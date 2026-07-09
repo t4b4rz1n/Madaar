@@ -1,6 +1,6 @@
-# Madar Platform
+# Madar
 
-Madar Platform is the monorepo base for building the Madar product. It currently brings together:
+Madar is the monorepo base for building the Madar product. It currently brings together:
 
 - `apps/api`: the Django / Django REST Framework backend base.
 - `apps/web`: the React / Vite admin panel base.
@@ -12,7 +12,7 @@ This repository is prepared so the current backend and frontend bases can run to
 ## Project Structure
 
 ```text
-madar-platform-standard/
+Madar/
 |-- apps/
 |   |-- api/       # Django / DRF base
 |   |-- web/       # React / Vite base
@@ -57,7 +57,7 @@ The `.gitignore` is already configured for this. After a fresh clone, every deve
 From the repository root:
 
 ```powershell
-cd C:\path\to\madar-platform-standard
+cd C:\path\to\Madar
 ```
 
 Create local environment files:

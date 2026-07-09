@@ -1,7 +1,7 @@
 .PHONY: help up up-build down logs api-shell api-migrate api-test api-lint worker-up
 
 help:
-	@echo "Madar Platform commands"
+	@echo "Madar commands"
 	@echo "  make up          Start local services"
 	@echo "  make up-build    Build and start local services"
 	@echo "  make down        Stop services"
