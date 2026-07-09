@@ -9,6 +9,7 @@ urlpatterns = [
     path("api/v1/accounts/", include("accounts.urls")),
     path("api/v1/panel/", include("panel.urls")),
     path("api/v1/dashboard/", include("dashboard.urls")),
+    path("api/v1/support/", include("dashboard.urls")),
 ]
 
 if settings.DEBUG:
@@ -40,7 +41,13 @@ if settings.DEBUG:
             schema_view.without_ui(cache_timeout=0),
             name="schema-json",
         ),
-        path("", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
-        path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+        path(
+            "",
+            schema_view.with_ui("swagger", cache_timeout=0),
+            name="schema-swagger-ui",
+        ),
+        path(
+            "redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
+        ),
     ]
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
