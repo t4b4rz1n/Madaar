@@ -7,13 +7,13 @@ export const getErrorMessage = (
   }
 
   if (error && typeof error === "object") {
-    const err = error as any;
+    const err = error as Record<string, unknown>;
 
-    if (err.message && typeof err.message === "string") {
+    if (typeof err.message === "string") {
       return err.message;
     }
 
-    if (err.detail && typeof err.detail === "string") {
+    if (typeof err.detail === "string") {
       return err.detail;
     }
 
@@ -29,8 +29,12 @@ export const getErrorMessage = (
       }
     }
 
-    if (err.response?.data?.message) {
-      return err.response.data.message;
+    const response = err.response as
+      | { data?: { message?: unknown } }
+      | undefined;
+
+    if (typeof response?.data?.message === "string") {
+      return response.data.message;
     }
   }
 

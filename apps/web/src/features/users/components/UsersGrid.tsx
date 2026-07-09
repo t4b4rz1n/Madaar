@@ -18,6 +18,7 @@ interface UsersGridProps {
   isLoading: boolean;
   isError: boolean;
   onEdit: (user: User) => void;
+  canManage?: boolean;
 }
 
 export const UsersGrid = ({
@@ -25,6 +26,7 @@ export const UsersGrid = ({
   isLoading,
   isError,
   onEdit,
+  canManage = false,
 }: UsersGridProps) => {
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
@@ -182,22 +184,24 @@ export const UsersGrid = ({
               </div>
 
               {/* Right: Actions */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => onEdit(user)}
-                  className="btn btn-ghost btn-sm btn-square rounded-lg text-base-content/60 hover:text-primary hover:bg-primary/10 transition-colors"
-                  title="Edit User"
-                >
-                  <Edit size={18} />
-                </button>
-                <button
-                  onClick={() => setDeleteModalState({ open: true, user })}
-                  className="btn btn-ghost btn-sm btn-square rounded-lg text-base-content/60 hover:text-error hover:bg-error/10 transition-colors"
-                  title="Delete User"
-                >
-                  <Trash size={18} />
-                </button>
-              </div>
+              {canManage && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => onEdit(user)}
+                    className="btn btn-ghost btn-sm btn-square rounded-lg text-base-content/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Edit User"
+                  >
+                    <Edit size={18} />
+                  </button>
+                  <button
+                    onClick={() => setDeleteModalState({ open: true, user })}
+                    className="btn btn-ghost btn-sm btn-square rounded-lg text-base-content/60 hover:text-error hover:bg-error/10 transition-colors"
+                    title="Delete User"
+                  >
+                    <Trash size={18} />
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         ))}

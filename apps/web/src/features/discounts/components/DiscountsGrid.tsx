@@ -19,6 +19,7 @@ interface DiscountsGridProps {
   isLoading: boolean;
   isError: boolean;
   onEdit: (discount: Discount) => void;
+  canManage?: boolean;
 }
 
 export const DiscountsGrid = ({
@@ -26,6 +27,7 @@ export const DiscountsGrid = ({
   isLoading,
   isError,
   onEdit,
+  canManage = false,
 }: DiscountsGridProps) => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [deleteModalState, setDeleteModalState] = useState<{
@@ -183,22 +185,24 @@ export const DiscountsGrid = ({
                   <span>{formatDate(discount.expiration_date)}</span>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => onEdit(discount)}
-                    className="p-1.5 hover:bg-base-200 rounded-lg text-base-content/60 hover:text-primary transition-colors"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    onClick={() =>
-                      setDeleteModalState({ open: true, discount })
-                    }
-                    className="p-1.5 hover:bg-error/10 rounded-lg text-base-content/60 hover:text-error transition-colors"
-                  >
-                    <Trash size={16} />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onEdit(discount)}
+                      className="p-1.5 hover:bg-base-200 rounded-lg text-base-content/60 hover:text-primary transition-colors"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() =>
+                        setDeleteModalState({ open: true, discount })
+                      }
+                      className="p-1.5 hover:bg-error/10 rounded-lg text-base-content/60 hover:text-error transition-colors"
+                    >
+                      <Trash size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           );

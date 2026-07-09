@@ -13,6 +13,7 @@ export type DrawerItem = {
   headerTitle?: string;
   link: string;
   icon: React.ReactNode;
+  staffOnly?: boolean;
 };
 
 export const drawerItems: DrawerItem[] = [
@@ -25,11 +26,13 @@ export const drawerItems: DrawerItem[] = [
     title: "Users Management",
     link: "users",
     icon: <People variant="Outline" />,
+    staffOnly: true,
   },
   {
     title: "Discounts",
     link: "discounts",
     icon: <DiscountShape variant="Outline" />,
+    staffOnly: true,
   },
   {
     title: "Notifications",

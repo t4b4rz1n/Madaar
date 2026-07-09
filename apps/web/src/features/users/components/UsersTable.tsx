@@ -17,6 +17,7 @@ interface UsersTableProps {
   isLoading: boolean;
   isError: boolean;
   onEdit: (user: User) => void;
+  canManage?: boolean;
 }
 
 export const UsersTable = ({
@@ -24,6 +25,7 @@ export const UsersTable = ({
   isLoading,
   isError,
   onEdit,
+  canManage = false,
 }: UsersTableProps) => {
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
@@ -103,9 +105,11 @@ export const UsersTable = ({
                 <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                  Actions
-                </th>
+                {canManage && (
+                  <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-base-content/5">
@@ -185,26 +189,28 @@ export const UsersTable = ({
                   </td>
 
                   {/* Actions */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onEdit(user)}
-                        className="p-2 hover:bg-primary/10 text-base-content/60 hover:text-primary rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          setDeleteModalState({ open: true, user })
-                        }
-                        className="p-2 hover:bg-error/10 text-base-content/60 hover:text-error rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+                  {canManage && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => onEdit(user)}
+                          className="p-2 hover:bg-primary/10 text-base-content/60 hover:text-primary rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() =>
+                            setDeleteModalState({ open: true, user })
+                          }
+                          className="p-2 hover:bg-error/10 text-base-content/60 hover:text-error rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </motion.tr>
               ))}
             </tbody>

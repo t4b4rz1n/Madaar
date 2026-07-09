@@ -35,12 +35,13 @@ const textVariants = {
 export const Sidebar = () => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
+  const isStaff = user?.is_staff === true;
   const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen } =
     useLayoutStore();
   const logout = useLogout();
 
   const renderNavItems = () =>
-    drawerItems.map((item, index) => {
+    drawerItems.filter((item) => !item.staffOnly || isStaff).map((item, index) => {
       const isActive =
         item.link === ""
           ? location.pathname === "/"

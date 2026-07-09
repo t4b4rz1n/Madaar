@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../../components/Pagination";
 import { ViewSwitcher } from "../../../components/ViewSwitcher";
+import { useAuthStore } from "../../auth/store/authStore";
 import { CreateEditUserModal } from "../components/CreateEditUserModal";
 import { UsersGrid } from "../components/UsersGrid";
 import { UsersTable } from "../components/UsersTable";
@@ -29,6 +30,7 @@ const itemVariants = {
 };
 
 export default function UsersListPage() {
+  const canManageUsers = useAuthStore((state) => state.user?.is_staff === true);
   const [searchParams, setSearchParams] = useSearchParams();
   const [modalState, setModalState] = useState<{
     open: boolean;
@@ -146,13 +148,15 @@ export default function UsersListPage() {
               setViewMode={setViewMode}
               className="w-full sm:w-auto"
             />
-            <button
-              onClick={handleCreateUser}
-              className="btn btn-primary rounded-xl gap-2"
-            >
-              <Add size={20} />
-              <span>Create User</span>
-            </button>
+            {canManageUsers && (
+              <button
+                onClick={handleCreateUser}
+                className="btn btn-primary rounded-xl gap-2"
+              >
+                <Add size={20} />
+                <span>Create User</span>
+              </button>
+            )}
           </div>
         </motion.div>
 
@@ -182,6 +186,7 @@ export default function UsersListPage() {
                   isLoading={showLoading}
                   isError={isError}
                   onEdit={handleEditUser}
+                  canManage={canManageUsers}
                 />
               ) : (
                 <UsersGrid
@@ -189,6 +194,7 @@ export default function UsersListPage() {
                   isLoading={showLoading}
                   isError={isError}
                   onEdit={handleEditUser}
+                  canManage={canManageUsers}
                 />
               )}
             </motion.div>
@@ -210,7 +216,7 @@ export default function UsersListPage() {
 
       {/* Create/Edit Modal */}
       <CreateEditUserModal
-        isOpen={modalState.open}
+        isOpen={canManageUsers && modalState.open}
         onClose={handleCloseModal}
         user={modalState.user}
       />

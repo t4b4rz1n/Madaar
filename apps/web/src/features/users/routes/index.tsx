@@ -1,10 +1,15 @@
 import { lazy } from "react";
+import { StaffRoute } from "../../../core/router/StaffRoute";
 
 const UsersListPage = lazy(() => import("../pages/UsersListPage"));
 
 export const usersRoutes = [
   {
     path: "users",
-    element: <UsersListPage />,
+    element: (
+      <StaffRoute>
+        <UsersListPage />
+      </StaffRoute>
+    ),
   },
 ];

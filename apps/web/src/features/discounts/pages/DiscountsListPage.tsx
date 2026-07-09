@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../../components/Pagination";
 import { ViewSwitcher } from "../../../components/ViewSwitcher";
+import { useAuthStore } from "../../auth/store/authStore";
 import { CreateEditDiscountModal } from "../components/CreateEditDiscountModal";
 import { DiscountsGrid } from "../components/DiscountsGrid";
 import { DiscountsTable } from "../components/DiscountsTable";
@@ -23,6 +24,7 @@ const itemVariants = {
 type ViewMode = "grid" | "table";
 
 const DiscountsListPage = () => {
+  const canManageDiscounts = useAuthStore((state) => state.user?.is_staff === true);
   const [searchParams, setSearchParams] = useSearchParams();
   const [modalState, setModalState] = useState<{
     open: boolean;
@@ -123,13 +125,15 @@ const DiscountsListPage = () => {
               setViewMode={setViewMode}
               className="w-full sm:w-auto"
             />
-            <button
-              className="btn btn-primary rounded-xl"
-              onClick={openCreateModal}
-            >
-              <Add />
-              <span>Create Discount</span>
-            </button>
+            {canManageDiscounts && (
+              <button
+                className="btn btn-primary rounded-xl"
+                onClick={openCreateModal}
+              >
+                <Add />
+                <span>Create Discount</span>
+              </button>
+            )}
           </div>
         </motion.div>
 
@@ -157,6 +161,7 @@ const DiscountsListPage = () => {
                   isLoading={showLoading}
                   isError={isError}
                   onEdit={openEditModal}
+                  canManage={canManageDiscounts}
                 />
               ) : (
                 <DiscountsGrid
@@ -164,6 +169,7 @@ const DiscountsListPage = () => {
                   isLoading={showLoading}
                   isError={isError}
                   onEdit={openEditModal}
+                  canManage={canManageDiscounts}
                 />
               )}
             </motion.div>
@@ -183,7 +189,7 @@ const DiscountsListPage = () => {
       </motion.div>
 
       <CreateEditDiscountModal
-        isOpen={modalState.open}
+        isOpen={canManageDiscounts && modalState.open}
         onClose={closeModal}
         discount={modalState.discount}
       />

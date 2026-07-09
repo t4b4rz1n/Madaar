@@ -35,7 +35,7 @@ export const useCreateDiscount = () => {
       toast.success("Discount created successfully");
       void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(getErrorMessage(error, "Failed to create discount"));
     },
   });
@@ -51,7 +51,7 @@ export const useUpdateDiscount = () => {
       toast.success("Discount updated successfully");
       void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(getErrorMessage(error, "Failed to update discount"));
     },
   });
@@ -66,7 +66,7 @@ export const useDeleteDiscount = () => {
       toast.success("Discount deleted successfully");
       void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(getErrorMessage(error, "Failed to delete discount"));
     },
   });
