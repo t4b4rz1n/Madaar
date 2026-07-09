@@ -1,0 +1,39 @@
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { loginRequest } from "../api/authApi";
+import { useAuthStore } from "../store/authStore";
+import type { LoginFormData } from "../validation/authSchema";
+
+export const useLogin = () => {
+  const navigate = useNavigate();
+  const setAuthData = useAuthStore((state) => state.setAuthData);
+
+  return useMutation({
+    mutationFn: (loginData: LoginFormData) => loginRequest(loginData),
+    onSuccess: (data) => {
+      if (data && data.access && data.user) {
+        setAuthData({
+          access: data.access,
+          user: data.user,
+        });
+        toast.success("Welcome back!");
+        navigate("/", { replace: true });
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
+export const useLogout = () => {
+  const navigate = useNavigate();
+  const logoutAction = useAuthStore((state) => state.logout);
+
+  return () => {
+    logoutAction();
+    toast.info("You have been logged out.");
+    navigate("/login");
+  };
+};

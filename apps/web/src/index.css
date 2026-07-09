@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* 🎨 MAIN THEME CONFIGURATION */
+@plugin "daisyui/theme" {
+  name: "light";
+  prefersdark: false;
+  color-scheme: "light";
+
+  /* Backgrounds */
+  --color-base-100: oklch(100% 0 0); /* #ffffff */
+  --color-base-200: oklch(98% 0 0); /* #fafafa */
+  --color-base-300: oklch(95% 0 0); /* #f3f3f3 */
+  --color-base-content: oklch(21% 0.006 285.885); /* #333333 */
+
+  /* Brand Colors */
+  --color-primary: #38b6ff; /* Main Brand Blue */
+  --color-primary-content: #ffffff;
+  --color-secondary: #4a90a4; /* Teal/Slate */
+  --color-secondary-content: #ffffff;
+  --color-accent: #00d1b2; /* Bright Teal */
+  --color-accent-content: #ffffff;
+  --color-neutral: #1f2937; /* Dark Gray */
+  --color-neutral-content: #ffffff;
+
+  /* Functional Colors */
+  --color-info: #1da1f2;
+  --color-info-content: #ffffff;
+  --color-success: #22c55e;
+  --color-success-content: #ffffff;
+  --color-warning: #f59e0b;
+  --color-warning-content: #111111;
+  --color-error: #ef4444;
+  --color-error-content: #ffffff;
+
+  /* Shape Settings */
+  --radius-selector: 0.5rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* 🎨 CUSTOM UTILITY COLORS
+   These are specific colors found hardcoded in component files
+   (AuthLayout, Platforms, ContactCards) added here for reusability.
+*/
+@theme {
+  /* Social Media Brand Colors (found in platforms.tsx) */
+  --color-telegram-bg: #d6eef9;
+  --color-telegram-text: #34aadf;
+
+  --color-whatsapp-bg: #e9fbf0;
+  --color-whatsapp-text: #00d95f;
+  --color-whatsapp-badge: #00d95f33;
+
+  --color-instagram-bg: #e4405f33; /* Low opacity bg */
+  --color-instagram-text: #e4405f;
+
+  --color-eitaa-bg: #fae4cc;
+  --color-eitaa-text: #e77600;
+
+  --color-rubika-bg: #f1e9f2;
+  --color-rubika-text: #4d3884;
+
+  /* Specific UI Elements */
+  --color-border-subtle: #e2e2e2; /* Used in ContactCard borders */
+
+  /* Auth Page Gradients (found in AuthLayout.tsx) */
+  --color-auth-grad-1-start: #dff6ff;
+  --color-auth-grad-1-end: #f0fbff;
+  --color-auth-grad-2-start: #eaf7ff;
+  --color-auth-grad-2-end: #f7fbff;
+}
+
+/* Font Setting */
+*,
+*::after,
+*::before {
+  font-family: "Vazirmatn", sans-serif;
+}

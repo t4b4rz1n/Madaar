@@ -1,0 +1,15 @@
+{
+  "name": "madar-platform",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "web:dev": "npm --prefix apps/web run dev",
+    "web:build": "npm --prefix apps/web run build",
+    "web:lint": "npm --prefix apps/web run lint",
+    "compose:up": "docker-compose up --build",
+    "compose:down": "docker-compose down"
+  }
+}

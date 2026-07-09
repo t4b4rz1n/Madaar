@@ -1,0 +1,3 @@
+-r prod.txt
+ruff==0.4.5
+pre-commit==3.7.1

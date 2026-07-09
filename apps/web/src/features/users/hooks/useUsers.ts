@@ -1,0 +1,79 @@
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { toast } from "sonner";
+import { createUser, deleteUser, getUsers, updateUser } from "../api/usersApi";
+import type { UserFormData, UserUpdateData } from "../types";
+
+export const useUsers = (params: URLSearchParams) => {
+  const queryKey = ["users", params.toString()];
+  return useQuery({
+    queryKey,
+    queryFn: async () => {
+      const response = await getUsers(params);
+      return response.data;
+    },
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UserFormData) => createUser(data),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User created successfully");
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "Failed to create user";
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UserUpdateData }) =>
+      updateUser(id, data),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User updated successfully");
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "Failed to update user";
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => deleteUser(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User deleted successfully");
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "Failed to delete user";
+      toast.error(errorMessage);
+    },
+  });
+};

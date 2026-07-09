@@ -1,0 +1,1 @@
+﻿Madar infrastructure notes.

@@ -1,0 +1,101 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: madar_db
+    environment:
+      POSTGRES_DB: madar_db
+      POSTGRES_USER: madar_user
+      POSTGRES_PASSWORD: madar_password
+    volumes:
+      - madar_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U madar_user -d madar_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - madar-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: madar_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - madar-network
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: madar_api
+    command: sh scripts/entrypoint.sh
+    volumes:
+      - ./apps/api:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./apps/api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - madar-network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+        VITE_API_VERSION: v1
+        VITE_API_TIMEOUT: "30000"
+    container_name: madar_web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - madar-network
+
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: madar_worker
+    command: celery -A config worker -l info
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - ./apps/api/.env
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - madar-network
+    profiles:
+      - worker
+
+networks:
+  madar-network:
+    driver: bridge
+
+volumes:
+  madar_postgres_data:

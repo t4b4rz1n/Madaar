@@ -1,0 +1,31 @@
+.git
+.gitignore
+.env
+.venv
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.db
+db.sqlite3
+
+# Data volumes
+postgres_data/
+minio_data/
+redis_data/
+
+# Logs
+logs/
+*.log
+
+# Media/Static
+mediafiles/
+staticfiles/
+
+# IDEs
+.idea/
+.vscode/
+*.swp

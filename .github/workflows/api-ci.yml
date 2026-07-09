@@ -1,0 +1,35 @@
+name: API CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api-ci.yml"
+  push:
+    branches: [main, develop]
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements/local.txt
+      - run: python manage.py check
+        env:
+          USE_SQLITE: "True"
+          SECRET_KEY: ci-secret
+          DEBUG: "True"
+      - run: python manage.py test
+        env:
+          USE_SQLITE: "True"
+          SECRET_KEY: ci-secret
+          DEBUG: "True"
+      - run: python -m ruff check .
+

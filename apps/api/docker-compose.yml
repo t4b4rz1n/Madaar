@@ -1,0 +1,119 @@
+services:
+  db_postgres:
+    image: postgres:16-alpine
+    container_name: base_project_db
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME:-base_project_db}
+      POSTGRES_USER: ${DB_USER:-base_project_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-strong_password_123}
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${DB_USER:-base_project_user} -d ${DB_NAME:-base_project_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - base-network
+  redis:
+    image: redis:7-alpine
+    container_name: base_project_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - base-network
+  minio:
+    image: minio/minio:latest
+    container_name: base_project_minio
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minio_password}
+    command: server --console-address ":9001" /data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - base-network
+    profiles:
+      - minio
+
+  setup-minio:
+    build: .
+    container_name: base_project_minio_setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file: .env
+    command: python scripts/setup-minio.py
+    volumes:
+      - .:/app
+    networks:
+      - base-network
+    profiles:
+      - minio
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: base_project_backend
+    user: "${UID:-1000}:${GID:-1000}"
+    command: sh scripts/entrypoint.sh
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      db_postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy 
+    restart: unless-stopped
+    networks:
+      - base-network
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: base_project_celery_worker
+    user: "${UID:-1000}:${GID:-1000}"
+    command: celery -A config worker -l info
+    volumes:
+      - .:/app
+    env_file: .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+      db_postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - base-network
+    profiles:
+      - celery  
+
+networks:
+  base-network:
+    driver: bridge
