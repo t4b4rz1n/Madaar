@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from common.utils.mixins import FieldFilterOverviewMixin
-from panel.Ticketing.models import Message, Ticket
+from panel.Ticketing.models import Message, Ticket, TicketType
 
 from .filters import MessageFilter, TicketFilter
 from .serializers import (
@@ -20,6 +20,7 @@ from .serializers import (
     TicketDetailSerializer,
     TicketListSerializer,
     TicketStatusUpdateSerializer,
+    TicketTypeSerializer,
 )
 
 ATTACHMENTS_PARAMETER = openapi.Parameter(
@@ -38,8 +39,12 @@ MESSAGE_CREATE_FORM_PARAMETERS = [
 ]
 
 TICKET_CREATE_FORM_PARAMETERS = [
-    openapi.Parameter("title", openapi.IN_FORM, type=openapi.TYPE_STRING, required=True),
-    openapi.Parameter("ticket_type", openapi.IN_FORM, type=openapi.TYPE_STRING, required=True),
+    openapi.Parameter(
+        "title", openapi.IN_FORM, type=openapi.TYPE_STRING, required=True
+    ),
+    openapi.Parameter(
+        "ticket_type", openapi.IN_FORM, type=openapi.TYPE_STRING, required=True
+    ),
     openapi.Parameter(
         "priority",
         openapi.IN_FORM,
@@ -68,7 +73,9 @@ class TicketViewSet(
     http_method_names = ["get", "post", "patch", "head", "options"]
 
     def get_queryset(self):
-        return Ticket.objects.filter(user=self.request.user).select_related("ticket_type", "user")
+        return Ticket.objects.filter(user=self.request.user).select_related(
+            "ticket_type", "user"
+        )
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -160,3 +167,17 @@ class MessageRetrieveUpdateDestroyAPIView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return Message.objects.filter(sender=self.request.user)
+
+
+class TicketTypeViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only viewset for TicketType.
+    Users can only view ticket types, not create/update/delete them.
+    """
+
+    permission_classes = [IsAuthenticated]
+    queryset = TicketType.objects.all()
+    serializer_class = TicketTypeSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name"]
+    http_method_names = ["get", "head", "options"]
