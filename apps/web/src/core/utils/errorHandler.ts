@@ -17,6 +17,18 @@ export const getErrorMessage = (
       return err.detail;
     }
 
+    if (err.errors && typeof err.errors === "object") {
+      for (const [field, value] of Object.entries(err.errors)) {
+        if (Array.isArray(value) && value.length > 0) {
+          return `${field}: ${String(value[0])}`;
+        }
+
+        if (typeof value === "string") {
+          return `${field}: ${value}`;
+        }
+      }
+    }
+
     if (err.response?.data?.message) {
       return err.response.data.message;
     }

@@ -154,6 +154,22 @@ class PanelBillingAndTicketingTestCase(APITestCase):
         discount = DiscountCode.objects.get(code="SUMMER50")
         self.assertTrue(discount.is_valid)
 
+    def test_staff_can_create_discount_code_without_trailing_slash(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.post(
+            "/api/v1/panel/discounts",
+            {
+                "code": "SPRING25",
+                "percent": 25,
+                "max_usage": 50,
+                "expiration_date": (timezone.now() + timezone.timedelta(days=30)).isoformat(),
+                "description": "Spring sale discount",
+                "is_active": True,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(DiscountCode.objects.filter(code="SPRING25").exists())
+
     def test_regular_user_cannot_create_discount_code(self):
         self.client.force_authenticate(user=self.regular_user)
         response = self.client.post(

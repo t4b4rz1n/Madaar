@@ -1,3 +1,5 @@
+name: madar
+
 services:
   db:
     image: postgres:16-alpine
@@ -7,7 +9,7 @@ services:
       POSTGRES_USER: madar_user
       POSTGRES_PASSWORD: madar_password
     volumes:
-      - madar_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -17,7 +19,7 @@ services:
       retries: 10
     restart: unless-stopped
     networks:
-      - madar-network
+      - network
 
   redis:
     image: redis:7-alpine
@@ -29,7 +31,7 @@ services:
       retries: 10
     restart: unless-stopped
     networks:
-      - madar-network
+      - network
 
   api:
     build:
@@ -50,7 +52,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - madar-network
+      - network
 
   web:
     build:
@@ -67,7 +69,7 @@ services:
       - api
     restart: unless-stopped
     networks:
-      - madar-network
+      - network
 
   worker:
     build:
@@ -89,13 +91,13 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - madar-network
+      - network
     profiles:
       - worker
 
 networks:
-  madar-network:
+  network:
     driver: bridge
 
 volumes:
-  madar_postgres_data:
+  postgres_data:

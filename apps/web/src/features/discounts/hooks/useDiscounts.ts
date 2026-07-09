@@ -5,6 +5,7 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "../../../core/utils/errorHandler";
 import {
   createDiscount,
   getDiscounts,
@@ -30,16 +31,12 @@ export const useCreateDiscount = () => {
 
   return useMutation({
     mutationFn: (data: DiscountFormData) => createDiscount(data),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["discounts"] });
+    onSuccess: () => {
       toast.success("Discount created successfully");
+      void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
     onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to create discount";
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(error, "Failed to create discount"));
     },
   });
 };
@@ -50,16 +47,12 @@ export const useUpdateDiscount = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: DiscountFormData }) =>
       updateDiscount(id, data),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["discounts"] });
+    onSuccess: () => {
       toast.success("Discount updated successfully");
+      void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
     onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to update discount";
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(error, "Failed to update discount"));
     },
   });
 };
@@ -69,16 +62,12 @@ export const useDeleteDiscount = () => {
 
   return useMutation({
     mutationFn: (id: string) => deleteDiscount(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["discounts"] });
+    onSuccess: () => {
       toast.success("Discount deleted successfully");
+      void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
     onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to delete discount";
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(error, "Failed to delete discount"));
     },
   });
 };
