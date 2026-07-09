@@ -9,6 +9,6 @@ urlpatterns = [
     path("notifications/", include("panel.Notification.urls")),
     path("users/", include("panel.User.urls")),
     path("feedbacks/", include("panel.Feedback.urls")),
-    path("discounts/", include("panel.Discount.urls")),  
+    path("discounts/", include("panel.Discount.urls")),
     path("discounts", discount_code_list, name="staff-discount-list-no-slash"),
 ]
