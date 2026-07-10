@@ -9,7 +9,7 @@ urlpatterns = [
     path("api/v1/accounts/", include("accounts.urls")),
     path("api/v1/panel/", include("panel.urls")),
     path("api/v1/dashboard/", include("dashboard.urls")),
-    path("api/v1/support/", include("dashboard.urls")),
+    path("api/v1/support/", include("dashboard.support_urls")),
 ]
 
 if settings.DEBUG:
