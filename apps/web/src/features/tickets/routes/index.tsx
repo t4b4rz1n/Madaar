@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
+import { StaffRoute } from "../../../core/router/StaffRoute";
 
 const TicketsListPage = lazy(() => import("../pages/TicketsListPage"));
 const TicketDetailsPage = lazy(() => import("../pages/TicketDetailsPage"));
@@ -16,6 +17,10 @@ export const ticketsRoutes: RouteObject[] = [
   },
   {
     path: "ticket-types",
-    element: <TicketTypesListPage />,
+    element: (
+      <StaffRoute>
+        <TicketTypesListPage />
+      </StaffRoute>
+    ),
   },
 ];

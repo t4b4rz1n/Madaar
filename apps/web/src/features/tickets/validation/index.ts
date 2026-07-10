@@ -2,9 +2,9 @@ import { z } from "zod";
 
 export const ticketSchema = z.object({
   title: z.string().min(1, "Subject is required"),
-  ticket_type: z.number({ message: "Category is required" }),
+  text: z.string().min(1, "Description is required"),
+  ticket_type: z.string().min(1, "Category is required"),
   priority: z.enum(["low", "medium", "high"]),
-  status: z.enum(["open", "answered", "closed"]),
 });
 
 export const ticketTypeSchema = z.object({

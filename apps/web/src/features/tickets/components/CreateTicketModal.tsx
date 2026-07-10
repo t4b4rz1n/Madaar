@@ -34,9 +34,9 @@ export const CreateTicketModal = ({
     resolver: zodResolver(ticketSchema),
     defaultValues: {
       title: "",
-      ticket_type: undefined,
+      text: "",
+      ticket_type: "",
       priority: "low",
-      status: "open",
     },
   });
 
@@ -47,9 +47,9 @@ export const CreateTicketModal = ({
     if (isOpen) {
       reset({
         title: "",
-        ticket_type: undefined,
+        text: "",
+        ticket_type: "",
         priority: "low",
-        status: "open",
       });
     }
   }, [isOpen, reset]);
@@ -68,12 +68,6 @@ export const CreateTicketModal = ({
     { value: "low", label: "Low", color: "text-success", bg: "bg-success/10 border-success/20 hover:bg-success/20" },
     { value: "medium", label: "Medium", color: "text-warning", bg: "bg-warning/10 border-warning/20 hover:bg-warning/20" },
     { value: "high", label: "High", color: "text-error", bg: "bg-error/10 border-error/20 hover:bg-error/20" },
-  ];
-
-  const statusOptions = [
-    { value: "open", label: "Open", color: "text-info", bg: "bg-info/10 border-info/20 hover:bg-info/20" },
-    { value: "answered", label: "Answered", color: "text-success", bg: "bg-success/10 border-success/20 hover:bg-success/20" },
-    { value: "closed", label: "Closed", color: "text-base-content/60", bg: "bg-base-content/10 border-base-content/20 hover:bg-base-content/15" },
   ];
 
   const modalContent = (
@@ -147,7 +141,31 @@ export const CreateTicketModal = ({
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <Controller
+                name="text"
+                control={control}
+                render={({ field }) => (
+                  <div className="form-control w-full">
+                    <div className="label pb-1.5">
+                      <span className="label-text text-xs font-semibold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5">
+                        <Messages2 size={14} />
+                        Description
+                      </span>
+                    </div>
+                    <textarea
+                      {...field}
+                      rows={4}
+                      placeholder="Describe your issue or request"
+                      className={`textarea textarea-bordered w-full resize-none !shadow-none focus:border-primary ${errors.text ? "border-error" : "border-base-300"}`}
+                    />
+                    {errors.text && (
+                      <span className="text-error text-xs mt-1.5">{errors.text.message}</span>
+                    )}
+                  </div>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Ticket Type */}
                 <Controller
                   name="ticket_type"
@@ -162,7 +180,7 @@ export const CreateTicketModal = ({
                       </div>
                       <select
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(e.target.value)}
                         className="select select-bordered w-full !shadow-none border-base-300"
                       >
                         <option value="">Select Category</option>
@@ -212,38 +230,6 @@ export const CreateTicketModal = ({
                   )}
                 />
 
-                {/* Status */}
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field }) => (
-                    <div className="form-control w-full">
-                      <div className="label pb-1.5">
-                        <span className="label-text text-xs font-semibold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5">
-                          <TickCircle size={14} />
-                          Status
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        {statusOptions.map((opt) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => field.onChange(opt.value)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 ${
-                              field.value === opt.value
-                                ? opt.bg + " " + opt.color
-                                : "bg-base-200 border-base-content/10 text-base-content/60 hover:bg-base-300"
-                            }`}
-                          >
-                            {field.value === opt.value && <TickCircle size={14} className={opt.color} variant="Bold" />}
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                />
               </div>
             </div>
 

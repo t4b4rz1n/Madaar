@@ -4,13 +4,13 @@ from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import generics, viewsets
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from common.utils.mixins import FieldFilterOverviewMixin
-from panel.Ticketing.models import Message, Ticket
+from panel.Ticketing.models import Message, Ticket, TicketType
 
 from .filters import MessageFilter, StaffTicketFilter
 from .serializers import (
@@ -19,6 +19,7 @@ from .serializers import (
     StaffTicketUpdateSerializer,
     TicketDetailSerializer,
     TicketListSerializer,
+    TicketTypeSerializer,
 )
 
 MESSAGE_CREATE_FORM_PARAMETERS = [
@@ -52,6 +53,17 @@ class StaffTicketViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
         if self.action in ["update", "partial_update"]:
             return StaffTicketUpdateSerializer
         return TicketDetailSerializer
+
+
+class StaffTicketTypeViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    queryset = TicketType.objects.all()
+    serializer_class = TicketTypeSerializer
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ["name"]
+    ordering_fields = ["name", "created_at"]
+    ordering = ["name"]
+    http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]
 
 
 class StaffMessageListCreateAPIView(generics.ListCreateAPIView):

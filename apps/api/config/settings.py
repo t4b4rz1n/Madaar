@@ -181,9 +181,9 @@ if USE_MINIO:
     }
 
     # Construct the media URL from the custom domain
-    protocol = env("AWS_S3_URL_PROTOCOL", default="http:")
+    AWS_S3_URL_PROTOCOL = env("AWS_S3_URL_PROTOCOL", default="http:")
     if AWS_S3_CUSTOM_DOMAIN:
-        MEDIA_URL = f"{protocol}//{AWS_S3_CUSTOM_DOMAIN}/"
+        MEDIA_URL = f"{AWS_S3_URL_PROTOCOL}//{AWS_S3_CUSTOM_DOMAIN}/"
     else:
         MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/"
 

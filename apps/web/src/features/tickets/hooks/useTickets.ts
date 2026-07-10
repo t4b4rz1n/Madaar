@@ -12,17 +12,19 @@ import {
   updateTicketType,
   deleteTicketType,
 } from "../api/ticketsApi";
-import type { TicketFormData } from "../types";
+import type { EntityId, TicketFormData } from "../types";
+import { useAuthStore } from "../../auth/store/authStore";
 
 // Tickets hooks
 export const useTickets = (
   params: URLSearchParams,
   options?: any
 ) => {
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
   return useQuery<any>({
-    queryKey: ["tickets", params.toString()],
+    queryKey: ["tickets", isStaff ? "staff" : "user", params.toString()],
     queryFn: async () => {
-      const response = await getTickets(params);
+      const response = await getTickets(params, isStaff);
       return response.data;
     },
     placeholderData: keepPreviousData,
@@ -30,11 +32,12 @@ export const useTickets = (
   });
 };
 
-export const useTicket = (id: number) => {
+export const useTicket = (id: string) => {
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
   return useQuery({
-    queryKey: ["ticket", id],
+    queryKey: ["ticket", isStaff ? "staff" : "user", id],
     queryFn: async () => {
-      const response = await getTicket(id);
+      const response = await getTicket(id, isStaff);
       return response.data;
     },
     enabled: !!id,
@@ -55,14 +58,16 @@ export const useCreateTicket = () => {
   });
 };
 
-export const useUpdateTicketStatus = (ticketId: number) => {
+export const useUpdateTicketStatus = (ticketId: string) => {
   const queryClient = useQueryClient();
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
+  const scope = isStaff ? "staff" : "user";
   return useMutation({
-    mutationFn: (status: "open" | "answered" | "closed") =>
-      updateTicket(ticketId, { status }),
+    mutationFn: (status: "open" | "in_progress" | "answered" | "closed") =>
+      updateTicket(ticketId, { status }, isStaff),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket", scope, ticketId] });
       toast.success("Ticket status updated successfully");
     },
     onError: (error: any) => {
@@ -72,33 +77,35 @@ export const useUpdateTicketStatus = (ticketId: number) => {
 };
 
 // Ticket Messages (Chat) hooks
-export const useTicketMessages = (ticketId: number, params: URLSearchParams) => {
+export const useTicketMessages = (ticketId: string, params: URLSearchParams) => {
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
   return useQuery({
-    queryKey: ["ticket-messages", ticketId, params.toString()],
+    queryKey: ["ticket-messages", isStaff ? "staff" : "user", ticketId, params.toString()],
     queryFn: async () => {
-      const response = await getTicketMessages(ticketId, params);
+      const response = await getTicketMessages(ticketId, params, isStaff);
       return response.data;
     },
     enabled: !!ticketId,
     placeholderData: keepPreviousData,
+    refetchInterval: 3000,
+    refetchIntervalInBackground: false,
   });
 };
 
-export const useSendTicketMessage = (ticketId: number) => {
+export const useSendTicketMessage = (ticketId: string) => {
   const queryClient = useQueryClient();
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
+  const scope = isStaff ? "staff" : "user";
   return useMutation({
     mutationFn: async (data: { text?: string; file?: File }) => {
-      const response = await sendTicketMessage(ticketId, data.text, data.file);
-      try {
-        await updateTicket(ticketId, { status: "answered" });
-      } catch (err) {
-        console.error("Failed to automatically update ticket status to answered", err);
-      }
-      return response;
+      return sendTicketMessage(ticketId, data.text, data.file, isStaff);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ticket-messages", ticketId] });
-      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["ticket-messages", scope, ticketId],
+        refetchType: "active",
+      });
+      queryClient.invalidateQueries({ queryKey: ["ticket", scope, ticketId] });
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
     },
     onError: (error: any) => {
@@ -136,7 +143,7 @@ export const useCreateTicketType = () => {
 export const useUpdateTicketType = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) =>
+    mutationFn: ({ id, name }: { id: EntityId; name: string }) =>
       updateTicketType(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ticket-types"] });
@@ -151,7 +158,7 @@ export const useUpdateTicketType = () => {
 export const useDeleteTicketType = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteTicketType(id),
+    mutationFn: (id: EntityId) => deleteTicketType(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ticket-types"] });
       toast.success("Ticket category deleted successfully");

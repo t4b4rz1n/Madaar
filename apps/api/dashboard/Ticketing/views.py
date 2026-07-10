@@ -4,7 +4,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import generics, mixins, viewsets
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -171,13 +171,14 @@ class MessageRetrieveUpdateDestroyAPIView(generics.RetrieveAPIView):
 
 class TicketTypeViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Read-only viewset for TicketType.
-    Users can only view ticket types, not create/update/delete them.
+    Read-only ticket categories available to authenticated users.
     """
 
     permission_classes = [IsAuthenticated]
     queryset = TicketType.objects.all()
     serializer_class = TicketTypeSerializer
-    filter_backends = [SearchFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["name"]
+    ordering_fields = ["name", "created_at"]
+    ordering = ["name"]
     http_method_names = ["get", "head", "options"]

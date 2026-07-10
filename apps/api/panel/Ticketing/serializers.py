@@ -1,6 +1,7 @@
 import os
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from panel.Ticketing.models import Attachment, Message, Ticket, TicketType
@@ -8,6 +9,21 @@ from panel.Ticketing.validators import validate_attachment_extension
 
 MAX_FILE_SIZE = settings.TICKET_ATTACHMENT_MAX_FILE_SIZE
 MAX_ATTACHMENTS_PER_MESSAGE = settings.TICKET_ATTACHMENT_MAX_FILES
+User = get_user_model()
+
+
+class TicketUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username", "email"]
+        ref_name = "ticket_user_panel"
+
+
+class MessageSenderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username", "is_staff"]
+        ref_name = "message_sender_panel"
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
@@ -42,7 +58,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender = serializers.StringRelatedField(read_only=True)
+    sender = MessageSenderSerializer(read_only=True)
     attachments = AttachmentSerializer(many=True, read_only=True)
 
     class Meta:
@@ -92,7 +108,7 @@ class MessageCreateSerializer(serializers.ModelSerializer):
 
 
 class TicketListSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = TicketUserSerializer(read_only=True)
     ticket_type = serializers.StringRelatedField()
 
     class Meta:
@@ -113,12 +129,13 @@ class TicketListSerializer(serializers.ModelSerializer):
 class TicketTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TicketType
-        fields = ["id", "name"]
+        fields = ["id", "name", "created_at"]
+        read_only_fields = ["id", "created_at"]
         ref_name = "ticket_type_panel"
 
 
 class TicketDetailSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = TicketUserSerializer(read_only=True)
     ticket_type = TicketTypeSerializer()
 
     class Meta:

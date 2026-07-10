@@ -10,6 +10,9 @@ interface TicketsTableProps {
   isError: boolean;
 }
 
+const getTicketTypeName = (ticketType: Ticket["ticket_type"]) =>
+  typeof ticketType === "string" ? ticketType : ticketType?.name || "";
+
 export const TicketsTable = ({
   tickets,
   isLoading,
@@ -108,7 +111,7 @@ export const TicketsTable = ({
                 {/* Ticket Type */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-xs text-base-content/70 bg-base-200/50 border border-base-content/10 px-2.5 py-1 rounded-lg">
-                    {ticket.ticket_type || "—"}
+                    {getTicketTypeName(ticket.ticket_type) || "—"}
                   </span>
                 </td>
 

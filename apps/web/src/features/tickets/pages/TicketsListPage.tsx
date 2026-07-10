@@ -23,6 +23,7 @@ import InputField from "../../../components/InputField";
 import { formatDate } from "../../../utils/formatDate";
 import { useDebounce } from "../../../hooks/useDebounce";
 import type { TicketTypeItem } from "../types";
+import { useAuthStore } from "../../auth/store/authStore";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -41,9 +42,16 @@ const modalVariants = {
 type TabId = "tickets" | "categories";
 
 export default function TicketsListPage() {
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabId>("tickets");
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isStaff && activeTab !== "tickets") {
+      setActiveTab("tickets");
+    }
+  }, [activeTab, isStaff]);
 
   // ── Tickets state ──────────────────────────────────────────────────────────
   const { data: ticketsResponse, isLoading, isError, isFetching } = useTickets(searchParams);
@@ -143,6 +151,7 @@ export default function TicketsListPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const handleSave = () => {
+    if (!isStaff) return;
     if (!modalState.name.trim()) return;
     if (modalState.item) {
       updateMutation.mutate(
@@ -157,6 +166,7 @@ export default function TicketsListPage() {
   };
 
   const handleDelete = () => {
+    if (!isStaff) return;
     if (deleteModalState.item) {
       deleteMutation.mutate(deleteModalState.item.id, {
         onSuccess: () => setDeleteModalState({ open: false, item: null }),
@@ -166,7 +176,9 @@ export default function TicketsListPage() {
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode; count?: number }[] = [
     { id: "tickets", label: "Tickets", icon: <Messages size={16} />, count: totalResults || undefined },
-    { id: "categories", label: "Categories", icon: <Category size={16} />, count: catTotalResults || undefined },
+    ...(isStaff
+      ? [{ id: "categories" as const, label: "Categories", icon: <Category size={16} />, count: catTotalResults || undefined }]
+      : []),
   ];
 
   return (
@@ -188,7 +200,11 @@ export default function TicketsListPage() {
               {activeTab === "tickets" ? "Tickets" : "Categories"}
             </h1>
             <p className="text-base-content/70 mt-1">
-              {activeTab === "tickets" ? "Manage and respond to support tickets submitted by users." : "Manage ticket types and departments."}
+              {activeTab === "tickets"
+                ? isStaff
+                  ? "Manage and respond to support tickets submitted by users."
+                  : "View and follow up on your support tickets."
+                : "Manage ticket types and departments."}
             </p>
           </div>
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 self-start md:self-auto">
@@ -200,7 +216,7 @@ export default function TicketsListPage() {
                 <Add size={20} className="shrink-0" />
                 <span>Create Ticket</span>
               </button>
-            ) : (
+            ) : isStaff ? (
               <button
                 onClick={() => setModalState({ open: true, item: null, name: "" })}
                 className="btn btn-primary rounded-xl gap-2 font-semibold h-[44px] px-6"
@@ -208,12 +224,12 @@ export default function TicketsListPage() {
                 <Add size={20} className="shrink-0" />
                 <span>Create Category</span>
               </button>
-            )}
+            ) : null}
           </div>
         </motion.div>
 
         {/* ── Tabs ───────────────────────────────────────────────────────────── */}
-        <motion.div variants={itemVariants} className="mt-6">
+        {isStaff && <motion.div variants={itemVariants} className="mt-6">
           <div className="flex gap-1 p-1 bg-base-200 border border-base-content/10 rounded-xl w-fit">
             {tabs.map((tab) => (
               <button
@@ -235,7 +251,7 @@ export default function TicketsListPage() {
               </button>
             ))}
           </div>
-        </motion.div>
+        </motion.div>}
 
         {/* ── Tab Content ────────────────────────────────────────────────────── */}
         <AnimatePresence mode="wait">
@@ -346,9 +362,11 @@ export default function TicketsListPage() {
                           <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
                             Created At
                           </th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                            Actions
-                          </th>
+                          {isStaff && (
+                            <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
+                              Actions
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-base-content/5">
@@ -371,8 +389,9 @@ export default function TicketsListPage() {
                             <td className="px-6 py-4 text-sm text-base-content/75">
                               {formatDate(item.created_at)}
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
+                            {isStaff && (
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => setModalState({ open: true, item, name: item.name })}
                                   className="p-2 hover:bg-primary/10 text-base-content/60 hover:text-primary rounded-lg transition-colors"
@@ -387,8 +406,9 @@ export default function TicketsListPage() {
                                 >
                                   <Trash size={16} />
                                 </button>
-                              </div>
-                            </td>
+                                </div>
+                              </td>
+                            )}
                           </motion.tr>
                         ))}
                       </tbody>
@@ -417,7 +437,7 @@ export default function TicketsListPage() {
 
       {/* Create/Edit Category Modal */}
       <AnimatePresence>
-        {modalState.open && (
+        {modalState.open && isStaff && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -497,7 +517,7 @@ export default function TicketsListPage() {
 
       {/* Delete Confirmation */}
       <ConfirmationModal
-        isOpen={deleteModalState.open}
+        isOpen={isStaff && deleteModalState.open}
         onClose={() => setDeleteModalState({ open: false, item: null })}
         onConfirm={handleDelete}
         title="Delete Category"

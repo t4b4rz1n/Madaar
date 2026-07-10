@@ -19,10 +19,12 @@ import {
 } from "../hooks/useTickets";
 import { messageSchema } from "../validation";
 import type { Ticket, TicketMessage } from "../types";
+import { useAuthStore } from "../../auth/store/authStore";
 
 export default function TicketDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const ticketId = Number(id);
+  const ticketId = id || "";
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
 
   const { data: ticket, isLoading: isLoadingTicket, isError: isErrorTicket } = useTicket(ticketId);
   const { data: messagesResponse, isLoading: isLoadingMessages } = useTicketMessages(
@@ -105,6 +107,7 @@ export default function TicketDetailsPage() {
   };
   const statusConfig = {
     open: { color: "text-info", bg: "bg-info/10 border-info/20", dot: "bg-info", pulse: true },
+    in_progress: { color: "text-warning", bg: "bg-warning/10 border-warning/20", dot: "bg-warning", pulse: true },
     answered: { color: "text-success", bg: "bg-success/10 border-success/20", dot: "bg-success", pulse: false },
     closed: { color: "text-base-content/50", bg: "bg-base-200 border-base-content/10", dot: "bg-base-content/30", pulse: false },
   };
@@ -115,6 +118,11 @@ export default function TicketDetailsPage() {
   const sCfg = ticket
     ? (statusConfig[ticket.status as keyof typeof statusConfig] || statusConfig.open)
     : statusConfig.open;
+  const ticketTypeName = ticket
+    ? typeof ticket.ticket_type === "string"
+      ? ticket.ticket_type
+      : ticket.ticket_type?.name || ""
+    : "";
 
   const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -176,9 +184,9 @@ export default function TicketDetailsPage() {
                   <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded border uppercase font-medium shrink-0 ${pCfg.bg} ${pCfg.color}`}>
                     {capitalize(ticket.priority)}
                   </span>
-                  {ticket.ticket_type && (
+                  {ticketTypeName && (
                     <span className="text-[10px] bg-base-200 border border-base-content/10 px-1.5 py-0.5 rounded text-base-content/60 font-mono shrink-0">
-                      {ticket.ticket_type}
+                      {ticketTypeName}
                     </span>
                   )}
                 </div>
@@ -204,7 +212,7 @@ export default function TicketDetailsPage() {
                 tabIndex={0}
                 className="dropdown-content menu p-1.5 shadow-xl bg-base-100 border border-base-content/10 rounded-xl w-36 mt-1"
               >
-                {(["open", "answered", "closed"] as const).map((status) => {
+                {(isStaff ? ["open", "in_progress", "answered", "closed"] as const : ["closed"] as const).map((status) => {
                   const cfg = statusConfig[status];
                   const isActive = ticket.status === status;
                   return (
@@ -263,15 +271,18 @@ export default function TicketDetailsPage() {
                         </span>
                       </div>
 
-                      {message.media && (
-                        <div className={`mt-2 mb-2 rounded-xl overflow-hidden border max-w-full ${isStaff ? "border-primary-content/20" : "border-base-content/10"}`}>
-                          {/\.(jpg|jpeg|png|webp|gif)$/i.test(message.media) ? (
-                            <a href={message.media} target="_blank" rel="noopener noreferrer" className="block hover:opacity-85 transition-opacity">
-                              <img src={message.media} alt="attachment" className="max-h-60 object-cover w-full" />
+                      {message.attachments?.map((attachment) => (
+                        <div
+                          key={attachment.id}
+                          className={`mt-2 mb-2 rounded-xl overflow-hidden border max-w-full ${isStaff ? "border-primary-content/20" : "border-base-content/10"}`}
+                        >
+                          {attachment.file_type === "image" ? (
+                            <a href={attachment.file} target="_blank" rel="noopener noreferrer" className="block hover:opacity-85 transition-opacity">
+                              <img src={attachment.file} alt="attachment" className="max-h-60 object-cover w-full" />
                             </a>
                           ) : (
                             <a
-                              href={message.media}
+                              href={attachment.file}
                               target="_blank"
                               rel="noopener noreferrer"
                               className={`flex items-center gap-2 p-3 text-xs font-medium transition-colors ${isStaff
@@ -280,11 +291,11 @@ export default function TicketDetailsPage() {
                               }`}
                             >
                               <Paperclip size={14} />
-                              <span className="truncate max-w-[200px]">{message.media.split("/").pop()}</span>
+                              <span className="truncate max-w-[200px]">{attachment.file.split("/").pop()}</span>
                             </a>
                           )}
                         </div>
-                      )}
+                      ))}
 
                       <p className="text-sm whitespace-pre-wrap leading-relaxed" dir="auto">
                         {message.text}

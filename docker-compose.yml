@@ -33,6 +33,45 @@ services:
     networks:
       - network
 
+  minio:
+    image: minio/minio:latest
+    container_name: madar_minio
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_password
+    command: server --console-address ":9001" /data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - network
+
+  setup-minio:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: madar_minio_setup
+    command: python scripts/setup-minio.py
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - path: ./apps/api/.env
+        required: false
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - network
+
   api:
     build:
       context: ./apps/api
@@ -51,6 +90,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      setup-minio:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - network
@@ -103,3 +144,4 @@ networks:
 
 volumes:
   postgres_data:
+  minio_data:

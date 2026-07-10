@@ -23,7 +23,7 @@ class PanelBillingAndTicketingTestCase(APITestCase):
         )
 
         # Create a ticket type
-        self.ticket_type = TicketType.objects.create(name="Technical Support")
+        self.ticket_type, _ = TicketType.objects.get_or_create(name="Technical Support")
 
         # Create a ticket owned by regular_user
         self.ticket = Ticket.objects.create(
@@ -45,6 +45,8 @@ class PanelBillingAndTicketingTestCase(APITestCase):
         self.staff_ticket_list_url = reverse("staff-ticket-list")
         self.staff_ticket_detail_url = reverse("staff-ticket-detail", kwargs={"id": self.ticket.id})
         self.staff_messages_url = reverse("staff-ticket-messages", kwargs={"id": self.ticket.id})
+        self.user_ticket_type_list_url = reverse("ticket-type-list")
+        self.staff_ticket_type_list_url = reverse("staff-ticket-type-list")
         self.staff_discount_list_url = reverse("staff-discount-list")
 
     # --- Ticketing Tests ---
@@ -64,6 +66,37 @@ class PanelBillingAndTicketingTestCase(APITestCase):
         json_data = response.json()
         self.assertTrue(json_data["status"])
         self.assertEqual(json_data["data"]["title"], "Cannot login on mobile app")
+
+    def test_regular_user_only_sees_own_tickets(self):
+        other_user = User.objects.create_user(
+            username="otheruser", email="other@example.com", password="otherpassword123"
+        )
+        other_ticket = Ticket.objects.create(
+            user=other_user,
+            title="Another user's ticket",
+            ticket_type=self.ticket_type,
+        )
+
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(self.user_ticket_list_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        payload = response.json().get("data", response.json())
+        ticket_ids = {item["id"] for item in payload["results"]}
+        self.assertIn(str(self.ticket.id), ticket_ids)
+        self.assertNotIn(str(other_ticket.id), ticket_ids)
+
+    def test_ticket_categories_are_predefined_and_read_only_for_regular_users(self):
+        self.client.force_authenticate(user=self.regular_user)
+
+        response = self.client.get(self.user_ticket_type_list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(TicketType.objects.filter(name="Projects & Tasks").exists())
+
+        response = self.client.post(
+            self.user_ticket_type_list_url, {"name": "User-created category"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_regular_user_can_post_message(self):
         self.client.force_authenticate(user=self.regular_user)
@@ -120,6 +153,39 @@ class PanelBillingAndTicketingTestCase(APITestCase):
         self.ticket.refresh_from_db()
         self.assertEqual(self.ticket.status, Ticket.Status.IN_PROGRESS)
         self.assertEqual(self.ticket.priority, Ticket.Priority.URGENT)
+
+    def test_staff_can_view_all_users_tickets(self):
+        other_user = User.objects.create_user(
+            username="seconduser", email="second@example.com", password="secondpassword123"
+        )
+        other_ticket = Ticket.objects.create(
+            user=other_user,
+            title="Second user's ticket",
+            ticket_type=self.ticket_type,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get(self.staff_ticket_list_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        payload = response.json().get("data", response.json())
+        ticket_ids = {item["id"] for item in payload["results"]}
+        self.assertIn(str(self.ticket.id), ticket_ids)
+        self.assertIn(str(other_ticket.id), ticket_ids)
+
+    def test_only_staff_can_manage_ticket_categories(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.post(
+            self.staff_ticket_type_list_url, {"name": "Restricted category"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.post(
+            self.staff_ticket_type_list_url, {"name": "Operations Support"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(TicketType.objects.filter(name="Operations Support").exists())
 
     def test_staff_can_reply_to_ticket(self):
         self.client.force_authenticate(user=self.admin_user)

@@ -4,49 +4,51 @@ import type {
   TicketTypeItem,
   TicketFormData,
   TicketMessage,
+  EntityId,
+  TicketStatus,
 } from "../types";
 
 // Tickets endpoints
-export const getTickets = (params: URLSearchParams) => {
-  return ApiService.getList<Ticket>("support/tickets/", { params });
+const ticketsBasePath = (isStaff: boolean) =>
+  isStaff ? "panel/tickets/" : "support/tickets/";
+
+export const getTickets = (params: URLSearchParams, isStaff: boolean) => {
+  return ApiService.getList<Ticket>(ticketsBasePath(isStaff), { params });
 };
 
-export const getTicket = (id: number) => {
-  return ApiService.get<Ticket>(`support/tickets/${id}/`);
+export const getTicket = (id: EntityId, isStaff: boolean) => {
+  return ApiService.get<Ticket>(`${ticketsBasePath(isStaff)}${id}/`);
 };
 
 export const createTicket = (data: TicketFormData) => {
   return ApiService.post<Ticket>("support/tickets/", data);
 };
 
-export const updateTicket = (id: number, data: Partial<TicketFormData>) => {
-  return ApiService.patch<Ticket>(`support/tickets/${id}/`, data);
+type TicketUpdateData = Partial<Omit<TicketFormData, "status">> & { status?: TicketStatus };
+
+export const updateTicket = (id: EntityId, data: TicketUpdateData, isStaff: boolean) => {
+  return ApiService.patch<Ticket>(`${ticketsBasePath(isStaff)}${id}/`, data);
 };
 
 // Ticket Messages (Chat) endpoints
-export const getTicketMessages = (ticketId: number, params: URLSearchParams) => {
+export const getTicketMessages = (ticketId: EntityId, params: URLSearchParams, isStaff: boolean) => {
   return ApiService.getList<TicketMessage>(
-    `support/tickets/${ticketId}/messages/`,
+    `${ticketsBasePath(isStaff)}${ticketId}/messages/`,
     { params }
   );
 };
 
-export const sendTicketMessage = (ticketId: number, text?: string, file?: File) => {
+export const sendTicketMessage = (ticketId: EntityId, text: string | undefined, file: File | undefined, isStaff: boolean) => {
+  const path = `${ticketsBasePath(isStaff)}${ticketId}/messages/`;
   if (file) {
     const formData = new FormData();
     if (text) {
       formData.append("text", text);
     }
-    formData.append("media", file);
-    return ApiService.post<TicketMessage>(
-      `support/tickets/${ticketId}/messages/`,
-      formData
-    );
+    formData.append("attachments", file);
+    return ApiService.post<TicketMessage>(path, formData);
   }
-  return ApiService.post<TicketMessage>(
-    `support/tickets/${ticketId}/messages/`,
-    { text }
-  );
+  return ApiService.post<TicketMessage>(path, { text });
 };
 
 // Ticket Types endpoints
@@ -58,13 +60,13 @@ export const getTicketTypes = (params: URLSearchParams) => {
 };
 
 export const createTicketType = (name: string) => {
-  return ApiService.post<TicketTypeItem>("support/ticket-types/", { name });
+  return ApiService.post<TicketTypeItem>("panel/ticket-types/", { name });
 };
 
-export const updateTicketType = (id: number, name: string) => {
-  return ApiService.put<TicketTypeItem>(`support/ticket-types/${id}/`, { name });
+export const updateTicketType = (id: EntityId, name: string) => {
+  return ApiService.put<TicketTypeItem>(`panel/ticket-types/${id}/`, { name });
 };
 
-export const deleteTicketType = (id: number) => {
-  return ApiService.delete(`support/ticket-types/${id}/`);
+export const deleteTicketType = (id: EntityId) => {
+  return ApiService.delete(`panel/ticket-types/${id}/`);
 };

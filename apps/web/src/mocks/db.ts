@@ -425,14 +425,16 @@ export const db = {
     getAll: () => mockTickets,
     getById: (id: number) => mockTickets.find((t) => t.id === id),
     create: (ticketData: TicketFormData) => {
-      const nextId = mockTickets.length > 0 ? Math.max(...mockTickets.map((t) => t.id)) + 1 : 1;
-      const typeItem = mockTicketTypes.find((t) => t.id === ticketData.ticket_type);
+      const nextId = mockTickets.length > 0 ? Math.max(...mockTickets.map((t) => Number(t.id))) + 1 : 1;
+      const typeItem = mockTicketTypes.find(
+        (t) => String(t.id) === ticketData.ticket_type
+      );
       const newTicket: Ticket = {
         id: nextId,
         title: ticketData.title,
         ticket_type: typeItem ? typeItem.name : "Technical Support",
         priority: ticketData.priority,
-        status: ticketData.status || "open",
+        status: "open",
         user: { username: "admin", email: "admin@example.com" },
         created_at: new Date().toISOString(),
       };
@@ -456,7 +458,9 @@ export const db = {
         id: nextId,
         text: messageText,
         sender: { username: "admin", is_staff: true },
-        media: mediaUrl || null,
+        attachments: mediaUrl
+          ? [{ id: Date.now(), file: mediaUrl, file_type: "file", created_at: new Date().toISOString() }]
+          : [],
         created_at: new Date().toISOString(),
       };
       messages.push(newMessage);
@@ -466,7 +470,7 @@ export const db = {
     ticketTypes: {
       getAll: () => mockTicketTypes,
       create: (name: string) => {
-        const nextId = mockTicketTypes.length > 0 ? Math.max(...mockTicketTypes.map((t) => t.id)) + 1 : 1;
+        const nextId = mockTicketTypes.length > 0 ? Math.max(...mockTicketTypes.map((t) => Number(t.id))) + 1 : 1;
         const newItem: TicketTypeItem = {
           id: nextId,
           name,

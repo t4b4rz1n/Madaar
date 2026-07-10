@@ -1,9 +1,12 @@
+export type EntityId = string | number;
+export type TicketStatus = "open" | "in_progress" | "answered" | "closed";
+
 export interface Ticket {
-  id: number;
+  id: EntityId;
   title: string;
-  ticket_type: string; // Type name or ID depending on context
+  ticket_type: string | TicketTypeItem | null;
   priority: "low" | "medium" | "high";
-  status: "open" | "answered" | "closed";
+  status: TicketStatus;
   user: {
     username: string;
     email: string;
@@ -12,27 +15,34 @@ export interface Ticket {
 }
 
 export interface TicketTypeItem {
-  id: number;
+  id: EntityId;
   name: string;
   created_at: string;
 }
 
 export interface TicketFormData {
   title: string;
-  ticket_type: number;
+  text: string;
+  ticket_type: string;
   priority: "low" | "medium" | "high";
-  status: "open" | "answered" | "closed";
 }
 
 export interface TicketMessage {
-  id: number;
+  id: EntityId;
   text: string;
   sender: {
     username: string;
     is_staff: boolean;
   };
-  media?: string | null;
+  attachments?: TicketAttachment[];
   message_type?: string | null;
+  created_at: string;
+}
+
+export interface TicketAttachment {
+  id: EntityId;
+  file: string;
+  file_type: "image" | "video" | "audio" | "document" | "archive" | "file" | "unknown";
   created_at: string;
 }
 

@@ -1,7 +1,7 @@
 import { Refresh, Warning2 } from "iconsax-reactjs";
 
 interface ErrorFallbackProps {
-  error: Error;
+  error: unknown;
   resetErrorBoundary: () => void;
 }
 
@@ -9,6 +9,8 @@ export const ErrorFallback = ({
   error,
   resetErrorBoundary,
 }: ErrorFallbackProps) => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
       <div className="max-w-md w-full bg-base-100 rounded-3xl shadow-xl p-8 border border-error/20 text-center">
@@ -19,7 +21,7 @@ export const ErrorFallback = ({
           Something went wrong
         </h2>
         <p className="text-sm text-base-content/60 mb-6 bg-base-200 p-3 rounded-xl font-mono text-left overflow-auto max-h-32">
-          {error.message}
+          {errorMessage}
         </p>
         <button
           onClick={resetErrorBoundary}
