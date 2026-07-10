@@ -43,6 +43,9 @@ const LoginPage: React.FC = () => {
           fields={loginFields}
           onSubmit={handleLogin as any}
           buttonText="Sign In"
+          footerText="Don't have an account?"
+          footerLink="/register"
+          footerLinkText="Create account"
           isLoading={isLoading}
           register={register as any}
           handleSubmit={handleSubmit}

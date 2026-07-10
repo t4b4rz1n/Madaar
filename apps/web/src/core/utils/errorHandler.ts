@@ -30,11 +30,26 @@ export const getErrorMessage = (
     }
 
     const response = err.response as
-      | { data?: { message?: unknown } }
+      | { data?: { message?: unknown; detail?: unknown; errors?: unknown } }
       | undefined;
 
     if (typeof response?.data?.message === "string") {
       return response.data.message;
+    }
+
+    if (typeof response?.data?.detail === "string") {
+      return response.data.detail;
+    }
+
+    if (response?.data?.errors && typeof response.data.errors === "object") {
+      for (const [field, value] of Object.entries(response.data.errors)) {
+        if (Array.isArray(value) && value.length > 0) {
+          return `${field}: ${String(value[0])}`;
+        }
+        if (typeof value === "string") {
+          return `${field}: ${value}`;
+        }
+      }
     }
   }
 

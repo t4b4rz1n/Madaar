@@ -1,9 +1,31 @@
 import ApiService from "../../../core/api/apiService";
 import { getErrorMessage } from "../../../core/utils/errorHandler";
-import type { AuthResponse, LoginCredentials } from "../types/authTypes";
+import type {
+  AuthResponse,
+  LoginCredentials,
+  RegisterCredentials,
+  User,
+} from "../types/authTypes";
 
 const AUTH_ENDPOINTS = {
   LOGIN: "/auth/login/",
+  REGISTER: "/auth/register/",
+};
+
+export const registerRequest = async (
+  credentials: RegisterCredentials
+): Promise<User> => {
+  try {
+    const response = await ApiService.post<User>(
+      AUTH_ENDPOINTS.REGISTER,
+      credentials
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Registration failed. Please try again.")
+    );
+  }
 };
 
 export const loginRequest = async (

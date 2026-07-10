@@ -1,9 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { loginRequest } from "../api/authApi";
+import { loginRequest, registerRequest } from "../api/authApi";
 import { useAuthStore } from "../store/authStore";
-import type { LoginFormData } from "../validation/authSchema";
+import type {
+  LoginFormData,
+  RegisterFormData,
+} from "../validation/authSchema";
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -20,6 +23,22 @@ export const useLogin = () => {
         toast.success("Welcome back!");
         navigate("/", { replace: true });
       }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
+export const useRegister = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (registerData: RegisterFormData) =>
+      registerRequest(registerData),
+    onSuccess: () => {
+      toast.success("Your account was created. You can now sign in.");
+      navigate("/login", { replace: true });
     },
     onError: (error: Error) => {
       toast.error(error.message);
