@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { CloseCircle, Lock, Sms, TickCircle, User } from "iconsax-reactjs";
+import { Camera, CloseCircle, Lock, Sms, TickCircle, User } from "iconsax-reactjs";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import InputField from "../../../components/InputField";
@@ -10,6 +11,9 @@ import type { ProfileUpdateData } from "../types";
 export const ProfileEditForm = () => {
   const user = useAuthStore((state) => state.user);
   const updateMutation = useUpdateProfile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
 
   const {
     control,
@@ -26,6 +30,12 @@ export const ProfileEditForm = () => {
     },
   });
 
+  useEffect(() => {
+    return () => {
+      if (profileImagePreview) URL.revokeObjectURL(profileImagePreview);
+    };
+  }, [profileImagePreview]);
+
   if (!user) {
     return (
       <div className="text-center text-error py-10">
@@ -36,6 +46,26 @@ export const ProfileEditForm = () => {
 
   const password = watch("password");
   const passwordConfirm = watch("password_confirm");
+
+  const handleProfileImageChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Profile image must be smaller than 5 MB.");
+      return;
+    }
+
+    setProfileImage(file);
+    setProfileImagePreview(URL.createObjectURL(file));
+  };
 
   const onSubmit = (data: ProfileUpdateData) => {
     if (data.password || data.password_confirm) {
@@ -61,6 +91,9 @@ export const ProfileEditForm = () => {
       updateData.password = data.password;
       updateData.password_confirm = data.password_confirm;
     }
+    if (profileImage) {
+      updateData.profile_image = profileImage;
+    }
 
     if (Object.keys(updateData).length === 0) {
       toast.info("No changes to save.");
@@ -75,11 +108,15 @@ export const ProfileEditForm = () => {
           password: "",
           password_confirm: "",
         });
+        setProfileImage(null);
+        setProfileImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
       },
     });
   };
 
-  const currentProfileImage = user.profile_image_url || "/default-avatar.png";
+  const currentProfileImage =
+    profileImagePreview || user.profile_image_url || "/images/base-logo.svg";
 
   const passwordsMatch =
     password && passwordConfirm && password === passwordConfirm;
@@ -98,11 +135,41 @@ export const ProfileEditForm = () => {
         <div className="bg-base-100 rounded-2xl border border-base-content/10 overflow-hidden">
           <div className="px-6 py-8 text-center border-b border-base-content/10">
             <div className="flex flex-col items-center gap-4">
-              <div className="avatar">
-                <div className="w-28 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4">
-                  <img src={currentProfileImage} alt="Profile" />
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="group relative rounded-full focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
+                aria-label="Change profile image"
+              >
+                <span className="avatar">
+                  <span className="w-28 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 overflow-hidden">
+                    <img
+                      src={currentProfileImage}
+                      alt="Profile"
+                      className="h-full w-full object-cover"
+                    />
+                  </span>
+                </span>
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-neutral/60 text-neutral-content opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <span className="flex flex-col items-center gap-1 text-xs font-semibold">
+                    <Camera size={24} />
+                    Change photo
+                  </span>
+                </span>
+                <span className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-4 border-base-100 bg-primary text-primary-content shadow-md">
+                  <Camera size={18} />
+                </span>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleProfileImageChange}
+                className="hidden"
+              />
+              <p className="text-xs text-base-content/50">
+                Click the photo to upload a JPG, PNG or WebP image (max 5 MB).
+              </p>
 
               <div>
                 <h3 className="font-bold text-xl text-base-content">
@@ -329,7 +396,7 @@ export const ProfileEditForm = () => {
           <div className="px-6 py-4 border-t border-base-content/10 bg-base-200/30">
             <div className="flex items-center justify-between">
               <div className="text-sm text-base-content/60">
-                {isDirty ? (
+                {isDirty || profileImage ? (
                   <span className="flex items-center gap-2 text-warning">
                     <div className="w-2 h-2 bg-warning rounded-full animate-pulse"></div>
                     Unsaved changes
@@ -341,7 +408,7 @@ export const ProfileEditForm = () => {
               <button
                 type="submit"
                 className="btn btn-primary rounded-xl px-8"
-                disabled={updateMutation.isPending || !isDirty}
+                disabled={updateMutation.isPending || (!isDirty && !profileImage)}
               >
                 {updateMutation.isPending ? (
                   <span className="flex items-center gap-2">

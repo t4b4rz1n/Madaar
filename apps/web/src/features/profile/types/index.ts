@@ -11,6 +11,7 @@ export interface UserProfile {
 export interface ProfileUpdateData {
   first_name?: string;
   last_name?: string;
+  profile_image?: File;
   password?: string;
   password_confirm?: string;
 }
