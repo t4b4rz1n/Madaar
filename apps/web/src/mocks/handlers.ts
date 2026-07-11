@@ -444,7 +444,7 @@ export const handlers = [
     });
   }),
 
-  http.patch("*/accounts/profile/update/", async ({ request }) => {
+  http.patch("*/accounts/profile/", async ({ request }) => {
     const data = (await request.json()) as ProfileUpdateData;
 
     if (data.first_name !== undefined) mockProfile.first_name = data.first_name;
