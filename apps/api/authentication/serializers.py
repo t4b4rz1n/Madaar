@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -7,7 +9,10 @@ User = get_user_model()
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
-        write_only=True, required=True, style={"input_type": "password"}
+        write_only=True,
+        required=True,
+        style={"input_type": "password"},
+        validators=[validate_password],
     )
     password_confirm = serializers.CharField(
         write_only=True, required=True, style={"input_type": "password"}
@@ -30,6 +35,12 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs["password"] != attrs["password_confirm"]:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
+
+        try:
+            validate_password(attrs["password"])
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": exc.messages}) from exc
+
         return attrs
 
     def create(self, validated_data):

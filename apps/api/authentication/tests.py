@@ -17,8 +17,8 @@ class AuthenticationTestCase(APITestCase):
         self.user_data = {
             "username": "authuser",
             "email": "authuser@example.com",
-            "password": "strongpassword123",
-            "password_confirm": "strongpassword123",
+            "password": "Strongpassword123",
+            "password_confirm": "Strongpassword123",
             "first_name": "Auth",
             "last_name": "User",
         }
@@ -39,6 +39,18 @@ class AuthenticationTestCase(APITestCase):
     def test_user_registration_password_mismatch(self):
         bad_data = self.user_data.copy()
         bad_data["password_confirm"] = "differentpassword"
+
+        response = self.client.post(self.register_url, bad_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        json_data = response.json()
+        self.assertFalse(json_data["status"])
+        self.assertIn("password", json_data["errors"])
+
+    def test_user_registration_requires_uppercase_letter(self):
+        bad_data = self.user_data.copy()
+        bad_data["password"] = "strongpassword123"
+        bad_data["password_confirm"] = "strongpassword123"
 
         response = self.client.post(self.register_url, bad_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

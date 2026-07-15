@@ -17,7 +17,7 @@ User = get_user_model()
 class UserProfileUpdateViewTestCase(TestCase):
     def setUp(self):
         self.url = reverse("profile")
-        self.user_password = "strongpassword123"
+        self.user_password = "Strongpassword123"
         self.user = User.objects.create_user(
             username="testuser",
             email="testuser@example.com",
@@ -51,7 +51,7 @@ class UserProfileUpdateViewTestCase(TestCase):
 
     def test_user_can_change_password(self):
         self.client.force_authenticate(user=self.user)
-        new_password = "newstrongpassword456"
+        new_password = "NewStrongPassword456"
         response = self.client.patch(
             self.url, {"password": new_password, "password_confirm": new_password}
         )
@@ -65,7 +65,7 @@ class UserProfileUpdateViewTestCase(TestCase):
     def test_password_change_validation_fails_on_mismatch(self):
         self.client.force_authenticate(user=self.user)
         response = self.client.patch(
-            self.url, {"password": "newpassword1", "password_confirm": "newpassword2"}
+            self.url, {"password": "NewPassword1", "password_confirm": "NewPassword2"}
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
