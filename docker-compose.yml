@@ -64,7 +64,7 @@ services:
       - ./apps/api:/app
     env_file:
       - path: ./apps/api/.env
-        required: false
+        required: true
     depends_on:
       minio:
         condition: service_healthy
@@ -84,7 +84,7 @@ services:
       - "8000:8000"
     env_file:
       - path: ./apps/api/.env
-        required: false
+        required: true
     depends_on:
       db:
         condition: service_healthy
@@ -123,7 +123,7 @@ services:
       - ./apps/api:/app
     env_file:
       - path: ./apps/api/.env
-        required: false
+        required: true
     environment:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
