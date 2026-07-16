@@ -128,3 +128,4 @@ postgres_data/
 minio_data/
 
 pyrightconfig.json
+node_modules/
