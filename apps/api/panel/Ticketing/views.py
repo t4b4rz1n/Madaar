@@ -1,7 +1,5 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg import openapi
-from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import generics, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -21,19 +19,6 @@ from .serializers import (
     TicketListSerializer,
     TicketTypeSerializer,
 )
-
-MESSAGE_CREATE_FORM_PARAMETERS = [
-    openapi.Parameter("text", openapi.IN_FORM, type=openapi.TYPE_STRING, required=True),
-    openapi.Parameter(
-        "attachments",
-        openapi.IN_FORM,
-        description=(
-            "Optional ticket attachment. To upload multiple files, send this form field more than once."
-        ),
-        type=openapi.TYPE_FILE,
-        required=False,
-    ),
-]
 
 
 class StaffTicketViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
@@ -100,11 +85,6 @@ class StaffMessageListCreateAPIView(generics.ListCreateAPIView):
         context["request"] = self.request
         return context
 
-    @swagger_auto_schema(
-        request_body=no_body,
-        manual_parameters=MESSAGE_CREATE_FORM_PARAMETERS,
-        consumes=["multipart/form-data"],
-    )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
