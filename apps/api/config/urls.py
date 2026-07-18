@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.views import LoginView
 from django.urls import include, path
 
 urlpatterns = [
@@ -13,41 +14,48 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    from django.urls import re_path
-    from drf_yasg import openapi
-    from drf_yasg.views import get_schema_view
-    from rest_framework import permissions
-
-    from authentication.views import SwaggerSessionLogoutView
-
-    schema_view = get_schema_view(
-        openapi.Info(
-            title="Base Project API",
-            default_version="v1",
-            description="API documentation for Base Project",
-        ),
-        public=True,
-        permission_classes=[permissions.AllowAny],
+    from drf_spectacular.views import (
+        SpectacularAPIView,
+        SpectacularRedocView,
+        SpectacularSwaggerView,
     )
 
     urlpatterns += [
         path(
-            "swagger/logout/",
-            SwaggerSessionLogoutView.as_view(),
-            name="swagger_session_logout",
-        ),
-        re_path(
-            r"^swagger(?P<format>\.json|\.yaml)$",
-            schema_view.without_ui(cache_timeout=0),
-            name="schema-json",
-        ),
-        path(
             "",
-            schema_view.with_ui("swagger", cache_timeout=0),
+            SpectacularSwaggerView.as_view(),
             name="schema-swagger-ui",
         ),
+        # OpenAPI Schema
         path(
-            "redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
+            "api/schema/",
+            SpectacularAPIView.as_view(),
+            name="schema",
+        ),
+        # Swagger UI
+        path(
+            "swagger/",
+            SpectacularSwaggerView.as_view(url_name="schema"),
+            name="swagger-ui",
+        ),
+        # ReDoc
+        path(
+            "redoc/",
+            SpectacularRedocView.as_view(
+                url_name="schema",
+                template_name="drf_spectacular/redoc.html",
+            ),
+            name="redoc",
+        ),
+        # Django Session Login
+        path(
+            "swagger/login/",
+            LoginView.as_view(template_name="admin/login.html"),
+            name="swagger_login",
         ),
     ]
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT,
+    )

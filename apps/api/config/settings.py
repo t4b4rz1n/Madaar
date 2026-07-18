@@ -47,7 +47,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "storages",
     "django_filters",
-    "drf_yasg",
+    "drf_spectacular",
 ]
 
 LOCAL_APPS = [
@@ -214,6 +214,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "config.pagination.DefaultPagination",
     "PAGE_SIZE": 10,
     "EXCEPTION_HANDLER": "config.exception_handler.custom_exception_handler",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # --- SimpleJWT Settings ---
@@ -225,20 +226,37 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-SWAGGER_SETTINGS = {
-    "SECURITY_DEFINITIONS": {
-        "Bearer": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header",
-            "description": "Use: Bearer <access_token>",
-        }
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Madaar API",
+    "DESCRIPTION": "Madaar backend API documentation",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
+        "deepLinking": True,
+        "displayOperationId": True,
+        "filter": True,
+        "tryItOutEnabled": True,
     },
-    "PERSIST_AUTH": True,
-    "USE_SESSION_AUTH": DEBUG,
-    "LOGIN_URL": "/admin/login/",
-    "LOGOUT_URL": "/swagger/logout/",
+    "COMPONENT_SPLIT_REQUEST": True,
+    "TAGS": [
+        {"name": "auth", "description": "Authentication endpoints"},
+        {"name": "accounts", "description": "User account management"},
+        {"name": "panel", "description": "Panel management"},
+        {"name": "dashboard", "description": "Dashboard endpoints"},
+        {"name": "support", "description": "Support endpoints"},
+        {"name": "billing", "description": "Billing and payments"},
+    ],
+    "SCHEMA_PATH_PREFIX": "/api/v1/",
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    "SERVERS": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Development",
+        },
+    ],
 }
+
 
 # --- Payment Settings ---
 SANDBOX = env("SANDBOX")

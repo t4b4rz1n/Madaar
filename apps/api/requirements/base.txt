@@ -11,7 +11,7 @@ django-filter==25.2
 django-storages==1.14.6
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
-drf-yasg==1.21.11
+drf-spectacular==0.30.0
 inflection==0.5.1
 jmespath==1.0.1
 minio==7.2.18

@@ -4,7 +4,6 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -27,7 +26,9 @@ class SwaggerSessionLogoutView(View):
         return self.logout(request)
 
     def logout(self, request):
-        next_url = request.GET.get("next") or request.POST.get("next") or reverse("schema-swagger-ui")
+        next_url = (
+            request.GET.get("next") or request.POST.get("next") or reverse("schema-swagger-ui")
+        )
         allowed_hosts = {request.get_host(), *settings.ALLOWED_HOSTS}
 
         if not url_has_allowed_host_and_scheme(
@@ -54,10 +55,6 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
-    @swagger_auto_schema(
-        request_body=LogoutSerializer,
-        responses={204: "Refresh token blacklisted successfully."},
-    )
     def post(self, request):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
