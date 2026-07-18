@@ -1,6 +1,6 @@
 import type { User } from "../features/users/types";
 import type { Discount } from "../features/discounts/types";
-import type { Feedback } from "../features/feedbacks/types";
+
 import type { Notification } from "../features/notifications/types";
 import type { UserProfile } from "../features/profile/types";
 import type { Ticket, TicketTypeItem, TicketMessage, TicketFormData } from "../features/tickets/types";
@@ -207,36 +207,7 @@ export let mockDiscounts: Discount[] = [
   },
 ];
 
-export let mockFeedbacks: Feedback[] = [
-  {
-    id: "f1",
-    user: "sarah_k",
-    subject: "Slow page load speed",
-    text: "The users list page takes more than 5 seconds to load when searching. Please optimize the index on user fields.",
-    created_at: "2026-06-18T10:15:00Z",
-  },
-  {
-    id: "f2",
-    user: "jim_raynor",
-    subject: "Login session expires too quickly",
-    text: "I am getting logged out every 15 minutes. Can you extend the token lifetime to 1 day for administrators?",
-    created_at: "2026-06-19T14:30:00Z",
-  },
-  {
-    id: "f3",
-    user: "nova_terra",
-    subject: "Typo in Discounts page",
-    text: "There is a typo in the discount description field helper text: 'max_useage' instead of 'max_usage'.",
-    created_at: "2026-06-20T08:45:00Z",
-  },
-  {
-    id: "f4",
-    user: "fenix_dragoon",
-    subject: "Export users button requested",
-    text: "It would be great if we could export the users list as a CSV or Excel file directly from the dashboard.",
-    created_at: "2026-06-20T11:00:00Z",
-  },
-];
+
 
 export const mockNotifications: Notification[] = [
   {
@@ -399,14 +370,7 @@ export const db = {
       return mockDiscounts.length < initialLength;
     },
   },
-  feedbacks: {
-    getAll: () => mockFeedbacks,
-    delete: (id: string) => {
-      const initialLength = mockFeedbacks.length;
-      mockFeedbacks = mockFeedbacks.filter((f) => f.id !== id);
-      return mockFeedbacks.length < initialLength;
-    },
-  },
+
   notifications: {
     getAll: () => mockNotifications,
     create: (notification: Omit<Notification, "id" | "seen" | "created_at">) => {

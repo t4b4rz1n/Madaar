@@ -329,69 +329,7 @@ export const handlers = [
     });
   }),
 
-  http.get("*/panel/feedbacks", ({ request }) => {
-    const url = new URL(request.url);
-    const page = Number(url.searchParams.get("page")) || 1;
-    const pageSize = Number(url.searchParams.get("page_size")) || 10;
-    const search = url.searchParams.get("search");
-    const ordering = url.searchParams.get("ordering");
 
-    let feedbacks = [...db.feedbacks.getAll()];
-
-    if (search) {
-      const q = search.toLowerCase();
-      feedbacks = feedbacks.filter(
-        (f) =>
-          f.user.toLowerCase().includes(q) ||
-          f.subject.toLowerCase().includes(q) ||
-          f.text.toLowerCase().includes(q)
-      );
-    }
-
-    if (ordering) {
-      const isDesc = ordering.startsWith("-");
-      const field = isDesc ? ordering.slice(1) : ordering;
-      feedbacks.sort((a, b) => {
-        let valA = (a as unknown as Record<string, unknown>)[field];
-        let valB = (b as unknown as Record<string, unknown>)[field];
-
-        if (typeof valA === "string") valA = valA.toLowerCase();
-        if (typeof valB === "string") valB = valB.toLowerCase();
-
-        if (valA === undefined || valA === null) return isDesc ? -1 : 1;
-        if (valB === undefined || valB === null) return isDesc ? 1 : -1;
-
-        if (valA < valB) return isDesc ? 1 : -1;
-        if (valA > valB) return isDesc ? -1 : 1;
-        return 0;
-      });
-    }
-
-    const response = createPaginatedResponse(feedbacks, page, pageSize, request.url);
-    return HttpResponse.json(response);
-  }),
-
-  http.delete("*/panel/feedbacks/:id/", ({ params }) => {
-    const id = params.id as string;
-    const success = db.feedbacks.delete(id);
-
-    if (!success) {
-      return HttpResponse.json(
-        {
-          status: false,
-          message: "Feedback submission not found",
-          data: {},
-        },
-        { status: 404 }
-      );
-    }
-
-    return HttpResponse.json({
-      status: true,
-      message: "Feedback deleted successfully",
-      data: {},
-    });
-  }),
 
   http.get("*/dashboard/notifications/", ({ request }) => {
     const url = new URL(request.url);
@@ -594,7 +532,7 @@ export const handlers = [
 
   http.post("*/support/tickets/:id/messages/", async ({ params, request }) => {
     const id = Number(params.id);
-    
+
     // Check if multipart/form-data (file upload)
     const contentType = request.headers.get("content-type") || "";
     let text = "";

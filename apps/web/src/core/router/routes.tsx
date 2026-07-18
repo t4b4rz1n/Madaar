@@ -3,7 +3,7 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import PageLoader from "../../components/PageLoader";
 import authRoutes from "../../features/auth/routes";
 import discountsRoutes from "../../features/discounts/routes";
-import feedbacksRoutes from "../../features/feedbacks/routes";
+
 import { MainLayout } from "../../features/layout/MainLayout";
 import notificationsRoutes from "../../features/notifications/routes";
 import profileRoutes from "../../features/profile/routes";
@@ -30,7 +30,7 @@ export const routes: RouteObject[] = [
       ...dashboardRoutes,
       ...usersRoutes,
       ...discountsRoutes,
-      ...feedbacksRoutes,
+
       ...notificationsRoutes,
       ...profileRoutes,
       ...ticketsRoutes,

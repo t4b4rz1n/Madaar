@@ -1,6 +1,5 @@
 import {
   DiscountShape,
-  Message,
   Notification,
   People,
   Ticket,
@@ -44,11 +43,7 @@ export const drawerItems: DrawerItem[] = [
     link: "tickets",
     icon: <Ticket variant="Outline" />,
   },
-  {
-    title: "Feedback",
-    link: "feedbacks",
-    icon: <Message variant="Outline" />,
-  },
+
   {
     title: "Profile",
     link: "profile",
