@@ -1,13 +1,14 @@
 from django.contrib import admin
+
 from .models import (
+    AsyncStandup,
     Board,
     BoardColumn,
-    TaskStatus,
     Task,
+    TaskActivityLog,
     TaskChecklistItem,
     TaskComment,
-    TaskActivityLog,
-    AsyncStandup,
+    TaskStatus,
 )
 
 
@@ -65,7 +66,6 @@ class TaskChecklistItemAdmin(admin.ModelAdmin):
     search_fields = ("task__title", "description")
 
 
-
 @admin.register(TaskComment)
 class TaskCommentAdmin(admin.ModelAdmin):
     list_display = ("task", "author", "created_at", "attached_file")
@@ -88,6 +88,3 @@ class AsyncStandupAdmin(admin.ModelAdmin):
     list_filter = ("created_at", "is_deleted")
     raw_id_fields = ("user",)
     search_fields = ("user__username", "yesterday_work", "today_work", "blockers")
-
-
-

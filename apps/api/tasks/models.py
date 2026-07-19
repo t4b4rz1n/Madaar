@@ -1,13 +1,13 @@
-import uuid
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
 from common.models import BaseModel
 
 
 class Board(BaseModel):
     """Kanban Board for a project."""
+
     title = models.CharField(_("Board Title"), max_length=255)
     project_id = models.IntegerField(_("Project ID"), db_index=True)
     created_by = models.ForeignKey(
@@ -31,6 +31,7 @@ class Board(BaseModel):
 
 class BoardColumn(BaseModel):
     """Custom Kanban column belonging to a Board."""
+
     board = models.ForeignKey(
         Board,
         on_delete=models.CASCADE,
@@ -46,10 +47,7 @@ class BoardColumn(BaseModel):
         verbose_name_plural = _("Board Columns")
         ordering = ["order", "created_at"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["board", "title"],
-                name="unique_board_column_title"
-            )
+            models.UniqueConstraint(fields=["board", "title"], name="unique_board_column_title")
         ]
 
     def __str__(self):
@@ -61,23 +59,21 @@ class TaskStatus(BaseModel):
     Customizable task status.
     Users can add/remove statuses as needed.
     """
+
     code = models.SlugField(
         _("Code"),
         max_length=50,
         unique=True,
         db_index=True,
-        help_text=_("Unique identifier for the status (e.g., 'todo', 'doing', 'review')")
+        help_text=_("Unique identifier for the status (e.g., 'todo', 'doing', 'review')"),
     )
     name = models.CharField(
         _("Name"),
         max_length=100,
-        help_text=_("Display name for the status (e.g., 'To Do', 'Doing', 'Review')")
+        help_text=_("Display name for the status (e.g., 'To Do', 'Doing', 'Review')"),
     )
     order = models.PositiveIntegerField(
-        _("Order"),
-        default=0,
-        db_index=True,
-        help_text=_("Order in Kanban board columns")
+        _("Order"), default=0, db_index=True, help_text=_("Order in Kanban board columns")
     )
 
     class Meta:
@@ -117,11 +113,11 @@ class Task(BaseModel):
         db_index=True,
     )
     priority = models.CharField(
-        _("Priority"), 
-        max_length=20, 
-        choices=Priority.choices, 
-        default=Priority.MEDIUM, 
-        db_index=True
+        _("Priority"),
+        max_length=20,
+        choices=Priority.choices,
+        default=Priority.MEDIUM,
+        db_index=True,
     )
     assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -143,18 +139,14 @@ class Task(BaseModel):
     )
     due_date = models.DateField(_("Due Date"), null=True, blank=True, db_index=True)
     estimated_hours = models.DecimalField(
-        _("Estimated Hours"), 
-        max_digits=5, 
-        decimal_places=2, 
-        null=True, 
-        blank=True
+        _("Estimated Hours"), max_digits=5, decimal_places=2, null=True, blank=True
     )
     spent_hours = models.DecimalField(
-        _("Spent Hours"), 
-        max_digits=5, 
-        decimal_places=2, 
-        default=0, 
-        help_text=_("Hours logged by the assignee")
+        _("Spent Hours"),
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        help_text=_("Hours logged by the assignee"),
     )
     parent_task = models.ForeignKey(
         "self",
@@ -220,10 +212,7 @@ class TaskComment(BaseModel):
     )
     content = models.TextField(_("Content"))
     attached_file = models.FileField(
-        _("Attached file"), 
-        upload_to="task_attachments/", 
-        null=True, 
-        blank=True
+        _("Attached file"), upload_to="task_attachments/", null=True, blank=True
     )
 
     class Meta:
@@ -268,6 +257,7 @@ class AsyncStandup(BaseModel):
     Daily standup report by team members.
     Includes yesterday's achievements, today's focus, and blockers.
     """
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
