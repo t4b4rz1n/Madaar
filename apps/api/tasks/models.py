@@ -29,7 +29,7 @@ class Board(BaseModel):
         return self.title
 
 
-class BoardColumn(models.Model):
+class BoardColumn(BaseModel):
     """Custom Kanban column belonging to a Board."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     board = models.ForeignKey(
