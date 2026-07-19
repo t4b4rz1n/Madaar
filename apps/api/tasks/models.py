@@ -6,15 +6,62 @@ from django.utils.translation import gettext_lazy as _
 from common.models import BaseModel
 
 
+class Board(BaseModel):
+    """Kanban Board for a project."""
+    title = models.CharField(_("Board Title"), max_length=255)
+    project_id = models.IntegerField(_("Project ID"), db_index=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="boards",
+        verbose_name=_("Created By"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    class Meta:
+        verbose_name = _("Board")
+        verbose_name_plural = _("Boards")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+
+class BoardColumn(models.Model):
+    """Custom Kanban column belonging to a Board."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    board = models.ForeignKey(
+        Board,
+        on_delete=models.CASCADE,
+        related_name="columns",
+        verbose_name=_("Board"),
+        db_index=True,
+    )
+    title = models.CharField(_("Column Title"), max_length=100)
+    order = models.PositiveIntegerField(_("Order"), default=0, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Board Column")
+        verbose_name_plural = _("Board Columns")
+        ordering = ["order", "created_at"]
+        unique_together = ("board", "title")
+
+    def __str__(self):
+        return f"{self.board.title} – {self.title}"
+
+
 class Task(BaseModel):
     """Primary task model."""
 
     class Status(models.TextChoices):
         TODO = "todo", _("TODO")
-        IN_PROGRESS = "in_progress", _("In Progress")
+        IN_PROGRESS = "in_progress", _("Doing")
         REVIEW = "review", _("Review")
         DONE = "done", _("Done")
-        BLOCKED = "blocked", _("Blocked")
 
     class Priority(models.TextChoices):
         LOW = "low", _("Low")
@@ -24,6 +71,16 @@ class Task(BaseModel):
 
     title = models.CharField(_("Title"), max_length=255)
     description = models.TextField(_("Description"), blank=True, null=True)
+    column = models.ForeignKey(
+        BoardColumn,
+        on_delete=models.SET_NULL,
+        related_name="tasks",
+        verbose_name=_("Kanban Column"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     status = models.CharField(
         _("Status"), max_length=20, choices=Status.choices, default=Status.TODO, db_index=True
     )
