@@ -31,7 +31,6 @@ class Board(BaseModel):
 
 class BoardColumn(BaseModel):
     """Custom Kanban column belonging to a Board."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     board = models.ForeignKey(
         Board,
         on_delete=models.CASCADE,
@@ -41,27 +40,57 @@ class BoardColumn(BaseModel):
     )
     title = models.CharField(_("Column Title"), max_length=100)
     order = models.PositiveIntegerField(_("Order"), default=0, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = _("Board Column")
         verbose_name_plural = _("Board Columns")
         ordering = ["order", "created_at"]
-        unique_together = ("board", "title")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["board", "title"],
+                name="unique_board_column_title"
+            )
+        ]
 
     def __str__(self):
         return f"{self.board.title} – {self.title}"
 
 
+class TaskStatus(BaseModel):
+    """
+    Customizable task status.
+    Users can add/remove statuses as needed.
+    """
+    code = models.SlugField(
+        _("Code"),
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text=_("Unique identifier for the status (e.g., 'todo', 'doing', 'review')")
+    )
+    name = models.CharField(
+        _("Name"),
+        max_length=100,
+        help_text=_("Display name for the status (e.g., 'To Do', 'Doing', 'Review')")
+    )
+    order = models.PositiveIntegerField(
+        _("Order"),
+        default=0,
+        db_index=True,
+        help_text=_("Order in Kanban board columns")
+    )
+
+    class Meta:
+        verbose_name = _("Task Status")
+        verbose_name_plural = _("Task Statuses")
+        ordering = ["order", "created_at"]
+
+    def __str__(self):
+        return self.name
+
+
 class Task(BaseModel):
     """Primary task model."""
-
-    class Status(models.TextChoices):
-        TODO = "todo", _("TODO")
-        IN_PROGRESS = "in_progress", _("Doing")
-        REVIEW = "review", _("Review")
-        DONE = "done", _("Done")
 
     class Priority(models.TextChoices):
         LOW = "low", _("Low")
@@ -80,12 +109,19 @@ class Task(BaseModel):
         blank=True,
         db_index=True,
     )
-
-    status = models.CharField(
-        _("Status"), max_length=20, choices=Status.choices, default=Status.TODO, db_index=True
+    status = models.ForeignKey(
+        TaskStatus,
+        on_delete=models.PROTECT,
+        related_name="tasks",
+        verbose_name=_("Status"),
+        db_index=True,
     )
     priority = models.CharField(
-        _("Priority"), max_length=20, choices=Priority.choices, default=Priority.MEDIUM, db_index=True
+        _("Priority"), 
+        max_length=20, 
+        choices=Priority.choices, 
+        default=Priority.MEDIUM, 
+        db_index=True
     )
     assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -107,10 +143,18 @@ class Task(BaseModel):
     )
     due_date = models.DateField(_("Due Date"), null=True, blank=True, db_index=True)
     estimated_hours = models.DecimalField(
-        _("Estimated Hours"), max_digits=5, decimal_places=2, null=True, blank=True
+        _("Estimated Hours"), 
+        max_digits=5, 
+        decimal_places=2, 
+        null=True, 
+        blank=True
     )
     spent_hours = models.DecimalField(
-        _("Spent Hours"), max_digits=5, decimal_places=2, default=0, help_text=_("Hours logged by the assignee")
+        _("Spent Hours"), 
+        max_digits=5, 
+        decimal_places=2, 
+        default=0, 
+        help_text=_("Hours logged by the assignee")
     )
     parent_task = models.ForeignKey(
         "self",
@@ -133,7 +177,7 @@ class Task(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.title} [{self.get_status_display()}]"
+        return f"{self.title} [{self.status.name if self.status else 'No Status'}]"
 
 
 class TaskChecklistItem(BaseModel):
@@ -151,45 +195,10 @@ class TaskChecklistItem(BaseModel):
     class Meta:
         verbose_name = _("Task Checklist Item")
         verbose_name_plural = _("Task Checklist Items")
-        ordering = ["id"]
+        ordering = ["created_at"]
 
     def __str__(self):
         return f"{self.task.title} – {self.description}"
-
-
-class TaskDependency(BaseModel):
-    """Dependencies between tasks (FS, SS, FF, SF)."""
-
-    class DepType(models.TextChoices):
-        FINISH_START = "FS", _("Finish‑Start")
-        START_START = "SS", _("Start‑Start")
-        FINISH_FINISH = "FF", _("Finish‑Finish")
-        START_FINISH = "SF", _("Start‑Finish")
-
-    task = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        related_name="dependencies",
-        verbose_name=_("Task"),
-    )
-    depends_on = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        related_name="dependents",
-        verbose_name=_("Depends on"),
-    )
-    dependency_type = models.CharField(
-        _("Dependency Type"), max_length=2, choices=DepType.choices, default=DepType.FINISH_START
-    )
-    lag = models.IntegerField(_("Lag (days)"), default=0)
-
-    class Meta:
-        verbose_name = _("Task Dependency")
-        verbose_name_plural = _("Task Dependencies")
-        unique_together = ("task", "depends_on", "dependency_type")
-
-    def __str__(self):
-        return f"{self.task.title} {self.dependency_type} {self.depends_on.title}"
 
 
 class TaskComment(BaseModel):
@@ -211,9 +220,11 @@ class TaskComment(BaseModel):
     )
     content = models.TextField(_("Content"))
     attached_file = models.FileField(
-        _("Attached file"), upload_to="task_attachments/", null=True, blank=True
+        _("Attached file"), 
+        upload_to="task_attachments/", 
+        null=True, 
+        blank=True
     )
-    created_at = models.DateTimeField(_("Created at"), auto_now_add=True)
 
     class Meta:
         verbose_name = _("Task Comment")
@@ -242,12 +253,36 @@ class TaskActivityLog(BaseModel):
         blank=True,
     )
     action = models.CharField(_("Action"), max_length=255)
-    timestamp = models.DateTimeField(_("Timestamp"), default=timezone.now, db_index=True)
 
     class Meta:
         verbose_name = _("Task Activity Log")
         verbose_name_plural = _("Task Activity Logs")
-        ordering = ["-timestamp"]
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.task.title} – {self.action} @ {self.timestamp}"
+        return f"{self.task.title} – {self.action} @ {self.created_at}"
+
+
+class AsyncStandup(BaseModel):
+    """
+    Daily standup report by team members.
+    Includes yesterday's achievements, today's focus, and blockers.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="standups",
+        verbose_name=_("User"),
+        db_index=True,
+    )
+    yesterday_work = models.TextField(_("Yesterday's Work"))
+    today_work = models.TextField(_("Today's Work"))
+    blockers = models.TextField(_("Blockers"), blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("Async Standup")
+        verbose_name_plural = _("Async Standups")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Standup by {self.user} on {self.created_at.date()}"

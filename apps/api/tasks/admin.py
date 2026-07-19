@@ -2,11 +2,12 @@ from django.contrib import admin
 from .models import (
     Board,
     BoardColumn,
+    TaskStatus,
     Task,
     TaskChecklistItem,
-    TaskDependency,
     TaskComment,
     TaskActivityLog,
+    AsyncStandup,
 )
 
 
@@ -24,6 +25,14 @@ class BoardColumnAdmin(admin.ModelAdmin):
     list_filter = ("board",)
     search_fields = ("title", "board__title")
     ordering = ("board", "order")
+
+
+@admin.register(TaskStatus)
+class TaskStatusAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "order", "created_at")
+    list_filter = ("is_deleted",)
+    search_fields = ("name", "code")
+    ordering = ("order",)
 
 
 @admin.register(Task)
@@ -49,25 +58,12 @@ class TaskAdmin(admin.ModelAdmin):
     raw_id_fields = ("assignee", "reporter", "parent_task", "column")
 
 
-
 @admin.register(TaskChecklistItem)
 class TaskChecklistItemAdmin(admin.ModelAdmin):
     list_display = ("task", "description", "is_completed")
     list_filter = ("is_completed", "is_deleted")
     search_fields = ("task__title", "description")
 
-
-@admin.register(TaskDependency)
-class TaskDependencyAdmin(admin.ModelAdmin):
-    list_display = (
-        "task",
-        "depends_on",
-        "dependency_type",
-        "lag",
-    )
-    list_filter = ("dependency_type", "is_deleted")
-    raw_id_fields = ("task", "depends_on")
-    search_fields = ("task__title", "depends_on__title")
 
 
 @admin.register(TaskComment)
@@ -80,8 +76,18 @@ class TaskCommentAdmin(admin.ModelAdmin):
 
 @admin.register(TaskActivityLog)
 class TaskActivityLogAdmin(admin.ModelAdmin):
-    list_display = ("task", "actor", "action", "timestamp")
-    list_filter = ("timestamp", "is_deleted")
+    list_display = ("task", "actor", "action", "created_at")
+    list_filter = ("created_at", "is_deleted")
     raw_id_fields = ("task", "actor")
     search_fields = ("task__title", "actor__username", "action")
+
+
+@admin.register(AsyncStandup)
+class AsyncStandupAdmin(admin.ModelAdmin):
+    list_display = ("user", "created_at")
+    list_filter = ("created_at", "is_deleted")
+    raw_id_fields = ("user",)
+    search_fields = ("user__username", "yesterday_work", "today_work", "blockers")
+
+
 
