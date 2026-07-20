@@ -11,8 +11,8 @@ class UserManager(BaseUserManager):
         self,
         email,
         username,
-        first_name,
-        last_name,
+        first_name="",
+        last_name="",
         password=None,
         **extra_fields,
     ):
@@ -20,10 +20,6 @@ class UserManager(BaseUserManager):
             raise ValueError(_("The Email field must be set"))
         if not username:
             raise ValueError(_("The Username field must be set"))
-        if not first_name:
-            raise ValueError(_("The First name field must be set"))
-        if not last_name:
-            raise ValueError(_("The Last name field must be set"))
 
         email = self.normalize_email(email)
         user = self.model(
@@ -38,7 +34,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(
-        self, email, username, first_name, last_name, password=None, **extra_fields
+        self, email, username, first_name="Admin", last_name="User", password=None, **extra_fields
     ):
         """
         Create and save a superuser with the given credentials.

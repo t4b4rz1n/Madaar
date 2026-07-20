@@ -50,7 +50,28 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"] = serializers.CharField(required=False, write_only=True)
+        self.fields[self.username_field] = serializers.CharField(required=False, write_only=True)
+
     def validate(self, attrs):
+        username = attrs.get("username")
+        email = attrs.get(self.username_field)
+
+        if not email and not username:
+            raise serializers.ValidationError({"detail": "Must include 'email' or 'username' and 'password'."})
+
+        if not email and username:
+            if "@" in username:
+                attrs[self.username_field] = username
+            else:
+                user = User.objects.filter(username=username).first()
+                if user:
+                    attrs[self.username_field] = user.email
+                else:
+                    attrs[self.username_field] = username
+
         data = super().validate(attrs)
 
         user_data = {
