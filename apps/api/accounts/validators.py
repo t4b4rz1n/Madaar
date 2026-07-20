@@ -35,13 +35,13 @@ def profile_picture_validator(value):
 
     if extension not in allowed_extensions:
         raise ValidationError(
-    _("The type of entered file must be png, jpg or jpeg."),
-    code="invalid_extension",
-)
+            _("The type of entered file must be png, jpg or jpeg."),
+            code="invalid_extension",
+        )
 
     max_size = 5 * 1024 * 1024
     if value.size > max_size:
         raise ValidationError(
-    _("Profile picture size must not exceed 5MB."),
-    code="file_too_large",
-)
+            _("Profile picture size must not exceed 5MB."),
+            code="file_too_large",
+        )

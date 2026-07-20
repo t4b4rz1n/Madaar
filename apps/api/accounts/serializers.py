@@ -6,7 +6,7 @@ User = get_user_model()
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    profile_image_url = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
     password = serializers.CharField(
         write_only=True, required=False, validators=[validate_password]
     )
@@ -19,19 +19,19 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
-            "profile_image",
-            "profile_image_url",
+            "avatar",
+            "avatar_url",
             "password",
             "password_confirm",
         )
         read_only_fields = ("username", "email")
 
-    def get_profile_image_url(self, obj):
-        if not obj.profile_image:
+    def get_avatar_url(self, obj):
+        if not obj.avatar:
             return None
 
         request = self.context.get("request")
-        image_url = obj.profile_image.url
+        image_url = obj.avatar.url
         return request.build_absolute_uri(image_url) if request else image_url
 
     def validate(self, attrs):
