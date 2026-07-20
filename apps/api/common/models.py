@@ -36,4 +36,3 @@ class BaseModel(models.Model):
 
     def hard_delete(self, using=None, keep_parents=False):
         return super().delete(using=using, keep_parents=keep_parents)
-
