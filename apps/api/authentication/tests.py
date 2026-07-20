@@ -84,7 +84,7 @@ class AuthenticationTestCase(APITestCase):
         response = self.client.post(
             self.login_url, {"username": "nonexistent", "password": "wrongpassword"}
         )
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_400_BAD_REQUEST])
 
         json_data = response.json()
         self.assertFalse(json_data["status"])

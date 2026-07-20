@@ -57,6 +57,9 @@ LOCAL_APPS = [
     "common",
     "panel.apps.PanelConfig",
     "dashboard.apps.DashboardConfig",
+    "organizations.apps.OrganizationsConfig",
+    "projects.apps.ProjectsConfig",
+    "tasks.apps.TasksConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

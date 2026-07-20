@@ -18,7 +18,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         write_only=True, required=True, style={"input_type": "password"}
     )
 
-    profile_image = serializers.ImageField(required=False, allow_null=True)
+    avatar = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -29,7 +29,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             "password_confirm",
             "first_name",
             "last_name",
-            "profile_image",
+            "avatar",
         )
 
     def validate(self, attrs):
@@ -50,7 +50,28 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"] = serializers.CharField(required=False, write_only=True)
+        self.fields[self.username_field] = serializers.CharField(required=False, write_only=True)
+
     def validate(self, attrs):
+        username = attrs.get("username")
+        email = attrs.get(self.username_field)
+
+        if not email and not username:
+            raise serializers.ValidationError({"detail": "Must include 'email' or 'username' and 'password'."})
+
+        if not email and username:
+            if "@" in username:
+                attrs[self.username_field] = username
+            else:
+                user = User.objects.filter(username=username).first()
+                if user:
+                    attrs[self.username_field] = user.email
+                else:
+                    attrs[self.username_field] = username
+
         data = super().validate(attrs)
 
         user_data = {
@@ -60,7 +81,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             "first_name": self.user.first_name,
             "last_name": self.user.last_name,
             "is_staff": self.user.is_staff,
-            "profile_image_url": self.user.profile_image.url if self.user.profile_image else None,
+            "avatar_url": self.user.avatar.url if self.user.avatar else None,
         }
 
         data["user"] = user_data

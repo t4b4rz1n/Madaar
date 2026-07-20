@@ -22,8 +22,9 @@ class PanelBillingAndTicketingTestCase(APITestCase):
             username="regularuser", email="user@example.com", password="userpassword123"
         )
 
-        # Create a ticket type
+        # Create ticket types
         self.ticket_type, _ = TicketType.objects.get_or_create(name="Technical Support")
+        TicketType.objects.get_or_create(name="Projects & Tasks")
 
         # Create a ticket owned by regular_user
         self.ticket = Ticket.objects.create(

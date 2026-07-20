@@ -15,7 +15,7 @@ class UserListSerializer(serializers.ModelSerializer):
             "last_name",
             "is_active",
             "is_staff",
-            "profile_image",
+            "avatar",
         ]
         ref_name = "users_panel"
 
@@ -36,10 +36,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "last_name",
             "is_active",
             "is_staff",
-            "profile_image",
+            "avatar",
         ]
         extra_kwargs = {
-            "profile_image": {"validators": []},
+            "avatar": {"validators": []},
         }
         ref_name = "user_panel"
 
@@ -57,7 +57,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             last_name=validated_data.get("last_name", ""),
             is_active=validated_data.get("is_active", True),
             is_staff=validated_data.get("is_staff", False),
-            profile_image=validated_data.get("profile_image"),
+            avatar=validated_data.get("avatar"),
         )
         return user
 
@@ -74,10 +74,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "last_name",
             "is_active",
             "is_staff",
-            "profile_image",
+            "avatar",
         ]
         extra_kwargs = {
-            "profile_image": {"validators": []},
+            "avatar": {"validators": []},
         }
         ref_name = "user_panel__update"
 

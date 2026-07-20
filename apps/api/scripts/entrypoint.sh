@@ -1,9 +1,16 @@
 #!/bin/sh
 set -e
 
-echo "Running migrations..."
-python manage.py migrate
+# Wait for the database to be ready and apply migrations
 
+echo "Waiting for database and applying migrations..."
+until python manage.py migrate --noinput; do
+  echo "Database not ready yet or migration failed. Sleeping 5 seconds..."
+  sleep 5
+done
+
+
+# Create superuser if it does not exist
 
 echo "Creating superuser..."
 python manage.py shell -c "
@@ -14,9 +21,11 @@ User = get_user_model()
 username = os.environ.get('SUPERUSER_USERNAME', 'admin')
 email = os.environ.get('SUPERUSER_EMAIL', 'admin@example.com')
 password = os.environ.get('SUPERUSER_PASSWORD', 'adminpass123')
+first_name = os.environ.get('SUPERUSER_FIRST_NAME', 'Admin')
+last_name = os.environ.get('SUPERUSER_LAST_NAME', 'User')
 
 if not User.objects.filter(username=username).exists():
-    User.objects.create_superuser(username=username, email=email, password=password)
+    User.objects.create_superuser(username=username, email=email, password=password, first_name=first_name, last_name=last_name)
     print(f'Superuser {username} created successfully!')
 else:
     print(f'Superuser {username} already exists.')

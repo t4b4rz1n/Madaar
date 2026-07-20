@@ -1,25 +1,123 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
-from .validators import profile_picture_validator, username_validator
+from accounts.validators import profile_picture_validator
+from common.models import BaseModel
+
+from .managers import UserManager
 
 
-class User(AbstractUser):
-    username = models.CharField(
-        _("username"),
-        max_length=150,
+class User(AbstractUser, BaseModel):
+    email = models.EmailField(
         unique=True,
-        help_text=_("Required. 150 characters or fewer. Letters, digits and -/_ only."),
-        validators=[username_validator],
-        error_messages={
-            "unique": _("A user with that username already exists."),
-        },
+        db_index=True,
     )
 
-    profile_image = models.ImageField(
-        upload_to="profile_pics/", null=True, blank=True, validators=[profile_picture_validator]
+    username = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
     )
+
+    first_name = models.CharField(
+        max_length=100,
+    )
+
+    last_name = models.CharField(
+        max_length=100,
+    )
+
+    phone_number = models.CharField(
+        max_length=20,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+
+    avatar = models.ImageField(
+        upload_to="avatars/", null=True, blank=True, validators=[profile_picture_validator]
+    )
+
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
+
+    class Meta:
+        db_table = "users"
+        verbose_name = "User"
+        verbose_name_plural = "Users"
 
     def __str__(self):
-        return self.username
+        return self.email
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def get_short_name(self):
+        return self.first_name
+
+
+class WorkStyleProfile(BaseModel):
+    """
+    Work style preferences for a user.
+    Used to guide how team members interact with each other.
+    """
+
+    class CommunicationPreference(models.TextChoices):
+        TEXT = "text", "Text"
+        CALL = "call", "Call"
+        MEETING = "meeting", "Meeting"
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="work_style_profile",
+    )
+
+    communication_preference = models.CharField(
+        max_length=20,
+        choices=CommunicationPreference.choices,
+        default=CommunicationPreference.TEXT,
+        help_text="Preferred communication channel",
+    )
+
+    preferred_working_hours_start = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Preferred start time for working hours",
+    )
+
+    preferred_working_hours_end = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Preferred end time for working hours",
+    )
+
+    disc_result = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="DISC personality assessment result",
+    )
+
+    neo_result = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="NEO personality assessment result",
+    )
+
+    notes = models.TextField(
+        blank=True,
+        help_text="Additional notes about work style preferences",
+    )
+
+    class Meta:
+        db_table = "work_style_profiles"
+        verbose_name = "Work Style Profile"
+        verbose_name_plural = "Work Style Profiles"
+
+    def __str__(self):
+        return f"WorkStyle({self.user_id})"
