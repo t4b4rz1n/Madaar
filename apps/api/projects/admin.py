@@ -5,15 +5,30 @@ from .models import Milestone, Project, ProjectActivity, ProjectMember
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("name", "owner_id", "budget", "budget_currency", "status", "deadline")
+    list_display = (
+        "name",
+        "owner_id",
+        "team_id",
+        "budget",
+        "budget_currency",
+        "status",
+        "deadline",
+    )
     list_filter = ("status", "budget_currency")
     search_fields = ("name", "description", "owner_id")
 
 
 @admin.register(ProjectMember)
 class ProjectMemberAdmin(admin.ModelAdmin):
-    list_display = ("project", "user_id", "role", "specialty", "allocation_percentage", "is_active")
-    list_filter = ("role", "is_active")
+    list_display = (
+        "project",
+        "user_id",
+        "team_id",
+        "specialty",
+        "allocation_percentage",
+        "is_active",
+    )
+    list_filter = ("is_active",)
     search_fields = ("project__name", "user_id", "specialty")
 
 

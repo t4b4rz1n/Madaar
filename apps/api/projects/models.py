@@ -7,7 +7,7 @@ from common.models import BaseModel
 
 
 class Project(BaseModel):
-    """The planning container for a project's members, capacity, and milestones."""
+    """The planning container for a project's members, resource allocation, capacity, and milestones."""
 
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
@@ -16,8 +16,11 @@ class Project(BaseModel):
         COMPLETED = "completed", _("Completed")
         ARCHIVED = "archived", _("Archived")
 
-    organization_id = models.UUIDField(_("Organization ID"), null=True, blank=True, db_index=True)
-    owner_id = models.UUIDField(_("Owner ID"), db_index=True)
+    organization_id = models.IntegerField(
+        _("Organization ID"), null=True, blank=True, db_index=True
+    )
+    owner_id = models.IntegerField(_("Owner ID"), db_index=True)
+    team_id = models.IntegerField(_("Team ID"), null=True, blank=True, db_index=True)
     name = models.CharField(_("Name"), max_length=255)
     description = models.TextField(_("Description"), blank=True)
     budget = models.DecimalField(
@@ -28,7 +31,7 @@ class Project(BaseModel):
         blank=True,
         validators=[MinValueValidator(0)],
     )
-    budget_currency = models.CharField(_("Budget currency"), max_length=3, default="IRR")
+    budget_currency = models.CharField(_("Budget currency"), max_length=10, default="IRR")
     status = models.CharField(
         _("Status"), max_length=20, choices=Status.choices, default=Status.DRAFT, db_index=True
     )
@@ -60,24 +63,27 @@ class Project(BaseModel):
 
 
 class ProjectMember(BaseModel):
-    """A user's project role, specialty, and allocated capacity.
+    """Resource Allocation: Assigning users/resources to a project based on specialty and capacity allocation.
 
-    User relationships intentionally use IDs until the identity app is finalized.
+    External entities (User, Team, Role) intentionally use Integer IDs to decouple from the Core Identity module.
     """
-
-    class Role(models.TextChoices):
-        MANAGER = "manager", _("Manager")
-        MEMBER = "member", _("Member")
-        VIEWER = "viewer", _("Viewer")
 
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="members", verbose_name=_("Project")
     )
-    user_id = models.UUIDField(_("User ID"), db_index=True)
-    role = models.CharField(_("Role"), max_length=20, choices=Role.choices, default=Role.MEMBER)
-    specialty = models.CharField(_("Specialty"), max_length=100, blank=True)
+    user_id = models.IntegerField(_("User ID"), db_index=True)
+    team_id = models.IntegerField(_("Team ID"), null=True, blank=True, db_index=True)
+    specialty = models.CharField(
+        _("Specialty"),
+        max_length=100,
+        blank=True,
+        help_text=_("Specialty/Skill, e.g., Frontend, UI/UX"),
+    )
     allocation_percentage = models.PositiveSmallIntegerField(
-        _("Allocation percentage"), validators=[MinValueValidator(1), MaxValueValidator(100)]
+        _("Allocation percentage"),
+        default=100,
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        help_text=_("Percentage of user's work capacity dedicated to this project (1-100%)"),
     )
     allocation_start_date = models.DateField(_("Allocation start date"), null=True, blank=True)
     allocation_end_date = models.DateField(_("Allocation end date"), null=True, blank=True)
@@ -99,11 +105,11 @@ class ProjectMember(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.project} — {self.user_id}"
+        return f"{self.project.name} — User #{self.user_id} ({self.allocation_percentage}%)"
 
 
 class Milestone(BaseModel):
-    """A project's major phase, objective, or delivery point."""
+    """A project's major phase, objective, or key delivery point."""
 
     class Status(models.TextChoices):
         PENDING = "pending", _("Pending")
@@ -122,7 +128,9 @@ class Milestone(BaseModel):
     start_date = models.DateField(_("Start date"), null=True, blank=True)
     target_date = models.DateField(_("Target date"))
     completed_at = models.DateTimeField(_("Completed at"), null=True, blank=True)
-    sequence = models.PositiveSmallIntegerField(_("Sequence"), default=0)
+    sequence = models.PositiveSmallIntegerField(
+        _("Sequence"), default=0, help_text=_("Phase order")
+    )
 
     class Meta:
         verbose_name = _("Milestone")
@@ -135,23 +143,17 @@ class Milestone(BaseModel):
         ]
         constraints = [
             models.CheckConstraint(
-                condition=Q(start_date__isnull=True)
-                | Q(target_date__gte=models.F("start_date")),
+                condition=Q(start_date__isnull=True) | Q(target_date__gte=models.F("start_date")),
                 name="milestone_target_after_start",
             )
         ]
 
     def __str__(self):
-        return self.title
+        return f"{self.project.name} – {self.title}"
 
 
 class ProjectActivity(BaseModel):
-    """The immutable, project-wide timeline.
-
-    Events created by the future task app use ``entity_type='task'`` and the
-    task's UUID in ``entity_id``. This avoids a cross-app relationship while
-    keeping the project timeline complete.
-    """
+    """Live timeline feed for all project events, task completions, and internal changes."""
 
     class EventType(models.TextChoices):
         PROJECT_CREATED = "project_created", _("Project created")
@@ -175,10 +177,12 @@ class ProjectActivity(BaseModel):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="activities", verbose_name=_("Project")
     )
-    actor_id = models.UUIDField(_("Actor ID"), null=True, blank=True, db_index=True)
+    actor_id = models.IntegerField(_("Actor ID"), null=True, blank=True, db_index=True)
     event_type = models.CharField(_("Event type"), max_length=30, choices=EventType.choices)
     entity_type = models.CharField(_("Entity type"), max_length=20, choices=EntityType.choices)
-    entity_id = models.UUIDField(_("Entity ID"), null=True, blank=True, db_index=True)
+    entity_id = models.CharField(
+        _("Entity ID"), max_length=255, null=True, blank=True, db_index=True
+    )
     metadata = models.JSONField(_("Metadata"), default=dict, blank=True)
 
     class Meta:
@@ -191,4 +195,4 @@ class ProjectActivity(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.project} — {self.get_event_type_display()}"
+        return f"{self.project.name} — {self.get_event_type_display()}"
