@@ -18,7 +18,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         write_only=True, required=True, style={"input_type": "password"}
     )
 
-    profile_image = serializers.ImageField(required=False, allow_null=True)
+    avatar = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -29,7 +29,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             "password_confirm",
             "first_name",
             "last_name",
-            "profile_image",
+            "avatar",
         )
 
     def validate(self, attrs):
@@ -60,7 +60,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             "first_name": self.user.first_name,
             "last_name": self.user.last_name,
             "is_staff": self.user.is_staff,
-            "profile_image_url": self.user.profile_image.url if self.user.profile_image else None,
+            "avatar_url": self.user.avatar.url if self.user.avatar else None,
         }
 
         data["user"] = user_data

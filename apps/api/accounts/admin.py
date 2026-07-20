@@ -10,7 +10,7 @@ class CustomUserAdmin(UserAdmin):
         (
             "Custom Fields",
             {
-                "fields": ("profile_image",),
+                "fields": ("avatar",),
             },
         ),
     )
