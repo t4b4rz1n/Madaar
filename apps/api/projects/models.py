@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
@@ -16,11 +17,33 @@ class Project(BaseModel):
         COMPLETED = "completed", _("Completed")
         ARCHIVED = "archived", _("Archived")
 
-    organization_id = models.IntegerField(
-        _("Organization ID"), null=True, blank=True, db_index=True
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.CASCADE,
+        related_name="projects",
+        verbose_name=_("Organization"),
+        null=True,
+        blank=True,
+        db_index=True,
     )
-    owner_id = models.IntegerField(_("Owner ID"), db_index=True)
-    team_id = models.IntegerField(_("Team ID"), null=True, blank=True, db_index=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="owned_projects",
+        verbose_name=_("Owner"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    team = models.ForeignKey(
+        "organizations.Team",
+        on_delete=models.SET_NULL,
+        related_name="projects",
+        verbose_name=_("Team"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     name = models.CharField(_("Name"), max_length=255)
     description = models.TextField(_("Description"), blank=True)
     budget = models.DecimalField(
@@ -45,8 +68,8 @@ class Project(BaseModel):
         verbose_name_plural = _("Projects")
         ordering = ["-updated_at"]
         indexes = [
-            models.Index(fields=["organization_id", "status"], name="project_org_status_idx"),
-            models.Index(fields=["owner_id", "status"], name="project_owner_status_idx"),
+            models.Index(fields=["organization", "status"], name="project_org_status_idx"),
+            models.Index(fields=["owner", "status"], name="project_owner_status_idx"),
             models.Index(fields=["status", "deadline"], name="project_status_deadline_idx"),
         ]
         constraints = [
@@ -63,16 +86,29 @@ class Project(BaseModel):
 
 
 class ProjectMember(BaseModel):
-    """Resource Allocation: Assigning users/resources to a project based on specialty and capacity allocation.
-
-    External entities (User, Team, Role) intentionally use Integer IDs to decouple from the Core Identity module.
-    """
+    """Resource Allocation: Assigning users/resources to a project based on specialty and capacity allocation."""
 
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="members", verbose_name=_("Project")
     )
-    user_id = models.IntegerField(_("User ID"), db_index=True)
-    team_id = models.IntegerField(_("Team ID"), null=True, blank=True, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="project_memberships",
+        verbose_name=_("User"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    team = models.ForeignKey(
+        "organizations.Team",
+        on_delete=models.SET_NULL,
+        related_name="project_memberships",
+        verbose_name=_("Team"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     specialty = models.CharField(
         _("Specialty"),
         max_length=100,
@@ -92,10 +128,10 @@ class ProjectMember(BaseModel):
     class Meta:
         verbose_name = _("Project Member")
         verbose_name_plural = _("Project Members")
-        ordering = ["project", "user_id"]
-        indexes = [models.Index(fields=["user_id", "is_active"], name="member_user_active_idx")]
+        ordering = ["project", "user"]
+        indexes = [models.Index(fields=["user", "is_active"], name="member_user_active_idx")]
         constraints = [
-            models.UniqueConstraint(fields=["project", "user_id"], name="unique_project_member"),
+            models.UniqueConstraint(fields=["project", "user"], name="unique_project_member"),
             models.CheckConstraint(
                 condition=Q(allocation_end_date__isnull=True)
                 | Q(allocation_start_date__isnull=True)
@@ -105,7 +141,7 @@ class ProjectMember(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.project.name} — User #{self.user_id} ({self.allocation_percentage}%)"
+        return f"{self.project.name} — {self.user} ({self.allocation_percentage}%)"
 
 
 class Milestone(BaseModel):
@@ -177,9 +213,17 @@ class ProjectActivity(BaseModel):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="activities", verbose_name=_("Project")
     )
-    actor_id = models.IntegerField(_("Actor ID"), null=True, blank=True, db_index=True)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="project_activities",
+        verbose_name=_("Actor"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     event_type = models.CharField(_("Event type"), max_length=30, choices=EventType.choices)
-    entity_type = models.CharField(_("Entity type"), max_length=20, choices=EntityType.choices)
+    entity_type = models.CharField(_("Entity type"), max_length=20, choices=EventType.choices)
     entity_id = models.CharField(
         _("Entity ID"), max_length=255, null=True, blank=True, db_index=True
     )
@@ -196,3 +240,4 @@ class ProjectActivity(BaseModel):
 
     def __str__(self):
         return f"{self.project.name} — {self.get_event_type_display()}"
+
