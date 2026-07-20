@@ -42,6 +42,14 @@ class Team(BaseModel):
         on_delete=models.CASCADE,
         related_name="teams",
     )
+    parent_team = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="subteams",
+        verbose_name="Parent Team",
+    )
     description = models.TextField(blank=True)
 
     class Meta:
@@ -82,7 +90,7 @@ class OrganizationMembership(BaseModel):
     role = models.CharField(
         max_length=20,
         choices=Role.choices,
-        default=Role.MEMBER,
+        default=Role.EMPLOYEE,
     )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -57,6 +57,7 @@ LOCAL_APPS = [
     "common",
     "panel.apps.PanelConfig",
     "dashboard.apps.DashboardConfig",
+    "organizations.apps.OrganizationsConfig",
     "projects.apps.ProjectsConfig",
     "tasks.apps.TasksConfig",
 ]
