@@ -9,7 +9,15 @@ class Board(BaseModel):
     """Kanban Board for a project."""
 
     title = models.CharField(_("Board Title"), max_length=255)
-    project_id = models.IntegerField(_("Project ID"), db_index=True)
+    project = models.ForeignKey(
+        "projects.Project",
+        on_delete=models.CASCADE,
+        related_name="boards",
+        verbose_name=_("Project"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -94,6 +102,24 @@ class Task(BaseModel):
         HIGH = "high", _("High")
         CRITICAL = "critical", _("Critical")
 
+    project = models.ForeignKey(
+        "projects.Project",
+        on_delete=models.CASCADE,
+        related_name="tasks",
+        verbose_name=_("Project"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    milestone = models.ForeignKey(
+        "projects.Milestone",
+        on_delete=models.SET_NULL,
+        related_name="tasks",
+        verbose_name=_("Milestone"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     title = models.CharField(_("Title"), max_length=255)
     description = models.TextField(_("Description"), blank=True, null=True)
     column = models.ForeignKey(
@@ -164,6 +190,8 @@ class Task(BaseModel):
         verbose_name_plural = _("Tasks")
         ordering = ["order", "-created_at"]
         indexes = [
+            models.Index(fields=["project", "status"]),
+            models.Index(fields=["project", "assignee"]),
             models.Index(fields=["status", "priority"]),
             models.Index(fields=["assignee"]),
         ]

@@ -14,9 +14,9 @@ from .models import (
 
 @admin.register(Board)
 class BoardAdmin(admin.ModelAdmin):
-    list_display = ("title", "project_id", "created_by", "created_at")
-    list_filter = ("project_id", "created_by")
-    search_fields = ("title", "project_id")
+    list_display = ("title", "project", "created_by", "created_at")
+    list_filter = ("project", "created_by")
+    search_fields = ("title", "project__name")
     ordering = ("-created_at",)
 
 
