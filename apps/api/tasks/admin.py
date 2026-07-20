@@ -40,6 +40,8 @@ class TaskStatusAdmin(admin.ModelAdmin):
 class TaskAdmin(admin.ModelAdmin):
     list_display = (
         "title",
+        "project",
+        "milestone",
         "status",
         "column",
         "priority",
@@ -48,15 +50,16 @@ class TaskAdmin(admin.ModelAdmin):
         "due_date",
         "created_at",
     )
-    list_filter = ("status", "priority", "assignee", "column", "is_deleted")
+    list_filter = ("project", "status", "priority", "assignee", "column", "is_deleted")
     search_fields = (
         "title",
         "description",
+        "project__name",
         "assignee__username",
         "reporter__username",
     )
     ordering = ("-created_at",)
-    raw_id_fields = ("assignee", "reporter", "parent_task", "column")
+    raw_id_fields = ("project", "milestone", "assignee", "reporter", "parent_task", "column")
 
 
 @admin.register(TaskChecklistItem)
