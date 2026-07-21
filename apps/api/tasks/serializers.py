@@ -1,8 +1,19 @@
 from rest_framework import serializers
 
 from accounts.models import User
-from projects.models import Milestone, Project
-from .models import (AsyncStandup,Board,BoardColumn,Task,TaskActivityLog,TaskChecklistItem,TaskComment,TaskStatus)
+
+from .models import (
+    AsyncStandup,
+    Board,
+    BoardColumn,
+    Task,
+    TaskActivityLog,
+    TaskChecklistItem,
+    TaskComment,
+    TaskStatus,
+)
+
+
 class UserMinimalSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -28,7 +39,15 @@ class BoardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = ("id", "title", "project", "created_by", "created_by_detail", "columns", "created_at")
+        fields = (
+            "id",
+            "title",
+            "project",
+            "created_by",
+            "created_by_detail",
+            "columns",
+            "created_at",
+        )
         read_only_fields = ("id", "created_by", "created_at")
 
 
@@ -67,11 +86,34 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ("id","project","milestone","title","description","column","column_detail","status",
-                "status_detail","priority","assignee","assignee_detail","reporter","reporter_detail",
-                "due_date","estimated_hours","spent_hours","parent_task","order","checklist_items",
-                "comments","created_at","updated_at",)
+        fields = (
+            "id",
+            "project",
+            "milestone",
+            "title",
+            "description",
+            "column",
+            "column_detail",
+            "status",
+            "status_detail",
+            "priority",
+            "assignee",
+            "assignee_detail",
+            "reporter",
+            "reporter_detail",
+            "due_date",
+            "estimated_hours",
+            "spent_hours",
+            "parent_task",
+            "order",
+            "checklist_items",
+            "comments",
+            "created_at",
+            "updated_at",
+        )
         read_only_fields = ("id", "reporter", "created_at", "updated_at")
+
+
 class TaskCreateUpdateSerializer(serializers.ModelSerializer):
     status = serializers.PrimaryKeyRelatedField(
         queryset=TaskStatus.objects.all(), required=False, allow_null=True
@@ -97,10 +139,19 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id",)
 
+
 class AsyncStandupSerializer(serializers.ModelSerializer):
     user_detail = UserMinimalSerializer(source="user", read_only=True)
 
     class Meta:
         model = AsyncStandup
-        fields = ("id", "user", "user_detail", "yesterday_work", "today_work", "blockers", "created_at")
+        fields = (
+            "id",
+            "user",
+            "user_detail",
+            "yesterday_work",
+            "today_work",
+            "blockers",
+            "created_at",
+        )
         read_only_fields = ("id", "user", "created_at")

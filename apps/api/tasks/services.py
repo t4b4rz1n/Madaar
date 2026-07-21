@@ -1,9 +1,18 @@
 from django.db import transaction
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
-from .models import (AsyncStandup,Board,BoardColumn,Task,TaskActivityLog,TaskChecklistItem,TaskComment,TaskStatus)
+from .models import (
+    AsyncStandup,
+    Board,
+    BoardColumn,
+    Task,
+    TaskActivityLog,
+    TaskChecklistItem,
+    TaskComment,
+    TaskStatus,
+)
+
 
 class BoardService:
     """Service layer for Kanban Board & Column business logic."""
@@ -60,6 +69,7 @@ class BoardService:
 
 class TaskService:
     """Service layer for Task creation, updates, movement, and activity logging."""
+
     @staticmethod
     @transaction.atomic
     def create_task(
@@ -189,7 +199,10 @@ class ChecklistService:
             TaskActivityLog.objects.create(
                 task=item.task,
                 actor=actor,
-                action=str(_("Marked checklist '%(desc)s' as %(status)s") % {"desc": item.description, "status": status_str}),
+                action=str(
+                    _("Marked checklist '%(desc)s' as %(status)s")
+                    % {"desc": item.description, "status": status_str}
+                ),
             )
         return item
 
@@ -201,7 +214,9 @@ class CommentService:
     @transaction.atomic
     def add_comment(task, author, content, attached_file=None):
         if not content and not attached_file:
-            raise ValidationError(_("Comment must contain either text content or an attached file."))
+            raise ValidationError(
+                _("Comment must contain either text content or an attached file.")
+            )
 
         comment = TaskComment.objects.create(
             task=task,
