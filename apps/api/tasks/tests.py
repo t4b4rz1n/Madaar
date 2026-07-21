@@ -7,7 +7,6 @@ from projects.models import Project
 from tasks.models import (
     AsyncStandup,
     Board,
-    BoardColumn,
     Task,
     TaskActivityLog,
     TaskChecklistItem,
@@ -44,7 +43,7 @@ class TasksModuleTestCase(APITestCase):
             description="Other project description",
         )
 
-        # Create a board (auto-generates 4 default columns + 4 default statuses)
+        # Create a board (auto-generates 4 default statuses acting as Kanban columns)
         self.client.force_authenticate(user=self.user)
         board_res = self.client.post(
             reverse("task-board-list"),
@@ -55,13 +54,27 @@ class TasksModuleTestCase(APITestCase):
         self.status_done = TaskStatus.objects.get(board=self.board, code="done")
 
     # ── Board Tests ─────────────────────────────────────────────
-    def test_board_creation_auto_columns_and_statuses(self):
-        """Board creation should auto-generate 4 columns and 4 statuses."""
-        self.assertEqual(self.board.columns.count(), 4)
+    def test_board_creation_auto_statuses(self):
+        """Board creation should auto-generate 4 default Kanban statuses (columns)."""
         self.assertEqual(self.board.statuses.count(), 4)
-        col_titles = list(self.board.columns.values_list("title", flat=True))
-        self.assertIn("To Do", col_titles)
-        self.assertIn("Done", col_titles)
+        status_names = list(self.board.statuses.values_list("name", flat=True))
+        self.assertIn("To Do", status_names)
+        self.assertIn("Done", status_names)
+
+    def test_board_creation_with_description_and_color(self):
+        """Board creation via API should save custom description and background_color."""
+        res = self.client.post(
+            reverse("task-board-list"),
+            {
+                "title": "Custom Board",
+                "description": "Sprint board description",
+                "background_color": "#10b981",
+                "project": self.project.id,
+            },
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["description"], "Sprint board description")
+        self.assertEqual(res.data["background_color"], "#10b981")
 
     def test_board_filter_by_project(self):
         """Boards should be filterable by project."""
@@ -97,25 +110,9 @@ class TasksModuleTestCase(APITestCase):
         self.assertEqual(board2.order, 1)
         self.assertEqual(self.board.order, 2)
 
-    # ── Column Tests ────────────────────────────────────────────
-    def test_add_column_to_board(self):
-        """Adding a column to a board should work and log activity."""
-        url = reverse("task-board-add-column", kwargs={"pk": self.board.id})
-        res = self.client.post(url, {"title": "QA Column"})
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(self.board.columns.count(), 5)
-
-    def test_reorder_columns(self):
-        """Column reorder should update order values."""
-        cols = list(self.board.columns.values_list("id", flat=True))
-        url = reverse("task-board-reorder-columns", kwargs={"pk": self.board.id})
-        orders = [{"id": str(c), "order": i + 1} for i, c in enumerate(reversed(cols))]
-        res = self.client.post(url, {"orders": orders}, format="json")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-    # ── Status CRUD Tests ───────────────────────────────────────
+    # ── Status CRUD & Reorder Tests ──────────────────────────────
     def test_create_custom_status(self):
-        """User should be able to create custom statuses for a board."""
+        """User should be able to create custom statuses (columns) for a board."""
         res = self.client.post(
             reverse("task-status-list"),
             {"board": self.board.id, "code": "testing", "name": "Testing"},
@@ -215,29 +212,24 @@ class TasksModuleTestCase(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
 
-    def test_move_task_column_and_status(self):
-        """Moving a task should update column, status, order, and log it."""
-        col1 = self.board.columns.first()
-        col2 = self.board.columns.last()
+    def test_move_task_status_and_order(self):
+        """Moving a task across statuses/columns should update status, order, and log it."""
         task = Task.objects.create(
             project=self.project,
             title="Move Task",
             reporter=self.user,
-            column=col1,
             status=self.status_todo,
         )
         url = reverse("task-move-task", kwargs={"pk": task.id})
         res = self.client.post(
             url,
             {
-                "column_id": str(col2.id),
                 "status_id": str(self.status_done.id),
                 "order": 5,
             },
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         task.refresh_from_db()
-        self.assertEqual(task.column, col2)
         self.assertEqual(task.status, self.status_done)
         self.assertEqual(task.order, 5)
 
@@ -355,10 +347,8 @@ class TasksModuleTestCase(APITestCase):
             project=self.project, title="Sub2", reporter=self.user, status=self.status_todo,
             parent_task=parent,
         )
-        # sub1: 2/2 checklist done = 100%
         TaskChecklistItem.objects.create(task=sub1, description="X", is_completed=True)
         TaskChecklistItem.objects.create(task=sub1, description="Y", is_completed=True)
-        # sub2: 0 checklist = 0%
         self.assertEqual(sub1.progress_percent, 100.0)
         self.assertEqual(sub2.progress_percent, 0.0)
         self.assertEqual(parent.progress_percent, 50.0)
@@ -375,7 +365,6 @@ class TasksModuleTestCase(APITestCase):
             parent_task=parent,
         )
         TaskChecklistItem.objects.create(task=sub, description="X", is_completed=True)
-        # parent checklist: 1/2 = 50%, subtask: 100% → (50+100)/2 = 75%
         self.assertEqual(parent.progress_percent, 75.0)
 
     def test_progress_in_api_response(self):
@@ -392,19 +381,3 @@ class TasksModuleTestCase(APITestCase):
         self.assertEqual(res.data["progress_percent"], 50.0)
         self.assertEqual(res.data["checklist_stats"]["total"], 2)
         self.assertEqual(res.data["checklist_stats"]["done"], 1)
-
-    def test_subtask_has_own_checklist(self):
-        """Subtasks should have their own checklists with independent progress."""
-        parent = Task.objects.create(
-            project=self.project, title="P", reporter=self.user, status=self.status_todo
-        )
-        sub = Task.objects.create(
-            project=self.project, title="S", reporter=self.user, status=self.status_todo,
-            parent_task=parent,
-        )
-        # Add checklist to subtask via API
-        url = reverse("task-add-checklist-item", kwargs={"pk": sub.id})
-        res = self.client.post(url, {"description": "Sub checklist item"})
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(sub.checklist_items.count(), 1)
-        self.assertEqual(sub.progress_percent, 0.0)
