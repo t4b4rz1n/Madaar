@@ -5,7 +5,6 @@ from rest_framework.exceptions import ValidationError
 from .models import (
     AsyncStandup,
     Board,
-    BoardColumn,
     Task,
     TaskActivityLog,
     TaskChecklistItem,
@@ -15,34 +14,22 @@ from .models import (
 
 
 class BoardService:
-    """Service layer for Kanban Board & Column business logic."""
+    """Service layer for Kanban Board business logic."""
 
     @staticmethod
     @transaction.atomic
-    def create_board(title, project, created_by):
+    def create_board(title, project, created_by, description=None, background_color=None):
         max_order = Board.objects.filter(project=project).count()
         board = Board.objects.create(
             title=title,
+            description=description,
+            background_color=background_color or "#6366f1",
             project=project,
             created_by=created_by,
             order=max_order + 1,
         )
 
-        # Create default Kanban columns for the board
-        default_columns = [
-            _("To Do"),
-            _("Doing"),
-            _("Review"),
-            _("Done"),
-        ]
-        for index, col_title in enumerate(default_columns):
-            BoardColumn.objects.create(
-                board=board,
-                title=str(col_title),
-                order=index + 1,
-            )
-
-        # Create default statuses for the board
+        # Create default Kanban statuses (columns) for the board
         default_statuses = [
             ("todo", _("To Do")),
             ("doing", _("Doing")),
@@ -68,70 +55,9 @@ class BoardService:
         for item in board_orders:
             Board.objects.filter(id=item["id"], project=project).update(order=item["order"])
 
-    @staticmethod
-    @transaction.atomic
-    def create_column(board, title, order=None, actor=None):
-        if order is None:
-            max_order = board.columns.count()
-            order = max_order + 1
-
-        col = BoardColumn.objects.create(
-            board=board,
-            title=title,
-            order=order,
-        )
-
-        if actor:
-            # Log on any task of this board for traceability
-            first_task = Task.objects.filter(column__board=board).first()
-            if first_task:
-                TaskActivityLog.objects.create(
-                    task=first_task,
-                    actor=actor,
-                    action=str(_("Added column '%(col)s' to board") % {"col": title}),
-                )
-
-        return col
-
-    @staticmethod
-    @transaction.atomic
-    def delete_column(column, actor=None):
-        board = column.board
-        title = column.title
-        column.delete()
-
-        if actor:
-            first_task = Task.objects.filter(column__board=board).first()
-            if first_task:
-                TaskActivityLog.objects.create(
-                    task=first_task,
-                    actor=actor,
-                    action=str(_("Removed column '%(col)s' from board") % {"col": title}),
-                )
-
-    @staticmethod
-    @transaction.atomic
-    def reorder_columns(board, column_orders, actor=None):
-        """
-        column_orders is a list of dicts: [{'id': column_uuid, 'order': 1}, ...]
-        """
-        for item in column_orders:
-            col_id = item.get("id")
-            new_order = item.get("order")
-            BoardColumn.objects.filter(id=col_id, board=board).update(order=new_order)
-
-        if actor:
-            first_task = Task.objects.filter(column__board=board).first()
-            if first_task:
-                TaskActivityLog.objects.create(
-                    task=first_task,
-                    actor=actor,
-                    action=str(_("Reordered columns on board '%(board)s'") % {"board": board.title}),
-                )
-
 
 class TaskStatusService:
-    """Service layer for per-board TaskStatus CRUD and reordering."""
+    """Service layer for per-board TaskStatus (Kanban Columns) CRUD and reordering."""
 
     @staticmethod
     @transaction.atomic
@@ -211,7 +137,6 @@ class TaskService:
         reporter,
         project=None,
         description=None,
-        column=None,
         status=None,
         priority=Task.Priority.MEDIUM,
         assignee=None,
@@ -235,7 +160,6 @@ class TaskService:
             milestone=milestone,
             title=title,
             description=description,
-            column=column,
             status=status,
             priority=priority,
             assignee=assignee,
@@ -280,15 +204,9 @@ class TaskService:
 
     @staticmethod
     @transaction.atomic
-    def move_task(task, actor, new_column=None, new_status=None, new_order=None):
-        """Handles Drag & Drop movement across Kanban columns and statuses."""
+    def move_task(task, actor, new_status=None, new_order=None):
+        """Handles Drag & Drop movement across Kanban statuses."""
         action_parts = []
-
-        if new_column and task.column != new_column:
-            action_parts.append(
-                str(_("Column changed to %(col)s") % {"col": new_column.title})
-            )
-            task.column = new_column
 
         if new_status and task.status != new_status:
             action_parts.append(

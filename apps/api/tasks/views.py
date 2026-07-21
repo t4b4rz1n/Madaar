@@ -6,7 +6,6 @@ from rest_framework.response import Response
 from .models import (
     AsyncStandup,
     Board,
-    BoardColumn,
     Task,
     TaskActivityLog,
     TaskChecklistItem,
@@ -16,7 +15,6 @@ from .models import (
 from .permissions import IsBoardOwnerOrReadOnly, IsTaskAssigneeOrReporterOrReadOnly
 from .serializers import (
     AsyncStandupSerializer,
-    BoardColumnSerializer,
     BoardSerializer,
     TaskActivityLogSerializer,
     TaskChecklistItemSerializer,
@@ -36,7 +34,7 @@ from .services import (
 
 
 # ──────────────────────────────────────────────
-# Board & Column ViewSets
+# Board ViewSet
 # ──────────────────────────────────────────────
 class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
@@ -51,30 +49,17 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         title = serializer.validated_data.get("title")
+        description = serializer.validated_data.get("description")
+        background_color = serializer.validated_data.get("background_color")
         project = serializer.validated_data.get("project")
         board = BoardService.create_board(
             title=title,
+            description=description,
+            background_color=background_color,
             project=project,
             created_by=self.request.user,
         )
         serializer.instance = board
-
-    @action(detail=True, methods=["post"], url_path="columns")
-    def add_column(self, request, pk=None):
-        board = self.get_object()
-        title = request.data.get("title")
-        order = request.data.get("order")
-        col = BoardService.create_column(
-            board=board, title=title, order=order, actor=request.user
-        )
-        return Response(BoardColumnSerializer(col).data, status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=["post"], url_path="reorder-columns")
-    def reorder_columns(self, request, pk=None):
-        board = self.get_object()
-        orders = request.data.get("orders", [])
-        BoardService.reorder_columns(board, orders, actor=request.user)
-        return Response({"status": "columns reordered"})
 
     @action(detail=False, methods=["post"], url_path="reorder-boards")
     def reorder_boards(self, request):
@@ -88,23 +73,8 @@ class BoardViewSet(viewsets.ModelViewSet):
         return Response({"status": "boards reordered"})
 
 
-class BoardColumnViewSet(viewsets.ModelViewSet):
-    serializer_class = BoardColumnSerializer
-    permission_classes = [IsAuthenticated, IsBoardOwnerOrReadOnly]
-
-    def get_queryset(self):
-        qs = BoardColumn.objects.all()
-        board_id = self.request.query_params.get("board")
-        if board_id:
-            qs = qs.filter(board_id=board_id)
-        return qs
-
-    def perform_destroy(self, instance):
-        BoardService.delete_column(instance, actor=self.request.user)
-
-
 # ──────────────────────────────────────────────
-# Task Status ViewSet (Full CRUD + Reorder)
+# Task Status ViewSet (Kanban Columns - CRUD + Reorder)
 # ──────────────────────────────────────────────
 class TaskStatusViewSet(viewsets.ModelViewSet):
     serializer_class = TaskStatusSerializer
@@ -148,14 +118,14 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Task.objects.select_related(
-            "project", "status", "column", "assignee", "reporter"
+            "project", "status", "assignee", "reporter"
         ).all()
         project_id = self.request.query_params.get("project")
         if project_id:
             qs = qs.filter(project_id=project_id)
         board_id = self.request.query_params.get("board")
         if board_id:
-            qs = qs.filter(column__board_id=board_id)
+            qs = qs.filter(status__board_id=board_id)
         assignee_id = self.request.query_params.get("assignee")
         if assignee_id:
             qs = qs.filter(assignee_id=assignee_id)
@@ -195,17 +165,14 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="move")
     def move_task(self, request, pk=None):
         task = self.get_object()
-        col_id = request.data.get("column_id")
         status_id = request.data.get("status_id")
         new_order = request.data.get("order")
 
-        column = BoardColumn.objects.filter(id=col_id).first() if col_id else None
         task_status = TaskStatus.objects.filter(id=status_id).first() if status_id else None
 
         updated_task = TaskService.move_task(
             task=task,
             actor=request.user,
-            new_column=column,
             new_status=task_status,
             new_order=new_order,
         )

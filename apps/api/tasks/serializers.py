@@ -5,7 +5,6 @@ from accounts.models import User
 from .models import (
     AsyncStandup,
     Board,
-    BoardColumn,
     Task,
     TaskActivityLog,
     TaskChecklistItem,
@@ -27,15 +26,7 @@ class TaskStatusSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at")
 
 
-class BoardColumnSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BoardColumn
-        fields = ("id", "board", "title", "order", "created_at")
-        read_only_fields = ("id", "created_at")
-
-
 class BoardSerializer(serializers.ModelSerializer):
-    columns = BoardColumnSerializer(many=True, read_only=True)
     statuses = TaskStatusSerializer(many=True, read_only=True)
     created_by_detail = UserMinimalSerializer(source="created_by", read_only=True)
 
@@ -44,11 +35,12 @@ class BoardSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "title",
+            "description",
+            "background_color",
             "project",
             "created_by",
             "created_by_detail",
             "order",
-            "columns",
             "statuses",
             "created_at",
         )
@@ -92,11 +84,11 @@ class TaskSerializer(serializers.ModelSerializer):
     status_detail = TaskStatusSerializer(source="status", read_only=True)
     assignee_detail = UserMinimalSerializer(source="assignee", read_only=True)
     reporter_detail = UserMinimalSerializer(source="reporter", read_only=True)
-    column_detail = BoardColumnSerializer(source="column", read_only=True)
     checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
     comments = TaskCommentSerializer(many=True, read_only=True)
     subtasks_count = serializers.SerializerMethodField()
     progress_percent = serializers.FloatField(read_only=True)
+    is_completed = serializers.BooleanField(read_only=True)
     checklist_stats = serializers.SerializerMethodField()
 
     class Meta:
@@ -107,8 +99,6 @@ class TaskSerializer(serializers.ModelSerializer):
             "milestone",
             "title",
             "description",
-            "column",
-            "column_detail",
             "status",
             "status_detail",
             "priority",
@@ -121,6 +111,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "spent_hours",
             "parent_task",
             "order",
+            "is_completed",
             "progress_percent",
             "subtasks_count",
             "checklist_stats",
@@ -137,7 +128,8 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_checklist_stats(self, obj):
         total = obj.checklist_items.count()
         done = obj.checklist_items.filter(is_completed=True).count()
-        return {"total": total, "done": done}
+        percent = round((done / total * 100), 1) if total > 0 else 0.0
+        return {"total": total, "done": done, "percent": percent}
 
 
 class TaskCreateUpdateSerializer(serializers.ModelSerializer):
@@ -153,7 +145,6 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             "milestone",
             "title",
             "description",
-            "column",
             "status",
             "priority",
             "assignee",

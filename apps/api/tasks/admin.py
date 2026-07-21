@@ -3,7 +3,6 @@ from django.contrib import admin
 from .models import (
     AsyncStandup,
     Board,
-    BoardColumn,
     Task,
     TaskActivityLog,
     TaskChecklistItem,
@@ -14,26 +13,18 @@ from .models import (
 
 @admin.register(Board)
 class BoardAdmin(admin.ModelAdmin):
-    list_display = ("title", "project", "created_by", "created_at")
+    list_display = ("title", "project", "order", "created_by", "created_at")
     list_filter = ("project", "created_by")
     search_fields = ("title", "project__name")
-    ordering = ("-created_at",)
-
-
-@admin.register(BoardColumn)
-class BoardColumnAdmin(admin.ModelAdmin):
-    list_display = ("title", "board", "order")
-    list_filter = ("board",)
-    search_fields = ("title", "board__title")
-    ordering = ("board", "order")
+    ordering = ("order", "-created_at")
 
 
 @admin.register(TaskStatus)
 class TaskStatusAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "order", "created_at")
-    list_filter = ("is_deleted",)
-    search_fields = ("name", "code")
-    ordering = ("order",)
+    list_display = ("name", "code", "board", "order", "created_at")
+    list_filter = ("board", "is_deleted")
+    search_fields = ("name", "code", "board__title")
+    ordering = ("board", "order")
 
 
 @admin.register(Task)
@@ -43,14 +34,13 @@ class TaskAdmin(admin.ModelAdmin):
         "project",
         "milestone",
         "status",
-        "column",
         "priority",
         "assignee",
         "reporter",
         "due_date",
         "created_at",
     )
-    list_filter = ("project", "status", "priority", "assignee", "column", "is_deleted")
+    list_filter = ("project", "status", "priority", "assignee", "is_deleted")
     search_fields = (
         "title",
         "description",
@@ -59,7 +49,7 @@ class TaskAdmin(admin.ModelAdmin):
         "reporter__username",
     )
     ordering = ("-created_at",)
-    raw_id_fields = ("project", "milestone", "assignee", "reporter", "parent_task", "column")
+    raw_id_fields = ("project", "milestone", "assignee", "reporter", "parent_task")
 
 
 @admin.register(TaskChecklistItem)
