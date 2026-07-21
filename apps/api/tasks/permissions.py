@@ -3,8 +3,9 @@ from rest_framework import permissions
 
 class IsTaskAssigneeOrReporterOrReadOnly(permissions.BasePermission):
     """
-    Custom permission to allow only the assignee or reporter of a task to modify it.
-    Read-only access is granted for safe HTTP methods.
+    Custom permission:
+    - Safe methods (GET, HEAD, OPTIONS): allowed for any authenticated user.
+    - Write methods: allowed for task assignee, reporter, or staff.
     """
 
     def has_object_permission(self, request, view, obj):
@@ -21,6 +22,27 @@ class IsTaskAssigneeOrReporterOrReadOnly(permissions.BasePermission):
             return True
 
         if hasattr(obj, "author") and obj.author == request.user:
+            return True
+
+        if hasattr(obj, "created_by") and obj.created_by == request.user:
+            return True
+
+        return request.user and request.user.is_staff
+
+
+class IsBoardOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Board-level permission: only the board creator or staff can modify.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        if hasattr(obj, "created_by") and obj.created_by == request.user:
+            return True
+
+        if hasattr(obj, "board") and obj.board and obj.board.created_by == request.user:
             return True
 
         return request.user and request.user.is_staff

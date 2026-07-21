@@ -27,11 +27,12 @@ class Board(BaseModel):
         blank=True,
         db_index=True,
     )
+    order = models.PositiveIntegerField(_("Order"), default=0, db_index=True)
 
     class Meta:
         verbose_name = _("Board")
         verbose_name_plural = _("Boards")
-        ordering = ["-created_at"]
+        ordering = ["order", "-created_at"]
 
     def __str__(self):
         return self.title
@@ -64,16 +65,25 @@ class BoardColumn(BaseModel):
 
 class TaskStatus(BaseModel):
     """
-    Customizable task status.
-    Users can add/remove statuses as needed.
+    Customizable task status per board.
+    Each board gets default statuses on creation;
+    users can add, remove, and reorder statuses freely.
     """
 
+    board = models.ForeignKey(
+        Board,
+        on_delete=models.CASCADE,
+        related_name="statuses",
+        verbose_name=_("Board"),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     code = models.SlugField(
         _("Code"),
         max_length=50,
-        unique=True,
         db_index=True,
-        help_text=_("Unique identifier for the status (e.g., 'todo', 'doing', 'review')"),
+        help_text=_("Identifier for the status (e.g., 'todo', 'doing', 'review')"),
     )
     name = models.CharField(
         _("Name"),
@@ -88,6 +98,12 @@ class TaskStatus(BaseModel):
         verbose_name = _("Task Status")
         verbose_name_plural = _("Task Statuses")
         ordering = ["order", "created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["board", "code"],
+                name="unique_status_code_per_board",
+            )
+        ]
 
     def __str__(self):
         return self.name

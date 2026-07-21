@@ -20,10 +20,12 @@ class BoardService:
     @staticmethod
     @transaction.atomic
     def create_board(title, project, created_by):
+        max_order = Board.objects.filter(project=project).count()
         board = Board.objects.create(
             title=title,
             project=project,
             created_by=created_by,
+            order=max_order + 1,
         )
 
         # Create default Kanban columns for the board
@@ -40,24 +42,76 @@ class BoardService:
                 order=index + 1,
             )
 
+        # Create default statuses for the board
+        default_statuses = [
+            ("todo", _("To Do")),
+            ("doing", _("Doing")),
+            ("review", _("Review")),
+            ("done", _("Done")),
+        ]
+        for index, (code, name) in enumerate(default_statuses):
+            TaskStatus.objects.create(
+                board=board,
+                code=code,
+                name=str(name),
+                order=index + 1,
+            )
+
         return board
 
     @staticmethod
     @transaction.atomic
-    def create_column(board, title, order=None):
+    def reorder_boards(project, board_orders):
+        """
+        board_orders: list of dicts [{'id': uuid, 'order': int}, ...]
+        """
+        for item in board_orders:
+            Board.objects.filter(id=item["id"], project=project).update(order=item["order"])
+
+    @staticmethod
+    @transaction.atomic
+    def create_column(board, title, order=None, actor=None):
         if order is None:
             max_order = board.columns.count()
             order = max_order + 1
 
-        return BoardColumn.objects.create(
+        col = BoardColumn.objects.create(
             board=board,
             title=title,
             order=order,
         )
 
+        if actor:
+            # Log on any task of this board for traceability
+            first_task = Task.objects.filter(column__board=board).first()
+            if first_task:
+                TaskActivityLog.objects.create(
+                    task=first_task,
+                    actor=actor,
+                    action=str(_("Added column '%(col)s' to board") % {"col": title}),
+                )
+
+        return col
+
     @staticmethod
     @transaction.atomic
-    def reorder_columns(board, column_orders):
+    def delete_column(column, actor=None):
+        board = column.board
+        title = column.title
+        column.delete()
+
+        if actor:
+            first_task = Task.objects.filter(column__board=board).first()
+            if first_task:
+                TaskActivityLog.objects.create(
+                    task=first_task,
+                    actor=actor,
+                    action=str(_("Removed column '%(col)s' from board") % {"col": title}),
+                )
+
+    @staticmethod
+    @transaction.atomic
+    def reorder_columns(board, column_orders, actor=None):
         """
         column_orders is a list of dicts: [{'id': column_uuid, 'order': 1}, ...]
         """
@@ -66,6 +120,86 @@ class BoardService:
             new_order = item.get("order")
             BoardColumn.objects.filter(id=col_id, board=board).update(order=new_order)
 
+        if actor:
+            first_task = Task.objects.filter(column__board=board).first()
+            if first_task:
+                TaskActivityLog.objects.create(
+                    task=first_task,
+                    actor=actor,
+                    action=str(_("Reordered columns on board '%(board)s'") % {"board": board.title}),
+                )
+
+
+class TaskStatusService:
+    """Service layer for per-board TaskStatus CRUD and reordering."""
+
+    @staticmethod
+    @transaction.atomic
+    def create_status(board, code, name, order=None, actor=None):
+        if order is None:
+            max_order = board.statuses.count()
+            order = max_order + 1
+
+        status_obj = TaskStatus.objects.create(
+            board=board,
+            code=code,
+            name=name,
+            order=order,
+        )
+
+        if actor:
+            first_task = Task.objects.filter(status__board=board).first()
+            if first_task:
+                TaskActivityLog.objects.create(
+                    task=first_task,
+                    actor=actor,
+                    action=str(_("Added status '%(name)s' to board") % {"name": name}),
+                )
+
+        return status_obj
+
+    @staticmethod
+    @transaction.atomic
+    def delete_status(status_obj, actor=None):
+        if Task.objects.filter(status=status_obj).exists():
+            raise ValidationError(
+                _("Cannot delete status '%(name)s': tasks are still using it.")
+                % {"name": status_obj.name}
+            )
+
+        board = status_obj.board
+        name = status_obj.name
+        status_obj.delete()
+
+        if actor:
+            first_task = Task.objects.filter(status__board=board).first()
+            if first_task:
+                TaskActivityLog.objects.create(
+                    task=first_task,
+                    actor=actor,
+                    action=str(_("Removed status '%(name)s' from board") % {"name": name}),
+                )
+
+    @staticmethod
+    @transaction.atomic
+    def reorder_statuses(board, status_orders, actor=None):
+        """
+        status_orders: list of dicts [{'id': uuid, 'order': int}, ...]
+        """
+        for item in status_orders:
+            TaskStatus.objects.filter(id=item["id"], board=board).update(order=item["order"])
+
+        if actor:
+            first_task = Task.objects.filter(status__board=board).first()
+            if first_task:
+                TaskActivityLog.objects.create(
+                    task=first_task,
+                    actor=actor,
+                    action=str(
+                        _("Reordered statuses on board '%(board)s'") % {"board": board.title}
+                    ),
+                )
+
 
 class TaskService:
     """Service layer for Task creation, updates, movement, and activity logging."""
@@ -73,9 +207,9 @@ class TaskService:
     @staticmethod
     @transaction.atomic
     def create_task(
-        project,
         title,
         reporter,
+        project=None,
         description=None,
         column=None,
         status=None,
@@ -85,13 +219,15 @@ class TaskService:
         estimated_hours=None,
         parent_task=None,
         milestone=None,
+        spent_hours=0,
+        order=0,
     ):
         if not status:
             status = TaskStatus.objects.filter(code="todo").first()
             if not status:
                 raise ValidationError(_("Default status 'todo' does not exist."))
 
-        if parent_task and parent_task.project != project:
+        if parent_task and project and parent_task.project != project:
             raise ValidationError(_("Parent task must belong to the same project."))
 
         task = Task.objects.create(
@@ -107,6 +243,8 @@ class TaskService:
             due_date=due_date,
             estimated_hours=estimated_hours,
             parent_task=parent_task,
+            spent_hours=spent_hours,
+            order=order,
         )
 
         # Log activity
@@ -131,7 +269,7 @@ class TaskService:
 
         if changes:
             task.save()
-            action_desc = _("Updated fields: ") + ", ".join(changes)
+            action_desc = str(_("Updated fields: ")) + ", ".join(changes)
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
@@ -147,11 +285,15 @@ class TaskService:
         action_parts = []
 
         if new_column and task.column != new_column:
-            action_parts.append(str(_("Column changed to %(col)s") % {"col": new_column.title}))
+            action_parts.append(
+                str(_("Column changed to %(col)s") % {"col": new_column.title})
+            )
             task.column = new_column
 
         if new_status and task.status != new_status:
-            action_parts.append(str(_("Status changed to %(st)s") % {"st": new_status.name}))
+            action_parts.append(
+                str(_("Status changed to %(st)s") % {"st": new_status.name})
+            )
             task.status = new_status
 
         if new_order is not None:
@@ -206,6 +348,20 @@ class ChecklistService:
             )
         return item
 
+    @staticmethod
+    @transaction.atomic
+    def delete_item(item, actor=None):
+        task = item.task
+        desc = item.description
+        item.delete()
+
+        if actor:
+            TaskActivityLog.objects.create(
+                task=task,
+                actor=actor,
+                action=str(_("Deleted checklist item: %(desc)s") % {"desc": desc}),
+            )
+
 
 class CommentService:
     """Service layer for Task Comments and file attachments."""
@@ -241,7 +397,9 @@ class StandupService:
     @transaction.atomic
     def create_standup(user, yesterday_work, today_work, blockers=None):
         if not yesterday_work or not today_work:
-            raise ValidationError(_("Both yesterday's work and today's work fields are required."))
+            raise ValidationError(
+                _("Both yesterday's work and today's work fields are required.")
+            )
 
         return AsyncStandup.objects.create(
             user=user,

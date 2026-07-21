@@ -13,7 +13,7 @@ from .models import (
     TaskComment,
     TaskStatus,
 )
-from .permissions import IsTaskAssigneeOrReporterOrReadOnly
+from .permissions import IsBoardOwnerOrReadOnly, IsTaskAssigneeOrReporterOrReadOnly
 from .serializers import (
     AsyncStandupSerializer,
     BoardColumnSerializer,
@@ -31,19 +31,23 @@ from .services import (
     CommentService,
     StandupService,
     TaskService,
+    TaskStatusService,
 )
 
 
-class TaskStatusViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = TaskStatus.objects.all()
-    serializer_class = TaskStatusSerializer
-    permission_classes = [IsAuthenticated]
-
-
+# ──────────────────────────────────────────────
+# Board & Column ViewSets
+# ──────────────────────────────────────────────
 class BoardViewSet(viewsets.ModelViewSet):
-    queryset = Board.objects.all()
     serializer_class = BoardSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsBoardOwnerOrReadOnly]
+
+    def get_queryset(self):
+        qs = Board.objects.all()
+        project_id = self.request.query_params.get("project")
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+        return qs
 
     def perform_create(self, serializer):
         title = serializer.validated_data.get("title")
@@ -60,26 +64,111 @@ class BoardViewSet(viewsets.ModelViewSet):
         board = self.get_object()
         title = request.data.get("title")
         order = request.data.get("order")
-        col = BoardService.create_column(board=board, title=title, order=order)
+        col = BoardService.create_column(
+            board=board, title=title, order=order, actor=request.user
+        )
         return Response(BoardColumnSerializer(col).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="reorder-columns")
     def reorder_columns(self, request, pk=None):
         board = self.get_object()
         orders = request.data.get("orders", [])
-        BoardService.reorder_columns(board, orders)
+        BoardService.reorder_columns(board, orders, actor=request.user)
         return Response({"status": "columns reordered"})
+
+    @action(detail=False, methods=["post"], url_path="reorder-boards")
+    def reorder_boards(self, request):
+        project_id = request.data.get("project_id")
+        orders = request.data.get("orders", [])
+        from projects.models import Project
+
+        project = Project.objects.filter(id=project_id).first()
+        if project:
+            BoardService.reorder_boards(project, orders)
+        return Response({"status": "boards reordered"})
 
 
 class BoardColumnViewSet(viewsets.ModelViewSet):
-    queryset = BoardColumn.objects.all()
     serializer_class = BoardColumnSerializer
+    permission_classes = [IsAuthenticated, IsBoardOwnerOrReadOnly]
+
+    def get_queryset(self):
+        qs = BoardColumn.objects.all()
+        board_id = self.request.query_params.get("board")
+        if board_id:
+            qs = qs.filter(board_id=board_id)
+        return qs
+
+    def perform_destroy(self, instance):
+        BoardService.delete_column(instance, actor=self.request.user)
+
+
+# ──────────────────────────────────────────────
+# Task Status ViewSet (Full CRUD + Reorder)
+# ──────────────────────────────────────────────
+class TaskStatusViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskStatusSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        qs = TaskStatus.objects.all()
+        board_id = self.request.query_params.get("board")
+        if board_id:
+            qs = qs.filter(board_id=board_id)
+        return qs
 
+    def perform_create(self, serializer):
+        board = serializer.validated_data.get("board")
+        code = serializer.validated_data.get("code")
+        name = serializer.validated_data.get("name")
+        order = serializer.validated_data.get("order")
+        status_obj = TaskStatusService.create_status(
+            board=board, code=code, name=name, order=order, actor=self.request.user
+        )
+        serializer.instance = status_obj
+
+    def perform_destroy(self, instance):
+        TaskStatusService.delete_status(instance, actor=self.request.user)
+
+    @action(detail=False, methods=["post"], url_path="reorder")
+    def reorder(self, request):
+        board_id = request.data.get("board_id")
+        orders = request.data.get("orders", [])
+        board = Board.objects.filter(id=board_id).first()
+        if board:
+            TaskStatusService.reorder_statuses(board, orders, actor=request.user)
+        return Response({"status": "statuses reordered"})
+
+
+# ──────────────────────────────────────────────
+# Task ViewSet
+# ──────────────────────────────────────────────
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = Task.objects.all()
     permission_classes = [IsAuthenticated, IsTaskAssigneeOrReporterOrReadOnly]
+
+    def get_queryset(self):
+        qs = Task.objects.select_related(
+            "project", "status", "column", "assignee", "reporter"
+        ).all()
+        project_id = self.request.query_params.get("project")
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+        board_id = self.request.query_params.get("board")
+        if board_id:
+            qs = qs.filter(column__board_id=board_id)
+        assignee_id = self.request.query_params.get("assignee")
+        if assignee_id:
+            qs = qs.filter(assignee_id=assignee_id)
+        status_id = self.request.query_params.get("status")
+        if status_id:
+            qs = qs.filter(status_id=status_id)
+        priority = self.request.query_params.get("priority")
+        if priority:
+            qs = qs.filter(priority=priority)
+        parent_only = self.request.query_params.get("parent_only")
+        if parent_only == "true":
+            qs = qs.filter(parent_task__isnull=True)
+        return qs
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -128,12 +217,20 @@ class TaskViewSet(viewsets.ModelViewSet):
         logs = TaskActivityLog.objects.filter(task=task)
         return Response(TaskActivityLogSerializer(logs, many=True).data)
 
+    @action(detail=True, methods=["get"], url_path="subtasks")
+    def subtasks(self, request, pk=None):
+        task = self.get_object()
+        subs = Task.objects.filter(parent_task=task)
+        return Response(TaskSerializer(subs, many=True).data)
+
     @action(detail=True, methods=["post"], url_path="checklist")
     def add_checklist_item(self, request, pk=None):
         task = self.get_object()
         desc = request.data.get("description")
         item = ChecklistService.add_item(task=task, description=desc, actor=request.user)
-        return Response(TaskChecklistItemSerializer(item).data, status=status.HTTP_201_CREATED)
+        return Response(
+            TaskChecklistItemSerializer(item).data, status=status.HTTP_201_CREATED
+        )
 
     @action(detail=True, methods=["post"], url_path="comments")
     def add_comment(self, request, pk=None):
@@ -146,13 +243,24 @@ class TaskViewSet(viewsets.ModelViewSet):
             content=content,
             attached_file=file_obj,
         )
-        return Response(TaskCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+        return Response(
+            TaskCommentSerializer(comment).data, status=status.HTTP_201_CREATED
+        )
 
 
+# ──────────────────────────────────────────────
+# Checklist, Comment, Standup ViewSets
+# ──────────────────────────────────────────────
 class TaskChecklistItemViewSet(viewsets.ModelViewSet):
-    queryset = TaskChecklistItem.objects.all()
     serializer_class = TaskChecklistItemSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = TaskChecklistItem.objects.all()
+        task_id = self.request.query_params.get("task")
+        if task_id:
+            qs = qs.filter(task_id=task_id)
+        return qs
 
     @action(detail=True, methods=["post"], url_path="toggle")
     def toggle(self, request, pk=None):
@@ -160,17 +268,32 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
         updated = ChecklistService.toggle_item(item=item, actor=request.user)
         return Response(TaskChecklistItemSerializer(updated).data)
 
+    def perform_destroy(self, instance):
+        ChecklistService.delete_item(instance, actor=self.request.user)
+
 
 class TaskCommentViewSet(viewsets.ModelViewSet):
-    queryset = TaskComment.objects.all()
     serializer_class = TaskCommentSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        qs = TaskComment.objects.all()
+        task_id = self.request.query_params.get("task")
+        if task_id:
+            qs = qs.filter(task_id=task_id)
+        return qs
+
 
 class AsyncStandupViewSet(viewsets.ModelViewSet):
-    queryset = AsyncStandup.objects.all()
     serializer_class = AsyncStandupSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = AsyncStandup.objects.all()
+        user_id = self.request.query_params.get("user")
+        if user_id:
+            qs = qs.filter(user_id=user_id)
+        return qs
 
     def perform_create(self, serializer):
         standup = StandupService.create_standup(

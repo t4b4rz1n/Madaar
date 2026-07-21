@@ -23,7 +23,8 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 class TaskStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskStatus
-        fields = ("id", "code", "name", "order")
+        fields = ("id", "board", "code", "name", "order", "created_at")
+        read_only_fields = ("id", "created_at")
 
 
 class BoardColumnSerializer(serializers.ModelSerializer):
@@ -35,6 +36,7 @@ class BoardColumnSerializer(serializers.ModelSerializer):
 
 class BoardSerializer(serializers.ModelSerializer):
     columns = BoardColumnSerializer(many=True, read_only=True)
+    statuses = TaskStatusSerializer(many=True, read_only=True)
     created_by_detail = UserMinimalSerializer(source="created_by", read_only=True)
 
     class Meta:
@@ -45,10 +47,12 @@ class BoardSerializer(serializers.ModelSerializer):
             "project",
             "created_by",
             "created_by_detail",
+            "order",
             "columns",
+            "statuses",
             "created_at",
         )
-        read_only_fields = ("id", "created_by", "created_at")
+        read_only_fields = ("id", "created_by", "order", "created_at")
 
 
 class TaskChecklistItemSerializer(serializers.ModelSerializer):
@@ -63,7 +67,15 @@ class TaskCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskComment
-        fields = ("id", "task", "author", "author_detail", "content", "attached_file", "created_at")
+        fields = (
+            "id",
+            "task",
+            "author",
+            "author_detail",
+            "content",
+            "attached_file",
+            "created_at",
+        )
         read_only_fields = ("id", "task", "author", "created_at")
 
 
@@ -83,6 +95,7 @@ class TaskSerializer(serializers.ModelSerializer):
     column_detail = BoardColumnSerializer(source="column", read_only=True)
     checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
     comments = TaskCommentSerializer(many=True, read_only=True)
+    subtasks_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -106,12 +119,16 @@ class TaskSerializer(serializers.ModelSerializer):
             "spent_hours",
             "parent_task",
             "order",
+            "subtasks_count",
             "checklist_items",
             "comments",
             "created_at",
             "updated_at",
         )
         read_only_fields = ("id", "reporter", "created_at", "updated_at")
+
+    def get_subtasks_count(self, obj):
+        return obj.subtasks.count()
 
 
 class TaskCreateUpdateSerializer(serializers.ModelSerializer):
