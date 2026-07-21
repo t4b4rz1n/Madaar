@@ -9,6 +9,10 @@ class Board(BaseModel):
     """Kanban Board for a project."""
 
     title = models.CharField(_("Board Title"), max_length=255)
+    description = models.TextField(_("Description"), blank=True, null=True)
+    background_color = models.CharField(
+        _("Background Color"), max_length=50, blank=True, null=True, default="#6366f1"
+    )
     project = models.ForeignKey(
         "projects.Project",
         on_delete=models.CASCADE,
@@ -38,36 +42,11 @@ class Board(BaseModel):
         return self.title
 
 
-class BoardColumn(BaseModel):
-    """Custom Kanban column belonging to a Board."""
-
-    board = models.ForeignKey(
-        Board,
-        on_delete=models.CASCADE,
-        related_name="columns",
-        verbose_name=_("Board"),
-        db_index=True,
-    )
-    title = models.CharField(_("Column Title"), max_length=100)
-    order = models.PositiveIntegerField(_("Order"), default=0, db_index=True)
-
-    class Meta:
-        verbose_name = _("Board Column")
-        verbose_name_plural = _("Board Columns")
-        ordering = ["order", "created_at"]
-        constraints = [
-            models.UniqueConstraint(fields=["board", "title"], name="unique_board_column_title")
-        ]
-
-    def __str__(self):
-        return f"{self.board.title} – {self.title}"
-
-
 class TaskStatus(BaseModel):
     """
-    Customizable task status per board.
+    Customizable task status per board (Acts as Kanban Column).
     Each board gets default statuses on creation;
-    users can add, remove, and reorder statuses freely.
+    users can add, remove, and reorder statuses freely per board.
     """
 
     board = models.ForeignKey(
@@ -106,7 +85,7 @@ class TaskStatus(BaseModel):
         ]
 
     def __str__(self):
-        return self.name
+        return f"{self.board.title if self.board else 'Global'} – {self.name}"
 
 
 class Task(BaseModel):
@@ -138,15 +117,6 @@ class Task(BaseModel):
     )
     title = models.CharField(_("Title"), max_length=255)
     description = models.TextField(_("Description"), blank=True, null=True)
-    column = models.ForeignKey(
-        BoardColumn,
-        on_delete=models.SET_NULL,
-        related_name="tasks",
-        verbose_name=_("Kanban Column"),
-        null=True,
-        blank=True,
-        db_index=True,
-    )
     status = models.ForeignKey(
         TaskStatus,
         on_delete=models.PROTECT,
@@ -214,6 +184,11 @@ class Task(BaseModel):
 
     def __str__(self):
         return f"{self.title} [{self.status.name if self.status else 'No Status'}]"
+
+    @property
+    def is_completed(self):
+        """Returns True if the task status code is 'done'."""
+        return bool(self.status and self.status.code == "done")
 
     @property
     def progress_percent(self):
