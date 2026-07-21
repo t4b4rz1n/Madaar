@@ -6,33 +6,40 @@ on:
       - "apps/web/**"
       - ".github/workflows/web-ci.yml"
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - feat/role-based-redirection
 
 jobs:
   web:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Verify repository structure
+        shell: bash
+        run: |
+          echo "Commit: $GITHUB_SHA"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          find . -maxdepth 3 \( -name package.json -o -name package-lock.json \) -print
+          test -f apps/web/package.json
+          test -f apps/web/package-lock.json
+
+      - name: Setup Node without cache
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
-          # اینجا بهش می‌گیم که برای هش کردن کش، از فایل لاکِ داخل پوشه وب استفاده کن
-          cache-dependency-path: apps/web/package-lock.json
-
       - name: Install dependencies
-        # با فلگ prefix به npm می‌گیم که عملیات رو داخل پوشه apps/web انجام بده
-        run: npm ci --prefix apps/web
+        run: npm --prefix apps/web ci
 
       - name: Lint
-        run: npm run lint --prefix apps/web
+        run: npm --prefix apps/web run lint
 
       - name: Build
-        run: npm run build --prefix apps/web
+        run: npm --prefix apps/web run build
         env:
           VITE_API_BASE_URL: /api
           VITE_API_VERSION: v1
