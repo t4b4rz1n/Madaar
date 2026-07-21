@@ -291,7 +291,7 @@ const DashboardPage = () => {
       setLoading(false);
       isMounted.current = true;
     });
-  }, []);
+  }, );
 
   // Fetch support agents resources by period filter (skip on mount)
   useEffect(() => {
