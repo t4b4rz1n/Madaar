@@ -17,7 +17,7 @@ export const useUpdateProfile = () => {
         updateUser({
           first_name: response.data.first_name,
           last_name: response.data.last_name,
-          profile_image_url: response.data.profile_image_url,
+          profile_image_url: response.data.profile_image,
         });
       }
     },
