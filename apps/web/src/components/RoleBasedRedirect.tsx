@@ -2,9 +2,9 @@ import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../features/auth/store/authStore";
 
 const RoleBasedRedirect = () => {
-  const role = useAuthStore((state) => state.user?.role);
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
 
-  return <Navigate to={role === "admin" ? "/admin" : "/dashboard"} replace />;
+  return <Navigate to={isStaff ? "/admin" : "/dashboard"} replace />;
 };
 
 export default RoleBasedRedirect;

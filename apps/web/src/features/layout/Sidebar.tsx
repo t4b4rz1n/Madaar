@@ -42,11 +42,13 @@ export const Sidebar = () => {
 
   const renderNavItems = () =>
     drawerItems.filter((item) => !item.staffOnly || isStaff).map((item, index) => {
+      const itemLink =
+        item.link === "dashboard" && isStaff ? "admin" : item.link;
       const isActive =
-        item.link === ""
+        itemLink === ""
           ? location.pathname === "/"
-          : location.pathname === `/${item.link}` ||
-            location.pathname.startsWith(`/${item.link}/`);
+          : location.pathname === `/${itemLink}` ||
+            location.pathname.startsWith(`/${itemLink}/`);
 
       return (
         <motion.li
@@ -57,7 +59,7 @@ export const Sidebar = () => {
           animate="visible"
         >
           <Link
-            to={`/${item.link}`}
+            to={`/${itemLink}`}
             onClick={() => setSidebarOpen(false)}
             className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-200 h-12 overflow-hidden ${
               isActive
