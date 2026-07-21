@@ -11,18 +11,26 @@ on:
 jobs:
   web:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: "22" # تغییر به Node 22
-          cache: npm
-          # این خط رو کامل پاک کن! چون working-directory نداریم
-          # cache-dependency-path: apps/web/package-lock.json 
+          node-version: "22"
+          cache: "npm"
+          # اینجا بهش می‌گیم که برای هش کردن کش، از فایل لاکِ داخل پوشه وب استفاده کن
+          cache-dependency-path: apps/web/package-lock.json
+
       - name: Install dependencies
+        # با فلگ prefix به npm می‌گیم که عملیات رو داخل پوشه apps/web انجام بده
         run: npm ci --prefix apps/web
+
       - name: Lint
         run: npm run lint --prefix apps/web
+
       - name: Build
         run: npm run build --prefix apps/web
         env:
