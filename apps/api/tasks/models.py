@@ -215,6 +215,36 @@ class Task(BaseModel):
     def __str__(self):
         return f"{self.title} [{self.status.name if self.status else 'No Status'}]"
 
+    @property
+    def progress_percent(self):
+        """
+        Calculate task progress (0-100) based on:
+        1. Checklist items completion ratio
+        2. Subtask progress (recursive)
+
+        If a task has both checklists and subtasks, both contribute equally.
+        If only checklists → 100% weight to checklists.
+        If only subtasks → 100% weight to subtasks.
+        If neither → 0%.
+        """
+        checklist_total = self.checklist_items.count()
+        checklist_done = self.checklist_items.filter(is_completed=True).count()
+        checklist_progress = (checklist_done / checklist_total * 100) if checklist_total > 0 else None
+
+        subtask_list = list(self.subtasks.all())
+        if subtask_list:
+            subtask_progress = sum(s.progress_percent for s in subtask_list) / len(subtask_list)
+        else:
+            subtask_progress = None
+
+        if checklist_progress is not None and subtask_progress is not None:
+            return round((checklist_progress + subtask_progress) / 2, 1)
+        if checklist_progress is not None:
+            return round(checklist_progress, 1)
+        if subtask_progress is not None:
+            return round(subtask_progress, 1)
+        return 0.0
+
 
 class TaskChecklistItem(BaseModel):
     """Checklist items belonging to a task."""

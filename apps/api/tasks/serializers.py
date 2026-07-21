@@ -96,6 +96,8 @@ class TaskSerializer(serializers.ModelSerializer):
     checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
     comments = TaskCommentSerializer(many=True, read_only=True)
     subtasks_count = serializers.SerializerMethodField()
+    progress_percent = serializers.FloatField(read_only=True)
+    checklist_stats = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -119,7 +121,9 @@ class TaskSerializer(serializers.ModelSerializer):
             "spent_hours",
             "parent_task",
             "order",
+            "progress_percent",
             "subtasks_count",
+            "checklist_stats",
             "checklist_items",
             "comments",
             "created_at",
@@ -129,6 +133,11 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def get_subtasks_count(self, obj):
         return obj.subtasks.count()
+
+    def get_checklist_stats(self, obj):
+        total = obj.checklist_items.count()
+        done = obj.checklist_items.filter(is_completed=True).count()
+        return {"total": total, "done": done}
 
 
 class TaskCreateUpdateSerializer(serializers.ModelSerializer):

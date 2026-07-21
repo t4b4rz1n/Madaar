@@ -329,3 +329,82 @@ class TasksModuleTestCase(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         standup = AsyncStandup.objects.get(id=res.data["id"])
         self.assertEqual(standup.user, self.user)
+
+    # ── Progress Percent Tests ──────────────────────────────────
+    def test_progress_checklist_only(self):
+        """Task with 4 checklist items, 1 completed → 25%."""
+        task = Task.objects.create(
+            project=self.project, title="CL Progress", reporter=self.user, status=self.status_todo
+        )
+        TaskChecklistItem.objects.create(task=task, description="A", is_completed=True)
+        TaskChecklistItem.objects.create(task=task, description="B", is_completed=False)
+        TaskChecklistItem.objects.create(task=task, description="C", is_completed=False)
+        TaskChecklistItem.objects.create(task=task, description="D", is_completed=False)
+        self.assertEqual(task.progress_percent, 25.0)
+
+    def test_progress_subtask_only(self):
+        """Parent with 2 subtasks: one at 100%, one at 0% → parent 50%."""
+        parent = Task.objects.create(
+            project=self.project, title="Parent", reporter=self.user, status=self.status_todo
+        )
+        sub1 = Task.objects.create(
+            project=self.project, title="Sub1", reporter=self.user, status=self.status_todo,
+            parent_task=parent,
+        )
+        sub2 = Task.objects.create(
+            project=self.project, title="Sub2", reporter=self.user, status=self.status_todo,
+            parent_task=parent,
+        )
+        # sub1: 2/2 checklist done = 100%
+        TaskChecklistItem.objects.create(task=sub1, description="X", is_completed=True)
+        TaskChecklistItem.objects.create(task=sub1, description="Y", is_completed=True)
+        # sub2: 0 checklist = 0%
+        self.assertEqual(sub1.progress_percent, 100.0)
+        self.assertEqual(sub2.progress_percent, 0.0)
+        self.assertEqual(parent.progress_percent, 50.0)
+
+    def test_progress_mixed_checklist_and_subtasks(self):
+        """Task with own checklists (50%) + subtask (100%) → (50+100)/2 = 75%."""
+        parent = Task.objects.create(
+            project=self.project, title="Mixed", reporter=self.user, status=self.status_todo
+        )
+        TaskChecklistItem.objects.create(task=parent, description="A", is_completed=True)
+        TaskChecklistItem.objects.create(task=parent, description="B", is_completed=False)
+        sub = Task.objects.create(
+            project=self.project, title="Sub", reporter=self.user, status=self.status_todo,
+            parent_task=parent,
+        )
+        TaskChecklistItem.objects.create(task=sub, description="X", is_completed=True)
+        # parent checklist: 1/2 = 50%, subtask: 100% → (50+100)/2 = 75%
+        self.assertEqual(parent.progress_percent, 75.0)
+
+    def test_progress_in_api_response(self):
+        """API response should include progress_percent and checklist_stats."""
+        task = Task.objects.create(
+            project=self.project, title="API Progress", reporter=self.user, status=self.status_todo
+        )
+        TaskChecklistItem.objects.create(task=task, description="A", is_completed=True)
+        TaskChecklistItem.objects.create(task=task, description="B", is_completed=False)
+
+        url = reverse("task-detail", kwargs={"pk": task.id})
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["progress_percent"], 50.0)
+        self.assertEqual(res.data["checklist_stats"]["total"], 2)
+        self.assertEqual(res.data["checklist_stats"]["done"], 1)
+
+    def test_subtask_has_own_checklist(self):
+        """Subtasks should have their own checklists with independent progress."""
+        parent = Task.objects.create(
+            project=self.project, title="P", reporter=self.user, status=self.status_todo
+        )
+        sub = Task.objects.create(
+            project=self.project, title="S", reporter=self.user, status=self.status_todo,
+            parent_task=parent,
+        )
+        # Add checklist to subtask via API
+        url = reverse("task-add-checklist-item", kwargs={"pk": sub.id})
+        res = self.client.post(url, {"description": "Sub checklist item"})
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(sub.checklist_items.count(), 1)
+        self.assertEqual(sub.progress_percent, 0.0)
