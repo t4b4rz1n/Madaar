@@ -13,7 +13,7 @@ export const mockProfile: UserProfile = {
   last_name: "Doe",
   email: "admin@example.com",
   is_staff: true,
-  profile_image_url: null,
+  profile_image: null,
 };
 
 export let mockUsers: User[] = [
