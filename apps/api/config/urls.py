@@ -11,6 +11,7 @@ urlpatterns = [
     path("api/v1/panel/", include("panel.urls")),
     path("api/v1/dashboard/", include("dashboard.urls")),
     path("api/v1/support/", include("dashboard.support_urls")),
+    path("api/v1/tasks/", include("tasks.urls")),
 ]
 
 if settings.DEBUG:
