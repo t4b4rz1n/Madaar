@@ -47,18 +47,46 @@ def extract_organization_id(obj_or_request):
         project = getattr(obj_or_request.task, "project", None)
         return getattr(project, "organization_id", None) if project else None
 
-    if hasattr(obj_or_request, "query_params"):
-        org_id = obj_or_request.query_params.get("organization") or obj_or_request.query_params.get("organization_id")
-        if org_id:
-            return org_id
-
-    if hasattr(obj_or_request, "method") and obj_or_request.method in ["POST", "PUT", "PATCH"]:
+    if hasattr(obj_or_request, "method") and obj_or_request.method in [
+        "POST",
+        "PUT",
+        "PATCH",
+    ]:
         try:
             data = getattr(obj_or_request, "data", {})
             if isinstance(data, dict):
-                return data.get("organization") or data.get("organization_id")
+                org_id = data.get("organization") or data.get("organization_id")
+                if org_id:
+                    return org_id
+                proj_id = data.get("project") or data.get("project_id")
+                if proj_id:
+                    from projects.models import Project
+
+                    return (
+                        Project.objects.filter(id=proj_id)
+                        .values_list("organization_id", flat=True)
+                        .first()
+                    )
         except Exception:
             pass
+
+    if hasattr(obj_or_request, "query_params"):
+        org_id = obj_or_request.query_params.get(
+            "organization"
+        ) or obj_or_request.query_params.get("organization_id")
+        if org_id:
+            return org_id
+        proj_id = obj_or_request.query_params.get(
+            "project"
+        ) or obj_or_request.query_params.get("project_id")
+        if proj_id:
+            from projects.models import Project
+
+            return (
+                Project.objects.filter(id=proj_id)
+                .values_list("organization_id", flat=True)
+                .first()
+            )
 
     return None
 
@@ -75,11 +103,17 @@ def extract_project_id(obj_or_request):
         return getattr(obj_or_request.task, "project_id", None)
 
     if hasattr(obj_or_request, "query_params"):
-        p_id = obj_or_request.query_params.get("project") or obj_or_request.query_params.get("project_id")
+        p_id = obj_or_request.query_params.get(
+            "project"
+        ) or obj_or_request.query_params.get("project_id")
         if p_id:
             return p_id
 
-    if hasattr(obj_or_request, "method") and obj_or_request.method in ["POST", "PUT", "PATCH"]:
+    if hasattr(obj_or_request, "method") and obj_or_request.method in [
+        "POST",
+        "PUT",
+        "PATCH",
+    ]:
         try:
             data = getattr(obj_or_request, "data", {})
             if isinstance(data, dict):
@@ -104,19 +138,13 @@ def is_user_project_member(request, project_id):
         from projects.models import ProjectMember
 
         p_ids = set(
-            ProjectMember.objects.filter(user=user, is_active=True).values_list("project_id", flat=True)
+            ProjectMember.objects.filter(user=user, is_active=True).values_list(
+                "project_id", flat=True
+            )
         )
         request._user_project_memberships_cache = {str(pid) for pid in p_ids}
 
-    if request._user_project_memberships_cache:
-        return str(project_id) in request._user_project_memberships_cache
-
-    from projects.models import ProjectMember
-
-    if ProjectMember.objects.filter(project_id=project_id, is_active=True).exists():
-        return False
-
-    return True
+    return str(project_id) in request._user_project_memberships_cache
 
 
 class BaseMadaarPermission(permissions.BasePermission):
