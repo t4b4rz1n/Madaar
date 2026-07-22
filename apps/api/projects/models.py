@@ -223,7 +223,7 @@ class ProjectActivity(BaseModel):
         db_index=True,
     )
     event_type = models.CharField(_("Event type"), max_length=30, choices=EventType.choices)
-    entity_type = models.CharField(_("Entity type"), max_length=20, choices=EventType.choices)
+    entity_type = models.CharField(_("Entity type"), max_length=20, choices=EntityType.choices)
     entity_id = models.CharField(
         _("Entity ID"), max_length=255, null=True, blank=True, db_index=True
     )
