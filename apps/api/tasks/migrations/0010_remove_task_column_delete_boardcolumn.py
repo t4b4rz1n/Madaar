@@ -6,15 +6,15 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0009_alter_board_options_board_order_taskstatus_board_and_more'),
+        ("tasks", "0009_alter_board_options_board_order_taskstatus_board_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='task',
-            name='column',
+            model_name="task",
+            name="column",
         ),
         migrations.DeleteModel(
-            name='BoardColumn',
+            name="BoardColumn",
         ),
     ]

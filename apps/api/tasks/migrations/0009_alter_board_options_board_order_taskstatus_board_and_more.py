@@ -7,31 +7,49 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0008_task_add_project_milestone_fk'),
+        ("tasks", "0008_task_add_project_milestone_fk"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='board',
-            options={'ordering': ['order', '-created_at'], 'verbose_name': 'Board', 'verbose_name_plural': 'Boards'},
+            name="board",
+            options={
+                "ordering": ["order", "-created_at"],
+                "verbose_name": "Board",
+                "verbose_name_plural": "Boards",
+            },
         ),
         migrations.AddField(
-            model_name='board',
-            name='order',
-            field=models.PositiveIntegerField(db_index=True, default=0, verbose_name='Order'),
+            model_name="board",
+            name="order",
+            field=models.PositiveIntegerField(
+                db_index=True, default=0, verbose_name="Order"
+            ),
         ),
         migrations.AddField(
-            model_name='taskstatus',
-            name='board',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='statuses', to='tasks.board', verbose_name='Board'),
+            model_name="taskstatus",
+            name="board",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="statuses",
+                to="tasks.board",
+                verbose_name="Board",
+            ),
         ),
         migrations.AlterField(
-            model_name='taskstatus',
-            name='code',
-            field=models.SlugField(help_text="Identifier for the status (e.g., 'todo', 'doing', 'review')", verbose_name='Code'),
+            model_name="taskstatus",
+            name="code",
+            field=models.SlugField(
+                help_text="Identifier for the status (e.g., 'todo', 'doing', 'review')",
+                verbose_name="Code",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='taskstatus',
-            constraint=models.UniqueConstraint(fields=('board', 'code'), name='unique_status_code_per_board'),
+            model_name="taskstatus",
+            constraint=models.UniqueConstraint(
+                fields=("board", "code"), name="unique_status_code_per_board"
+            ),
         ),
     ]

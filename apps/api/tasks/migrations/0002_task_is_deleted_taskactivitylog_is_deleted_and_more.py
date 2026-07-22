@@ -6,33 +6,33 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0001_initial'),
+        ("tasks", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='is_deleted',
+            model_name="task",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='taskactivitylog',
-            name='is_deleted',
+            model_name="taskactivitylog",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='taskchecklistitem',
-            name='is_deleted',
+            model_name="taskchecklistitem",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='taskcomment',
-            name='is_deleted',
+            model_name="taskcomment",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='taskdependency',
-            name='is_deleted',
+            model_name="taskdependency",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
     ]

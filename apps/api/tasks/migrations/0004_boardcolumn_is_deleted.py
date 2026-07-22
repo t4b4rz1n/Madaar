@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0003_alter_task_status_board_boardcolumn_task_column'),
+        ("tasks", "0003_alter_task_status_board_boardcolumn_task_column"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='boardcolumn',
-            name='is_deleted',
+            model_name="boardcolumn",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
     ]
