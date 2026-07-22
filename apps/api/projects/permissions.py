@@ -22,7 +22,6 @@ from rest_framework import permissions
 
 from organizations.models import OrganizationMembership
 
-
 # ---------------------------------------------------------------------------
 # Helpers (private)
 # ---------------------------------------------------------------------------

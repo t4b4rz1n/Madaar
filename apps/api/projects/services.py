@@ -22,7 +22,6 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 
 from .models import Milestone, Project, ProjectActivity, ProjectMember
 
@@ -82,7 +81,11 @@ class ProjectService:
         method so that annotations (``member_count``, ``task_count``,
         ``milestone_count``) are always present and consistent.
         """
-        qs = Project.objects.all() if include_deleted else Project.objects.filter(is_deleted=False)
+        qs = (
+            Project.objects.all()
+            if include_deleted
+            else Project.objects.filter(is_deleted=False)
+        )
         return qs.select_related("organization", "owner", "team").annotate(
             member_count=Count("members", filter=Q(members__is_deleted=False)),
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
@@ -128,7 +131,9 @@ class ProjectService:
 
     @classmethod
     @transaction.atomic
-    def update(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> Project:
+    def update(
+        cls, *, project: Project, actor, validated_data: dict[str, Any]
+    ) -> Project:
         """Update a Project's fields and manage lifecycle timestamps.
 
         Automatically sets ``completed_at`` / ``archived_at`` when the
@@ -151,12 +156,18 @@ class ProjectService:
 
         # Lifecycle timestamps ------------------------------------------
         now = timezone.now()
-        if new_status == Project.Status.COMPLETED and old_status != Project.Status.COMPLETED:
+        if (
+            new_status == Project.Status.COMPLETED
+            and old_status != Project.Status.COMPLETED
+        ):
             project.completed_at = now
         elif new_status != Project.Status.COMPLETED:
             project.completed_at = None
 
-        if new_status == Project.Status.ARCHIVED and old_status != Project.Status.ARCHIVED:
+        if (
+            new_status == Project.Status.ARCHIVED
+            and old_status != Project.Status.ARCHIVED
+        ):
             project.archived_at = now
         elif new_status != Project.Status.ARCHIVED:
             project.archived_at = None
@@ -204,7 +215,9 @@ class ProjectMemberService:
 
     @classmethod
     @transaction.atomic
-    def add(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> ProjectMember:
+    def add(
+        cls, *, project: Project, actor, validated_data: dict[str, Any]
+    ) -> ProjectMember:
         """Add a member (user or team) to a project.
 
         Args:
@@ -230,12 +243,16 @@ class ProjectMemberService:
                 "allocation_percentage": member.allocation_percentage,
             },
         )
-        logger.info("Member %s added to project %s (by %s)", member.pk, project.pk, actor)
+        logger.info(
+            "Member %s added to project %s (by %s)", member.pk, project.pk, actor
+        )
         return member
 
     @classmethod
     @transaction.atomic
-    def update(cls, *, member: ProjectMember, actor, validated_data: dict[str, Any]) -> ProjectMember:
+    def update(
+        cls, *, member: ProjectMember, actor, validated_data: dict[str, Any]
+    ) -> ProjectMember:
         """Update a project member's allocation or specialty.
 
         Args:
@@ -259,7 +276,10 @@ class ProjectMemberService:
             metadata={"updated_fields": list(validated_data.keys())},
         )
         logger.info(
-            "Member %s updated in project %s (by %s)", member.pk, member.project_id, actor
+            "Member %s updated in project %s (by %s)",
+            member.pk,
+            member.project_id,
+            actor,
         )
         return member
 
@@ -285,7 +305,9 @@ class ProjectMemberService:
             entity_id=member.pk,
             metadata={"user_id": user_id},
         )
-        logger.info("Member %s removed from project %s (by %s)", member.pk, project.pk, actor)
+        logger.info(
+            "Member %s removed from project %s (by %s)", member.pk, project.pk, actor
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -298,7 +320,9 @@ class MilestoneService:
 
     @classmethod
     @transaction.atomic
-    def create(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> Milestone:
+    def create(
+        cls, *, project: Project, actor, validated_data: dict[str, Any]
+    ) -> Milestone:
         """Create a new Milestone under a project.
 
         Args:
@@ -317,14 +341,24 @@ class MilestoneService:
             event_type=ProjectActivity.EventType.MILESTONE_CREATED,
             entity_type=ProjectActivity.EntityType.MILESTONE,
             entity_id=milestone.pk,
-            metadata={"title": milestone.title, "target_date": str(milestone.target_date)},
+            metadata={
+                "title": milestone.title,
+                "target_date": str(milestone.target_date),
+            },
         )
-        logger.info("Milestone %s created in project %s (by %s)", milestone.pk, project.pk, actor)
+        logger.info(
+            "Milestone %s created in project %s (by %s)",
+            milestone.pk,
+            project.pk,
+            actor,
+        )
         return milestone
 
     @classmethod
     @transaction.atomic
-    def update(cls, *, milestone: Milestone, actor, validated_data: dict[str, Any]) -> Milestone:
+    def update(
+        cls, *, milestone: Milestone, actor, validated_data: dict[str, Any]
+    ) -> Milestone:
         """Update a Milestone and manage completion timestamp.
 
         If the status transitions to ``COMPLETED``, ``completed_at`` is
@@ -345,7 +379,10 @@ class MilestoneService:
         for attr, value in validated_data.items():
             setattr(milestone, attr, value)
 
-        if new_status == Milestone.Status.COMPLETED and old_status != Milestone.Status.COMPLETED:
+        if (
+            new_status == Milestone.Status.COMPLETED
+            and old_status != Milestone.Status.COMPLETED
+        ):
             milestone.completed_at = timezone.now()
         elif new_status != Milestone.Status.COMPLETED:
             milestone.completed_at = None

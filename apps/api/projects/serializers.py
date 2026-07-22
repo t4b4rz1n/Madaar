@@ -21,7 +21,6 @@ from organizations.models import Organization, Team
 
 from .models import Milestone, Project, ProjectActivity, ProjectMember
 
-
 # ---------------------------------------------------------------------------
 # Nested / lightweight read serializers
 # ---------------------------------------------------------------------------
@@ -168,7 +167,11 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         org = attrs.get("organization", getattr(self.instance, "organization", None))
         if team and org and team.organization_id != org.pk:
             raise serializers.ValidationError(
-                {"team_id": _("The selected team does not belong to this organisation.")}
+                {
+                    "team_id": _(
+                        "The selected team does not belong to this organisation."
+                    )
+                }
             )
 
         return attrs
@@ -243,9 +246,12 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
         # Duplicate membership check (only on create)
         if user and not self.instance:
             project_pk = self.context.get("project_pk")
-            if project_pk and ProjectMember.objects.filter(
-                project_id=project_pk, user=user, is_deleted=False
-            ).exists():
+            if (
+                project_pk
+                and ProjectMember.objects.filter(
+                    project_id=project_pk, user=user, is_deleted=False
+                ).exists()
+            ):
                 raise serializers.ValidationError(
                     {"user_id": _("This user is already a member of this project.")}
                 )
