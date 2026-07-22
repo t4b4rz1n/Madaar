@@ -54,9 +54,15 @@ class Project(BaseModel):
         blank=True,
         validators=[MinValueValidator(0)],
     )
-    budget_currency = models.CharField(_("Budget currency"), max_length=10, default="IRR")
+    budget_currency = models.CharField(
+        _("Budget currency"), max_length=10, default="IRR"
+    )
     status = models.CharField(
-        _("Status"), max_length=20, choices=Status.choices, default=Status.DRAFT, db_index=True
+        _("Status"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        db_index=True,
     )
     start_date = models.DateField(_("Start date"), null=True, blank=True)
     deadline = models.DateField(_("Deadline"), null=True, blank=True)
@@ -68,9 +74,13 @@ class Project(BaseModel):
         verbose_name_plural = _("Projects")
         ordering = ["-updated_at"]
         indexes = [
-            models.Index(fields=["organization", "status"], name="project_org_status_idx"),
+            models.Index(
+                fields=["organization", "status"], name="project_org_status_idx"
+            ),
             models.Index(fields=["owner", "status"], name="project_owner_status_idx"),
-            models.Index(fields=["status", "deadline"], name="project_status_deadline_idx"),
+            models.Index(
+                fields=["status", "deadline"], name="project_status_deadline_idx"
+            ),
         ]
         constraints = [
             models.CheckConstraint(
@@ -89,7 +99,10 @@ class ProjectMember(BaseModel):
     """Resource Allocation: Assigning users/resources to a project based on specialty and capacity allocation."""
 
     project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name="members", verbose_name=_("Project")
+        Project,
+        on_delete=models.CASCADE,
+        related_name="members",
+        verbose_name=_("Project"),
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -119,19 +132,29 @@ class ProjectMember(BaseModel):
         _("Allocation percentage"),
         default=100,
         validators=[MinValueValidator(1), MaxValueValidator(100)],
-        help_text=_("Percentage of user's work capacity dedicated to this project (1-100%)"),
+        help_text=_(
+            "Percentage of user's work capacity dedicated to this project (1-100%)"
+        ),
     )
-    allocation_start_date = models.DateField(_("Allocation start date"), null=True, blank=True)
-    allocation_end_date = models.DateField(_("Allocation end date"), null=True, blank=True)
+    allocation_start_date = models.DateField(
+        _("Allocation start date"), null=True, blank=True
+    )
+    allocation_end_date = models.DateField(
+        _("Allocation end date"), null=True, blank=True
+    )
     is_active = models.BooleanField(_("Is active"), default=True, db_index=True)
 
     class Meta:
         verbose_name = _("Project Member")
         verbose_name_plural = _("Project Members")
         ordering = ["project", "user"]
-        indexes = [models.Index(fields=["user", "is_active"], name="member_user_active_idx")]
+        indexes = [
+            models.Index(fields=["user", "is_active"], name="member_user_active_idx")
+        ]
         constraints = [
-            models.UniqueConstraint(fields=["project", "user"], name="unique_project_member"),
+            models.UniqueConstraint(
+                fields=["project", "user"], name="unique_project_member"
+            ),
             models.CheckConstraint(
                 condition=Q(allocation_end_date__isnull=True)
                 | Q(allocation_start_date__isnull=True)
@@ -154,12 +177,19 @@ class Milestone(BaseModel):
         CANCELLED = "cancelled", _("Cancelled")
 
     project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name="milestones", verbose_name=_("Project")
+        Project,
+        on_delete=models.CASCADE,
+        related_name="milestones",
+        verbose_name=_("Project"),
     )
     title = models.CharField(_("Title"), max_length=255)
     description = models.TextField(_("Description"), blank=True)
     status = models.CharField(
-        _("Status"), max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
+        _("Status"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
     )
     start_date = models.DateField(_("Start date"), null=True, blank=True)
     target_date = models.DateField(_("Target date"))
@@ -174,12 +204,14 @@ class Milestone(BaseModel):
         ordering = ["target_date", "sequence"]
         indexes = [
             models.Index(
-                fields=["project", "status", "target_date"], name="milestone_proj_status_date_idx"
+                fields=["project", "status", "target_date"],
+                name="milestone_proj_status_date_idx",
             )
         ]
         constraints = [
             models.CheckConstraint(
-                condition=Q(start_date__isnull=True) | Q(target_date__gte=models.F("start_date")),
+                condition=Q(start_date__isnull=True)
+                | Q(target_date__gte=models.F("start_date")),
                 name="milestone_target_after_start",
             )
         ]
@@ -211,7 +243,10 @@ class ProjectActivity(BaseModel):
         TASK = "task", _("Task")
 
     project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name="activities", verbose_name=_("Project")
+        Project,
+        on_delete=models.CASCADE,
+        related_name="activities",
+        verbose_name=_("Project"),
     )
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -222,8 +257,12 @@ class ProjectActivity(BaseModel):
         blank=True,
         db_index=True,
     )
-    event_type = models.CharField(_("Event type"), max_length=30, choices=EventType.choices)
-    entity_type = models.CharField(_("Entity type"), max_length=20, choices=EntityType.choices)
+    event_type = models.CharField(
+        _("Event type"), max_length=30, choices=EventType.choices
+    )
+    entity_type = models.CharField(
+        _("Entity type"), max_length=20, choices=EntityType.choices
+    )
     entity_id = models.CharField(
         _("Entity ID"), max_length=255, null=True, blank=True, db_index=True
     )
@@ -234,10 +273,13 @@ class ProjectActivity(BaseModel):
         verbose_name_plural = _("Project Activities")
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["project", "created_at"], name="activity_project_created_idx"),
-            models.Index(fields=["project", "event_type"], name="activity_project_event_idx"),
+            models.Index(
+                fields=["project", "created_at"], name="activity_project_created_idx"
+            ),
+            models.Index(
+                fields=["project", "event_type"], name="activity_project_event_idx"
+            ),
         ]
 
     def __str__(self):
         return f"{self.project.name} — {self.get_event_type_display()}"
-

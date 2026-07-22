@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('projects', '0001_initial'),
+        ("projects", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='milestone',
-            name='is_deleted',
+            model_name="milestone",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='project',
-            name='is_deleted',
+            model_name="project",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='projectactivity',
-            name='is_deleted',
+            model_name="projectactivity",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='projectmember',
-            name='is_deleted',
+            model_name="projectmember",
+            name="is_deleted",
             field=models.BooleanField(db_index=True, default=False),
         ),
     ]

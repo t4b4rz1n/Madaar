@@ -34,16 +34,12 @@ router = DefaultRouter()
 router.register(r"", ProjectViewSet, basename="project")
 
 # Nested routes manually wired (avoids drf-nested-routers dependency)
-member_list = ProjectMemberViewSet.as_view(
-    {"get": "list", "post": "create"}
-)
+member_list = ProjectMemberViewSet.as_view({"get": "list", "post": "create"})
 member_detail = ProjectMemberViewSet.as_view(
     {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
 )
 
-milestone_list = MilestoneViewSet.as_view(
-    {"get": "list", "post": "create"}
-)
+milestone_list = MilestoneViewSet.as_view({"get": "list", "post": "create"})
 milestone_detail = MilestoneViewSet.as_view(
     {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
 )

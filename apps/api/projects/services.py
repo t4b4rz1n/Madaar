@@ -1,21 +1,26 @@
 """
 projects/services.py
 --------------------
-Business logic layer for the projects app.
-Views and serializers must NOT contain business logic — this is the single
-source of truth for all project-related mutations.
+Business-logic layer for the projects application.
 
-All public functions:
-    - Accept validated Python objects (not request objects).
-    - Wrap multi-step DB work in transaction.atomic().
-    - Log a ProjectActivity record for every meaningful mutation.
-    - Return the mutated model instance (or None for deletes).
+Design principles
+~~~~~~~~~~~~~~~~~
+* Views and serializers MUST NOT contain business logic.
+* Every public method lives on a descriptive **service class**.
+* All mutating methods use ``@transaction.atomic`` so partial writes
+  never persist.
+* A ``ProjectActivity`` record is logged for every meaningful mutation.
+* Methods accept validated Python objects — never ``request`` objects —
+  so they are easy to call from management commands, Celery tasks or tests.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import Optional
+from typing import Any
 
 from django.db import transaction
+from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -25,318 +30,364 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Internal helper
+# Internal activity-logging helper
 # ---------------------------------------------------------------------------
 
 
-def _log_activity(
-    project: Project,
-    actor,
-    event_type: str,
-    entity_type: str,
-    entity_id: Optional[str] = None,
-    metadata: Optional[dict] = None,
-) -> None:
-    """Create a ProjectActivity record. Never raises — errors are logged only."""
-    try:
-        ProjectActivity.objects.create(
+class _ActivityLogger:
+    """Thin wrapper around ``ProjectActivity.objects.create``.
+
+    Swallows exceptions so that a logging failure never aborts the
+    business transaction that triggered it.
+    """
+
+    @staticmethod
+    def log(
+        *,
+        project: Project,
+        actor,
+        event_type: str,
+        entity_type: str,
+        entity_id: str | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        try:
+            ProjectActivity.objects.create(
+                project=project,
+                actor=actor,
+                event_type=event_type,
+                entity_type=entity_type,
+                entity_id=str(entity_id) if entity_id else None,
+                metadata=metadata or {},
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.warning("Failed to log project activity: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# ProjectService
+# ---------------------------------------------------------------------------
+
+
+class ProjectService:
+    """Handles all Project-level mutations and queries."""
+
+    # -- Query helpers -----------------------------------------------------
+
+    @staticmethod
+    def get_base_queryset(*, include_deleted: bool = False) -> QuerySet[Project]:
+        """Return the canonical annotated queryset used by views.
+
+        Every place that needs a ``Project`` queryset should call this
+        method so that annotations (``member_count``, ``task_count``,
+        ``milestone_count``) are always present and consistent.
+        """
+        qs = Project.objects.all() if include_deleted else Project.objects.filter(is_deleted=False)
+        return qs.select_related("organization", "owner", "team").annotate(
+            member_count=Count("members", filter=Q(members__is_deleted=False)),
+            task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
+            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False)),
+        )
+
+    @classmethod
+    def get_with_annotations(cls, pk) -> Project:
+        """Fetch a single project with all standard annotations.
+
+        Use this after create / update so the serialiser receives the
+        expected annotated fields.
+        """
+        return cls.get_base_queryset().get(pk=pk)
+
+    # -- Mutations ---------------------------------------------------------
+
+    @classmethod
+    @transaction.atomic
+    def create(cls, *, actor, validated_data: dict[str, Any]) -> Project:
+        """Create a new Project and log a ``PROJECT_CREATED`` event.
+
+        Args:
+            actor: The ``User`` performing the action.
+            validated_data: Cleaned data from ``ProjectWriteSerializer``.
+
+        Returns:
+            The newly created ``Project`` instance **with annotations**.
+        """
+        project = Project.objects.create(**validated_data)
+
+        _ActivityLogger.log(
             project=project,
             actor=actor,
-            event_type=event_type,
-            entity_type=entity_type,
-            entity_id=str(entity_id) if entity_id else None,
-            metadata=metadata or {},
+            event_type=ProjectActivity.EventType.PROJECT_CREATED,
+            entity_type=ProjectActivity.EntityType.PROJECT,
+            entity_id=project.pk,
+            metadata={"name": project.name, "status": project.status},
         )
-    except Exception as exc:  # pragma: no cover
-        logger.warning("Failed to log project activity: %s", exc)
+        logger.info("Project created: %s (by %s)", project.pk, actor)
+        # Re-fetch with annotations so the caller can serialise immediately.
+        return cls.get_with_annotations(project.pk)
+
+    @classmethod
+    @transaction.atomic
+    def update(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> Project:
+        """Update a Project's fields and manage lifecycle timestamps.
+
+        Automatically sets ``completed_at`` / ``archived_at`` when the
+        status transitions to ``COMPLETED`` / ``ARCHIVED``, and clears
+        them when moving away from those states.
+
+        Args:
+            project: The ``Project`` instance to update.
+            actor: The ``User`` performing the action.
+            validated_data: Cleaned data from ``ProjectWriteSerializer``.
+
+        Returns:
+            The updated ``Project`` instance **with annotations**.
+        """
+        old_status = project.status
+        new_status = validated_data.get("status", old_status)
+
+        for attr, value in validated_data.items():
+            setattr(project, attr, value)
+
+        # Lifecycle timestamps ------------------------------------------
+        now = timezone.now()
+        if new_status == Project.Status.COMPLETED and old_status != Project.Status.COMPLETED:
+            project.completed_at = now
+        elif new_status != Project.Status.COMPLETED:
+            project.completed_at = None
+
+        if new_status == Project.Status.ARCHIVED and old_status != Project.Status.ARCHIVED:
+            project.archived_at = now
+        elif new_status != Project.Status.ARCHIVED:
+            project.archived_at = None
+
+        project.save()
+
+        # Activity log --------------------------------------------------
+        metadata: dict[str, Any] = {"updated_fields": list(validated_data.keys())}
+        if old_status != new_status:
+            metadata["status_changed"] = {"from": old_status, "to": new_status}
+
+        _ActivityLogger.log(
+            project=project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.PROJECT_UPDATED,
+            entity_type=ProjectActivity.EntityType.PROJECT,
+            entity_id=project.pk,
+            metadata=metadata,
+        )
+        logger.info("Project updated: %s (by %s)", project.pk, actor)
+        return cls.get_with_annotations(project.pk)
+
+    @classmethod
+    @transaction.atomic
+    def delete(cls, *, project: Project, actor) -> None:
+        """Soft-delete a Project and cascade to members / milestones.
+
+        Args:
+            project: The ``Project`` instance to delete.
+            actor: The ``User`` performing the action.
+        """
+        project.members.filter(is_deleted=False).update(is_deleted=True)
+        project.milestones.filter(is_deleted=False).update(is_deleted=True)
+        project.delete()  # BaseModel.delete → sets is_deleted=True
+        logger.info("Project soft-deleted: %s (by %s)", project.pk, actor)
 
 
 # ---------------------------------------------------------------------------
-# Project services
+# ProjectMemberService
 # ---------------------------------------------------------------------------
 
 
-@transaction.atomic
-def create_project(*, actor, validated_data: dict) -> Project:
-    """
-    Create a new Project and log the creation event.
+class ProjectMemberService:
+    """Handles all ProjectMember mutations."""
 
-    Args:
-        actor: The User performing the action (used for activity log).
-        validated_data: Cleaned data from ProjectWriteSerializer.
+    @classmethod
+    @transaction.atomic
+    def add(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> ProjectMember:
+        """Add a member (user or team) to a project.
 
-    Returns:
-        The newly created Project instance.
-    """
-    project = Project.objects.create(**validated_data)
+        Args:
+            project: The ``Project`` to add the member to.
+            actor: The ``User`` performing the action.
+            validated_data: Cleaned data from ``ProjectMemberWriteSerializer``.
 
-    _log_activity(
-        project=project,
-        actor=actor,
-        event_type=ProjectActivity.EventType.PROJECT_CREATED,
-        entity_type=ProjectActivity.EntityType.PROJECT,
-        entity_id=project.pk,
-        metadata={"name": project.name, "status": project.status},
-    )
-    logger.info("Project created: %s (by %s)", project.pk, actor)
-    return project
+        Returns:
+            The newly created ``ProjectMember`` instance.
+        """
+        member = ProjectMember.objects.create(project=project, **validated_data)
 
+        _ActivityLogger.log(
+            project=project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.MEMBER_ADDED,
+            entity_type=ProjectActivity.EntityType.MEMBER,
+            entity_id=member.pk,
+            metadata={
+                "user_id": str(member.user_id) if member.user_id else None,
+                "team_id": str(member.team_id) if member.team_id else None,
+                "specialty": member.specialty,
+                "allocation_percentage": member.allocation_percentage,
+            },
+        )
+        logger.info("Member %s added to project %s (by %s)", member.pk, project.pk, actor)
+        return member
 
-@transaction.atomic
-def update_project(*, project: Project, actor, validated_data: dict) -> Project:
-    """
-    Update a Project's fields and log the update event.
-    Automatically sets completed_at / archived_at timestamps.
+    @classmethod
+    @transaction.atomic
+    def update(cls, *, member: ProjectMember, actor, validated_data: dict[str, Any]) -> ProjectMember:
+        """Update a project member's allocation or specialty.
 
-    Args:
-        project: The Project instance to update.
-        actor: The User performing the action.
-        validated_data: Cleaned data from ProjectWriteSerializer.
+        Args:
+            member: The ``ProjectMember`` instance to update.
+            actor: The ``User`` performing the action.
+            validated_data: Cleaned data from ``ProjectMemberWriteSerializer``.
 
-    Returns:
-        The updated Project instance.
-    """
-    old_status = project.status
-    new_status = validated_data.get("status", old_status)
+        Returns:
+            The updated ``ProjectMember`` instance.
+        """
+        for attr, value in validated_data.items():
+            setattr(member, attr, value)
+        member.save()
 
-    for attr, value in validated_data.items():
-        setattr(project, attr, value)
+        _ActivityLogger.log(
+            project=member.project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.MEMBER_UPDATED,
+            entity_type=ProjectActivity.EntityType.MEMBER,
+            entity_id=member.pk,
+            metadata={"updated_fields": list(validated_data.keys())},
+        )
+        logger.info(
+            "Member %s updated in project %s (by %s)", member.pk, member.project_id, actor
+        )
+        return member
 
-    # Manage lifecycle timestamps
-    now = timezone.now()
-    if new_status == Project.Status.COMPLETED and old_status != Project.Status.COMPLETED:
-        project.completed_at = now
-    elif new_status != Project.Status.COMPLETED:
-        project.completed_at = None
+    @classmethod
+    @transaction.atomic
+    def remove(cls, *, member: ProjectMember, actor) -> None:
+        """Soft-delete a project member.
 
-    if new_status == Project.Status.ARCHIVED and old_status != Project.Status.ARCHIVED:
-        project.archived_at = now
-    elif new_status != Project.Status.ARCHIVED:
-        project.archived_at = None
+        Args:
+            member: The ``ProjectMember`` instance to remove.
+            actor: The ``User`` performing the action.
+        """
+        project = member.project
+        user_id = str(member.user_id) if member.user_id else None
 
-    project.save()
+        member.delete()  # soft delete via BaseModel
 
-    metadata = {"updated_fields": list(validated_data.keys())}
-    if old_status != new_status:
-        metadata["status_changed"] = {"from": old_status, "to": new_status}
-
-    event_type = (
-        ProjectActivity.EventType.PROJECT_UPDATED
-    )
-    _log_activity(
-        project=project,
-        actor=actor,
-        event_type=event_type,
-        entity_type=ProjectActivity.EntityType.PROJECT,
-        entity_id=project.pk,
-        metadata=metadata,
-    )
-    logger.info("Project updated: %s (by %s)", project.pk, actor)
-    return project
-
-
-@transaction.atomic
-def delete_project(*, project: Project, actor) -> None:
-    """
-    Soft-delete a Project (and cascade-soft-delete its members and milestones).
-
-    Args:
-        project: The Project instance to delete.
-        actor: The User performing the action.
-    """
-    # Soft-delete dependent objects before soft-deleting the project itself
-    project.members.filter(is_deleted=False).update(is_deleted=True)
-    project.milestones.filter(is_deleted=False).update(is_deleted=True)
-    project.delete()  # calls BaseModel.delete() which sets is_deleted=True
-    logger.info("Project soft-deleted: %s (by %s)", project.pk, actor)
+        _ActivityLogger.log(
+            project=project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.MEMBER_REMOVED,
+            entity_type=ProjectActivity.EntityType.MEMBER,
+            entity_id=member.pk,
+            metadata={"user_id": user_id},
+        )
+        logger.info("Member %s removed from project %s (by %s)", member.pk, project.pk, actor)
 
 
 # ---------------------------------------------------------------------------
-# ProjectMember services
+# MilestoneService
 # ---------------------------------------------------------------------------
 
 
-@transaction.atomic
-def add_project_member(*, project: Project, actor, validated_data: dict) -> ProjectMember:
-    """
-    Add a member (user or team) to a project.
+class MilestoneService:
+    """Handles all Milestone mutations."""
 
-    Args:
-        project: The Project to add the member to.
-        actor: The User performing the action.
-        validated_data: Cleaned data from ProjectMemberWriteSerializer.
+    @classmethod
+    @transaction.atomic
+    def create(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> Milestone:
+        """Create a new Milestone under a project.
 
-    Returns:
-        The newly created ProjectMember instance.
-    """
-    member = ProjectMember.objects.create(project=project, **validated_data)
+        Args:
+            project: The parent ``Project``.
+            actor: The ``User`` performing the action.
+            validated_data: Cleaned data from ``MilestoneSerializer``.
 
-    user_id = str(member.user_id) if member.user_id else None
-    team_id = str(member.team_id) if member.team_id else None
+        Returns:
+            The newly created ``Milestone`` instance.
+        """
+        milestone = Milestone.objects.create(project=project, **validated_data)
 
-    _log_activity(
-        project=project,
-        actor=actor,
-        event_type=ProjectActivity.EventType.MEMBER_ADDED,
-        entity_type=ProjectActivity.EntityType.MEMBER,
-        entity_id=member.pk,
-        metadata={
-            "user_id": user_id,
-            "team_id": team_id,
-            "specialty": member.specialty,
-            "allocation_percentage": member.allocation_percentage,
-        },
-    )
-    logger.info("Member %s added to project %s (by %s)", member.pk, project.pk, actor)
-    return member
+        _ActivityLogger.log(
+            project=project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.MILESTONE_CREATED,
+            entity_type=ProjectActivity.EntityType.MILESTONE,
+            entity_id=milestone.pk,
+            metadata={"title": milestone.title, "target_date": str(milestone.target_date)},
+        )
+        logger.info("Milestone %s created in project %s (by %s)", milestone.pk, project.pk, actor)
+        return milestone
 
+    @classmethod
+    @transaction.atomic
+    def update(cls, *, milestone: Milestone, actor, validated_data: dict[str, Any]) -> Milestone:
+        """Update a Milestone and manage completion timestamp.
 
-@transaction.atomic
-def update_project_member(
-    *, member: ProjectMember, actor, validated_data: dict
-) -> ProjectMember:
-    """
-    Update a project member's allocation / specialty.
+        If the status transitions to ``COMPLETED``, ``completed_at`` is
+        set automatically.  Moving away from ``COMPLETED`` clears the
+        timestamp.
 
-    Args:
-        member: The ProjectMember instance to update.
-        actor: The User performing the action.
-        validated_data: Cleaned data from ProjectMemberWriteSerializer.
+        Args:
+            milestone: The ``Milestone`` instance to update.
+            actor: The ``User`` performing the action.
+            validated_data: Cleaned data from ``MilestoneSerializer``.
 
-    Returns:
-        The updated ProjectMember instance.
-    """
-    for attr, value in validated_data.items():
-        setattr(member, attr, value)
-    member.save()
+        Returns:
+            The updated ``Milestone`` instance.
+        """
+        old_status = milestone.status
+        new_status = validated_data.get("status", old_status)
 
-    _log_activity(
-        project=member.project,
-        actor=actor,
-        event_type=ProjectActivity.EventType.MEMBER_UPDATED,
-        entity_type=ProjectActivity.EntityType.MEMBER,
-        entity_id=member.pk,
-        metadata={"updated_fields": list(validated_data.keys())},
-    )
-    logger.info("Member %s updated in project %s (by %s)", member.pk, member.project_id, actor)
-    return member
+        for attr, value in validated_data.items():
+            setattr(milestone, attr, value)
 
+        if new_status == Milestone.Status.COMPLETED and old_status != Milestone.Status.COMPLETED:
+            milestone.completed_at = timezone.now()
+        elif new_status != Milestone.Status.COMPLETED:
+            milestone.completed_at = None
 
-@transaction.atomic
-def remove_project_member(*, member: ProjectMember, actor) -> None:
-    """
-    Soft-delete a project member.
+        milestone.save()
 
-    Args:
-        member: The ProjectMember instance to remove.
-        actor: The User performing the action.
-    """
-    project = member.project
-    user_id = str(member.user_id) if member.user_id else None
+        event_type = (
+            ProjectActivity.EventType.MILESTONE_COMPLETED
+            if new_status == Milestone.Status.COMPLETED
+            and old_status != Milestone.Status.COMPLETED
+            else ProjectActivity.EventType.MILESTONE_UPDATED
+        )
+        _ActivityLogger.log(
+            project=milestone.project,
+            actor=actor,
+            event_type=event_type,
+            entity_type=ProjectActivity.EntityType.MILESTONE,
+            entity_id=milestone.pk,
+            metadata={"updated_fields": list(validated_data.keys())},
+        )
+        logger.info(
+            "Milestone %s updated in project %s (by %s)",
+            milestone.pk,
+            milestone.project_id,
+            actor,
+        )
+        return milestone
 
-    member.delete()  # soft delete via BaseModel
+    @classmethod
+    @transaction.atomic
+    def delete(cls, *, milestone: Milestone, actor) -> None:
+        """Soft-delete a Milestone.
 
-    _log_activity(
-        project=project,
-        actor=actor,
-        event_type=ProjectActivity.EventType.MEMBER_REMOVED,
-        entity_type=ProjectActivity.EntityType.MEMBER,
-        entity_id=member.pk,
-        metadata={"user_id": user_id},
-    )
-    logger.info("Member %s removed from project %s (by %s)", member.pk, project.pk, actor)
-
-
-# ---------------------------------------------------------------------------
-# Milestone services
-# ---------------------------------------------------------------------------
-
-
-@transaction.atomic
-def create_milestone(*, project: Project, actor, validated_data: dict) -> Milestone:
-    """
-    Create a new Milestone under a project.
-
-    Args:
-        project: The parent Project.
-        actor: The User performing the action.
-        validated_data: Cleaned data from MilestoneSerializer.
-
-    Returns:
-        The newly created Milestone instance.
-    """
-    milestone = Milestone.objects.create(project=project, **validated_data)
-
-    _log_activity(
-        project=project,
-        actor=actor,
-        event_type=ProjectActivity.EventType.MILESTONE_CREATED,
-        entity_type=ProjectActivity.EntityType.MILESTONE,
-        entity_id=milestone.pk,
-        metadata={"title": milestone.title, "target_date": str(milestone.target_date)},
-    )
-    logger.info("Milestone %s created in project %s (by %s)", milestone.pk, project.pk, actor)
-    return milestone
-
-
-@transaction.atomic
-def update_milestone(*, milestone: Milestone, actor, validated_data: dict) -> Milestone:
-    """
-    Update a Milestone and handle completion timestamp.
-
-    Args:
-        milestone: The Milestone instance to update.
-        actor: The User performing the action.
-        validated_data: Cleaned data from MilestoneSerializer.
-
-    Returns:
-        The updated Milestone instance.
-    """
-    old_status = milestone.status
-    new_status = validated_data.get("status", old_status)
-
-    for attr, value in validated_data.items():
-        setattr(milestone, attr, value)
-
-    if new_status == Milestone.Status.COMPLETED and old_status != Milestone.Status.COMPLETED:
-        milestone.completed_at = timezone.now()
-    elif new_status != Milestone.Status.COMPLETED:
-        milestone.completed_at = None
-
-    milestone.save()
-
-    event_type = (
-        ProjectActivity.EventType.MILESTONE_COMPLETED
-        if new_status == Milestone.Status.COMPLETED
-        and old_status != Milestone.Status.COMPLETED
-        else ProjectActivity.EventType.MILESTONE_UPDATED
-    )
-
-    _log_activity(
-        project=milestone.project,
-        actor=actor,
-        event_type=event_type,
-        entity_type=ProjectActivity.EntityType.MILESTONE,
-        entity_id=milestone.pk,
-        metadata={"updated_fields": list(validated_data.keys())},
-    )
-    logger.info(
-        "Milestone %s updated in project %s (by %s)", milestone.pk, milestone.project_id, actor
-    )
-    return milestone
-
-
-@transaction.atomic
-def delete_milestone(*, milestone: Milestone, actor) -> None:
-    """
-    Soft-delete a Milestone.
-
-    Args:
-        milestone: The Milestone instance to delete.
-        actor: The User performing the action.
-    """
-    project = milestone.project
-    milestone.delete()  # soft delete
-    logger.info(
-        "Milestone %s soft-deleted from project %s (by %s)", milestone.pk, project.pk, actor
-    )
+        Args:
+            milestone: The ``Milestone`` instance to delete.
+            actor: The ``User`` performing the action.
+        """
+        project = milestone.project
+        milestone.delete()  # soft delete
+        logger.info(
+            "Milestone %s soft-deleted from project %s (by %s)",
+            milestone.pk,
+            project.pk,
+            actor,
+        )

@@ -1,25 +1,32 @@
 """
 projects/views.py
 -----------------
-DRF ViewSets for the projects app.
+DRF ViewSets for the projects application.
 
-Responsibilities:
-    - Parse requests, enforce authentication & permissions.
-    - Annotate querysets for performance (no N+1).
-    - Delegate all business logic to services.py.
-    - Return serialized responses.
+Responsibilities
+~~~~~~~~~~~~~~~~
+* Parse incoming requests.
+* Enforce authentication and permissions.
+* Build annotated, optimised querysets (no N+1).
+* Delegate **all** business logic to the service classes in
+  ``projects.services``.
+* Return serialised responses.
 
-URL structure (registered in urls.py with a nested router):
-    /api/v1/projects/                           → ProjectViewSet
-    /api/v1/projects/<pk>/members/              → ProjectMemberViewSet
-    /api/v1/projects/<pk>/milestones/           → MilestoneViewSet
-    /api/v1/projects/<pk>/activities/           → ProjectActivityViewSet
+URL structure (registered via ``projects/urls.py``)::
+
+    /api/v1/projects/                                → ProjectViewSet
+    /api/v1/projects/<pk>/archive/                   → ProjectViewSet.archive
+    /api/v1/projects/<pk>/complete/                   → ProjectViewSet.complete
+    /api/v1/projects/<project_pk>/members/            → ProjectMemberViewSet
+    /api/v1/projects/<project_pk>/milestones/         → MilestoneViewSet
+    /api/v1/projects/<project_pk>/activities/         → ProjectActivityViewSet
 """
 
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count
+from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -27,7 +34,6 @@ from rest_framework.response import Response
 
 from organizations.models import OrganizationMembership
 
-from . import services
 from .filters import MilestoneFilter, ProjectFilter, ProjectMemberFilter
 from .models import Milestone, Project, ProjectActivity, ProjectMember
 from .permissions import (
@@ -46,6 +52,7 @@ from .serializers import (
     ProjectMemberWriteSerializer,
     ProjectWriteSerializer,
 )
+from .services import MilestoneService, ProjectMemberService, ProjectService
 
 
 # ---------------------------------------------------------------------------
@@ -55,75 +62,58 @@ from .serializers import (
 
 @extend_schema_view(
     list=extend_schema(
-        summary="List projects",
-        description="Returns all non-deleted projects accessible to the authenticated user.",
+        summary=_("List projects"),
+        description=_("Returns all non-deleted projects accessible to the authenticated user."),
         tags=["projects"],
     ),
     create=extend_schema(
-        summary="Create a project",
-        description="Create a new project. Requires org-admin or staff role.",
+        summary=_("Create a project"),
+        description=_("Create a new project. Requires org-admin or staff role."),
         tags=["projects"],
     ),
     retrieve=extend_schema(
-        summary="Retrieve a project",
-        description="Full project detail including members and milestones.",
+        summary=_("Retrieve a project"),
+        description=_("Full project detail including members and milestones."),
         tags=["projects"],
     ),
-    update=extend_schema(
-        summary="Update a project (full)",
-        tags=["projects"],
-    ),
-    partial_update=extend_schema(
-        summary="Update a project (partial)",
-        tags=["projects"],
-    ),
-    destroy=extend_schema(
-        summary="Soft-delete a project",
-        tags=["projects"],
-    ),
+    update=extend_schema(summary=_("Update a project"), tags=["projects"]),
+    partial_update=extend_schema(summary=_("Partially update a project"), tags=["projects"]),
+    destroy=extend_schema(summary=_("Soft-delete a project"), tags=["projects"]),
 )
 class ProjectViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for Projects.
-    Business logic is delegated to services.py.
-    """
+    """CRUD for Projects with search, filtering and ordering."""
 
-    filter_backends = [
-        filters.SearchFilter,
-        filters.OrderingFilter,
-        DjangoFilterBackend,
-    ]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ProjectFilter
     search_fields = ["name", "description", "owner__email", "owner__username"]
     ordering_fields = ["name", "status", "deadline", "created_at", "updated_at"]
     ordering = ["-updated_at"]
-    filterset_class = ProjectFilter
+
+    # -- Permissions -------------------------------------------------------
 
     def get_permissions(self):
         if self.action == "create":
             return [IsAuthenticated(), CanCreateProject()]
-        if self.action in ("update", "partial_update", "destroy"):
+        if self.action in ("update", "partial_update", "destroy", "archive", "complete"):
             return [IsAuthenticated(), IsProjectOwnerOrOrgAdmin()]
         return [IsAuthenticated()]
+
+    # -- Queryset ----------------------------------------------------------
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Project.objects.none()
 
         user = self.request.user
-        qs = (
-            Project.objects.filter(is_deleted=False)
-            .select_related("organization", "owner", "team")
-            .annotate(
-                member_count=Count("members", filter=Q(members__is_deleted=False)),
-                task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
-                milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False)),
-            )
-        )
+        qs = ProjectService.get_base_queryset()
 
         if not user.is_staff:
+            from django.db.models import Q
+
             org_ids = OrganizationMembership.objects.filter(
-                user=user, is_deleted=False
+                user=user, is_deleted=False,
             ).values_list("organization_id", flat=True)
+
             qs = qs.filter(
                 Q(organization_id__in=org_ids)
                 | Q(members__user=user, members__is_deleted=False)
@@ -132,6 +122,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return qs
 
+    # -- Serializer --------------------------------------------------------
+
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
             return ProjectWriteSerializer
@@ -139,10 +131,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return ProjectDetailSerializer
         return ProjectListSerializer
 
+    # -- CRUD overrides ----------------------------------------------------
+
     def create(self, request, *args, **kwargs):
-        serializer = ProjectWriteSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        project = services.create_project(
+        project = ProjectService.create(
             actor=request.user,
             validated_data=serializer.validated_data,
         )
@@ -154,9 +148,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         project = self.get_object()
-        serializer = ProjectWriteSerializer(project, data=request.data, partial=partial)
+        serializer = self.get_serializer(project, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        updated = services.update_project(
+        updated = ProjectService.update(
             project=project,
             actor=request.user,
             validated_data=serializer.validated_data,
@@ -165,23 +159,21 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         project = self.get_object()
-        services.delete_project(project=project, actor=request.user)
+        ProjectService.delete(project=project, actor=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # ------------------------------------------------------------------
-    # Extra actions
-    # ------------------------------------------------------------------
+    # -- Custom actions ----------------------------------------------------
 
     @extend_schema(
-        summary="Archive a project",
-        description="Convenience endpoint to move a project to ARCHIVED status.",
+        summary=_("Archive a project"),
+        description=_("Convenience endpoint to move a project to ARCHIVED status."),
         tags=["projects"],
+        request=None,
     )
     @action(detail=True, methods=["post"], url_path="archive")
     def archive(self, request, pk=None):
         project = self.get_object()
-        self.check_object_permissions(request, project)
-        updated = services.update_project(
+        updated = ProjectService.update(
             project=project,
             actor=request.user,
             validated_data={"status": Project.Status.ARCHIVED},
@@ -189,15 +181,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(ProjectDetailSerializer(updated).data)
 
     @extend_schema(
-        summary="Complete a project",
-        description="Convenience endpoint to move a project to COMPLETED status.",
+        summary=_("Complete a project"),
+        description=_("Convenience endpoint to move a project to COMPLETED status."),
         tags=["projects"],
+        request=None,
     )
     @action(detail=True, methods=["post"], url_path="complete")
     def complete(self, request, pk=None):
         project = self.get_object()
-        self.check_object_permissions(request, project)
-        updated = services.update_project(
+        updated = ProjectService.update(
             project=project,
             actor=request.user,
             validated_data={"status": Project.Status.COMPLETED},
@@ -206,39 +198,45 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 # ---------------------------------------------------------------------------
-# ProjectMember ViewSet (nested under /projects/<project_pk>/members/)
+# ProjectMember ViewSet (nested: /projects/<project_pk>/members/)
 # ---------------------------------------------------------------------------
 
 
 @extend_schema_view(
-    list=extend_schema(summary="List project members", tags=["projects"]),
-    create=extend_schema(summary="Add a project member", tags=["projects"]),
-    retrieve=extend_schema(summary="Retrieve a project member", tags=["projects"]),
-    update=extend_schema(summary="Update a project member (full)", tags=["projects"]),
-    partial_update=extend_schema(summary="Update a project member (partial)", tags=["projects"]),
-    destroy=extend_schema(summary="Remove a project member (soft-delete)", tags=["projects"]),
+    list=extend_schema(summary=_("List project members"), tags=["projects"]),
+    create=extend_schema(summary=_("Add a project member"), tags=["projects"]),
+    retrieve=extend_schema(summary=_("Retrieve a project member"), tags=["projects"]),
+    update=extend_schema(summary=_("Update a project member"), tags=["projects"]),
+    partial_update=extend_schema(summary=_("Partially update a project member"), tags=["projects"]),
+    destroy=extend_schema(summary=_("Remove a project member"), tags=["projects"]),
 )
 class ProjectMemberViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for ProjectMembers, nested under a Project.
-    """
+    """CRUD for ProjectMembers, nested under a Project."""
 
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = ProjectMemberFilter
     ordering_fields = ["specialty", "allocation_percentage", "created_at"]
     ordering = ["created_at"]
-    filterset_class = ProjectMemberFilter
+
+    # -- Permissions -------------------------------------------------------
 
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
             return [IsAuthenticated()]
         return [IsAuthenticated(), CanManageProjectMember()]
 
-    def _get_project(self):
-        if getattr(self, "_project_cache", None) is None:
-            self._project_cache = Project.objects.get(
-                pk=self.kwargs["project_pk"], is_deleted=False
+    # -- Helpers -----------------------------------------------------------
+
+    def _get_project(self) -> Project:
+        """Return the parent project; raises 404 if it does not exist."""
+        if not hasattr(self, "_project_cache"):
+            self._project_cache = get_object_or_404(
+                Project.objects.filter(is_deleted=False),
+                pk=self.kwargs["project_pk"],
             )
         return self._project_cache
+
+    # -- Queryset & serializer ---------------------------------------------
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
@@ -255,11 +253,18 @@ class ProjectMemberViewSet(viewsets.ModelViewSet):
             return ProjectMemberWriteSerializer
         return ProjectMemberReadSerializer
 
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["project_pk"] = self.kwargs.get("project_pk")
+        return ctx
+
+    # -- CRUD overrides ----------------------------------------------------
+
     def create(self, request, *args, **kwargs):
         project = self._get_project()
-        serializer = ProjectMemberWriteSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        member = services.add_project_member(
+        member = ProjectMemberService.add(
             project=project,
             actor=request.user,
             validated_data=serializer.validated_data,
@@ -272,9 +277,9 @@ class ProjectMemberViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         member = self.get_object()
-        serializer = ProjectMemberWriteSerializer(member, data=request.data, partial=partial)
+        serializer = self.get_serializer(member, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        updated = services.update_project_member(
+        updated = ProjectMemberService.update(
             member=member,
             actor=request.user,
             validated_data=serializer.validated_data,
@@ -283,45 +288,49 @@ class ProjectMemberViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         member = self.get_object()
-        services.remove_project_member(member=member, actor=request.user)
+        ProjectMemberService.remove(member=member, actor=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ---------------------------------------------------------------------------
-# Milestone ViewSet (nested under /projects/<project_pk>/milestones/)
+# Milestone ViewSet (nested: /projects/<project_pk>/milestones/)
 # ---------------------------------------------------------------------------
 
 
 @extend_schema_view(
-    list=extend_schema(summary="List milestones", tags=["projects"]),
-    create=extend_schema(summary="Create a milestone", tags=["projects"]),
-    retrieve=extend_schema(summary="Retrieve a milestone", tags=["projects"]),
-    update=extend_schema(summary="Update a milestone (full)", tags=["projects"]),
-    partial_update=extend_schema(summary="Update a milestone (partial)", tags=["projects"]),
-    destroy=extend_schema(summary="Soft-delete a milestone", tags=["projects"]),
+    list=extend_schema(summary=_("List milestones"), tags=["projects"]),
+    create=extend_schema(summary=_("Create a milestone"), tags=["projects"]),
+    retrieve=extend_schema(summary=_("Retrieve a milestone"), tags=["projects"]),
+    update=extend_schema(summary=_("Update a milestone"), tags=["projects"]),
+    partial_update=extend_schema(summary=_("Partially update a milestone"), tags=["projects"]),
+    destroy=extend_schema(summary=_("Soft-delete a milestone"), tags=["projects"]),
 )
 class MilestoneViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for Milestones, nested under a Project.
-    """
+    """CRUD for Milestones, nested under a Project."""
 
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = MilestoneFilter
     ordering_fields = ["target_date", "sequence", "status", "created_at"]
     ordering = ["target_date", "sequence"]
-    filterset_class = MilestoneFilter
-    serializer_class = MilestoneSerializer
+
+    # -- Permissions -------------------------------------------------------
 
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
             return [IsAuthenticated()]
         return [IsAuthenticated(), CanManageMilestone()]
 
-    def _get_project(self):
-        if getattr(self, "_project_cache", None) is None:
-            self._project_cache = Project.objects.get(
-                pk=self.kwargs["project_pk"], is_deleted=False
+    # -- Helpers -----------------------------------------------------------
+
+    def _get_project(self) -> Project:
+        if not hasattr(self, "_project_cache"):
+            self._project_cache = get_object_or_404(
+                Project.objects.filter(is_deleted=False),
+                pk=self.kwargs["project_pk"],
             )
         return self._project_cache
+
+    # -- Queryset & serializer ---------------------------------------------
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
@@ -336,11 +345,13 @@ class MilestoneViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         return MilestoneSerializer
 
+    # -- CRUD overrides ----------------------------------------------------
+
     def create(self, request, *args, **kwargs):
         project = self._get_project()
-        serializer = MilestoneSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        milestone = services.create_milestone(
+        milestone = MilestoneService.create(
             project=project,
             actor=request.user,
             validated_data=serializer.validated_data,
@@ -353,9 +364,9 @@ class MilestoneViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         milestone = self.get_object()
-        serializer = MilestoneSerializer(milestone, data=request.data, partial=partial)
+        serializer = self.get_serializer(milestone, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        updated = services.update_milestone(
+        updated = MilestoneService.update(
             milestone=milestone,
             actor=request.user,
             validated_data=serializer.validated_data,
@@ -364,7 +375,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         milestone = self.get_object()
-        services.delete_milestone(milestone=milestone, actor=request.user)
+        MilestoneService.delete(milestone=milestone, actor=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -375,19 +386,17 @@ class MilestoneViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(
     list=extend_schema(
-        summary="List project activity feed",
-        description="Returns the live activity timeline for a project (read-only).",
+        summary=_("List project activities"),
+        description=_("Returns the live activity timeline for a project."),
         tags=["projects"],
     ),
     retrieve=extend_schema(
-        summary="Retrieve a project activity entry",
+        summary=_("Retrieve a project activity entry"),
         tags=["projects"],
     ),
 )
 class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Read-only activity feed for a Project.
-    """
+    """Read-only activity feed for a Project."""
 
     serializer_class = ProjectActivitySerializer
     filter_backends = [filters.OrderingFilter]

@@ -6,7 +6,6 @@ Enables powerful URL-based filtering on list endpoints.
 """
 
 import django_filters
-from django.utils.translation import gettext_lazy as _
 
 from .models import Milestone, Project, ProjectMember
 
@@ -28,9 +27,13 @@ class ProjectFilter(django_filters.FilterSet):
     organization = django_filters.UUIDFilter(field_name="organization__id")
     owner = django_filters.UUIDFilter(field_name="owner__id")
     team = django_filters.UUIDFilter(field_name="team__id")
-    deadline_before = django_filters.DateFilter(field_name="deadline", lookup_expr="lte")
+    deadline_before = django_filters.DateFilter(
+        field_name="deadline", lookup_expr="lte"
+    )
     deadline_after = django_filters.DateFilter(field_name="deadline", lookup_expr="gte")
-    start_date_after = django_filters.DateFilter(field_name="start_date", lookup_expr="gte")
+    start_date_after = django_filters.DateFilter(
+        field_name="start_date", lookup_expr="gte"
+    )
     budget_min = django_filters.NumberFilter(field_name="budget", lookup_expr="gte")
     budget_max = django_filters.NumberFilter(field_name="budget", lookup_expr="lte")
 
@@ -79,8 +82,12 @@ class MilestoneFilter(django_filters.FilterSet):
     """
 
     status = django_filters.ChoiceFilter(choices=Milestone.Status.choices)
-    target_date_before = django_filters.DateFilter(field_name="target_date", lookup_expr="lte")
-    target_date_after = django_filters.DateFilter(field_name="target_date", lookup_expr="gte")
+    target_date_before = django_filters.DateFilter(
+        field_name="target_date", lookup_expr="lte"
+    )
+    target_date_after = django_filters.DateFilter(
+        field_name="target_date", lookup_expr="gte"
+    )
 
     class Meta:
         model = Milestone

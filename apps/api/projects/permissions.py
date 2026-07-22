@@ -1,16 +1,20 @@
 """
 projects/permissions.py
 -----------------------
-Custom DRF permission classes for the projects app.
+Custom DRF permission classes for the projects application.
 
-Access matrix:
-    - Project list/detail : any authenticated user in the same org (or staff)
-    - Project create      : org admin / owner or staff
-    - Project update      : project owner, org admin/owner, or staff
-    - Project delete      : project owner, org admin/owner, or staff
-    - ProjectMember write : project owner, org admin/owner, or staff
-    - Milestone write     : project members + above
-    - Activity (read-only): project members or staff
+Access matrix
+~~~~~~~~~~~~~
++----------------------------+-------------------------------------------------+
+| Action                     | Allowed for                                     |
++============================+=================================================+
+| Project list / detail      | Any authenticated user in the same org (+ staff)|
+| Project create             | Org admin / owner (+ staff)                     |
+| Project update / delete    | Project owner, org admin/owner (+ staff)        |
+| ProjectMember write        | Project owner, org admin/owner (+ staff)        |
+| Milestone write            | Project members + project owner + org admin     |
+| Activity feed (read-only)  | Project members, org members (+ staff)          |
++----------------------------+-------------------------------------------------+
 """
 
 from django.utils.translation import gettext_lazy as _
@@ -19,8 +23,15 @@ from rest_framework import permissions
 from organizations.models import OrganizationMembership
 
 
+# ---------------------------------------------------------------------------
+# Helpers (private)
+# ---------------------------------------------------------------------------
+
+
 def _get_org_role(user, organization):
-    """Return the user's role in *organization*, or None if not a member."""
+    """Return the user's organisation role, or ``None``."""
+    if not organization:
+        return None
     try:
         return OrganizationMembership.objects.get(
             user=user, organization=organization, is_deleted=False
@@ -29,7 +40,8 @@ def _get_org_role(user, organization):
         return None
 
 
-def _is_org_admin(user, organization):
+def _is_org_admin(user, organization) -> bool:
+    """Check whether *user* is admin or owner of *organization*."""
     role = _get_org_role(user, organization)
     return role in (
         OrganizationMembership.Role.OWNER,
@@ -37,32 +49,37 @@ def _is_org_admin(user, organization):
     )
 
 
-def _is_project_member(user, project):
+def _is_project_member(user, project) -> bool:
     return project.members.filter(user=user, is_deleted=False).exists()
 
 
-def _is_project_owner(user, project):
+def _is_project_owner(user, project) -> bool:
     return project.owner_id == user.pk
 
 
 # ---------------------------------------------------------------------------
-# Base helper mixin
+# Base helper
 # ---------------------------------------------------------------------------
 
 
-class _ProjectPermBase(permissions.BasePermission):
-    """Shared helper to extract the project from view.get_object() or kwargs."""
+class _ProjectFromKwargsMixin(permissions.BasePermission):
+    """Extracts the parent ``Project`` from the view's URL kwargs.
 
-    def _project(self, view):
-        # For nested routes the project is in kwargs
-        project_pk = view.kwargs.get("project_pk") or view.kwargs.get("pk")
-        if not project_pk:
+    For nested viewsets the ``project_pk`` kwarg holds the UUID of the
+    parent project.  For the top-level ``ProjectViewSet`` the kwarg is
+    just ``pk``.  This mixin normalises access via ``_get_project(view)``.
+    """
+
+    @staticmethod
+    def _get_project(view):
+        pk = view.kwargs.get("project_pk") or view.kwargs.get("pk")
+        if not pk:
             return None
         try:
             from projects.models import Project
 
-            return Project.objects.get(pk=project_pk, is_deleted=False)
-        except (Project.DoesNotExist, Exception):
+            return Project.objects.get(pk=pk, is_deleted=False)
+        except Project.DoesNotExist:
             return None
 
 
@@ -72,7 +89,7 @@ class _ProjectPermBase(permissions.BasePermission):
 
 
 class IsProjectOwnerOrOrgAdmin(permissions.BasePermission):
-    """Allow write access only to project owner, org admin/owner, or staff."""
+    """Object-level: allow writes only for project owner, org admin, or staff."""
 
     message = _("You do not have permission to modify this project.")
 
@@ -84,13 +101,13 @@ class IsProjectOwnerOrOrgAdmin(permissions.BasePermission):
             return True
         if _is_project_owner(user, obj):
             return True
-        if obj.organization and _is_org_admin(user, obj.organization):
+        if _is_org_admin(user, obj.organization):
             return True
         return False
 
 
 class CanCreateProject(permissions.BasePermission):
-    """Allow project creation to org admin/owner or staff."""
+    """View-level: only org admins/owners (or staff) may create projects."""
 
     message = _("Only organisation admins or staff can create projects.")
 
@@ -102,7 +119,6 @@ class CanCreateProject(permissions.BasePermission):
             return False
         if user.is_staff:
             return True
-        # At least one org where user is admin/owner
         return OrganizationMembership.objects.filter(
             user=user,
             role__in=[
@@ -118,8 +134,8 @@ class CanCreateProject(permissions.BasePermission):
 # ---------------------------------------------------------------------------
 
 
-class CanManageProjectMember(_ProjectPermBase):
-    """Allow member CRUD to project owner, org admin/owner, or staff."""
+class CanManageProjectMember(_ProjectFromKwargsMixin):
+    """View-level: project owner, org admin, or staff can manage members."""
 
     message = _("You do not have permission to manage project members.")
 
@@ -131,12 +147,12 @@ class CanManageProjectMember(_ProjectPermBase):
             return False
         if user.is_staff:
             return True
-        project = self._project(view)
-        if not project:
-            return True  # let 404 handle it
+        project = self._get_project(view)
+        if project is None:
+            return True  # let the view raise 404
         if _is_project_owner(user, project):
             return True
-        if project.organization and _is_org_admin(user, project.organization):
+        if _is_org_admin(user, project.organization):
             return True
         return False
 
@@ -146,8 +162,8 @@ class CanManageProjectMember(_ProjectPermBase):
 # ---------------------------------------------------------------------------
 
 
-class CanManageMilestone(_ProjectPermBase):
-    """Allow milestone CRUD to project members, owner, org admin/owner, or staff."""
+class CanManageMilestone(_ProjectFromKwargsMixin):
+    """View-level: project members (+ owner, org admin, staff) can manage milestones."""
 
     message = _("You must be a project member to manage milestones.")
 
@@ -159,12 +175,12 @@ class CanManageMilestone(_ProjectPermBase):
             return False
         if user.is_staff:
             return True
-        project = self._project(view)
-        if not project:
+        project = self._get_project(view)
+        if project is None:
             return True
         if _is_project_owner(user, project):
             return True
-        if project.organization and _is_org_admin(user, project.organization):
+        if _is_org_admin(user, project.organization):
             return True
         if _is_project_member(user, project):
             return True
@@ -176,24 +192,26 @@ class CanManageMilestone(_ProjectPermBase):
 # ---------------------------------------------------------------------------
 
 
-class CanViewProjectActivity(_ProjectPermBase):
-    """Activity feed is visible to project members, org members, or staff."""
+class CanViewProjectActivity(_ProjectFromKwargsMixin):
+    """Activity feed is visible to org members, project members, or staff."""
 
     message = _("You do not have permission to view this project's activity.")
 
     def has_permission(self, request, view):
-        if not request.method in permissions.SAFE_METHODS:
-            return False  # activity is always read-only via API
+        if request.method not in permissions.SAFE_METHODS:
+            return False  # activity is always read-only
         user = request.user
         if not user or not user.is_authenticated:
             return False
         if user.is_staff:
             return True
-        project = self._project(view)
-        if not project:
+        project = self._get_project(view)
+        if project is None:
             return True
         if _is_project_owner(user, project):
             return True
-        if project.organization and _get_org_role(user, project.organization):
+        if _get_org_role(user, project.organization):
+            return True
+        if _is_project_member(user, project):
             return True
         return False
