@@ -123,11 +123,18 @@ class TaskSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "reporter", "created_at", "updated_at")
 
     def get_subtasks_count(self, obj):
+        if hasattr(obj, "annotated_subtasks_count"):
+            return obj.annotated_subtasks_count
         return obj.subtasks.count()
 
     def get_checklist_stats(self, obj):
-        total = obj.checklist_items.count()
-        done = obj.checklist_items.filter(is_completed=True).count()
+        if hasattr(obj, "annotated_checklist_total"):
+            total = obj.annotated_checklist_total
+            done = obj.annotated_checklist_done
+        else:
+            total = obj.checklist_items.count()
+            done = obj.checklist_items.filter(is_completed=True).count()
+
         percent = round((done / total * 100), 1) if total > 0 else 0.0
         return {"total": total, "done": done, "percent": percent}
 

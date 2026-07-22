@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +13,15 @@ from .models import (
     TaskComment,
     TaskStatus,
 )
-from .permissions import IsBoardOwnerOrReadOnly, IsTaskAssigneeOrReporterOrReadOnly
+from .permissions import (
+    IsAsyncStandupPermission,
+    IsBoardPermission,
+    IsTaskChecklistPermission,
+    IsTaskCommentPermission,
+    IsTaskPermission,
+    IsTaskStatusPermission,
+    get_user_org_role,
+)
 from .serializers import (
     AsyncStandupSerializer,
     BoardSerializer,
@@ -33,12 +42,10 @@ from .services import (
 )
 
 
-# ──────────────────────────────────────────────
 # Board ViewSet
-# ──────────────────────────────────────────────
 class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
-    permission_classes = [IsAuthenticated, IsBoardOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, IsBoardPermission]
 
     def get_queryset(self):
         qs = Board.objects.all()
@@ -73,12 +80,10 @@ class BoardViewSet(viewsets.ModelViewSet):
         return Response({"status": "boards reordered"})
 
 
-# ──────────────────────────────────────────────
 # Task Status ViewSet (Kanban Columns - CRUD + Reorder)
-# ──────────────────────────────────────────────
 class TaskStatusViewSet(viewsets.ModelViewSet):
     serializer_class = TaskStatusSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTaskStatusPermission]
 
     def get_queryset(self):
         qs = TaskStatus.objects.all()
@@ -110,16 +115,26 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
         return Response({"status": "statuses reordered"})
 
 
-# ──────────────────────────────────────────────
 # Task ViewSet
-# ──────────────────────────────────────────────
 class TaskViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsTaskAssigneeOrReporterOrReadOnly]
+    permission_classes = [IsAuthenticated, IsTaskPermission]
 
     def get_queryset(self):
-        qs = Task.objects.select_related(
-            "project", "status", "assignee", "reporter"
-        ).all()
+        from django.db.models import Count, Q
+
+        qs = (
+            Task.objects.select_related("project", "status", "assignee", "reporter")
+            .annotate(
+                annotated_subtasks_count=Count("subtasks", distinct=True),
+                annotated_checklist_total=Count("checklist_items", distinct=True),
+                annotated_checklist_done=Count(
+                    "checklist_items",
+                    filter=Q(checklist_items__is_completed=True),
+                    distinct=True,
+                ),
+            )
+            .all()
+        )
         project_id = self.request.query_params.get("project")
         if project_id:
             qs = qs.filter(project_id=project_id)
@@ -138,7 +153,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         parent_only = self.request.query_params.get("parent_only")
         if parent_only == "true":
             qs = qs.filter(parent_task__isnull=True)
-        return qs
+        return qs.order_by("order", "-created_at")
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -215,12 +230,10 @@ class TaskViewSet(viewsets.ModelViewSet):
         )
 
 
-# ──────────────────────────────────────────────
 # Checklist, Comment, Standup ViewSets
-# ──────────────────────────────────────────────
 class TaskChecklistItemViewSet(viewsets.ModelViewSet):
     serializer_class = TaskChecklistItemSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTaskChecklistPermission]
 
     def get_queryset(self):
         qs = TaskChecklistItem.objects.all()
@@ -241,7 +254,7 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
 
 class TaskCommentViewSet(viewsets.ModelViewSet):
     serializer_class = TaskCommentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTaskCommentPermission]
 
     def get_queryset(self):
         qs = TaskComment.objects.all()
@@ -253,14 +266,34 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
 
 class AsyncStandupViewSet(viewsets.ModelViewSet):
     serializer_class = AsyncStandupSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAsyncStandupPermission]
 
     def get_queryset(self):
-        qs = AsyncStandup.objects.all()
+        user = self.request.user
+        if not user or not user.is_authenticated:
+            return AsyncStandup.objects.none()
+
+        qs = AsyncStandup.objects.select_related("user").all()
+
         user_id = self.request.query_params.get("user")
         if user_id:
             qs = qs.filter(user_id=user_id)
-        return qs
+
+        if user.is_staff or user.is_superuser:
+            return qs
+
+        role = get_user_org_role(self.request)
+        if role in ["owner", "admin", "hr"]:
+            return qs
+
+        if role == "team_lead":
+            team_ids = user.team_memberships.values_list("team_id", flat=True)
+            return qs.filter(
+                Q(user=user) | Q(user__team_memberships__team_id__in=team_ids)
+            ).distinct()
+
+        # Employees only see their own standup reports
+        return qs.filter(user=user)
 
     def perform_create(self, serializer):
         standup = StandupService.create_standup(
@@ -270,3 +303,4 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             blockers=serializer.validated_data.get("blockers"),
         )
         serializer.instance = standup
+

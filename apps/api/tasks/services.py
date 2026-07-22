@@ -75,12 +75,12 @@ class TaskStatusService:
 
         if actor:
             first_task = Task.objects.filter(status__board=board).first()
-            if first_task:
-                TaskActivityLog.objects.create(
-                    task=first_task,
-                    actor=actor,
-                    action=str(_("Added status '%(name)s' to board") % {"name": name}),
-                )
+            TaskActivityLog.objects.create(
+                task=first_task,
+                board=board if not first_task else None,
+                actor=actor,
+                action=str(_("Added status '%(name)s' to board") % {"name": name}),
+            )
 
         return status_obj
 
@@ -99,12 +99,12 @@ class TaskStatusService:
 
         if actor:
             first_task = Task.objects.filter(status__board=board).first()
-            if first_task:
-                TaskActivityLog.objects.create(
-                    task=first_task,
-                    actor=actor,
-                    action=str(_("Removed status '%(name)s' from board") % {"name": name}),
-                )
+            TaskActivityLog.objects.create(
+                task=first_task,
+                board=board if not first_task else None,
+                actor=actor,
+                action=str(_("Removed status '%(name)s' from board") % {"name": name}),
+            )
 
     @staticmethod
     @transaction.atomic
@@ -117,14 +117,14 @@ class TaskStatusService:
 
         if actor:
             first_task = Task.objects.filter(status__board=board).first()
-            if first_task:
-                TaskActivityLog.objects.create(
-                    task=first_task,
-                    actor=actor,
-                    action=str(
-                        _("Reordered statuses on board '%(board)s'") % {"board": board.title}
-                    ),
-                )
+            TaskActivityLog.objects.create(
+                task=first_task,
+                board=board if not first_task else None,
+                actor=actor,
+                action=str(
+                    _("Reordered statuses on board '%(board)s'") % {"board": board.title}
+                ),
+            )
 
 
 class TaskService:
