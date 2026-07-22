@@ -68,7 +68,10 @@ class TaskStatus(BaseModel):
         help_text=_("Display name for the status (e.g., 'To Do', 'Doing', 'Review')"),
     )
     order = models.PositiveIntegerField(
-        _("Order"), default=0, db_index=True, help_text=_("Order in Kanban board columns")
+        _("Order"),
+        default=0,
+        db_index=True,
+        help_text=_("Order in Kanban board columns"),
     )
 
     class Meta:
@@ -202,11 +205,15 @@ class Task(BaseModel):
         """
         checklist_total = self.checklist_items.count()
         checklist_done = self.checklist_items.filter(is_completed=True).count()
-        checklist_progress = (checklist_done / checklist_total * 100) if checklist_total > 0 else None
+        checklist_progress = (
+            (checklist_done / checklist_total * 100) if checklist_total > 0 else None
+        )
 
         subtask_list = list(self.subtasks.all())
         if subtask_list:
-            subtask_progress = sum(s.progress_percent for s in subtask_list) / len(subtask_list)
+            subtask_progress = sum(s.progress_percent for s in subtask_list) / len(
+                subtask_list
+            )
         else:
             subtask_progress = None
 
@@ -306,7 +313,11 @@ class TaskActivityLog(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        target = self.task.title if self.task else (self.board.title if self.board else "Global")
+        target = (
+            self.task.title
+            if self.task
+            else (self.board.title if self.board else "Global")
+        )
         return f"{target} – {self.action} @ {self.created_at}"
 
 
