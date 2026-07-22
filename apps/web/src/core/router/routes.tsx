@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
-import { Navigate, type RouteObject } from "react-router-dom";
+import { type RouteObject } from "react-router-dom";
 import PageLoader from "../../components/PageLoader";
+import RoleBasedRedirect from "../../components/RoleBasedRedirect";
 import authRoutes from "../../features/auth/routes";
 import discountsRoutes from "../../features/discounts/routes";
 
@@ -25,7 +26,7 @@ export const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <Navigate to="dashboard" replace />,
+        element: <RoleBasedRedirect />,
       },
       ...dashboardRoutes,
       ...usersRoutes,

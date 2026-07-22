@@ -5,7 +5,7 @@ export interface UserProfile {
   last_name: string;
   email: string;
   is_staff: boolean;
-  profile_image_url: string | null;
+  profile_image: string | null;
 }
 
 export interface ProfileUpdateData {

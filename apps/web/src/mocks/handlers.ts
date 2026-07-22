@@ -1,10 +1,13 @@
 import { http, HttpResponse } from "msw";
-import { db, mockProfile } from "./db";
+import { db, mockProfile, mockUsers } from "./db";
 import type { UserFormData, UserUpdateData } from "../features/users/types";
 import type { DiscountFormData } from "../features/discounts/types";
 import type { NotificationFormData } from "../features/notifications/types";
 import type { ProfileUpdateData } from "../features/profile/types";
 import type { Ticket, TicketFormData } from "../features/tickets/types";
+import { getApiUrl } from "../core/api/config";
+
+const apiUrl = getApiUrl();
 
 const createPaginatedResponse = <T>(
   results: T[],
@@ -39,21 +42,32 @@ const createPaginatedResponse = <T>(
 };
 
 export const handlers = [
-  http.post("*/auth/login/", async ({ request }) => {
+  http.post(`${apiUrl}/auth/login/`, async ({ request }) => {
     interface LoginBody {
       username?: string;
       password?: string;
     }
     const credentials = (await request.json()) as LoginBody;
+    const user = mockUsers.find(
+      (mockUser) => mockUser.username === credentials.username
+    );
 
-    if (credentials.username && credentials.password) {
+    if (user && credentials.password) {
       return HttpResponse.json({
         status: true,
         message: "Login successful",
         data: {
           access: "mock-access-token-jwt-secret-string",
           refresh: "mock-refresh-token-jwt-secret-string",
-          user: mockProfile,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            is_staff: user.is_staff,
+            profile_image: user.profile_image,
+          },
         },
       });
     }
