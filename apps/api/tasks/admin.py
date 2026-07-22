@@ -69,10 +69,10 @@ class TaskCommentAdmin(admin.ModelAdmin):
 
 @admin.register(TaskActivityLog)
 class TaskActivityLogAdmin(admin.ModelAdmin):
-    list_display = ("task", "actor", "action", "created_at")
+    list_display = ("task", "board", "actor", "action", "created_at")
     list_filter = ("created_at", "is_deleted")
-    raw_id_fields = ("task", "actor")
-    search_fields = ("task__title", "actor__username", "action")
+    raw_id_fields = ("task", "board", "actor")
+    search_fields = ("task__title", "board__title", "actor__username", "action")
 
 
 @admin.register(AsyncStandup)
