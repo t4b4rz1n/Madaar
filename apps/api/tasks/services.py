@@ -18,7 +18,9 @@ class BoardService:
 
     @staticmethod
     @transaction.atomic
-    def create_board(title, project, created_by, description=None, background_color=None):
+    def create_board(
+        title, project, created_by, description=None, background_color=None
+    ):
         max_order = Board.objects.filter(project=project).count()
         board = Board.objects.create(
             title=title,
@@ -53,7 +55,9 @@ class BoardService:
         board_orders: list of dicts [{'id': uuid, 'order': int}, ...]
         """
         for item in board_orders:
-            Board.objects.filter(id=item["id"], project=project).update(order=item["order"])
+            Board.objects.filter(id=item["id"], project=project).update(
+                order=item["order"]
+            )
 
 
 class TaskStatusService:
@@ -74,10 +78,8 @@ class TaskStatusService:
         )
 
         if actor:
-            first_task = Task.objects.filter(status__board=board).first()
             TaskActivityLog.objects.create(
-                task=first_task,
-                board=board if not first_task else None,
+                board=board,
                 actor=actor,
                 action=str(_("Added status '%(name)s' to board") % {"name": name}),
             )
@@ -98,10 +100,8 @@ class TaskStatusService:
         status_obj.delete()
 
         if actor:
-            first_task = Task.objects.filter(status__board=board).first()
             TaskActivityLog.objects.create(
-                task=first_task,
-                board=board if not first_task else None,
+                board=board,
                 actor=actor,
                 action=str(_("Removed status '%(name)s' from board") % {"name": name}),
             )
@@ -113,16 +113,17 @@ class TaskStatusService:
         status_orders: list of dicts [{'id': uuid, 'order': int}, ...]
         """
         for item in status_orders:
-            TaskStatus.objects.filter(id=item["id"], board=board).update(order=item["order"])
+            TaskStatus.objects.filter(id=item["id"], board=board).update(
+                order=item["order"]
+            )
 
         if actor:
-            first_task = Task.objects.filter(status__board=board).first()
             TaskActivityLog.objects.create(
-                task=first_task,
-                board=board if not first_task else None,
+                board=board,
                 actor=actor,
                 action=str(
-                    _("Reordered statuses on board '%(board)s'") % {"board": board.title}
+                    _("Reordered statuses on board '%(board)s'")
+                    % {"board": board.title}
                 ),
             )
 
@@ -148,7 +149,12 @@ class TaskService:
         order=0,
     ):
         if not status:
-            status = TaskStatus.objects.filter(code="todo").first()
+            if project:
+                status = TaskStatus.objects.filter(
+                    board__project=project, code="todo"
+                ).first()
+            if not status:
+                status = TaskStatus.objects.filter(code="todo").first()
             if not status:
                 raise ValidationError(_("Default status 'todo' does not exist."))
 
@@ -209,6 +215,14 @@ class TaskService:
         action_parts = []
 
         if new_status and task.status != new_status:
+            if (
+                task.project
+                and new_status.board
+                and new_status.board.project_id != task.project_id
+            ):
+                raise ValidationError(
+                    _("Target status does not belong to the same project.")
+                )
             action_parts.append(
                 str(_("Status changed to %(st)s") % {"st": new_status.name})
             )
@@ -227,6 +241,19 @@ class TaskService:
             )
 
         return task
+
+    @staticmethod
+    @transaction.atomic
+    def delete_task(task, actor):
+        """Soft deletes task and logs activity."""
+        title = task.title
+        board = task.status.board if task.status else None
+        task.delete()
+        TaskActivityLog.objects.create(
+            board=board,
+            actor=actor,
+            action=str(_("Deleted task: %(title)s") % {"title": title})[:255],
+        )
 
 
 class ChecklistService:
