@@ -1,3 +1,7 @@
+import re
+
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from accounts.models import User
@@ -46,12 +50,27 @@ class BoardSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "created_by", "order", "created_at")
 
+    def validate_background_color(self, value):
+        """Validate hex color format (e.g. #6366f1 or #fff)."""
+        if value and not re.match(r"^#(?:[0-9a-fA-F]{3}){1,2}$", value):
+            raise serializers.ValidationError(
+                _("Invalid background_color format. Use hex format like #6366f1.")
+            )
+        return value
+
 
 class TaskChecklistItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskChecklistItem
         fields = ("id", "task", "description", "is_completed", "created_at")
         read_only_fields = ("id", "task", "created_at")
+
+    def validate_description(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError(
+                _("Checklist item description cannot be empty.")
+            )
+        return value.strip()
 
 
 class TaskCommentSerializer(serializers.ModelSerializer):
@@ -69,6 +88,15 @@ class TaskCommentSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = ("id", "task", "author", "created_at")
+
+    def validate(self, attrs):
+        content = attrs.get("content", "")
+        attached_file = attrs.get("attached_file")
+        if not content and not attached_file:
+            raise serializers.ValidationError(
+                _("Comment must contain either text content or an attached file.")
+            )
+        return attrs
 
 
 class TaskActivityLogSerializer(serializers.ModelSerializer):
@@ -163,6 +191,53 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id",)
 
+    def validate_estimated_hours(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError(_("Estimated hours cannot be negative."))
+        return value
+
+    def validate_spent_hours(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError(_("Spent hours cannot be negative."))
+        return value
+
+    def validate_due_date(self, value):
+        if value is not None and value < timezone.now().date():
+            raise serializers.ValidationError(_("Due date cannot be in the past."))
+        return value
+
+    def validate(self, attrs):
+        parent_task = attrs.get("parent_task")
+        project = attrs.get("project") or (
+            self.instance.project if self.instance else None
+        )
+        task_status = attrs.get("status")
+
+        # Prevent circular parent assignment
+        if self.instance and parent_task and parent_task.id == self.instance.id:
+            raise serializers.ValidationError(
+                {"parent_task": _("A task cannot be its own parent.")}
+            )
+
+        # Ensure parent task belongs to the same project
+        if parent_task and project and parent_task.project_id != project.id:
+            raise serializers.ValidationError(
+                {"parent_task": _("Parent task must belong to the same project.")}
+            )
+
+        # Ensure status belongs to a board in the same project
+        if (
+            task_status
+            and project
+            and task_status.board
+            and task_status.board.project_id != project.id
+        ):
+            raise serializers.ValidationError(
+                {"status": _("Status must belong to a board in the same project.")}
+            )
+
+        return attrs
+
 
 class AsyncStandupSerializer(serializers.ModelSerializer):
     user_detail = UserMinimalSerializer(source="user", read_only=True)
@@ -179,3 +254,31 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = ("id", "user", "created_at")
+
+    def validate(self, attrs):
+        yw = attrs.get("yesterday_work", "").strip()
+        tw = attrs.get("today_work", "").strip()
+        if not yw or not tw:
+            raise serializers.ValidationError(
+                _("Both yesterday's work and today's work fields are required.")
+            )
+        return attrs
+
+
+class OrderItemSerializer(serializers.Serializer):
+    id = serializers.UUIDField(help_text=_("UUID of the object to reorder"))
+    order = serializers.IntegerField(help_text=_("New 1-based order position"))
+
+
+class BoardReorderSerializer(serializers.Serializer):
+    project_id = serializers.UUIDField(help_text=_("UUID of the project"))
+    orders = OrderItemSerializer(
+        many=True, help_text=_("List of board ordering objects")
+    )
+
+
+class StatusReorderSerializer(serializers.Serializer):
+    board_id = serializers.UUIDField(help_text=_("UUID of the board"))
+    orders = OrderItemSerializer(
+        many=True, help_text=_("List of status ordering objects")
+    )
