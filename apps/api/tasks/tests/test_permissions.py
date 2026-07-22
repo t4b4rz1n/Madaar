@@ -14,19 +14,27 @@ class TasksRBACTestCase(APITestCase):
     def setUp(self):
         self.org = Organization.objects.create(name="Test Org", slug="test-org")
 
-        self.admin = User.objects.create_user("admin_user", "admin@test.com", "Pass123!")
+        self.admin = User.objects.create_user(
+            "admin_user", "admin@test.com", "Pass123!"
+        )
         OrganizationMembership.objects.create(
-            user=self.admin, organization=self.org, role=OrganizationMembership.Role.ADMIN
+            user=self.admin,
+            organization=self.org,
+            role=OrganizationMembership.Role.ADMIN,
         )
 
         self.lead = User.objects.create_user("lead_user", "lead@test.com", "Pass123!")
         OrganizationMembership.objects.create(
-            user=self.lead, organization=self.org, role=OrganizationMembership.Role.TEAM_LEAD
+            user=self.lead,
+            organization=self.org,
+            role=OrganizationMembership.Role.TEAM_LEAD,
         )
 
         self.employee = User.objects.create_user("emp_user", "emp@test.com", "Pass123!")
         OrganizationMembership.objects.create(
-            user=self.employee, organization=self.org, role=OrganizationMembership.Role.EMPLOYEE
+            user=self.employee,
+            organization=self.org,
+            role=OrganizationMembership.Role.EMPLOYEE,
         )
 
         self.hr = User.objects.create_user("hr_user", "hr@test.com", "Pass123!")
@@ -34,12 +42,18 @@ class TasksRBACTestCase(APITestCase):
             user=self.hr, organization=self.org, role=OrganizationMembership.Role.HR
         )
 
-        self.accountant = User.objects.create_user("acc_user", "acc@test.com", "Pass123!")
+        self.accountant = User.objects.create_user(
+            "acc_user", "acc@test.com", "Pass123!"
+        )
         OrganizationMembership.objects.create(
-            user=self.accountant, organization=self.org, role=OrganizationMembership.Role.ACCOUNTANT
+            user=self.accountant,
+            organization=self.org,
+            role=OrganizationMembership.Role.ACCOUNTANT,
         )
 
-        self.project = Project.objects.create(name="RBAC Project", organization=self.org)
+        self.project = Project.objects.create(
+            name="RBAC Project", organization=self.org
+        )
         self.board = Board.objects.create(
             title="RBAC Board", project=self.project, created_by=self.admin
         )
@@ -100,9 +114,7 @@ class TasksRBACTestCase(APITestCase):
             assignee=self.lead,
             status=self.status_todo,
         )
-        item = TaskChecklistItem.objects.create(
-            task=task, description="Secret Item"
-        )
+        item = TaskChecklistItem.objects.create(task=task, description="Secret Item")
 
         self.client.force_authenticate(user=self.employee)
         toggle_url = reverse("task-checklist-item-toggle", kwargs={"pk": item.id})
@@ -136,8 +148,12 @@ class TasksRBACTestCase(APITestCase):
 
     def test_employee_project_isolation(self):
         """Employee in Project 1 cannot create tasks in Project 2 where they are not a member."""
-        project2 = Project.objects.create(name="Project 2 Isolation", organization=self.org)
-        ProjectMember.objects.create(project=self.project, user=self.employee, is_active=True)
+        project2 = Project.objects.create(
+            name="Project 2 Isolation", organization=self.org
+        )
+        ProjectMember.objects.create(
+            project=self.project, user=self.employee, is_active=True
+        )
 
         self.client.force_authenticate(user=self.employee)
 

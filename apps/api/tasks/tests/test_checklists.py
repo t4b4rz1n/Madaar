@@ -4,7 +4,14 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from projects.models import Project
-from tasks.models import Board, Task, TaskActivityLog, TaskChecklistItem, TaskComment, TaskStatus
+from tasks.models import (
+    Board,
+    Task,
+    TaskActivityLog,
+    TaskChecklistItem,
+    TaskComment,
+    TaskStatus,
+)
 
 User = get_user_model()
 

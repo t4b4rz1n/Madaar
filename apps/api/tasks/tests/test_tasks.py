@@ -69,7 +69,11 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         )
         res = self.client.post(
             reverse("task-list"),
-            {"project": self.project.id, "title": "Subtask 1", "parent_task": parent.id},
+            {
+                "project": self.project.id,
+                "title": "Subtask 1",
+                "parent_task": parent.id,
+            },
         )
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(parent.subtasks.count(), 1)
@@ -118,10 +122,16 @@ class TaskCRUDAndProgressTestCase(APITestCase):
     def test_filter_tasks_by_project(self):
         """Tasks should be filterable by project."""
         Task.objects.create(
-            project=self.project, title="T1", reporter=self.user, status=self.status_todo
+            project=self.project,
+            title="T1",
+            reporter=self.user,
+            status=self.status_todo,
         )
         Task.objects.create(
-            project=self.project2, title="T2", reporter=self.user, status=self.status_todo
+            project=self.project2,
+            title="T2",
+            reporter=self.user,
+            status=self.status_todo,
         )
         res = self.client.get(reverse("task-list"), {"project": self.project.id})
         self.assertEqual(len(res.data["results"]), 1)
@@ -130,7 +140,10 @@ class TaskCRUDAndProgressTestCase(APITestCase):
     def test_filter_parent_only(self):
         """parent_only=true should exclude subtasks."""
         parent = Task.objects.create(
-            project=self.project, title="Parent", reporter=self.user, status=self.status_todo
+            project=self.project,
+            title="Parent",
+            reporter=self.user,
+            status=self.status_todo,
         )
         Task.objects.create(
             project=self.project,
@@ -147,7 +160,10 @@ class TaskCRUDAndProgressTestCase(APITestCase):
     def test_progress_checklist_only(self):
         """Task with 4 checklist items, 1 completed → 25%."""
         task = Task.objects.create(
-            project=self.project, title="CL Progress", reporter=self.user, status=self.status_todo
+            project=self.project,
+            title="CL Progress",
+            reporter=self.user,
+            status=self.status_todo,
         )
         TaskChecklistItem.objects.create(task=task, description="A", is_completed=True)
         TaskChecklistItem.objects.create(task=task, description="B", is_completed=False)
@@ -158,13 +174,24 @@ class TaskCRUDAndProgressTestCase(APITestCase):
     def test_progress_subtask_only(self):
         """Parent with 2 subtasks: one at 100%, one at 0% → parent 50%."""
         parent = Task.objects.create(
-            project=self.project, title="Parent", reporter=self.user, status=self.status_todo
+            project=self.project,
+            title="Parent",
+            reporter=self.user,
+            status=self.status_todo,
         )
         sub1 = Task.objects.create(
-            project=self.project, title="Sub1", reporter=self.user, status=self.status_todo, parent_task=parent
+            project=self.project,
+            title="Sub1",
+            reporter=self.user,
+            status=self.status_todo,
+            parent_task=parent,
         )
         sub2 = Task.objects.create(
-            project=self.project, title="Sub2", reporter=self.user, status=self.status_todo, parent_task=parent
+            project=self.project,
+            title="Sub2",
+            reporter=self.user,
+            status=self.status_todo,
+            parent_task=parent,
         )
         TaskChecklistItem.objects.create(task=sub1, description="X", is_completed=True)
         TaskChecklistItem.objects.create(task=sub1, description="Y", is_completed=True)
@@ -175,12 +202,23 @@ class TaskCRUDAndProgressTestCase(APITestCase):
     def test_progress_mixed_checklist_and_subtasks(self):
         """Task with own checklists (50%) + subtask (100%) → (50+100)/2 = 75%."""
         parent = Task.objects.create(
-            project=self.project, title="Mixed", reporter=self.user, status=self.status_todo
+            project=self.project,
+            title="Mixed",
+            reporter=self.user,
+            status=self.status_todo,
         )
-        TaskChecklistItem.objects.create(task=parent, description="A", is_completed=True)
-        TaskChecklistItem.objects.create(task=parent, description="B", is_completed=False)
+        TaskChecklistItem.objects.create(
+            task=parent, description="A", is_completed=True
+        )
+        TaskChecklistItem.objects.create(
+            task=parent, description="B", is_completed=False
+        )
         sub = Task.objects.create(
-            project=self.project, title="Sub", reporter=self.user, status=self.status_todo, parent_task=parent
+            project=self.project,
+            title="Sub",
+            reporter=self.user,
+            status=self.status_todo,
+            parent_task=parent,
         )
         TaskChecklistItem.objects.create(task=sub, description="X", is_completed=True)
         self.assertEqual(parent.progress_percent, 75.0)
@@ -188,7 +226,10 @@ class TaskCRUDAndProgressTestCase(APITestCase):
     def test_progress_in_api_response(self):
         """API response should include progress_percent and checklist_stats."""
         task = Task.objects.create(
-            project=self.project, title="API Progress", reporter=self.user, status=self.status_todo
+            project=self.project,
+            title="API Progress",
+            reporter=self.user,
+            status=self.status_todo,
         )
         TaskChecklistItem.objects.create(task=task, description="A", is_completed=True)
         TaskChecklistItem.objects.create(task=task, description="B", is_completed=False)

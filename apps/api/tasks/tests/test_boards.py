@@ -116,7 +116,9 @@ class BoardAndStatusTestCase(APITestCase):
     def test_reorder_statuses(self):
         """Status reorder endpoint should update order values."""
         statuses = list(self.board.statuses.values_list("id", flat=True))
-        orders = [{"id": str(s), "order": i + 1} for i, s in enumerate(reversed(statuses))]
+        orders = [
+            {"id": str(s), "order": i + 1} for i, s in enumerate(reversed(statuses))
+        ]
         res = self.client.post(
             reverse("task-status-reorder"),
             {"board_id": str(self.board.id), "orders": orders},
