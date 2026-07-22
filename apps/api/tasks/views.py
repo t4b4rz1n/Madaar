@@ -1,4 +1,5 @@
-from django.db.models import Q
+from django.db.models import Count, Q
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -24,7 +25,9 @@ from .permissions import (
 )
 from .serializers import (
     AsyncStandupSerializer,
+    BoardReorderSerializer,
     BoardSerializer,
+    StatusReorderSerializer,
     TaskActivityLogSerializer,
     TaskChecklistItemSerializer,
     TaskCommentSerializer,
@@ -68,6 +71,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         )
         serializer.instance = board
 
+    @extend_schema(request=BoardReorderSerializer)
     @action(detail=False, methods=["post"], url_path="reorder-boards")
     def reorder_boards(self, request):
         project_id = request.data.get("project_id")
@@ -105,6 +109,7 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         TaskStatusService.delete_status(instance, actor=self.request.user)
 
+    @extend_schema(request=StatusReorderSerializer)
     @action(detail=False, methods=["post"], url_path="reorder")
     def reorder(self, request):
         board_id = request.data.get("board_id")
@@ -120,16 +125,24 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTaskPermission]
 
     def get_queryset(self):
-        from django.db.models import Count, Q
-
         qs = (
             Task.objects.select_related("project", "status", "assignee", "reporter")
+            .prefetch_related("subtasks", "checklist_items")
             .annotate(
-                annotated_subtasks_count=Count("subtasks", distinct=True),
-                annotated_checklist_total=Count("checklist_items", distinct=True),
+                annotated_subtasks_count=Count(
+                    "subtasks", filter=Q(subtasks__is_deleted=False), distinct=True
+                ),
+                annotated_checklist_total=Count(
+                    "checklist_items",
+                    filter=Q(checklist_items__is_deleted=False),
+                    distinct=True,
+                ),
                 annotated_checklist_done=Count(
                     "checklist_items",
-                    filter=Q(checklist_items__is_completed=True),
+                    filter=Q(
+                        checklist_items__is_completed=True,
+                        checklist_items__is_deleted=False,
+                    ),
                     distinct=True,
                 ),
             )
@@ -177,13 +190,18 @@ class TaskViewSet(viewsets.ModelViewSet):
         )
         serializer.instance = task
 
+    def perform_destroy(self, instance):
+        TaskService.delete_task(task=instance, actor=self.request.user)
+
     @action(detail=True, methods=["post"], url_path="move")
     def move_task(self, request, pk=None):
         task = self.get_object()
         status_id = request.data.get("status_id")
         new_order = request.data.get("order")
 
-        task_status = TaskStatus.objects.filter(id=status_id).first() if status_id else None
+        task_status = (
+            TaskStatus.objects.filter(id=status_id).first() if status_id else None
+        )
 
         updated_task = TaskService.move_task(
             task=task,
@@ -209,7 +227,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def add_checklist_item(self, request, pk=None):
         task = self.get_object()
         desc = request.data.get("description")
-        item = ChecklistService.add_item(task=task, description=desc, actor=request.user)
+        item = ChecklistService.add_item(
+            task=task, description=desc, actor=request.user
+        )
         return Response(
             TaskChecklistItemSerializer(item).data, status=status.HTTP_201_CREATED
         )
@@ -303,4 +323,3 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             blockers=serializer.validated_data.get("blockers"),
         )
         serializer.instance = standup
-
