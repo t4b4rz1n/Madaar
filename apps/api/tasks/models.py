@@ -54,8 +54,6 @@ class TaskStatus(BaseModel):
         on_delete=models.CASCADE,
         related_name="statuses",
         verbose_name=_("Board"),
-        null=True,
-        blank=True,
         db_index=True,
     )
     code = models.SlugField(
@@ -85,7 +83,7 @@ class TaskStatus(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.board.title if self.board else 'Global'} – {self.name}"
+        return f"{self.board.title} – {self.name}"
 
 
 class Task(BaseModel):
@@ -274,13 +272,23 @@ class TaskComment(BaseModel):
 
 
 class TaskActivityLog(BaseModel):
-    """Audit trail for task actions."""
+    """Audit trail for task and board actions."""
 
     task = models.ForeignKey(
         Task,
         on_delete=models.CASCADE,
         related_name="activity_logs",
         verbose_name=_("Task"),
+        null=True,
+        blank=True,
+    )
+    board = models.ForeignKey(
+        Board,
+        on_delete=models.CASCADE,
+        related_name="activity_logs",
+        verbose_name=_("Board"),
+        null=True,
+        blank=True,
     )
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -298,7 +306,8 @@ class TaskActivityLog(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.task.title} – {self.action} @ {self.created_at}"
+        target = self.task.title if self.task else (self.board.title if self.board else "Global")
+        return f"{target} – {self.action} @ {self.created_at}"
 
 
 class AsyncStandup(BaseModel):
