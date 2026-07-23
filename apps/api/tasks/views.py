@@ -79,8 +79,12 @@ class BoardViewSet(viewsets.ModelViewSet):
         from projects.models import Project
 
         project = Project.objects.filter(id=project_id).first()
-        if project:
-            BoardService.reorder_boards(project, orders)
+        if not project:
+            return Response(
+                {"detail": "Project not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        BoardService.reorder_boards(project, orders)
         return Response({"status": "boards reordered"})
 
 
@@ -127,7 +131,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = (
             Task.objects.select_related("project", "status", "assignee", "reporter")
-            .prefetch_related("subtasks", "checklist_items")
+            .prefetch_related("subtasks", "checklist_items", "comments")
             .annotate(
                 annotated_subtasks_count=Count(
                     "subtasks", filter=Q(subtasks__is_deleted=False), distinct=True
@@ -220,7 +224,11 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="subtasks")
     def subtasks(self, request, pk=None):
         task = self.get_object()
-        subs = Task.objects.filter(parent_task=task)
+        subs = (
+            Task.objects.select_related("project", "status", "assignee", "reporter")
+            .prefetch_related("subtasks", "checklist_items", "comments")
+            .filter(parent_task=task)
+        )
         return Response(TaskSerializer(subs, many=True).data)
 
     @action(detail=True, methods=["post"], url_path="checklist")
