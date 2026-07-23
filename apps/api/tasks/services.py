@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
@@ -21,7 +22,11 @@ class BoardService:
     def create_board(
         title, project, created_by, description=None, background_color=None
     ):
-        max_order = Board.objects.filter(project=project).count()
+        # Lock existing boards to prevent race condition
+        existing_boards = list(
+            Board.objects.filter(project=project).select_for_update()
+        )
+        max_order = len(existing_boards)
         board = Board.objects.create(
             title=title,
             description=description,
@@ -84,7 +89,9 @@ class TaskStatusService:
             TaskActivityLog.objects.create(
                 board=board,
                 actor=actor,
-                action=str(_("Added status '%(name)s' to board") % {"name": name}),
+                action=Truncator(str(
+                    _("Added status '%(name)s' to board") % {"name": name}
+                )).chars(255),
             )
 
         return status_obj
@@ -106,7 +113,9 @@ class TaskStatusService:
             TaskActivityLog.objects.create(
                 board=board,
                 actor=actor,
-                action=str(_("Removed status '%(name)s' from board") % {"name": name}),
+                action=Truncator(str(
+                    _("Removed status '%(name)s' from board") % {"name": name}
+                )).chars(255),
             )
 
     @staticmethod
@@ -127,10 +136,10 @@ class TaskStatusService:
             TaskActivityLog.objects.create(
                 board=board,
                 actor=actor,
-                action=str(
+                action=Truncator(str(
                     _("Reordered statuses on board '%(board)s'")
                     % {"board": board.title}
-                ),
+                )).chars(255),
             )
 
 
@@ -225,7 +234,7 @@ class TaskService:
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
-                action=action_desc[:255],
+                action=Truncator(action_desc).chars(255),
             )
 
         return task
@@ -259,7 +268,7 @@ class TaskService:
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
-                action=" | ".join(action_parts)[:255],
+                action=Truncator(" | ".join(action_parts)).chars(255),
             )
 
         return task
@@ -274,7 +283,7 @@ class TaskService:
         TaskActivityLog.objects.create(
             board=board,
             actor=actor,
-            action=str(_("Deleted task: %(title)s") % {"title": title})[:255],
+            action=Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255),
         )
 
 
@@ -293,7 +302,7 @@ class ChecklistService:
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
-                action=str(_("Added checklist item: %(desc)s") % {"desc": description}),
+                action=Truncator(str(_("Added checklist item: %(desc)s") % {"desc": description})).chars(255),
             )
         return item
 
@@ -308,10 +317,10 @@ class ChecklistService:
             TaskActivityLog.objects.create(
                 task=item.task,
                 actor=actor,
-                action=str(
+                action=Truncator(str(
                     _("Marked checklist '%(desc)s' as %(status)s")
                     % {"desc": item.description, "status": status_str}
-                ),
+                )).chars(255),
             )
         return item
 
@@ -326,7 +335,7 @@ class ChecklistService:
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
-                action=str(_("Deleted checklist item: %(desc)s") % {"desc": desc}),
+                action=Truncator(str(_("Deleted checklist item: %(desc)s") % {"desc": desc})).chars(255),
             )
 
 
@@ -351,7 +360,7 @@ class CommentService:
         TaskActivityLog.objects.create(
             task=task,
             actor=author,
-            action=str(_("Added a comment.")),
+            action=Truncator(str(_("Added a comment."))).chars(255),
         )
 
         return comment
