@@ -85,7 +85,14 @@ class BoardViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         BoardService.reorder_boards(project, orders)
-        return Response({"status": "boards reordered"})
+        updated = Board.objects.filter(project=project).order_by("order").all()
+        return Response(BoardSerializer(updated, many=True, context={"request": request}).data)
+
+    @action(detail=True, methods=["get"], url_path="activities")
+    def activities(self, request, pk=None):
+        board = self.get_object()
+        logs = TaskActivityLog.objects.filter(board=board)
+        return Response(TaskActivityLogSerializer(logs, many=True, context={"request": request}).data)
 
 
 # Task Status ViewSet (Kanban Columns - CRUD + Reorder)
@@ -119,9 +126,14 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
         board_id = request.data.get("board_id")
         orders = request.data.get("orders", [])
         board = Board.objects.filter(id=board_id).first()
-        if board:
-            TaskStatusService.reorder_statuses(board, orders, actor=request.user)
-        return Response({"status": "statuses reordered"})
+        if not board:
+            return Response(
+                {"detail": "Board not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        TaskStatusService.reorder_statuses(board, orders, actor=request.user)
+        updated = TaskStatus.objects.filter(board=board).order_by("order").all()
+        return Response(TaskStatusSerializer(updated, many=True, context={"request": request}).data)
 
 
 # Task ViewSet
@@ -207,7 +219,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             reporter=request.user,
             **serializer.validated_data,
         )
-        return Response(TaskSerializer(task).data, status=status.HTTP_201_CREATED)
+        return Response(TaskSerializer(task, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     def perform_update(self, serializer):
         task = TaskService.update_task(
@@ -236,13 +248,13 @@ class TaskViewSet(viewsets.ModelViewSet):
             new_status=task_status,
             new_order=new_order,
         )
-        return Response(TaskSerializer(updated_task).data)
+        return Response(TaskSerializer(updated_task, context={"request": request}).data)
 
     @action(detail=True, methods=["get"], url_path="activities")
     def activities(self, request, pk=None):
         task = self.get_object()
         logs = TaskActivityLog.objects.filter(task=task)
-        return Response(TaskActivityLogSerializer(logs, many=True).data)
+        return Response(TaskActivityLogSerializer(logs, many=True, context={"request": request}).data)
 
     @action(detail=True, methods=["get"], url_path="subtasks")
     def subtasks(self, request, pk=None):
@@ -252,7 +264,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             .prefetch_related("subtasks", "checklist_items", "comments")
             .filter(parent_task=task)
         )
-        return Response(TaskSerializer(subs, many=True).data)
+        return Response(TaskSerializer(subs, many=True, context={"request": request}).data)
 
     @action(detail=True, methods=["post"], url_path="checklist")
     def add_checklist_item(self, request, pk=None):
@@ -262,7 +274,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             task=task, description=desc, actor=request.user
         )
         return Response(
-            TaskChecklistItemSerializer(item).data, status=status.HTTP_201_CREATED
+            TaskChecklistItemSerializer(item, context={"request": request}).data, status=status.HTTP_201_CREATED
         )
 
     @action(detail=True, methods=["post"], url_path="comments")
@@ -277,7 +289,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             attached_file=file_obj,
         )
         return Response(
-            TaskCommentSerializer(comment).data, status=status.HTTP_201_CREATED
+            TaskCommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED
         )
 
 
@@ -297,7 +309,7 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
     def toggle(self, request, pk=None):
         item = self.get_object()
         updated = ChecklistService.toggle_item(item=item, actor=request.user)
-        return Response(TaskChecklistItemSerializer(updated).data)
+        return Response(TaskChecklistItemSerializer(updated, context={"request": request}).data)
 
     def perform_destroy(self, instance):
         ChecklistService.delete_item(instance, actor=self.request.user)
