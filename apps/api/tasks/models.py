@@ -86,7 +86,7 @@ class TaskStatus(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.board.title} – {self.name}"
+        return f"{self.board.title} - {self.name}"
 
 
 class Task(BaseModel):
@@ -184,7 +184,7 @@ class Task(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.title} [{self.status.name if self.status else 'No Status'}]"
+        return f"{self.title} [{self.status.name if self.status else _('No Status')}]"
 
     @property
     def is_completed(self):
@@ -259,7 +259,7 @@ class TaskChecklistItem(BaseModel):
         ordering = ["created_at"]
 
     def __str__(self):
-        return f"{self.task.title} – {self.description}"
+        return f"{self.task.title} - {self.description}"
 
 
 class TaskComment(BaseModel):
@@ -334,7 +334,7 @@ class TaskActivityLog(BaseModel):
             if self.task
             else (self.board.title if self.board else "Global")
         )
-        return f"{target} – {self.action} @ {self.created_at}"
+        return f"{target} - {self.action} @ {self.created_at}"
 
 
 class AsyncStandup(BaseModel):
@@ -362,4 +362,5 @@ class AsyncStandup(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Standup by {self.user} on {self.created_at.date()}"
+        user_name = self.user.get_full_name() if self.user else _("Unknown")
+        return f"Standup by {user_name} on {self.created_at.date()}"
