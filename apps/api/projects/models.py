@@ -164,7 +164,9 @@ class ProjectMember(BaseModel):
         ]
 
     def __str__(self):
-        project_name = self.project.name if getattr(self, "project", None) else _("No project")
+        project_name = (
+            self.project.name if getattr(self, "project", None) else _("No project")
+        )
         identity = self.user or self.team or _("Unassigned")
         return f"{project_name} — {identity} ({self.allocation_percentage}%)"
 

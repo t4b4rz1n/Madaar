@@ -22,7 +22,6 @@ URL structure (registered via ``projects/urls.py``)::
     /api/v1/projects/<project_pk>/activities/         → ProjectActivityViewSet
 """
 
-from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
@@ -350,9 +349,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Milestone.objects.none()
-        return MilestoneService.get_base_queryset(
-            project_id=self.kwargs["project_pk"]
-        )
+        return MilestoneService.get_base_queryset(project_id=self.kwargs["project_pk"])
 
     def get_serializer_class(self):
         return MilestoneSerializer

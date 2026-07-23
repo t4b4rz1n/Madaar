@@ -196,7 +196,9 @@ class ProjectMemberService:
 
     @staticmethod
     def get_base_queryset(project_id=None) -> QuerySet[ProjectMember]:
-        qs = ProjectMember.objects.filter(is_deleted=False).select_related("user", "team")
+        qs = ProjectMember.objects.filter(is_deleted=False).select_related(
+            "user", "team"
+        )
         if project_id:
             qs = qs.filter(project_id=project_id)
         return qs
