@@ -219,6 +219,17 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
                 {"parent_task": _("A task cannot be its own parent.")}
             )
 
+        if parent_task and self.instance:
+            ancestor = parent_task
+            seen = {self.instance.id}
+            while ancestor:
+                if ancestor.id in seen:
+                    raise serializers.ValidationError(
+                        {"parent_task": _("Circular parent task detected.")}
+                    )
+                seen.add(ancestor.id)
+                ancestor = ancestor.parent_task
+
         # Ensure parent task belongs to the same project
         if parent_task and project and parent_task.project_id != project.id:
             raise serializers.ValidationError(
