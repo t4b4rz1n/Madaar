@@ -61,7 +61,11 @@ class BoardService:
         """
         board_ids = [item["id"] for item in board_orders if "id" in item]
         if board_ids:
-            list(Board.objects.filter(id__in=board_ids, project=project).select_for_update())
+            list(
+                Board.objects.filter(
+                    id__in=board_ids, project=project
+                ).select_for_update()
+            )
         for item in board_orders:
             Board.objects.filter(id=item["id"], project=project).update(
                 order=item["order"]
@@ -89,9 +93,9 @@ class TaskStatusService:
             TaskActivityLog.objects.create(
                 board=board,
                 actor=actor,
-                action=Truncator(str(
-                    _("Added status '%(name)s' to board") % {"name": name}
-                )).chars(255),
+                action=Truncator(
+                    str(_("Added status '%(name)s' to board") % {"name": name})
+                ).chars(255),
             )
 
         return status_obj
@@ -113,9 +117,9 @@ class TaskStatusService:
             TaskActivityLog.objects.create(
                 board=board,
                 actor=actor,
-                action=Truncator(str(
-                    _("Removed status '%(name)s' from board") % {"name": name}
-                )).chars(255),
+                action=Truncator(
+                    str(_("Removed status '%(name)s' from board") % {"name": name})
+                ).chars(255),
             )
 
     @staticmethod
@@ -126,7 +130,11 @@ class TaskStatusService:
         """
         status_ids = [item["id"] for item in status_orders if "id" in item]
         if status_ids:
-            list(TaskStatus.objects.filter(id__in=status_ids, board=board).select_for_update())
+            list(
+                TaskStatus.objects.filter(
+                    id__in=status_ids, board=board
+                ).select_for_update()
+            )
         for item in status_orders:
             TaskStatus.objects.filter(id=item["id"], board=board).update(
                 order=item["order"]
@@ -136,10 +144,12 @@ class TaskStatusService:
             TaskActivityLog.objects.create(
                 board=board,
                 actor=actor,
-                action=Truncator(str(
-                    _("Reordered statuses on board '%(board)s'")
-                    % {"board": board.title}
-                )).chars(255),
+                action=Truncator(
+                    str(
+                        _("Reordered statuses on board '%(board)s'")
+                        % {"board": board.title}
+                    )
+                ).chars(255),
             )
 
 
@@ -283,7 +293,9 @@ class TaskService:
         TaskActivityLog.objects.create(
             board=board,
             actor=actor,
-            action=Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255),
+            action=Truncator(
+                str(_("Deleted task: %(title)s") % {"title": title})
+            ).chars(255),
         )
 
 
@@ -302,7 +314,9 @@ class ChecklistService:
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
-                action=Truncator(str(_("Added checklist item: %(desc)s") % {"desc": description})).chars(255),
+                action=Truncator(
+                    str(_("Added checklist item: %(desc)s") % {"desc": description})
+                ).chars(255),
             )
         return item
 
@@ -317,10 +331,12 @@ class ChecklistService:
             TaskActivityLog.objects.create(
                 task=item.task,
                 actor=actor,
-                action=Truncator(str(
-                    _("Marked checklist '%(desc)s' as %(status)s")
-                    % {"desc": item.description, "status": status_str}
-                )).chars(255),
+                action=Truncator(
+                    str(
+                        _("Marked checklist '%(desc)s' as %(status)s")
+                        % {"desc": item.description, "status": status_str}
+                    )
+                ).chars(255),
             )
         return item
 
@@ -335,7 +351,9 @@ class ChecklistService:
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
-                action=Truncator(str(_("Deleted checklist item: %(desc)s") % {"desc": desc})).chars(255),
+                action=Truncator(
+                    str(_("Deleted checklist item: %(desc)s") % {"desc": desc})
+                ).chars(255),
             )
 
 

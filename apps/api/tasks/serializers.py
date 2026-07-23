@@ -22,7 +22,15 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "avatar", "avatar_url")
+        fields = (
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "avatar",
+            "avatar_url",
+        )
 
     def get_avatar_url(self, obj):
         if not obj.avatar:
@@ -143,7 +151,16 @@ class TaskActivityLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskActivityLog
-        fields = ("id", "task", "board", "board_detail", "actor", "actor_detail", "action", "created_at")
+        fields = (
+            "id",
+            "task",
+            "board",
+            "board_detail",
+            "actor",
+            "actor_detail",
+            "action",
+            "created_at",
+        )
         read_only_fields = ("id", "task", "board", "actor", "action", "created_at")
 
     def get_board_detail(self, obj):
@@ -153,7 +170,9 @@ class TaskActivityLogSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    status_detail = TaskStatusSerializer(source="status", read_only=True, allow_null=True)
+    status_detail = TaskStatusSerializer(
+        source="status", read_only=True, allow_null=True
+    )
     assignee_detail = UserMinimalSerializer(source="assignee", read_only=True)
     reporter_detail = UserMinimalSerializer(source="reporter", read_only=True)
     checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
@@ -322,7 +341,9 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.Serializer):
     id = serializers.UUIDField(help_text=_("UUID of the object to reorder"))
-    order = serializers.IntegerField(min_value=1, help_text=_("New 1-based order position"))
+    order = serializers.IntegerField(
+        min_value=1, help_text=_("New 1-based order position")
+    )
 
 
 class BoardReorderSerializer(serializers.Serializer):

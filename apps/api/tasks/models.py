@@ -199,7 +199,9 @@ class Task(BaseModel):
             return 0.0
         seen = seen | {self.id}
 
-        if hasattr(self, "annotated_checklist_total") and hasattr(self, "annotated_checklist_done"):
+        if hasattr(self, "annotated_checklist_total") and hasattr(
+            self, "annotated_checklist_done"
+        ):
             checklist_total = self.annotated_checklist_total
             checklist_done = self.annotated_checklist_done
         else:
