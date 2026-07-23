@@ -81,11 +81,7 @@ class ProjectService:
         method so that annotations (``member_count``, ``task_count``,
         ``milestone_count``) are always present and consistent.
         """
-        qs = (
-            Project.objects.all()
-            if include_deleted
-            else Project.objects.filter(is_deleted=False)
-        )
+        qs = Project.all_objects.all() if include_deleted else Project.objects.all()
         return qs.select_related("organization", "owner", "team").annotate(
             member_count=Count("members", filter=Q(members__is_deleted=False)),
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
@@ -196,9 +192,7 @@ class ProjectMemberService:
 
     @staticmethod
     def get_base_queryset(project_id=None) -> QuerySet[ProjectMember]:
-        qs = ProjectMember.objects.filter(is_deleted=False).select_related(
-            "user", "team"
-        )
+        qs = ProjectMember.objects.select_related("user", "team")
         if project_id:
             qs = qs.filter(project_id=project_id)
         return qs
@@ -291,7 +285,7 @@ class MilestoneService:
 
     @staticmethod
     def get_base_queryset(project_id=None) -> QuerySet[Milestone]:
-        qs = Milestone.objects.filter(is_deleted=False).annotate(
+        qs = Milestone.objects.annotate(
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False))
         )
         if project_id:

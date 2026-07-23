@@ -7,7 +7,7 @@ Enables powerful URL-based filtering on list endpoints.
 
 import django_filters
 
-from .models import Milestone, Project, ProjectMember
+from .models import Milestone, Project, ProjectActivity, ProjectMember
 
 
 class ProjectFilter(django_filters.FilterSet):
@@ -92,3 +92,22 @@ class MilestoneFilter(django_filters.FilterSet):
     class Meta:
         model = Milestone
         fields = ["status", "target_date_before", "target_date_after"]
+
+
+class ProjectActivityFilter(django_filters.FilterSet):
+    """
+    Filterable fields for ProjectActivity feed.
+
+    Example:
+        ?event_type=project_created
+        ?entity_type=milestone
+    """
+
+    event_type = django_filters.ChoiceFilter(choices=ProjectActivity.EventType.choices)
+    entity_type = django_filters.ChoiceFilter(
+        choices=ProjectActivity.EntityType.choices
+    )
+
+    class Meta:
+        model = ProjectActivity
+        fields = ["event_type", "entity_type"]

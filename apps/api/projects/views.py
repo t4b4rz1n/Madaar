@@ -22,6 +22,7 @@ URL structure (registered via ``projects/urls.py``)::
     /api/v1/projects/<project_pk>/activities/         → ProjectActivityViewSet
 """
 
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
@@ -31,9 +32,14 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from organizations.models import OrganizationMembership
+from organizations.models import OrganizationMembership, Team
 
-from .filters import MilestoneFilter, ProjectFilter, ProjectMemberFilter
+from .filters import (
+    MilestoneFilter,
+    ProjectActivityFilter,
+    ProjectFilter,
+    ProjectMemberFilter,
+)
 from .models import Milestone, Project, ProjectActivity, ProjectMember
 from .permissions import (
     CanCreateProject,
@@ -121,8 +127,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         qs = ProjectService.get_base_queryset()
 
         if not user.is_staff:
-            from django.db.models import Q
-
             org_ids = OrganizationMembership.objects.filter(
                 user=user,
                 is_deleted=False,
@@ -189,14 +193,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="teams")
     def teams(self, request, pk=None):
         project = self.get_object()
-        from django.db.models import Q
-        from organizations.models import Team
-
-        teams = Team.objects.filter(
-            Q(id=project.team_id) | Q(project_memberships__project=project, project_memberships__is_deleted=False)
-        ).distinct()
-
-        serializer = TeamMinimalSerializer(teams, many=True)
+        team_filter = Q(
+            project_memberships__project=project, project_memberships__is_deleted=False
+        )
+        if project.team_id:
+            team_filter |= Q(id=project.team_id)
+        teams_qs = Team.objects.filter(team_filter).distinct()
+        serializer = TeamMinimalSerializer(teams_qs, many=True)
         return Response(serializer.data)
 
     @extend_schema(
@@ -430,7 +433,8 @@ class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
     """Read-only activity feed for a Project."""
 
     serializer_class = ProjectActivitySerializer
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = ProjectActivityFilter
     ordering_fields = ["created_at", "event_type"]
     ordering = ["-created_at"]
 
@@ -441,5 +445,5 @@ class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return ProjectActivity.objects.none()
         return ProjectActivity.objects.filter(
-            project_id=self.kwargs["project_pk"], is_deleted=False
+            project_id=self.kwargs["project_pk"]
         ).select_related("actor")

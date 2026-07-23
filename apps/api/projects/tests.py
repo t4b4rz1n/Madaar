@@ -276,3 +276,36 @@ class ProjectAPITests(APITestCase):
         url = f"/api/v1/projects/{self.project.id}/activities/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_activity_feed_filter_by_event_type(self):
+        self.client.force_authenticate(user=self.admin)
+        url = (
+            f"/api/v1/projects/{self.project.id}/activities/?event_type=project_created"
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data.get("results", response.data):
+            self.assertEqual(item["event_type"], "project_created")
+
+    def test_teams_endpoint(self):
+        self.client.force_authenticate(user=self.admin)
+        team = Team.objects.create(name="Backend Team", organization=self.org)
+        # Assign team as project member
+        ProjectMemberService.add(
+            project=self.project,
+            actor=self.admin,
+            validated_data={"team": team, "allocation_percentage": 50},
+        )
+        url = f"/api/v1/projects/{self.project.id}/teams/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        team_names = [t["name"] for t in response.data]
+        self.assertIn("Backend Team", team_names)
+
+    def test_project_list_has_status_display(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get("/api/v1/projects/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get("results", response.data)
+        if results:
+            self.assertIn("status_display", results[0])

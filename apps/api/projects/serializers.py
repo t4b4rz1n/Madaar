@@ -71,6 +71,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
     member_count = serializers.IntegerField(read_only=True, default=0)
     task_count = serializers.IntegerField(read_only=True, default=0)
     milestone_count = serializers.IntegerField(read_only=True, default=0)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
         model = Project
@@ -82,6 +83,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
             "owner",
             "team",
             "status",
+            "status_display",
             "budget",
             "budget_currency",
             "start_date",
@@ -129,8 +131,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     organization_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(),
         source="organization",
-        required=False,
-        allow_null=True,
     )
     team_id = serializers.PrimaryKeyRelatedField(
         queryset=Team.objects.all(),
@@ -295,6 +295,7 @@ class MilestoneSerializer(serializers.ModelSerializer):
 
     # default=0 prevents errors when object is not annotated
     task_count = serializers.IntegerField(read_only=True, default=0)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
         model = Milestone
@@ -304,6 +305,7 @@ class MilestoneSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "status",
+            "status_display",
             "start_date",
             "target_date",
             "completed_at",
