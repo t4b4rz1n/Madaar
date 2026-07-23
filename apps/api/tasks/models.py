@@ -191,6 +191,36 @@ class Task(BaseModel):
         """Returns True if the task status code is 'done'."""
         return bool(self.status and self.status.code == "done")
 
+    def _progress_percent_internal(self, seen=None):
+        """Recursive progress calculation with cycle detection."""
+        if seen is None:
+            seen = set()
+        if self.id in seen:
+            return 0.0
+        seen = seen | {self.id}
+
+        checklist_total = self.checklist_items.count()
+        checklist_done = self.checklist_items.filter(is_completed=True).count()
+        checklist_progress = (
+            (checklist_done / checklist_total * 100) if checklist_total > 0 else None
+        )
+
+        subtask_list = list(self.subtasks.all())
+        if subtask_list:
+            subtask_progress = sum(
+                s._progress_percent_internal(seen) for s in subtask_list
+            ) / len(subtask_list)
+        else:
+            subtask_progress = None
+
+        if checklist_progress is not None and subtask_progress is not None:
+            return round((checklist_progress + subtask_progress) / 2, 1)
+        if checklist_progress is not None:
+            return round(checklist_progress, 1)
+        if subtask_progress is not None:
+            return round(subtask_progress, 1)
+        return 0.0
+
     @property
     def progress_percent(self):
         """
@@ -203,27 +233,7 @@ class Task(BaseModel):
         If only subtasks → 100% weight to subtasks.
         If neither → 0%.
         """
-        checklist_total = self.checklist_items.count()
-        checklist_done = self.checklist_items.filter(is_completed=True).count()
-        checklist_progress = (
-            (checklist_done / checklist_total * 100) if checklist_total > 0 else None
-        )
-
-        subtask_list = list(self.subtasks.all())
-        if subtask_list:
-            subtask_progress = sum(s.progress_percent for s in subtask_list) / len(
-                subtask_list
-            )
-        else:
-            subtask_progress = None
-
-        if checklist_progress is not None and subtask_progress is not None:
-            return round((checklist_progress + subtask_progress) / 2, 1)
-        if checklist_progress is not None:
-            return round(checklist_progress, 1)
-        if subtask_progress is not None:
-            return round(subtask_progress, 1)
-        return 0.0
+        return self._progress_percent_internal()
 
 
 class TaskChecklistItem(BaseModel):
@@ -275,7 +285,8 @@ class TaskComment(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Comment by {self.author} on {self.task.title}"
+        author_name = self.author.get_full_name() if self.author else _("Unknown")
+        return f"Comment by {author_name} on {self.task.title}"
 
 
 class TaskActivityLog(BaseModel):
