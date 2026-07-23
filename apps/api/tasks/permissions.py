@@ -132,7 +132,7 @@ def is_user_project_member(request, project_id):
     if user.is_staff or user.is_superuser:
         return True
     if not project_id:
-        return True
+        return False
 
     if not hasattr(request, "_user_project_memberships_cache"):
         from projects.models import ProjectMember

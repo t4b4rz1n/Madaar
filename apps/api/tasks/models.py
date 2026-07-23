@@ -163,7 +163,7 @@ class Task(BaseModel):
     )
     parent_task = models.ForeignKey(
         "self",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="subtasks",
         verbose_name=_("Parent Task"),
         null=True,
@@ -199,8 +199,13 @@ class Task(BaseModel):
             return 0.0
         seen = seen | {self.id}
 
-        checklist_total = self.checklist_items.count()
-        checklist_done = self.checklist_items.filter(is_completed=True).count()
+        if hasattr(self, "annotated_checklist_total") and hasattr(self, "annotated_checklist_done"):
+            checklist_total = self.annotated_checklist_total
+            checklist_done = self.annotated_checklist_done
+        else:
+            checklist_total = self.checklist_items.count()
+            checklist_done = self.checklist_items.filter(is_completed=True).count()
+
         checklist_progress = (
             (checklist_done / checklist_total * 100) if checklist_total > 0 else None
         )
@@ -294,7 +299,7 @@ class TaskActivityLog(BaseModel):
 
     task = models.ForeignKey(
         Task,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="activity_logs",
         verbose_name=_("Task"),
         null=True,
@@ -302,7 +307,7 @@ class TaskActivityLog(BaseModel):
     )
     board = models.ForeignKey(
         Board,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="activity_logs",
         verbose_name=_("Board"),
         null=True,
@@ -340,9 +345,11 @@ class AsyncStandup(BaseModel):
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="standups",
         verbose_name=_("User"),
+        null=True,
+        blank=True,
         db_index=True,
     )
     yesterday_work = models.TextField(_("Yesterday's Work"))

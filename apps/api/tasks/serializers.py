@@ -29,6 +29,10 @@ class TaskStatusSerializer(serializers.ModelSerializer):
         fields = ("id", "board", "code", "name", "order", "created_at")
         read_only_fields = ("id", "created_at")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["board"].allow_null = True
+
 
 class BoardSerializer(serializers.ModelSerializer):
     statuses = TaskStatusSerializer(many=True, read_only=True)
@@ -75,6 +79,7 @@ class TaskChecklistItemSerializer(serializers.ModelSerializer):
 
 class TaskCommentSerializer(serializers.ModelSerializer):
     author_detail = UserMinimalSerializer(source="author", read_only=True)
+    attached_file_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = TaskComment
@@ -85,9 +90,18 @@ class TaskCommentSerializer(serializers.ModelSerializer):
             "author_detail",
             "content",
             "attached_file",
+            "attached_file_url",
             "created_at",
         )
         read_only_fields = ("id", "task", "author", "created_at")
+
+    def get_attached_file_url(self, obj):
+        if not obj.attached_file:
+            return None
+        request = self.context.get("request")
+        if request is not None:
+            return request.build_absolute_uri(obj.attached_file.url)
+        return obj.attached_file.url
 
     def validate(self, attrs):
         content = attrs.get("content", "")
@@ -101,15 +115,16 @@ class TaskCommentSerializer(serializers.ModelSerializer):
 
 class TaskActivityLogSerializer(serializers.ModelSerializer):
     actor_detail = UserMinimalSerializer(source="actor", read_only=True)
+    board_detail = BoardSerializer(source="board", read_only=True)
 
     class Meta:
         model = TaskActivityLog
-        fields = ("id", "task", "actor", "actor_detail", "action", "created_at")
-        read_only_fields = ("id", "task", "actor", "action", "created_at")
+        fields = ("id", "task", "board", "board_detail", "actor", "actor_detail", "action", "created_at")
+        read_only_fields = ("id", "task", "board", "actor", "action", "created_at")
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    status_detail = TaskStatusSerializer(source="status", read_only=True)
+    status_detail = TaskStatusSerializer(source="status", read_only=True, allow_null=True)
     assignee_detail = UserMinimalSerializer(source="assignee", read_only=True)
     reporter_detail = UserMinimalSerializer(source="reporter", read_only=True)
     checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
@@ -202,7 +217,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_due_date(self, value):
-        if value is not None and value < timezone.now().date():
+        if value is not None and value < timezone.localdate():
             raise serializers.ValidationError(_("Due date cannot be in the past."))
         return value
 
@@ -278,7 +293,7 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.Serializer):
     id = serializers.UUIDField(help_text=_("UUID of the object to reorder"))
-    order = serializers.IntegerField(help_text=_("New 1-based order position"))
+    order = serializers.IntegerField(min_value=1, help_text=_("New 1-based order position"))
 
 
 class BoardReorderSerializer(serializers.Serializer):
