@@ -164,7 +164,9 @@ class ProjectMember(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.project.name} — {self.user} ({self.allocation_percentage}%)"
+        project_name = self.project.name if getattr(self, "project", None) else _("No project")
+        identity = self.user or self.team or _("Unassigned")
+        return f"{project_name} — {identity} ({self.allocation_percentage}%)"
 
 
 class Milestone(BaseModel):
@@ -226,12 +228,14 @@ class ProjectActivity(BaseModel):
     class EventType(models.TextChoices):
         PROJECT_CREATED = "project_created", _("Project created")
         PROJECT_UPDATED = "project_updated", _("Project updated")
+        PROJECT_DELETED = "project_deleted", _("Project deleted")
         MEMBER_ADDED = "member_added", _("Member added")
         MEMBER_UPDATED = "member_updated", _("Member updated")
         MEMBER_REMOVED = "member_removed", _("Member removed")
         MILESTONE_CREATED = "milestone_created", _("Milestone created")
         MILESTONE_UPDATED = "milestone_updated", _("Milestone updated")
         MILESTONE_COMPLETED = "milestone_completed", _("Milestone completed")
+        MILESTONE_DELETED = "milestone_deleted", _("Milestone deleted")
         TASK_CREATED = "task_created", _("Task created")
         TASK_UPDATED = "task_updated", _("Task updated")
         TASK_COMPLETED = "task_completed", _("Task completed")

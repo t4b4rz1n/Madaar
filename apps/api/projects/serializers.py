@@ -240,7 +240,7 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
         # At least one of user / team is required
         if not user and not team:
             raise serializers.ValidationError(
-                _("A project member must have either a user or a team assigned.")
+                {"user_id": _("A project member must have either a user or a team assigned.")}
             )
 
         # Duplicate membership check (only on create)

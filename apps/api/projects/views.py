@@ -257,9 +257,9 @@ class ProjectMemberViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return ProjectMember.objects.none()
-        return ProjectMember.objects.filter(
-            project_id=self.kwargs["project_pk"], is_deleted=False
-        ).select_related("user", "team")
+        return ProjectMemberService.get_base_queryset(
+            project_id=self.kwargs["project_pk"]
+        )
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -350,9 +350,9 @@ class MilestoneViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Milestone.objects.none()
-        return Milestone.objects.filter(
-            project_id=self.kwargs["project_pk"], is_deleted=False
-        ).annotate(task_count=Count("tasks"))
+        return MilestoneService.get_base_queryset(
+            project_id=self.kwargs["project_pk"]
+        )
 
     def get_serializer_class(self):
         return MilestoneSerializer
