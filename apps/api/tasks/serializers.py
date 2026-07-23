@@ -18,15 +18,32 @@ from .models import (
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "avatar")
+        fields = ("id", "username", "email", "first_name", "last_name", "avatar", "avatar_url")
+
+    def get_avatar_url(self, obj):
+        if not obj.avatar:
+            return None
+        request = self.context.get("request")
+        if request is not None:
+            return request.build_absolute_uri(obj.avatar.url)
+        return obj.avatar.url
+
+
+class BoardMinimalSerializer(serializers.Serializer):
+    id = serializers.UUIDField(read_only=True)
+    title = serializers.CharField(read_only=True)
 
 
 class TaskStatusSerializer(serializers.ModelSerializer):
+    board_detail = BoardMinimalSerializer(source="board", read_only=True)
+
     class Meta:
         model = TaskStatus
-        fields = ("id", "board", "code", "name", "order", "created_at")
+        fields = ("id", "board", "board_detail", "code", "name", "order", "created_at")
         read_only_fields = ("id", "created_at")
 
     def __init__(self, *args, **kwargs):
