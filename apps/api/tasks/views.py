@@ -84,7 +84,7 @@ class BoardViewSet(viewsets.ModelViewSet):
                 {"detail": "Project not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        BoardService.reorder_boards(project, orders)
+        BoardService.reorder_boards(project, orders, actor=request.user)
         updated = Board.objects.filter(project=project).order_by("order").all()
         return Response(
             BoardSerializer(updated, many=True, context={"request": request}).data

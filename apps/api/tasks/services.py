@@ -55,7 +55,7 @@ class BoardService:
 
     @staticmethod
     @transaction.atomic
-    def reorder_boards(project, board_orders):
+    def reorder_boards(project, board_orders, actor=None):
         """
         board_orders: list of dicts [{'id': uuid, 'order': int}, ...]
         """
@@ -69,6 +69,17 @@ class BoardService:
         for item in board_orders:
             Board.objects.filter(id=item["id"], project=project).update(
                 order=item["order"]
+            )
+
+        if actor:
+            TaskActivityLog.objects.create(
+                actor=actor,
+                action=Truncator(
+                    str(
+                        _("Reordered boards in project '%(project)s'")
+                        % {"project": project.name}
+                    )
+                ).chars(255),
             )
 
 
