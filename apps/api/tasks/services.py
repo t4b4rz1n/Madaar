@@ -131,6 +131,21 @@ class TaskStatusService:
 class TaskService:
     """Service layer for Task creation, updates, movement, and activity logging."""
 
+    UPDATABLE_FIELDS = {
+        "project",
+        "milestone",
+        "title",
+        "description",
+        "status",
+        "priority",
+        "assignee",
+        "due_date",
+        "estimated_hours",
+        "spent_hours",
+        "parent_task",
+        "order",
+    }
+
     @staticmethod
     @transaction.atomic
     def create_task(
@@ -191,11 +206,12 @@ class TaskService:
     def update_task(task, actor, **kwargs):
         changes = []
         for field, value in kwargs.items():
-            if hasattr(task, field):
-                old_val = getattr(task, field)
-                if old_val != value:
-                    setattr(task, field, value)
-                    changes.append(f"{field}: {old_val} -> {value}")
+            if field not in TaskService.UPDATABLE_FIELDS:
+                continue
+            old_val = getattr(task, field)
+            if old_val != value:
+                setattr(task, field, value)
+                changes.append(f"{field}: {old_val} -> {value}")
 
         if changes:
             task.save()
