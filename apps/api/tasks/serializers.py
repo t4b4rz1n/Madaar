@@ -34,9 +34,15 @@ class TaskStatusSerializer(serializers.ModelSerializer):
         self.fields["board"].allow_null = True
 
 
+class ProjectMinimalSerializer(serializers.Serializer):
+    id = serializers.UUIDField(read_only=True)
+    name = serializers.CharField(read_only=True)
+
+
 class BoardSerializer(serializers.ModelSerializer):
     statuses = TaskStatusSerializer(many=True, read_only=True)
     created_by_detail = UserMinimalSerializer(source="created_by", read_only=True)
+    project_detail = ProjectMinimalSerializer(source="project", read_only=True)
 
     class Meta:
         model = Board
@@ -46,6 +52,7 @@ class BoardSerializer(serializers.ModelSerializer):
             "description",
             "background_color",
             "project",
+            "project_detail",
             "created_by",
             "created_by_detail",
             "order",
@@ -115,12 +122,17 @@ class TaskCommentSerializer(serializers.ModelSerializer):
 
 class TaskActivityLogSerializer(serializers.ModelSerializer):
     actor_detail = UserMinimalSerializer(source="actor", read_only=True)
-    board_detail = BoardSerializer(source="board", read_only=True)
+    board_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = TaskActivityLog
         fields = ("id", "task", "board", "board_detail", "actor", "actor_detail", "action", "created_at")
         read_only_fields = ("id", "task", "board", "actor", "action", "created_at")
+
+    def get_board_detail(self, obj):
+        if obj.board:
+            return BoardSerializer(obj.board, read_only=True).data
+        return None
 
 
 class TaskSerializer(serializers.ModelSerializer):

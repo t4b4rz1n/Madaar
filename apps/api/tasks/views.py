@@ -170,6 +170,29 @@ class TaskViewSet(viewsets.ModelViewSet):
         parent_only = self.request.query_params.get("parent_only")
         if parent_only == "true":
             qs = qs.filter(parent_task__isnull=True)
+
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(Q(title__icontains=search) | Q(description__icontains=search))
+
+        due_date_after = self.request.query_params.get("due_date_after")
+        if due_date_after:
+            qs = qs.filter(due_date__gte=due_date_after)
+
+        due_date_before = self.request.query_params.get("due_date_before")
+        if due_date_before:
+            qs = qs.filter(due_date__lte=due_date_before)
+
+        ordering = self.request.query_params.get("ordering")
+        if ordering:
+            allowed_fields = {
+                "priority", "-priority", "due_date", "-due_date",
+                "created_at", "-created_at", "order", "-order"
+            }
+            order_fields = [f.strip() for f in ordering.split(",") if f.strip() in allowed_fields]
+            if order_fields:
+                return qs.order_by(*order_fields)
+
         return qs.order_by("order", "-created_at")
 
     def get_serializer_class(self):

@@ -54,6 +54,9 @@ class BoardService:
         """
         board_orders: list of dicts [{'id': uuid, 'order': int}, ...]
         """
+        board_ids = [item["id"] for item in board_orders if "id" in item]
+        if board_ids:
+            list(Board.objects.filter(id__in=board_ids, project=project).select_for_update())
         for item in board_orders:
             Board.objects.filter(id=item["id"], project=project).update(
                 order=item["order"]
@@ -112,6 +115,9 @@ class TaskStatusService:
         """
         status_orders: list of dicts [{'id': uuid, 'order': int}, ...]
         """
+        status_ids = [item["id"] for item in status_orders if "id" in item]
+        if status_ids:
+            list(TaskStatus.objects.filter(id__in=status_ids, board=board).select_for_update())
         for item in status_orders:
             TaskStatus.objects.filter(id=item["id"], board=board).update(
                 order=item["order"]
