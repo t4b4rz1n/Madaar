@@ -50,6 +50,7 @@ from .serializers import (
     ProjectMemberReadSerializer,
     ProjectMemberWriteSerializer,
     ProjectWriteSerializer,
+    TeamMinimalSerializer,
 )
 from .services import MilestoneService, ProjectMemberService, ProjectService
 
@@ -176,6 +177,27 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # -- Custom actions ----------------------------------------------------
+
+    @extend_schema(
+        summary=_("List project teams"),
+        description=_(
+            "Returns a list of all teams involved in this project (both the main team and member teams)."
+        ),
+        tags=["projects"],
+        responses={200: TeamMinimalSerializer(many=True)},
+    )
+    @action(detail=True, methods=["get"], url_path="teams")
+    def teams(self, request, pk=None):
+        project = self.get_object()
+        from django.db.models import Q
+        from organizations.models import Team
+
+        teams = Team.objects.filter(
+            Q(id=project.team_id) | Q(project_memberships__project=project, project_memberships__is_deleted=False)
+        ).distinct()
+
+        serializer = TeamMinimalSerializer(teams, many=True)
+        return Response(serializer.data)
 
     @extend_schema(
         summary=_("Archive a project"),
