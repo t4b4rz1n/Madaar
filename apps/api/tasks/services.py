@@ -61,18 +61,26 @@ class BoardService:
         """
         board_ids = [item["id"] for item in board_orders if "id" in item]
         if board_ids:
-            list(
-                Board.objects.filter(
+            boards_dict = {
+                str(b.id): b
+                for b in Board.objects.filter(
                     id__in=board_ids, project=project
                 ).select_for_update()
-            )
-        for item in board_orders:
-            Board.objects.filter(id=item["id"], project=project).update(
-                order=item["order"]
-            )
+            }
+            boards_to_update = []
+            for item in board_orders:
+                board_obj = boards_dict.get(str(item["id"]))
+                if board_obj:
+                    board_obj.order = item["order"]
+                    boards_to_update.append(board_obj)
+
+            if boards_to_update:
+                Board.objects.bulk_update(boards_to_update, ["order"])
 
         if actor:
+            first_board = boards_to_update[0] if boards_to_update else None
             TaskActivityLog.objects.create(
+                board=first_board,
                 actor=actor,
                 action=Truncator(
                     str(
@@ -144,15 +152,21 @@ class TaskStatusService:
         """
         status_ids = [item["id"] for item in status_orders if "id" in item]
         if status_ids:
-            list(
-                TaskStatus.objects.filter(
+            statuses_dict = {
+                str(s.id): s
+                for s in TaskStatus.objects.filter(
                     id__in=status_ids, board=board
                 ).select_for_update()
-            )
-        for item in status_orders:
-            TaskStatus.objects.filter(id=item["id"], board=board).update(
-                order=item["order"]
-            )
+            }
+            statuses_to_update = []
+            for item in status_orders:
+                status_obj = statuses_dict.get(str(item["id"]))
+                if status_obj:
+                    status_obj.order = item["order"]
+                    statuses_to_update.append(status_obj)
+
+            if statuses_to_update:
+                TaskStatus.objects.bulk_update(statuses_to_update, ["order"])
 
         if actor:
             TaskActivityLog.objects.create(
@@ -267,6 +281,7 @@ class TaskService:
         """Handles Drag & Drop movement across Kanban statuses."""
         action_parts = []
 
+        changed = False
         if new_status and task.status != new_status:
             if (
                 task.project
@@ -280,11 +295,14 @@ class TaskService:
                 str(_("Status changed to %(st)s") % {"st": new_status.name})
             )
             task.status = new_status
+            changed = True
 
-        if new_order is not None:
+        if new_order is not None and task.order != new_order:
             task.order = new_order
+            changed = True
 
-        task.save()
+        if changed:
+            task.save()
 
         if action_parts:
             TaskActivityLog.objects.create(
