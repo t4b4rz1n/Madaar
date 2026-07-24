@@ -7,19 +7,29 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('projects', '0003_alter_projectmember_options_and_more'),
-        ('tasks', '0014_alter_asyncstandup_user_alter_task_parent_task_and_more'),
+        ("projects", "0003_alter_projectmember_options_and_more"),
+        ("tasks", "0014_alter_asyncstandup_user_alter_task_parent_task_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='board',
-            name='project',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='boards', to='projects.project', verbose_name='Project'),
+            model_name="board",
+            name="project",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="boards",
+                to="projects.project",
+                verbose_name="Project",
+            ),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='project',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tasks', to='projects.project', verbose_name='Project'),
+            model_name="task",
+            name="project",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="tasks",
+                to="projects.project",
+                verbose_name="Project",
+            ),
         ),
     ]

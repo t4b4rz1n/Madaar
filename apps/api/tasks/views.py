@@ -32,8 +32,8 @@ from .serializers import (
     TaskChecklistItemSerializer,
     TaskCommentSerializer,
     TaskCreateUpdateSerializer,
-    TaskListSerializer,
     TaskDetailSerializer,
+    TaskListSerializer,
     TaskStatusSerializer,
 )
 from .services import (
@@ -94,7 +94,9 @@ class BoardViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="activities")
     def activities(self, request, pk=None):
         board = self.get_object()
-        logs = TaskActivityLog.objects.filter(board=board).select_related("board", "actor")
+        logs = TaskActivityLog.objects.filter(board=board).select_related(
+            "board", "actor"
+        )
         return Response(
             TaskActivityLogSerializer(
                 logs, many=True, context={"request": request}
@@ -272,12 +274,16 @@ class TaskViewSet(viewsets.ModelViewSet):
             new_status=task_status,
             new_order=new_order,
         )
-        return Response(TaskDetailSerializer(updated_task, context={"request": request}).data)
+        return Response(
+            TaskDetailSerializer(updated_task, context={"request": request}).data
+        )
 
     @action(detail=True, methods=["get"], url_path="activities")
     def activities(self, request, pk=None):
         task = self.get_object()
-        logs = TaskActivityLog.objects.filter(task=task).select_related("board", "actor")
+        logs = TaskActivityLog.objects.filter(task=task).select_related(
+            "board", "actor"
+        )
         return Response(
             TaskActivityLogSerializer(
                 logs, many=True, context={"request": request}
