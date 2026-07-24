@@ -108,6 +108,7 @@ class TaskChecklistItemSerializer(serializers.ModelSerializer):
 class TaskCommentSerializer(serializers.ModelSerializer):
     author_detail = UserMinimalSerializer(source="author", read_only=True)
     attached_file_url = serializers.SerializerMethodField(read_only=True)
+    content = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = TaskComment
