@@ -8,18 +8,39 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0015_alter_board_project_alter_task_project'),
+        ("tasks", "0015_alter_board_project_alter_task_project"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='taskcomment',
-            name='attached_file',
-            field=models.FileField(blank=True, null=True, upload_to='task_attachments/', validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg', 'zip', 'doc', 'docx', 'xls', 'xlsx']), tasks.models.validate_file_size], verbose_name='Attached file'),
+            model_name="taskcomment",
+            name="attached_file",
+            field=models.FileField(
+                blank=True,
+                null=True,
+                upload_to="task_attachments/",
+                validators=[
+                    django.core.validators.FileExtensionValidator(
+                        allowed_extensions=[
+                            "pdf",
+                            "png",
+                            "jpg",
+                            "jpeg",
+                            "zip",
+                            "doc",
+                            "docx",
+                            "xls",
+                            "xlsx",
+                        ]
+                    ),
+                    tasks.models.validate_file_size,
+                ],
+                verbose_name="Attached file",
+            ),
         ),
         migrations.AlterField(
-            model_name='taskcomment',
-            name='content',
-            field=models.TextField(blank=True, verbose_name='Content'),
+            model_name="taskcomment",
+            name="content",
+            field=models.TextField(blank=True, verbose_name="Content"),
         ),
     ]
