@@ -379,6 +379,11 @@ class MilestoneViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         return MilestoneSerializer
 
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["project_pk"] = self.kwargs.get("project_pk")
+        return ctx
+
     # -- CRUD overrides ----------------------------------------------------
 
     def create(self, request, *args, **kwargs):
