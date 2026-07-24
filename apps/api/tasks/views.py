@@ -52,7 +52,7 @@ class BoardViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsBoardPermission]
 
     def get_queryset(self):
-        qs = Board.objects.all()
+        qs = Board.objects.select_related("project", "created_by").all()
         project_id = self.request.query_params.get("project")
         if project_id:
             qs = qs.filter(project_id=project_id)
@@ -86,7 +86,13 @@ class BoardViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         BoardService.reorder_boards(project, orders, actor=request.user)
-        updated = Board.objects.filter(project=project).order_by("order").all()
+        updated = (
+            Board.objects.select_related("project", "created_by")
+            .prefetch_related("statuses")
+            .filter(project=project)
+            .order_by("order")
+            .all()
+        )
         return Response(
             BoardSerializer(updated, many=True, context={"request": request}).data
         )
@@ -110,7 +116,7 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTaskStatusPermission]
 
     def get_queryset(self):
-        qs = TaskStatus.objects.all()
+        qs = TaskStatus.objects.select_related("board").all()
         board_id = self.request.query_params.get("board")
         if board_id:
             qs = qs.filter(board_id=board_id)
@@ -141,7 +147,12 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         TaskStatusService.reorder_statuses(board, orders, actor=request.user)
-        updated = TaskStatus.objects.filter(board=board).order_by("order").all()
+        updated = (
+            TaskStatus.objects.select_related("board")
+            .filter(board=board)
+            .order_by("order")
+            .all()
+        )
         return Response(
             TaskStatusSerializer(updated, many=True, context={"request": request}).data
         )
@@ -274,8 +285,11 @@ class TaskViewSet(viewsets.ModelViewSet):
             new_status=task_status,
             new_order=new_order,
         )
+        annotated_task = (
+            self.get_queryset().filter(id=updated_task.id).first() or updated_task
+        )
         return Response(
-            TaskDetailSerializer(updated_task, context={"request": request}).data
+            TaskDetailSerializer(annotated_task, context={"request": request}).data
         )
 
     @action(detail=True, methods=["get"], url_path="activities")
@@ -293,11 +307,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="subtasks")
     def subtasks(self, request, pk=None):
         task = self.get_object()
-        subs = (
-            Task.objects.select_related("project", "status", "assignee", "reporter")
-            .prefetch_related("subtasks", "checklist_items", "comments")
-            .filter(parent_task=task)
-        )
+        subs = self.get_queryset().filter(parent_task=task)
         return Response(
             TaskListSerializer(subs, many=True, context={"request": request}).data
         )
@@ -360,7 +370,7 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTaskCommentPermission]
 
     def get_queryset(self):
-        qs = TaskComment.objects.all()
+        qs = TaskComment.objects.select_related("author", "task").all()
         task_id = self.request.query_params.get("task")
         if task_id:
             qs = qs.filter(task_id=task_id)
