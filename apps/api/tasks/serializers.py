@@ -55,8 +55,6 @@ class TaskStatusSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at")
 
 
-
-
 class ProjectMinimalSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     name = serializers.CharField(read_only=True)
@@ -163,7 +161,7 @@ class TaskActivityLogSerializer(serializers.ModelSerializer):
 
     def get_board_detail(self, obj):
         if obj.board:
-            return BoardSerializer(obj.board, read_only=True).data
+            return BoardMinimalSerializer(obj.board).data
         return None
 
 
@@ -253,7 +251,6 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             "assignee",
             "due_date",
             "estimated_hours",
-            "spent_hours",
             "parent_task",
         )
         read_only_fields = ("id",)
@@ -261,11 +258,6 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_estimated_hours(self, value):
         if value is not None and value < 0:
             raise serializers.ValidationError(_("Estimated hours cannot be negative."))
-        return value
-
-    def validate_spent_hours(self, value):
-        if value is not None and value < 0:
-            raise serializers.ValidationError(_("Spent hours cannot be negative."))
         return value
 
     def validate_due_date(self, value):

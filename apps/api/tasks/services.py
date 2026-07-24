@@ -90,7 +90,9 @@ class TaskStatusService:
     @transaction.atomic
     def create_status(board, code, name, order=None, actor=None):
         if order is None:
-            existing_statuses = list(TaskStatus.objects.filter(board=board).select_for_update())
+            existing_statuses = list(
+                TaskStatus.objects.filter(board=board).select_for_update()
+            )
             max_order = len(existing_statuses)
             order = max_order + 1
 
@@ -178,9 +180,7 @@ class TaskService:
         "assignee",
         "due_date",
         "estimated_hours",
-        "spent_hours",
         "parent_task",
-        "order",
     }
 
     @staticmethod
