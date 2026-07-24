@@ -90,7 +90,8 @@ class TaskStatusService:
     @transaction.atomic
     def create_status(board, code, name, order=None, actor=None):
         if order is None:
-            max_order = board.statuses.count()
+            existing_statuses = list(TaskStatus.objects.filter(board=board).select_for_update())
+            max_order = len(existing_statuses)
             order = max_order + 1
 
         status_obj = TaskStatus.objects.create(
@@ -204,10 +205,10 @@ class TaskService:
                 status = TaskStatus.objects.filter(
                     board__project=project, code="todo"
                 ).first()
+                if not status:
+                    status = TaskStatus.objects.filter(board__project=project).first()
             if not status:
-                status = TaskStatus.objects.filter(code="todo").first()
-            if not status:
-                raise ValidationError(_("Default status 'todo' does not exist."))
+                raise ValidationError(_("No statuses found for this project."))
 
         if parent_task and project and parent_task.project != project:
             raise ValidationError(_("Parent task must belong to the same project."))

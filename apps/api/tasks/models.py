@@ -1,9 +1,15 @@
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
 
 from common.models import BaseModel
 
+def validate_file_size(value):
+    filesize = value.size
+    if filesize > 10 * 1024 * 1024:
+        raise ValidationError(_("The maximum file size that can be uploaded is 10MB"))
 
 class Board(BaseModel):
     """Kanban Board for a project."""
@@ -18,8 +24,8 @@ class Board(BaseModel):
         on_delete=models.CASCADE,
         related_name="boards",
         verbose_name=_("Project"),
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         db_index=True,
     )
     created_by = models.ForeignKey(
@@ -103,8 +109,8 @@ class Task(BaseModel):
         on_delete=models.CASCADE,
         related_name="tasks",
         verbose_name=_("Project"),
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         db_index=True,
     )
     milestone = models.ForeignKey(
@@ -283,7 +289,14 @@ class TaskComment(BaseModel):
     )
     content = models.TextField(_("Content"))
     attached_file = models.FileField(
-        _("Attached file"), upload_to="task_attachments/", null=True, blank=True
+        _("Attached file"),
+        upload_to="task_attachments/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["pdf", "png", "jpg", "jpeg", "zip", "doc", "docx", "xls", "xlsx"]),
+            validate_file_size
+        ]
     )
 
     class Meta:

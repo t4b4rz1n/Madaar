@@ -54,9 +54,7 @@ class TaskStatusSerializer(serializers.ModelSerializer):
         fields = ("id", "board", "board_detail", "code", "name", "order", "created_at")
         read_only_fields = ("id", "created_at")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["board"].allow_null = True
+
 
 
 class ProjectMinimalSerializer(serializers.Serializer):
@@ -169,14 +167,12 @@ class TaskActivityLogSerializer(serializers.ModelSerializer):
         return None
 
 
-class TaskSerializer(serializers.ModelSerializer):
+class TaskListSerializer(serializers.ModelSerializer):
     status_detail = TaskStatusSerializer(
         source="status", read_only=True, allow_null=True
     )
     assignee_detail = UserMinimalSerializer(source="assignee", read_only=True)
     reporter_detail = UserMinimalSerializer(source="reporter", read_only=True)
-    checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
-    comments = TaskCommentSerializer(many=True, read_only=True)
     subtasks_count = serializers.SerializerMethodField()
     progress_percent = serializers.FloatField(read_only=True)
     is_completed = serializers.BooleanField(read_only=True)
@@ -206,8 +202,6 @@ class TaskSerializer(serializers.ModelSerializer):
             "progress_percent",
             "subtasks_count",
             "checklist_stats",
-            "checklist_items",
-            "comments",
             "created_at",
             "updated_at",
         )
@@ -230,6 +224,17 @@ class TaskSerializer(serializers.ModelSerializer):
         return {"total": total, "done": done, "percent": percent}
 
 
+class TaskDetailSerializer(TaskListSerializer):
+    checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
+    comments = TaskCommentSerializer(many=True, read_only=True)
+
+    class Meta(TaskListSerializer.Meta):
+        fields = TaskListSerializer.Meta.fields + (
+            "checklist_items",
+            "comments",
+        )
+
+
 class TaskCreateUpdateSerializer(serializers.ModelSerializer):
     status = serializers.PrimaryKeyRelatedField(
         queryset=TaskStatus.objects.all(), required=False, allow_null=True
@@ -250,7 +255,6 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             "estimated_hours",
             "spent_hours",
             "parent_task",
-            "order",
         )
         read_only_fields = ("id",)
 

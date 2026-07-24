@@ -32,7 +32,8 @@ from .serializers import (
     TaskChecklistItemSerializer,
     TaskCommentSerializer,
     TaskCreateUpdateSerializer,
-    TaskSerializer,
+    TaskListSerializer,
+    TaskDetailSerializer,
     TaskStatusSerializer,
 )
 from .services import (
@@ -93,7 +94,7 @@ class BoardViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="activities")
     def activities(self, request, pk=None):
         board = self.get_object()
-        logs = TaskActivityLog.objects.filter(board=board)
+        logs = TaskActivityLog.objects.filter(board=board).select_related("board", "actor")
         return Response(
             TaskActivityLogSerializer(
                 logs, many=True, context={"request": request}
@@ -228,7 +229,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
             return TaskCreateUpdateSerializer
-        return TaskSerializer
+        if self.action == "list":
+            return TaskListSerializer
+        return TaskDetailSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -238,7 +241,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             **serializer.validated_data,
         )
         return Response(
-            TaskSerializer(task, context={"request": request}).data,
+            TaskDetailSerializer(task, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -269,12 +272,12 @@ class TaskViewSet(viewsets.ModelViewSet):
             new_status=task_status,
             new_order=new_order,
         )
-        return Response(TaskSerializer(updated_task, context={"request": request}).data)
+        return Response(TaskDetailSerializer(updated_task, context={"request": request}).data)
 
     @action(detail=True, methods=["get"], url_path="activities")
     def activities(self, request, pk=None):
         task = self.get_object()
-        logs = TaskActivityLog.objects.filter(task=task)
+        logs = TaskActivityLog.objects.filter(task=task).select_related("board", "actor")
         return Response(
             TaskActivityLogSerializer(
                 logs, many=True, context={"request": request}
@@ -290,7 +293,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             .filter(parent_task=task)
         )
         return Response(
-            TaskSerializer(subs, many=True, context={"request": request}).data
+            TaskListSerializer(subs, many=True, context={"request": request}).data
         )
 
     @action(detail=True, methods=["post"], url_path="checklist")
