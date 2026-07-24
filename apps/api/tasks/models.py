@@ -49,6 +49,27 @@ class Board(BaseModel):
     def __str__(self):
         return self.title
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_is_deleted = False
+        if not is_new:
+            old = (
+                Board.all_objects.filter(pk=self.pk)
+                .values_list("is_deleted", flat=True)
+                .first()
+            )
+            old_is_deleted = old if old is not None else False
+
+        super().save(*args, **kwargs)
+
+        if not is_new and self.is_deleted != old_is_deleted:
+            from .cascade_services import TaskCascadeService
+
+            if self.is_deleted:
+                TaskCascadeService.soft_delete_board(self)
+            else:
+                TaskCascadeService.restore_board(self)
+
 
 class TaskStatus(BaseModel):
     """
@@ -95,6 +116,27 @@ class TaskStatus(BaseModel):
 
     def __str__(self):
         return f"{self.board.title} - {self.name}"
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_is_deleted = False
+        if not is_new:
+            old = (
+                TaskStatus.all_objects.filter(pk=self.pk)
+                .values_list("is_deleted", flat=True)
+                .first()
+            )
+            old_is_deleted = old if old is not None else False
+
+        super().save(*args, **kwargs)
+
+        if not is_new and self.is_deleted != old_is_deleted:
+            from .cascade_services import TaskCascadeService
+
+            if self.is_deleted:
+                TaskCascadeService.soft_delete_status(self)
+            else:
+                TaskCascadeService.restore_status(self)
 
 
 class Task(BaseModel):
@@ -158,7 +200,10 @@ class Task(BaseModel):
         blank=True,
         db_index=True,
     )
-    due_date = models.DateField(_("Due Date"), null=True, blank=True, db_index=True)
+    due_date = models.DateTimeField(_("Due date"), null=True, blank=True)
+    progress_cache = models.DecimalField(
+        _("Progress Percent"), max_digits=5, decimal_places=2, default=0
+    )
     estimated_hours = models.DecimalField(
         _("Estimated Hours"), max_digits=5, decimal_places=2, null=True, blank=True
     )
@@ -188,11 +233,12 @@ class Task(BaseModel):
             models.Index(fields=["project", "status"]),
             models.Index(fields=["project", "assignee"]),
             models.Index(fields=["status", "priority"]),
-            models.Index(fields=["assignee"]),
         ]
 
     def __str__(self):
-        return f"{self.title} [{self.status.name if self.status else _('No Status')}]"
+        if "status" in self.__dict__ and self.status:
+            return f"{self.title} [{self.status.name}]"
+        return self.title
 
     @property
     def is_completed(self):
@@ -242,13 +288,29 @@ class Task(BaseModel):
         Calculate task progress (0-100) based on:
         1. Checklist items completion ratio
         2. Subtask progress (recursive)
-
-        If a task has both checklists and subtasks, both contribute equally.
-        If only checklists → 100% weight to checklists.
-        If only subtasks → 100% weight to subtasks.
-        If neither → 0%.
         """
         return self._progress_percent_internal()
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_is_deleted = False
+        if not is_new:
+            old = (
+                Task.all_objects.filter(pk=self.pk)
+                .values_list("is_deleted", flat=True)
+                .first()
+            )
+            old_is_deleted = old if old is not None else False
+
+        super().save(*args, **kwargs)
+
+        if not is_new and self.is_deleted != old_is_deleted:
+            from .cascade_services import TaskCascadeService
+
+            if self.is_deleted:
+                TaskCascadeService.soft_delete_task(self)
+            else:
+                TaskCascadeService.restore_task(self)
 
 
 class TaskChecklistItem(BaseModel):
@@ -267,6 +329,9 @@ class TaskChecklistItem(BaseModel):
         verbose_name = _("Task Checklist Item")
         verbose_name_plural = _("Task Checklist Items")
         ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["task", "is_completed"], name="chk_task_completed_idx")
+        ]
 
     def __str__(self):
         return f"{self.task.title} - {self.description}"
@@ -316,7 +381,12 @@ class TaskComment(BaseModel):
     class Meta:
         verbose_name = _("Task Comment")
         verbose_name_plural = _("Task Comments")
-        ordering = ["-created_at"]
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(
+                fields=["task", "-created_at"], name="comment_task_created_idx"
+            )
+        ]
 
     def __str__(self):
         author_name = self.author.get_full_name() if self.author else _("Unknown")
@@ -356,6 +426,11 @@ class TaskActivityLog(BaseModel):
         verbose_name = _("Task Activity Log")
         verbose_name_plural = _("Task Activity Logs")
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["task", "-created_at"], name="activity_task_created_idx"
+            )
+        ]
 
     def __str__(self):
         target = (
