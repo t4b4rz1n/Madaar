@@ -55,18 +55,18 @@ def extract_organization_id(obj_or_request):
         try:
             data = getattr(obj_or_request, "data", {})
             if isinstance(data, dict):
-                org_id = data.get("organization") or data.get("organization_id")
-                if org_id:
-                    return org_id
                 proj_id = data.get("project") or data.get("project_id")
                 if proj_id:
                     from projects.models import Project
 
-                    return (
-                        Project.objects.filter(id=proj_id)
-                        .values_list("organization_id", flat=True)
-                        .first()
-                    )
+                    project = Project.objects.filter(id=proj_id).first()
+                    user = getattr(obj_or_request, "user", None)
+                    if project and user and user.is_authenticated:
+                        if is_user_project_member(obj_or_request, proj_id):
+                            return project.organization_id
+                org_id = data.get("organization") or data.get("organization_id")
+                if org_id:
+                    return org_id
         except Exception:
             pass
 
@@ -370,6 +370,14 @@ class IsTaskCommentPermission(BaseMadaarPermission):
 
 class IsAsyncStandupPermission(BaseMadaarPermission):
     """Async Standup access: Read for org members; Create for org users; Modify for Author, Admin, or Owner."""
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        org_id = extract_organization_id(request)
+        return get_user_org_role(request, org_id) is not None
 
     def check_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:

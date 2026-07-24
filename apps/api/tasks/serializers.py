@@ -280,31 +280,32 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             )
 
         if parent_task and self.instance:
-            ancestor = parent_task
+            ancestor_id = parent_task.id
             seen = {self.instance.id}
-            while ancestor:
-                if ancestor.id in seen:
+            from .models import Task
+
+            while ancestor_id:
+                if ancestor_id in seen:
                     raise serializers.ValidationError(
                         {"parent_task": _("Circular parent task detected.")}
                     )
-                seen.add(ancestor.id)
-                ancestor = ancestor.parent_task
+                seen.add(ancestor_id)
+                ancestor_id = (
+                    Task.all_objects.filter(id=ancestor_id)
+                    .values_list("parent_task_id", flat=True)
+                    .first()
+                )
+
+        # Ensure status belongs to the same project
+        if task_status and project and task_status.board.project_id != project.id:
+            raise serializers.ValidationError(
+                {"status": _("Status must belong to a board in the same project.")}
+            )
 
         # Ensure parent task belongs to the same project
         if parent_task and project and parent_task.project_id != project.id:
             raise serializers.ValidationError(
                 {"parent_task": _("Parent task must belong to the same project.")}
-            )
-
-        # Ensure status belongs to a board in the same project
-        if (
-            task_status
-            and project
-            and task_status.board
-            and task_status.board.project_id != project.id
-        ):
-            raise serializers.ValidationError(
-                {"status": _("Status must belong to a board in the same project.")}
             )
 
         return attrs
