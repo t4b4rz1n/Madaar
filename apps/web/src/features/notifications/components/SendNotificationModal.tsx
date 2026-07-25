@@ -19,6 +19,7 @@ const backdropVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
 };
+import { useAuthStore } from "../../auth/store/authStore";
 
 const modalVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
@@ -50,6 +51,7 @@ export const SendNotificationModal = ({
   isOpen,
   onClose,
 }: SendNotificationModalProps) => {
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
   const {
     control,
     handleSubmit,
@@ -90,7 +92,7 @@ export const SendNotificationModal = ({
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && isStaff && (
         <motion.div
           variants={backdropVariants}
           initial="hidden"

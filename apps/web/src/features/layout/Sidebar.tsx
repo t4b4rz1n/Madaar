@@ -40,10 +40,14 @@ export const Sidebar = () => {
     useLayoutStore();
   const logout = useLogout();
 
-  const renderNavItems = () =>
-    drawerItems.filter((item) => !item.staffOnly || isStaff).map((item, index) => {
-      const itemLink =
-        item.link === "dashboard" && isStaff ? "admin" : item.link;
+const renderNavItems = () =>
+  drawerItems
+    .filter((item) => !item.staffOnly || isStaff)
+    .map((item, index) => {
+      const isDashboardItem = item.link === "dashboard";
+      const itemLink = isDashboardItem && isStaff ? "admin" : item.link;
+      const itemTitle = isDashboardItem && isStaff ? "Admin Panel" : item.title;
+
       const isActive =
         itemLink === ""
           ? location.pathname === "/"
@@ -66,11 +70,12 @@ export const Sidebar = () => {
                 ? "bg-primary text-primary-content shadow-md shadow-primary/20"
                 : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
             }`}
-            title={isCollapsed ? item.title : ""}
+            title={isCollapsed ? itemTitle : ""}
           >
             <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
               {item.icon}
             </div>
+
             <AnimatePresence>
               {!isCollapsed && (
                 <motion.span
@@ -80,7 +85,7 @@ export const Sidebar = () => {
                   exit="collapsed"
                   className="font-medium whitespace-nowrap"
                 >
-                  {item.title}
+                  {itemTitle}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -88,6 +93,7 @@ export const Sidebar = () => {
         </motion.li>
       );
     });
+
 
   return (
     <>
