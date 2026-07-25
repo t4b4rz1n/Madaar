@@ -8,6 +8,7 @@ import { NotificationHistoryList } from "../components/NotificationHistoryList";
 import { NotificationsToolbar } from "../components/NotificationsToolbar"; // Import Toolbar
 import { SendNotificationModal } from "../components/SendNotificationModal";
 import { useNotificationHistory } from "../hooks/useNotifications";
+import { useAuthStore } from "../../auth/store/authStore";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,7 +23,7 @@ const NotificationsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-
+  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
   const {
     data: notificationsResponse,
     isLoading,
@@ -47,28 +48,28 @@ const NotificationsPage = () => {
         return newParams;
       });
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handlePageChange = useCallback(
     (page: number) => updateSearchParams("page", String(page)),
-    [updateSearchParams]
+    [updateSearchParams],
   );
 
   const handlePageSizeChange = useCallback(
     (size: number) => updateSearchParams("page_size", String(size)),
-    [updateSearchParams]
+    [updateSearchParams],
   );
 
   // Handlers for Toolbar
   const handleSearch = useCallback(
     (query: string) => updateSearchParams("search", query),
-    [updateSearchParams]
+    [updateSearchParams],
   );
 
   const handleSort = useCallback(
     (sortKey: string) => updateSearchParams("ordering", sortKey),
-    [updateSearchParams]
+    [updateSearchParams],
   );
 
   const handleFilter = useCallback(
@@ -86,7 +87,7 @@ const NotificationsPage = () => {
         return newParams;
       });
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const openSendModal = () => setSendModalOpen(true);
@@ -123,13 +124,15 @@ const NotificationsPage = () => {
               setViewMode={setViewMode}
               className="w-auto"
             />
-            <button
-              className="btn btn-primary rounded-xl"
-              onClick={openSendModal}
-            >
-              <Send />
-              <span>Send New Notification</span>
-            </button>
+            {isStaff && (
+              <button
+                className="btn btn-primary rounded-xl"
+                onClick={openSendModal}
+              >
+                <Send />
+                <span>Send New Notification</span>
+              </button>
+            )}
           </div>
         </motion.div>
 
