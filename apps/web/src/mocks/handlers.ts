@@ -3,7 +3,7 @@ import { db, mockProfile, mockUsers } from "./db";
 import type { UserFormData, UserUpdateData } from "../features/users/types";
 import type { DiscountFormData } from "../features/discounts/types";
 import type { NotificationFormData } from "../features/notifications/types";
-import type { ProfileUpdateData } from "../features/profile/types";
+// import type { ProfileUpdateData } from "../features/profile/types";
 import type { Ticket, TicketFormData } from "../features/tickets/types";
 import { getApiUrl } from "../core/api/config";
 
@@ -396,18 +396,27 @@ export const handlers = [
     });
   }),
 
-  http.patch("*/accounts/profile/", async ({ request }) => {
-    const data = (await request.json()) as ProfileUpdateData;
+http.patch("*/accounts/profile/", async ({ request }) => {
+  const formData = await request.formData();
 
-    if (data.first_name !== undefined) mockProfile.first_name = data.first_name;
-    if (data.last_name !== undefined) mockProfile.last_name = data.last_name;
+  const first_name = formData.get("first_name");
+  const last_name = formData.get("last_name");
+  const profile_image = formData.get("profile_image"); // اسم محتمل فیلد عکس
 
-    return HttpResponse.json({
-      status: true,
-      message: "Profile updated successfully",
-      data: mockProfile,
-    });
-  }),
+  if (first_name !== null) mockProfile.first_name = String(first_name);
+  if (last_name !== null) mockProfile.last_name = String(last_name);
+
+  if (profile_image instanceof File) {
+    mockProfile.profile_image = URL.createObjectURL(profile_image);
+  }
+
+  return HttpResponse.json({
+    status: true,
+    message: "Profile updated successfully",
+    data: mockProfile,
+  });
+}),
+
 
   // ─── Tickets MSW Mocks ───────────────────────────────────────────────────────
   http.get("*/support/tickets/", ({ request }) => {
