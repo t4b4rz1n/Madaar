@@ -8,4 +8,4 @@ class TasksConfig(AppConfig):
     verbose_name = _("Tasks")
 
     def ready(self):
-        pass
+        import tasks.signals 
