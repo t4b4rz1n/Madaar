@@ -10,26 +10,46 @@ import { useLayoutStore } from "./store/layoutStore";
 export const MainLayout = () => {
   const { setSidebarOpen } = useLayoutStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
+  const isStaff = user?.is_staff === true;
   const { pathname } = useLocation();
 
   const breadcrumbs = useMemo(() => {
     const pathSegments = pathname.split("/").filter((i) => i);
-    const crumbs: Breadcrumb[] = [{ title: "Dashboard", path: "/" }];
+    const rootTitle = isStaff ? "Admin panel" : "Dashboard";
+    const crumbs: Breadcrumb[] = [{ title: rootTitle, path: "/" }];
 
     let currentPath = "";
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
-      const matchingItem = drawerItems.find((item) => item.link === segment);
+
+      const matchingItem = drawerItems.find((item) => {
+        if (segment === "admin" && item.link === "dashboard" && isStaff) {
+          return true;
+        }
+
+        return item.link === segment;
+      });
 
       if (matchingItem) {
+        const itemTitle =
+          segment === "admin" && matchingItem.link === "dashboard" && isStaff
+            ? "Admin panel"
+            : matchingItem.title;
+
         crumbs.push({
-          title: matchingItem.title,
-          path: `/${matchingItem.link}`,
+          title: itemTitle,
+          path: currentPath,
         });
       } else if (index === pathSegments.length - 1) {
         const parentItem = drawerItems.find(
-          (item) => pathSegments[0] === item.link
+          (item) =>
+            pathSegments[0] === item.link ||
+            (pathSegments[0] === "admin" &&
+              item.link === "dashboard" &&
+              isStaff),
         );
+
         if (parentItem) {
           crumbs.push({ title: "Details", path: currentPath });
         }
@@ -37,7 +57,7 @@ export const MainLayout = () => {
     });
 
     return crumbs;
-  }, [pathname]);
+  }, [pathname, isStaff]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
