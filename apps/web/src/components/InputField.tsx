@@ -28,13 +28,14 @@ const InputField = ({
           {icon}
         </div>
       )}
+
       <input
         name={name}
         type={type}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className={`w-full bg-white border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary transition-shadow duration-200 shadow-sm border-slate-200 ${
+        className={`w-full bg-base-100 text-base-content border border-base-content/15 rounded-xl px-4 py-3 placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-shadow duration-200 shadow-sm ${
           icon ? "pl-10" : ""
         } ${classNameInput}`}
       />

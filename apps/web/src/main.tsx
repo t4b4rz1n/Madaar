@@ -21,6 +21,19 @@ async function enableMocking() {
 }
 
 enableMocking().finally(() => {
+  const getPreferredTheme = () => {
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme === "light" || storedTheme === "dark") {
+      return storedTheme;
+    }
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  };
+
+  document.documentElement.setAttribute("data-theme", getPreferredTheme());
+
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <ErrorBoundary
@@ -32,6 +45,6 @@ enableMocking().finally(() => {
           <Toaster richColors position="bottom-right" />
         </QueryClientProvider>
       </ErrorBoundary>
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 });
