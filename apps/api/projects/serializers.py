@@ -179,15 +179,29 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         org = attrs.get("organization", getattr(self.instance, "organization", None))
 
         if owner and org:
-            if not OrganizationMembership.objects.filter(user=owner, organization=org, is_deleted=False).exists():
+            if not OrganizationMembership.objects.filter(
+                user=owner, organization=org, is_deleted=False
+            ).exists():
                 raise serializers.ValidationError(
-                    {"owner_id": _("The selected owner is not a member of this organisation.")}
+                    {
+                        "owner_id": _(
+                            "The selected owner is not a member of this organisation."
+                        )
+                    }
                 )
 
         # Prevent changing organization of an existing project
-        if self.instance and "organization" in attrs and attrs["organization"] != self.instance.organization:
+        if (
+            self.instance
+            and "organization" in attrs
+            and attrs["organization"] != self.instance.organization
+        ):
             raise serializers.ValidationError(
-                {"organization_id": _("You cannot change the organisation of an existing project.")}
+                {
+                    "organization_id": _(
+                        "You cannot change the organisation of an existing project."
+                    )
+                }
             )
 
         return attrs
@@ -301,18 +315,32 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
 
         if not org_id and project_pk:
             from .models import Project
+
             project_obj = Project.objects.filter(pk=project_pk).first()
             if project_obj:
                 org_id = project_obj.organization_id
 
         if org_id:
-            if user and not OrganizationMembership.objects.filter(user=user, organization_id=org_id, is_deleted=False).exists():
+            if (
+                user
+                and not OrganizationMembership.objects.filter(
+                    user=user, organization_id=org_id, is_deleted=False
+                ).exists()
+            ):
                 raise serializers.ValidationError(
-                    {"user_id": _("The selected user is not a member of the project's organisation.")}
+                    {
+                        "user_id": _(
+                            "The selected user is not a member of the project's organisation."
+                        )
+                    }
                 )
             if team and team.organization_id != org_id:
                 raise serializers.ValidationError(
-                    {"team_id": _("The selected team does not belong to the project's organisation.")}
+                    {
+                        "team_id": _(
+                            "The selected team does not belong to the project's organisation."
+                        )
+                    }
                 )
 
         return attrs
@@ -364,19 +392,28 @@ class MilestoneSerializer(serializers.ModelSerializer):
         # Ensure milestone dates fall within project bounds if the project has them defined
         project_pk = self.context.get("project_pk")
         project = getattr(self.instance, "project", None)
-        
+
         if not project and project_pk:
             from .models import Project
+
             project = Project.objects.filter(pk=project_pk).first()
-            
+
         if project:
             if target and project.deadline and target > project.deadline:
                 raise serializers.ValidationError(
-                    {"target_date": _("Target date cannot be after the project's deadline.")}
+                    {
+                        "target_date": _(
+                            "Target date cannot be after the project's deadline."
+                        )
+                    }
                 )
             if start and project.start_date and start < project.start_date:
                 raise serializers.ValidationError(
-                    {"start_date": _("Start date cannot be before the project's start date.")}
+                    {
+                        "start_date": _(
+                            "Start date cannot be before the project's start date."
+                        )
+                    }
                 )
 
         return attrs
