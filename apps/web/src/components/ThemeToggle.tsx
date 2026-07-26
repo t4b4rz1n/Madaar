@@ -59,7 +59,7 @@ const ThemeToggle = () => {
 
       <span
         className={`absolute  h-8 w-8 rounded-full bg-primary shadow-md transition-all duration-300 sm:top-1.5 sm:h-8 sm:w-8 ${
-          isDark ? "sm:left-[calc(100%-2.5rem)]" : "left-1.5"
+          isDark ? "sm:left-[calc(100%-2.5rem)]" : "left-1"
         }`}
       />
 

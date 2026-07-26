@@ -5,7 +5,7 @@ import { useLogout } from "../auth/hooks/useAuth";
 import { useAuthStore } from "../auth/store/authStore";
 import { drawerItems } from "./DrawerItems";
 import { useLayoutStore } from "./store/layoutStore";
-import logoUrl from "/images/base-logo.svg";
+import logoUrl from "/images/base-logo1.png";
 
 const sidebarVariants = {
   expanded: {
