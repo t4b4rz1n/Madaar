@@ -299,6 +299,20 @@ class TaskService:
             task.status = new_status
             changed = True
 
+            # Handle timer auto-start/stop
+            from attendance.services import TimeLogService
+            code = new_status.code.lower() if new_status.code else ""
+            if code == "doing":
+                # Only start if the actor is the assignee
+                if task.assignee == actor:
+                    TimeLogService.start_timer(actor, task)
+            elif code in ["review", "done"]:
+                # Stop timers for anyone working on this task
+                from attendance.models import TimeLog
+                active_timers = TimeLog.objects.filter(task=task, is_active=True)
+                for timer in active_timers:
+                    TimeLogService.stop_timer(timer.user, task)
+
         if new_order is not None and task.order != new_order:
             task.order = new_order
             action_parts.append(str(_("Order changed")))

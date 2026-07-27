@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from .models import Attendance, TimeLog, TimeOffRequest, Holiday
 from accounts.models import User
+from tasks.models import Task
 
 class TimeLogSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,6 +20,10 @@ class TimeLogSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "user", "start_time", "end_time", "duration_seconds", "is_active", "created_at")
 
+    def validate(self, attrs):
+        # Additional custom validations can be added here
+        return attrs
+
 
 class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,6 +38,12 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = ("id", "user", "created_at")
+
+    def validate(self, attrs):
+        if attrs.get("check_in") and attrs.get("check_out"):
+            if attrs["check_in"] > attrs["check_out"]:
+                raise serializers.ValidationError({"check_out": _("Check-out cannot be before Check-in.")})
+        return attrs
 
 
 class TimeOffRequestSerializer(serializers.ModelSerializer):
@@ -49,6 +61,15 @@ class TimeOffRequestSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = ("id", "user", "status", "approved_by", "created_at")
+
+    def validate(self, attrs):
+        start = attrs.get("start_datetime")
+        end = attrs.get("end_datetime")
+        
+        if start and end and start >= end:
+            raise serializers.ValidationError({"end_datetime": _("End time must be after start time.")})
+            
+        return attrs
 
 
 class HolidaySerializer(serializers.ModelSerializer):

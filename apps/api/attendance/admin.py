@@ -12,6 +12,11 @@ class AttendanceAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return self.model.all_objects.all()
 
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj.is_deleted = True
+            obj.save(update_fields=["is_deleted"])
+
 
 @admin.register(TimeLog)
 class TimeLogAdmin(admin.ModelAdmin):
@@ -22,6 +27,11 @@ class TimeLogAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return self.model.all_objects.all()
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj.is_deleted = True
+            obj.save(update_fields=["is_deleted"])
 
 
 @admin.register(TimeOffRequest)
@@ -34,6 +44,11 @@ class TimeOffRequestAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return self.model.all_objects.all()
 
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj.is_deleted = True
+            obj.save(update_fields=["is_deleted"])
+
 
 @admin.register(Holiday)
 class HolidayAdmin(admin.ModelAdmin):
@@ -43,3 +58,8 @@ class HolidayAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return self.model.all_objects.all()
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj.is_deleted = True
+            obj.save(update_fields=["is_deleted"])
