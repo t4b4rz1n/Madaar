@@ -22,8 +22,6 @@ class Project(BaseModel):
         on_delete=models.CASCADE,
         related_name="projects",
         verbose_name=_("Organization"),
-        null=True,
-        blank=True,
         db_index=True,
     )
     owner = models.ForeignKey(
