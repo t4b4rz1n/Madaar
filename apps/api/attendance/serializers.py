@@ -2,65 +2,73 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from .models import Attendance, TimeLog, TimeOffRequest, Holiday
 from accounts.models import User
-from tasks.models import Task
 
-class TimeLogSerializer(serializers.ModelSerializer):
+# (Assuming we have basic serializers for User and Org, we use PrimaryKeyRelatedField for writes, 
+# and a simple representation for reads)
+
+class MinimalUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TimeLog
-        fields = (
-            "id",
-            "user",
-            "task",
-            "start_time",
-            "end_time",
-            "duration_seconds",
-            "is_active",
-            "description",
-            "created_at",
-        )
-        read_only_fields = ("id", "user", "start_time", "end_time", "duration_seconds", "is_active", "created_at")
-
-    def validate(self, attrs):
-        # Additional custom validations can be added here
-        return attrs
+        model = User
+        fields = ("id", "username", "first_name", "last_name", "email", "avatar")
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
+    user = MinimalUserSerializer(read_only=True)
+    
     class Meta:
         model = Attendance
         fields = (
-            "id",
-            "user",
-            "date",
-            "check_in",
-            "check_out",
-            "is_remote",
-            "created_at",
+            "id", "user", "organization", "date", "check_in", "check_out", 
+            "is_remote", "overtime_minutes", "created_at"
         )
-        read_only_fields = ("id", "user", "created_at")
+        read_only_fields = ("id", "overtime_minutes", "created_at")
 
+
+class AttendanceWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = ("id", "organization", "is_remote")
+
+
+class TimeLogSerializer(serializers.ModelSerializer):
+    user = MinimalUserSerializer(read_only=True)
+    
+    class Meta:
+        model = TimeLog
+        fields = (
+            "id", "user", "task", "project", "date", "start_time", 
+            "end_time", "duration_seconds", "is_active", "description", "created_at"
+        )
+
+
+class TimeLogWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeLog
+        fields = ("id", "task", "start_time", "end_time", "description")
+        
     def validate(self, attrs):
-        if attrs.get("check_in") and attrs.get("check_out"):
-            if attrs["check_in"] > attrs["check_out"]:
-                raise serializers.ValidationError({"check_out": _("Check-out cannot be before Check-in.")})
+        if 'start_time' in attrs and 'end_time' in attrs:
+            if attrs['end_time'] <= attrs['start_time']:
+                raise serializers.ValidationError({"end_time": _("End time must be after start time.")})
         return attrs
 
 
 class TimeOffRequestSerializer(serializers.ModelSerializer):
+    user = MinimalUserSerializer(read_only=True)
+    approved_by = MinimalUserSerializer(read_only=True)
+
     class Meta:
         model = TimeOffRequest
         fields = (
-            "id",
-            "user",
-            "request_type",
-            "start_datetime",
-            "end_datetime",
-            "reason",
-            "status",
-            "approved_by",
-            "created_at",
+            "id", "user", "organization", "request_type", "start_datetime", 
+            "end_datetime", "reason", "status", "approved_by", "created_at"
         )
-        read_only_fields = ("id", "user", "status", "approved_by", "created_at")
+
+
+class TimeOffRequestWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeOffRequest
+        fields = ("id", "organization", "request_type", "start_datetime", "end_datetime", "reason")
 
     def validate(self, attrs):
         start = attrs.get("start_datetime")
@@ -77,3 +85,14 @@ class HolidaySerializer(serializers.ModelSerializer):
         model = Holiday
         fields = ("id", "name", "date", "is_official", "created_at")
         read_only_fields = ("id", "created_at")
+
+
+class TimesheetDailySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    total_seconds = serializers.IntegerField()
+
+
+class TimesheetTeamSerializer(serializers.Serializer):
+    user__username = serializers.CharField()
+    date = serializers.DateField()
+    total_seconds = serializers.IntegerField()

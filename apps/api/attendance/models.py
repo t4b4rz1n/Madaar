@@ -1,13 +1,71 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, F
 from common.models import BaseModel
+
+
+class AttendanceSetting(BaseModel):
+    """
+    تنظیمات ساعت کاری سازمان
+    """
+    organization = models.OneToOneField(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="attendance_setting"
+    )
+    expected_daily_hours = models.DecimalField(
+        _("Expected Daily Working Hours"), max_digits=4, decimal_places=2, default=8.00
+    )
+    
+    class Meta:
+        verbose_name = _("Attendance Setting")
+        verbose_name_plural = _("Attendance Settings")
+        
+    def __str__(self):
+        return f"Settings for {self.organization}"
+
+
+class Attendance(BaseModel):
+    """
+    ثبت ورود/خروج روزانه
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attendances"
+    )
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="attendances"
+    )
+    date = models.DateField(_("Date"), db_index=True)
+    check_in = models.DateTimeField(_("Check-in Time"), null=True, blank=True)
+    check_out = models.DateTimeField(_("Check-out Time"), null=True, blank=True)
+    is_remote = models.BooleanField(_("Is Remote Work"), default=False)
+    overtime_minutes = models.PositiveIntegerField(_("Overtime Minutes"), default=0)
+
+    class Meta:
+        verbose_name = _("Attendance")
+        verbose_name_plural = _("Attendances")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "date"], 
+                condition=Q(is_deleted=False),
+                name="unique_daily_attendance"
+            ),
+            models.CheckConstraint(
+                check=Q(check_out__gte=F('check_in')) | Q(check_out__isnull=True),
+                name="check_out_after_check_in"
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "date"]),
+            models.Index(fields=["organization", "date"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} - {self.date}"
 
 
 class TimeLog(BaseModel):
     """
-    ثبت زمانِ کار روی تسک‌ها (تایمر زنده یا ثبت دستی)
+    ثبت زمان روی تسک
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="time_logs"
@@ -15,6 +73,10 @@ class TimeLog(BaseModel):
     task = models.ForeignKey(
         "tasks.Task", on_delete=models.CASCADE, related_name="time_logs"
     )
+    project = models.ForeignKey(
+        "projects.Project", on_delete=models.CASCADE, related_name="time_logs"
+    )
+    date = models.DateField(_("Date"), db_index=True)
     start_time = models.DateTimeField(_("Start Time"), db_index=True)
     end_time = models.DateTimeField(_("End Time"), null=True, blank=True)
     duration_seconds = models.PositiveIntegerField(_("Duration in Seconds"), default=0)
@@ -25,58 +87,41 @@ class TimeLog(BaseModel):
         verbose_name = _("Time Log")
         verbose_name_plural = _("Time Logs")
         indexes = [
-            models.Index(fields=["user", "is_active"]),
-            models.Index(fields=["task", "is_active"]),
+            models.Index(fields=["user", "date"]),
+            models.Index(fields=["task", "date"]),
+            models.Index(fields=["project", "date"]),
         ]
         constraints = [
-            # جلوگیری از داشتن بیش از یک تایمر فعال برای یک کاربر در یک لحظه
             models.UniqueConstraint(
                 fields=["user"],
                 condition=Q(is_active=True, is_deleted=False),
                 name="unique_active_timer_per_user"
+            ),
+            models.CheckConstraint(
+                check=Q(end_time__gte=F('start_time')) | Q(end_time__isnull=True),
+                name="end_time_after_start_time"
             )
         ]
 
-    def __str__(self):
-        return f"{self.user} - Task: {self.task_id} ({'Active' if self.is_active else 'Stopped'})"
-
-
-class Attendance(BaseModel):
-    """
-    ثبت ورود و خروج روزانه (حضور و غیاب)
-    """
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attendances"
-    )
-    date = models.DateField(_("Date"), db_index=True)
-    check_in = models.DateTimeField(_("Check-in Time"), null=True, blank=True)
-    check_out = models.DateTimeField(_("Check-out Time"), null=True, blank=True)
-    is_remote = models.BooleanField(_("Is Remote Work"), default=False)
-
-    class Meta:
-        verbose_name = _("Attendance")
-        verbose_name_plural = _("Attendances")
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "date"], 
-                condition=Q(is_deleted=False),
-                name="unique_daily_attendance"
-            )
-        ]
+    def save(self, *args, **kwargs):
+        if self.start_time and not self.date:
+            self.date = self.start_time.date()
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.user} - {self.date}"
+        return f"{self.user} - Task: {self.task_id}"
 
 
 class TimeOffRequest(BaseModel):
     """
-    مدیریت جامع درخواست‌های مرخصی و دورکاری
+    درخواست مرخصی/دورکاری/اضافه‌کاری
     """
     class Type(models.TextChoices):
-        VACATION = "vacation", _("Vacation (Daily)")
+        VACATION = "vacation", _("Vacation")
         SICK = "sick", _("Sick Leave")
         HOURLY = "hourly", _("Hourly Leave")
         REMOTE = "remote", _("Remote Work Request")
+        OVERTIME = "overtime", _("Overtime")
 
     class Status(models.TextChoices):
         PENDING = "pending", _("Pending")
@@ -85,6 +130,9 @@ class TimeOffRequest(BaseModel):
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timeoff_requests"
+    )
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="timeoff_requests"
     )
     request_type = models.CharField(_("Request Type"), max_length=20, choices=Type.choices)
     start_datetime = models.DateTimeField(_("Start Date/Time"))
@@ -102,15 +150,22 @@ class TimeOffRequest(BaseModel):
         verbose_name_plural = _("Time Off Requests")
         indexes = [
             models.Index(fields=["user", "status"]),
+            models.Index(fields=["organization", "status"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=Q(end_datetime__gte=F('start_datetime')),
+                name="end_datetime_after_start_datetime"
+            )
         ]
 
     def __str__(self):
-        return f"{self.user} - {self.request_type} ({self.status})"
+        return f"{self.user} - {self.request_type}"
 
 
 class Holiday(BaseModel):
     """
-    تقویم تعطیلات رسمی جهت تاثیر در محاسبات ددلاین و حقوق
+    تعطیلات رسمی
     """
     name = models.CharField(_("Holiday Name"), max_length=255)
     date = models.DateField(_("Date"), unique=True, db_index=True)
