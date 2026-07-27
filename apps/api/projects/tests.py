@@ -113,8 +113,8 @@ class ProjectServicesTests(TestCase):
         project.refresh_from_db()
         self.assertTrue(project.is_deleted)
 
-        # Check deletion activity was logged (activity is now soft-deleted with project)
-        delete_act = ProjectActivity.all_objects.get(
+        # Check deletion activity was logged (stays visible even after project deletion)
+        delete_act = ProjectActivity.objects.get(
             project=project, event_type=ProjectActivity.EventType.PROJECT_DELETED
         )
         self.assertEqual(delete_act.actor, self.user)

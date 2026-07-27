@@ -157,6 +157,11 @@ class ProjectMember(BaseModel):
                 condition=Q(is_deleted=False),
                 name="unique_active_project_member",
             ),
+            models.UniqueConstraint(
+                fields=["project", "team"],
+                condition=Q(is_deleted=False, user__isnull=True),
+                name="unique_active_project_team",
+            ),
             models.CheckConstraint(
                 condition=Q(allocation_end_date__isnull=True)
                 | Q(allocation_start_date__isnull=True)

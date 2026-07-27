@@ -121,7 +121,7 @@ class ProjectDetailSerializer(ProjectListSerializer):
 
     def get_milestones(self, obj):
         qs = obj.milestones.filter(is_deleted=False)[:self._NESTED_LIMIT]
-        ctx = {"project_pk": str(obj.pk)}
+        ctx = {**self.context, "project_pk": str(obj.pk)}
         return MilestoneSerializer(qs, many=True, context=ctx).data
 
 
@@ -284,16 +284,19 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
             )
 
         # Duplicate membership check (only on create)
-        if user and not self.instance:
-            project_pk = self.context.get("project_pk")
-            if (
-                project_pk
-                and ProjectMember.objects.filter(
-                    project_id=project_pk, user=user, is_deleted=False
-                ).exists()
-            ):
+        project_pk = self.context.get("project_pk")
+        if not self.instance and project_pk:
+            if user and ProjectMember.objects.filter(
+                project_id=project_pk, user=user, is_deleted=False
+            ).exists():
                 raise serializers.ValidationError(
                     {"user_id": _("This user is already a member of this project.")}
+                )
+            if team and not user and ProjectMember.objects.filter(
+                project_id=project_pk, team=team, user__isnull=True, is_deleted=False
+            ).exists():
+                raise serializers.ValidationError(
+                    {"team_id": _("This team is already a member of this project.")}
                 )
 
         # Date range validation
@@ -314,15 +317,31 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Org membership validation
-        project_pk = self.context.get("project_pk")
+        # Validate allocation dates fall within project bounds
         project = getattr(self.instance, "project", None)
-        org_id = project.organization_id if project else None
+        if not project and project_pk:
+            project = Project.objects.filter(pk=project_pk).first()
 
-        if not org_id and project_pk:
-            project_obj = Project.objects.filter(pk=project_pk).first()
-            if project_obj:
-                org_id = project_obj.organization_id
+        if project:
+            if start and project.start_date and start < project.start_date:
+                raise serializers.ValidationError(
+                    {
+                        "allocation_start_date": _(
+                            "Allocation start date cannot be before the project's start date."
+                        )
+                    }
+                )
+            if end and project.deadline and end > project.deadline:
+                raise serializers.ValidationError(
+                    {
+                        "allocation_end_date": _(
+                            "Allocation end date cannot be after the project's deadline."
+                        )
+                    }
+                )
+
+        # Org membership validation
+        org_id = project.organization_id if project else None
 
         if org_id:
             if (

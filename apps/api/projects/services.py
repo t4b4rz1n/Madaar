@@ -135,7 +135,13 @@ class ProjectService:
             and old_status != Project.Status.COMPLETED
         ):
             project.completed_at = now
-        elif new_status != Project.Status.COMPLETED:
+        elif (
+            new_status != Project.Status.COMPLETED
+            and old_status == Project.Status.COMPLETED
+            and new_status != Project.Status.ARCHIVED
+        ):
+            # Only clear completed_at when moving BACK from completed
+            # to a non-terminal state.  ARCHIVED preserves it.
             project.completed_at = None
 
         if (
@@ -143,7 +149,8 @@ class ProjectService:
             and old_status != Project.Status.ARCHIVED
         ):
             project.archived_at = now
-        elif new_status != Project.Status.ARCHIVED:
+        elif new_status != Project.Status.ARCHIVED and old_status == Project.Status.ARCHIVED:
+            # Only clear archived_at when moving BACK from archived.
             project.archived_at = None
 
         project.save()
@@ -167,7 +174,15 @@ class ProjectService:
     @classmethod
     @transaction.atomic
     def delete(cls, *, project: Project, actor) -> None:
-        """Soft-delete a Project and cascade to members / milestones."""
+        """Soft-delete a Project and cascade to members / milestones / activities.
+
+        Activities are soft-deleted *before* the deletion log is written
+        so the deletion event itself remains visible in the audit trail.
+        """
+        # First: soft-delete existing activities
+        project.activities.filter(is_deleted=False).update(is_deleted=True)
+
+        # Then: log the deletion event (this new record stays is_deleted=False)
         _ActivityLogger.log(
             project=project,
             actor=actor,
@@ -176,9 +191,10 @@ class ProjectService:
             entity_id=project.pk,
             metadata={"name": project.name},
         )
+
+        # Finally: soft-delete members, milestones, and the project itself
         project.members.filter(is_deleted=False).update(is_deleted=True)
         project.milestones.filter(is_deleted=False).update(is_deleted=True)
-        project.activities.filter(is_deleted=False).update(is_deleted=True)
         project.delete()  # BaseModel.delete → sets is_deleted=True
         logger.info("Project soft-deleted: %s (by %s)", project.pk, actor)
 
@@ -209,17 +225,24 @@ class ProjectMemberService:
     ) -> ProjectMember:
         """Add a member (user or team) to a project.
 
-        If the same user was previously soft-deleted from this project,
-        we reactivate the existing record instead of creating a duplicate
-        to avoid IntegrityError from the partial unique constraint.
+        If the same user/team was previously soft-deleted from this
+        project, we reactivate the existing record instead of creating
+        a duplicate to avoid IntegrityError.
         """
         user = validated_data.get("user")
+        team = validated_data.get("team")
         reactivated = None
 
         if user:
             reactivated = (
                 ProjectMember.all_objects
                 .filter(project=project, user=user, is_deleted=True)
+                .first()
+            )
+        elif team:
+            reactivated = (
+                ProjectMember.all_objects
+                .filter(project=project, team=team, user__isnull=True, is_deleted=True)
                 .first()
             )
 
@@ -364,8 +387,13 @@ class MilestoneService:
             and old_status != Milestone.Status.COMPLETED
         ):
             milestone.completed_at = timezone.now()
-        elif new_status != Milestone.Status.COMPLETED:
+        elif (
+            new_status != Milestone.Status.COMPLETED
+            and old_status == Milestone.Status.COMPLETED
+        ):
+            # Only clear completed_at when moving BACK from completed.
             milestone.completed_at = None
+
 
         milestone.save()
 

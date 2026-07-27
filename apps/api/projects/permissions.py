@@ -173,7 +173,7 @@ class CanManageProjectMember(_ProjectFromKwargsMixin):
             return True
         project = self._get_project(view)
         if project is None:
-            return True  # let the view raise 404
+            return False  # deny access if project doesn't exist
         if _is_project_owner(user, project):
             return True
         if _is_org_admin(user, project.organization):
@@ -201,7 +201,7 @@ class CanManageMilestone(_ProjectFromKwargsMixin):
             return True
         project = self._get_project(view)
         if project is None:
-            return True
+            return False
         if _is_project_owner(user, project):
             return True
         if _is_org_admin(user, project.organization):
@@ -231,7 +231,7 @@ class CanViewProjectActivity(_ProjectFromKwargsMixin):
             return True
         project = self._get_project(view)
         if project is None:
-            return True
+            return False
         if _is_project_owner(user, project):
             return True
         if _get_org_role(user, project.organization):
