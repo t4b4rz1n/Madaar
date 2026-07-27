@@ -43,6 +43,7 @@ class TaskCascadeService:
         TaskCascadeService._restore_tasks_by_status([status.id])
 
     @staticmethod
+    @transaction.atomic
     def _soft_delete_tasks_by_status(status_ids):
         from .models import Task
 
@@ -57,6 +58,7 @@ class TaskCascadeService:
         TaskCascadeService._soft_delete_task_children(task_ids)
 
     @staticmethod
+    @transaction.atomic
     def _restore_tasks_by_status(status_ids):
         from .models import Task
 
@@ -81,6 +83,7 @@ class TaskCascadeService:
         TaskCascadeService._restore_task_children([task.id])
 
     @staticmethod
+    @transaction.atomic
     def _soft_delete_task_children(task_ids, depth=0):
         if depth > 10 or not task_ids:
             return
@@ -102,6 +105,7 @@ class TaskCascadeService:
         )
 
     @staticmethod
+    @transaction.atomic
     def _restore_task_children(task_ids, depth=0):
         if depth > 10 or not task_ids:
             return

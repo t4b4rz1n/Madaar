@@ -43,13 +43,16 @@ class BoardService:
             ("review", _("Review")),
             ("done", _("Done")),
         ]
-        for index, (code, name) in enumerate(default_statuses):
-            TaskStatus.objects.create(
+        statuses_to_create = [
+            TaskStatus(
                 board=board,
                 code=code,
                 name=str(name),
                 order=index + 1,
             )
+            for index, (code, name) in enumerate(default_statuses)
+        ]
+        TaskStatus.objects.bulk_create(statuses_to_create)
 
         return board
 

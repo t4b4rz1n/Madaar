@@ -262,7 +262,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_due_date(self, value):
-        if value is not None and value < timezone.localdate():
+        if value is not None and value.date() < timezone.localdate():
             raise serializers.ValidationError(_("Due date cannot be in the past."))
         return value
 

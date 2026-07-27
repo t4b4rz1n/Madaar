@@ -28,8 +28,7 @@ class Board(BaseModel):
         verbose_name=_("Project"),
         null=False,
         blank=False,
-        db_index=True,
-    )
+        )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -37,9 +36,8 @@ class Board(BaseModel):
         verbose_name=_("Created By"),
         null=True,
         blank=True,
-        db_index=True,
-    )
-    order = models.PositiveIntegerField(_("Order"), default=0, db_index=True)
+        )
+    order = models.PositiveIntegerField(_("Order"), default=0)
 
     class Meta:
         verbose_name = _("Board")
@@ -83,12 +81,10 @@ class TaskStatus(BaseModel):
         on_delete=models.CASCADE,
         related_name="statuses",
         verbose_name=_("Board"),
-        db_index=True,
-    )
+        )
     code = models.SlugField(
         _("Code"),
         max_length=50,
-        db_index=True,
         help_text=_("Identifier for the status (e.g., 'todo', 'doing', 'review')"),
     )
     name = models.CharField(
@@ -99,7 +95,6 @@ class TaskStatus(BaseModel):
     order = models.PositiveIntegerField(
         _("Order"),
         default=0,
-        db_index=True,
         help_text=_("Order in Kanban board columns"),
     )
 
@@ -115,7 +110,9 @@ class TaskStatus(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.board.title} - {self.name}"
+        if "board" in self.__dict__ and self.board:
+            return f"{self.board.title} - {self.name}"
+        return self.name
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -155,8 +152,7 @@ class Task(BaseModel):
         verbose_name=_("Project"),
         null=False,
         blank=False,
-        db_index=True,
-    )
+        )
     milestone = models.ForeignKey(
         "projects.Milestone",
         on_delete=models.SET_NULL,
@@ -164,8 +160,7 @@ class Task(BaseModel):
         verbose_name=_("Milestone"),
         null=True,
         blank=True,
-        db_index=True,
-    )
+        )
     title = models.CharField(_("Title"), max_length=255)
     description = models.TextField(_("Description"), blank=True, null=True)
     status = models.ForeignKey(
@@ -173,15 +168,13 @@ class Task(BaseModel):
         on_delete=models.PROTECT,
         related_name="tasks",
         verbose_name=_("Status"),
-        db_index=True,
-    )
+        )
     priority = models.CharField(
         _("Priority"),
         max_length=20,
         choices=Priority.choices,
         default=Priority.MEDIUM,
-        db_index=True,
-    )
+        )
     assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -189,8 +182,7 @@ class Task(BaseModel):
         verbose_name=_("Assignee"),
         null=True,
         blank=True,
-        db_index=True,
-    )
+        )
     reporter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -198,8 +190,7 @@ class Task(BaseModel):
         verbose_name=_("Reporter"),
         null=True,
         blank=True,
-        db_index=True,
-    )
+        )
     due_date = models.DateTimeField(_("Due date"), null=True, blank=True)
     progress_cache = models.DecimalField(
         _("Progress Percent"), max_digits=5, decimal_places=2, default=0
@@ -221,9 +212,8 @@ class Task(BaseModel):
         verbose_name=_("Parent Task"),
         null=True,
         blank=True,
-        db_index=True,
-    )
-    order = models.PositiveIntegerField(_("Kanban Order"), default=0, db_index=True)
+        )
+    order = models.PositiveIntegerField(_("Kanban Order"), default=0)
 
     class Meta:
         verbose_name = _("Task")
@@ -243,7 +233,9 @@ class Task(BaseModel):
     @property
     def is_completed(self):
         """Returns True if the task status code is 'done'."""
-        return bool(self.status and self.status.code == "done")
+        if "status" in self.__dict__ and self.status:
+            return self.status.code == "done"
+        return False
 
     def _progress_percent_internal(self, seen=None):
         """Recursive progress calculation with cycle detection."""
@@ -284,12 +276,8 @@ class Task(BaseModel):
 
     @property
     def progress_percent(self):
-        """
-        Calculate task progress (0-100) based on:
-        1. Checklist items completion ratio
-        2. Subtask progress (recursive)
-        """
-        return self._progress_percent_internal()
+        """Returns the cached progress percent."""
+        return self.progress_cache
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -323,7 +311,7 @@ class TaskChecklistItem(BaseModel):
         verbose_name=_("Task"),
     )
     description = models.CharField(_("Description"), max_length=255)
-    is_completed = models.BooleanField(_("Completed"), default=False, db_index=True)
+    is_completed = models.BooleanField(_("Completed"), default=False)
 
     class Meta:
         verbose_name = _("Task Checklist Item")
@@ -334,7 +322,9 @@ class TaskChecklistItem(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.task.title} - {self.description}"
+        if "task" in self.__dict__ and self.task:
+            return f"{self.task.title} - {self.description}"
+        return self.description
 
 
 class TaskComment(BaseModel):
@@ -389,8 +379,7 @@ class TaskComment(BaseModel):
         ]
 
     def __str__(self):
-        author_name = self.author.get_full_name() if self.author else _("Unknown")
-        return f"Comment by {author_name} on {self.task.title}"
+        return f"Comment {self.id} on Task {self.task_id}"
 
 
 class TaskActivityLog(BaseModel):
@@ -433,11 +422,7 @@ class TaskActivityLog(BaseModel):
         ]
 
     def __str__(self):
-        target = (
-            self.task.title
-            if self.task
-            else (self.board.title if self.board else "Global")
-        )
+        target = f"Task {self.task_id}" if self.task_id else (f"Board {self.board_id}" if self.board_id else "Global")
         return f"{target} - {self.action} @ {self.created_at}"
 
 
@@ -454,8 +439,7 @@ class AsyncStandup(BaseModel):
         verbose_name=_("User"),
         null=True,
         blank=True,
-        db_index=True,
-    )
+        )
     yesterday_work = models.TextField(_("Yesterday's Work"))
     today_work = models.TextField(_("Today's Work"))
     blockers = models.TextField(_("Blockers"), blank=True, null=True)
@@ -466,5 +450,4 @@ class AsyncStandup(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        user_name = self.user.get_full_name() if self.user else _("Unknown")
-        return f"Standup by {user_name} on {self.created_at.date()}"
+        return f"Standup by User {self.user_id} on {self.created_at.date()}"

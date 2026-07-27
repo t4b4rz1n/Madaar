@@ -23,8 +23,6 @@ def get_user_org_role(request, organization_id=None):
     membership = qs.first()
     if membership:
         role = membership.role.lower()
-    elif organization_id is None:
-        role = "owner"
     else:
         role = None
 

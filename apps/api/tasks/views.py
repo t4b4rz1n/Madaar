@@ -52,7 +52,11 @@ class BoardViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsBoardPermission]
 
     def get_queryset(self):
-        qs = Board.objects.select_related("project", "created_by").all()
+        qs = (
+            Board.objects.select_related("project", "created_by")
+            .prefetch_related("statuses")
+            .all()
+        )
         project_id = self.request.query_params.get("project")
         if project_id:
             qs = qs.filter(project_id=project_id)
@@ -347,7 +351,7 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTaskChecklistPermission]
 
     def get_queryset(self):
-        qs = TaskChecklistItem.objects.all()
+        qs = TaskChecklistItem.objects.select_related("task").all()
         task_id = self.request.query_params.get("task")
         if task_id:
             qs = qs.filter(task_id=task_id)
