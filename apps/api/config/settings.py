@@ -60,6 +60,7 @@ LOCAL_APPS = [
     "organizations.apps.OrganizationsConfig",
     "projects.apps.ProjectsConfig",
     "tasks.apps.TasksConfig",
+    "attendance.apps.AttendanceConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
