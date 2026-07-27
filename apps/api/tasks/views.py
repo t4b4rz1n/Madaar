@@ -386,6 +386,14 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
             qs = qs.filter(task_id=task_id)
         return qs
 
+    def perform_create(self, serializer):
+        task = serializer.validated_data.get("task")
+        desc = serializer.validated_data.get("description")
+        item = ChecklistService.add_item(
+            task=task, description=desc, actor=self.request.user
+        )
+        serializer.instance = item
+
     @action(detail=True, methods=["post"], url_path="toggle")
     def toggle(self, request, pk=None):
         item = self.get_object()
@@ -408,6 +416,18 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
         if task_id:
             qs = qs.filter(task_id=task_id)
         return qs
+
+    def perform_create(self, serializer):
+        task = serializer.validated_data.get("task")
+        content = serializer.validated_data.get("content", "")
+        attached_file = serializer.validated_data.get("attached_file")
+        comment = CommentService.add_comment(
+            task=task,
+            author=self.request.user,
+            content=content,
+            attached_file=attached_file,
+        )
+        serializer.instance = comment
 
     def perform_destroy(self, instance):
         instance.is_deleted = True

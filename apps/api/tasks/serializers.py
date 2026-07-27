@@ -95,7 +95,7 @@ class TaskChecklistItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskChecklistItem
         fields = ("id", "task", "description", "is_completed", "created_at")
-        read_only_fields = ("id", "task", "created_at")
+        read_only_fields = ("id", "created_at")
 
     def validate_description(self, value):
         if not value or not value.strip():
@@ -122,7 +122,7 @@ class TaskCommentSerializer(serializers.ModelSerializer):
             "attached_file_url",
             "created_at",
         )
-        read_only_fields = ("id", "task", "author", "created_at")
+        read_only_fields = ("id", "author", "created_at")
 
     def get_attached_file_url(self, obj):
         if not obj.attached_file:
