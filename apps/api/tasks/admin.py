@@ -28,6 +28,7 @@ class BoardAdmin(admin.ModelAdmin):
             super().save_model(request, obj, form, change)
             if old_obj.is_deleted != obj.is_deleted:
                 from .cascade_services import TaskCascadeService
+
                 if obj.is_deleted:
                     TaskCascadeService.soft_delete_board(obj)
                 else:
@@ -37,6 +38,7 @@ class BoardAdmin(admin.ModelAdmin):
 
     def delete_queryset(self, request, queryset):
         from .cascade_services import TaskCascadeService
+
         for obj in queryset:
             obj.is_deleted = True
             obj.save(update_fields=["is_deleted"])
@@ -60,6 +62,7 @@ class TaskStatusAdmin(admin.ModelAdmin):
             super().save_model(request, obj, form, change)
             if old_obj.is_deleted != obj.is_deleted:
                 from .cascade_services import TaskCascadeService
+
                 if obj.is_deleted:
                     TaskCascadeService.soft_delete_status(obj)
                 else:
@@ -69,6 +72,7 @@ class TaskStatusAdmin(admin.ModelAdmin):
 
     def delete_queryset(self, request, queryset):
         from .cascade_services import TaskCascadeService
+
         for obj in queryset:
             obj.is_deleted = True
             obj.save(update_fields=["is_deleted"])
@@ -109,6 +113,7 @@ class TaskAdmin(admin.ModelAdmin):
             super().save_model(request, obj, form, change)
             if old_obj.is_deleted != obj.is_deleted:
                 from .cascade_services import TaskCascadeService
+
                 if obj.is_deleted:
                     TaskCascadeService.soft_delete_task(obj)
                 else:
@@ -118,6 +123,7 @@ class TaskAdmin(admin.ModelAdmin):
 
     def delete_queryset(self, request, queryset):
         from .cascade_services import TaskCascadeService
+
         for obj in queryset:
             obj.is_deleted = True
             obj.save(update_fields=["is_deleted"])
