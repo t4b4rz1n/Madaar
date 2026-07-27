@@ -9,27 +9,46 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0005_taskstatus_alter_taskdependency_unique_together_and_more'),
+        ("tasks", "0005_taskstatus_alter_taskdependency_unique_together_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AsyncStandup',
+            name="AsyncStandup",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('is_deleted', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('yesterday_work', models.TextField(verbose_name="Yesterday's Work")),
-                ('today_work', models.TextField(verbose_name="Today's Work")),
-                ('blockers', models.TextField(blank=True, null=True, verbose_name='Blockers')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='standups', to=settings.AUTH_USER_MODEL, verbose_name='User')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("yesterday_work", models.TextField(verbose_name="Yesterday's Work")),
+                ("today_work", models.TextField(verbose_name="Today's Work")),
+                (
+                    "blockers",
+                    models.TextField(blank=True, null=True, verbose_name="Blockers"),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="standups",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="User",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Async Standup',
-                'verbose_name_plural': 'Async Standups',
-                'ordering': ['-created_at'],
+                "verbose_name": "Async Standup",
+                "verbose_name_plural": "Async Standups",
+                "ordering": ["-created_at"],
             },
         ),
     ]
