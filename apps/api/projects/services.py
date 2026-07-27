@@ -178,6 +178,7 @@ class ProjectService:
         )
         project.members.filter(is_deleted=False).update(is_deleted=True)
         project.milestones.filter(is_deleted=False).update(is_deleted=True)
+        project.activities.filter(is_deleted=False).update(is_deleted=True)
         project.delete()  # BaseModel.delete → sets is_deleted=True
         logger.info("Project soft-deleted: %s (by %s)", project.pk, actor)
 
@@ -206,8 +207,31 @@ class ProjectMemberService:
     def add(
         cls, *, project: Project, actor, validated_data: dict[str, Any]
     ) -> ProjectMember:
-        """Add a member (user or team) to a project."""
-        member = ProjectMember.objects.create(project=project, **validated_data)
+        """Add a member (user or team) to a project.
+
+        If the same user was previously soft-deleted from this project,
+        we reactivate the existing record instead of creating a duplicate
+        to avoid IntegrityError from the partial unique constraint.
+        """
+        user = validated_data.get("user")
+        reactivated = None
+
+        if user:
+            reactivated = (
+                ProjectMember.all_objects
+                .filter(project=project, user=user, is_deleted=True)
+                .first()
+            )
+
+        if reactivated:
+            reactivated.is_deleted = False
+            reactivated.is_active = True
+            for attr, value in validated_data.items():
+                setattr(reactivated, attr, value)
+            reactivated.save()
+            member = reactivated
+        else:
+            member = ProjectMember.objects.create(project=project, **validated_data)
 
         _ActivityLogger.log(
             project=project,

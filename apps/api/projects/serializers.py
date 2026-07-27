@@ -100,7 +100,14 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
 
 class ProjectDetailSerializer(ProjectListSerializer):
-    """Full-detail serialiser — includes nested members and milestones."""
+    """Full-detail serialiser — includes nested members and milestones.
+
+    Nested collections are capped at 50 items to prevent unbounded
+    memory usage.  For full paginated access, use the dedicated
+    ``/members/`` and ``/milestones/`` endpoints.
+    """
+
+    _NESTED_LIMIT = 50
 
     members = serializers.SerializerMethodField()
     milestones = serializers.SerializerMethodField()
@@ -108,15 +115,14 @@ class ProjectDetailSerializer(ProjectListSerializer):
     class Meta(ProjectListSerializer.Meta):
         fields = ProjectListSerializer.Meta.fields + ("members", "milestones")
 
-    @staticmethod
-    def get_members(obj):
-        qs = obj.members.filter(is_deleted=False).select_related("user", "team")
+    def get_members(self, obj):
+        qs = obj.members.filter(is_deleted=False).select_related("user", "team")[:self._NESTED_LIMIT]
         return ProjectMemberReadSerializer(qs, many=True).data
 
-    @staticmethod
-    def get_milestones(obj):
-        qs = obj.milestones.filter(is_deleted=False)
-        return MilestoneSerializer(qs, many=True).data
+    def get_milestones(self, obj):
+        qs = obj.milestones.filter(is_deleted=False)[:self._NESTED_LIMIT]
+        ctx = {"project_pk": str(obj.pk)}
+        return MilestoneSerializer(qs, many=True, context=ctx).data
 
 
 class ProjectWriteSerializer(serializers.ModelSerializer):
@@ -162,9 +168,12 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 {"deadline": _("Deadline must be on or after the start date.")}
             )
 
-        # Ensure team belongs to the selected organisation
-        team = attrs.get("team", getattr(self.instance, "team", None))
+        # Resolve org and related objects once
         org = attrs.get("organization", getattr(self.instance, "organization", None))
+        team = attrs.get("team", getattr(self.instance, "team", None))
+        owner = attrs.get("owner", getattr(self.instance, "owner", None))
+
+        # Ensure team belongs to the selected organisation
         if team and org and team.organization_id != org.pk:
             raise serializers.ValidationError(
                 {
@@ -175,9 +184,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             )
 
         # Ensure owner belongs to the organization
-        owner = attrs.get("owner", getattr(self.instance, "owner", None))
-        org = attrs.get("organization", getattr(self.instance, "organization", None))
-
         if owner and org:
             if not OrganizationMembership.objects.filter(
                 user=owner, organization=org, is_deleted=False
@@ -314,8 +320,6 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
         org_id = project.organization_id if project else None
 
         if not org_id and project_pk:
-            from .models import Project
-
             project_obj = Project.objects.filter(pk=project_pk).first()
             if project_obj:
                 org_id = project_obj.organization_id
@@ -394,8 +398,6 @@ class MilestoneSerializer(serializers.ModelSerializer):
         project = getattr(self.instance, "project", None)
 
         if not project and project_pk:
-            from .models import Project
-
             project = Project.objects.filter(pk=project_pk).first()
 
         if project:

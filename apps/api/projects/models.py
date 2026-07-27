@@ -106,7 +106,7 @@ class ProjectMember(BaseModel):
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="project_memberships",
         verbose_name=_("User"),
         null=True,
@@ -147,13 +147,15 @@ class ProjectMember(BaseModel):
     class Meta:
         verbose_name = _("Project Member")
         verbose_name_plural = _("Project Members")
-        ordering = ["project", "user"]
+        ordering = ["project", models.F("user").asc(nulls_last=True)]
         indexes = [
             models.Index(fields=["user", "is_active"], name="member_user_active_idx")
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=["project", "user"], name="unique_project_member"
+                fields=["project", "user"],
+                condition=Q(is_deleted=False),
+                name="unique_active_project_member",
             ),
             models.CheckConstraint(
                 condition=Q(allocation_end_date__isnull=True)

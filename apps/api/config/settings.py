@@ -257,6 +257,8 @@ SPECTACULAR_SETTINGS = {
     "TAGS": [
         {"name": "auth", "description": "Authentication endpoints"},
         {"name": "accounts", "description": "User account management"},
+        {"name": "organizations", "description": "Organisation and team management"},
+        {"name": "projects", "description": "Project, member, milestone and activity management"},
         {"name": "panel", "description": "Panel management"},
         {"name": "dashboard", "description": "Dashboard endpoints"},
         {"name": "support", "description": "Support endpoints"},

@@ -113,8 +113,8 @@ class ProjectServicesTests(TestCase):
         project.refresh_from_db()
         self.assertTrue(project.is_deleted)
 
-        # Check deletion activity was logged
-        delete_act = ProjectActivity.objects.get(
+        # Check deletion activity was logged (activity is now soft-deleted with project)
+        delete_act = ProjectActivity.all_objects.get(
             project=project, event_type=ProjectActivity.EventType.PROJECT_DELETED
         )
         self.assertEqual(delete_act.actor, self.user)
@@ -309,3 +309,57 @@ class ProjectAPITests(APITestCase):
         results = response.data.get("results", response.data)
         if results:
             self.assertIn("status_display", results[0])
+
+    # -- Permission tests --------------------------------------------------
+
+    def test_unauthenticated_user_cannot_list_projects(self):
+        response = self.client.get("/api/v1/projects/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_non_org_admin_cannot_create_project(self):
+        self.client.force_authenticate(user=self.outside_user)
+        payload = {
+            "name": "Blocked Project",
+            "organization_id": str(self.org.id),
+            "status": "draft",
+        }
+        response = self.client.post("/api/v1/projects/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_non_owner_cannot_delete_project(self):
+        self.client.force_authenticate(user=self.member_user)
+        response = self.client.delete(f"/api/v1/projects/{self.project.id}/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    # -- Soft-delete exclusion tests ---------------------------------------
+
+    def test_soft_deleted_project_not_in_list(self):
+        self.client.force_authenticate(user=self.admin)
+        ProjectService.delete(project=self.project, actor=self.admin)
+        response = self.client.get("/api/v1/projects/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get("results", response.data)
+        project_ids = [p["id"] for p in results]
+        self.assertNotIn(str(self.project.id), project_ids)
+
+    # -- Re-add soft-deleted member test -----------------------------------
+
+    def test_readd_soft_deleted_member_reactivates(self):
+        self.client.force_authenticate(user=self.admin)
+        url = f"/api/v1/projects/{self.project.id}/members/"
+
+        # Add member
+        payload = {"user_id": str(self.member_user.id), "allocation_percentage": 100}
+        resp1 = self.client.post(url, payload, format="json")
+        self.assertEqual(resp1.status_code, status.HTTP_201_CREATED)
+        member_id = resp1.data["id"]
+
+        # Remove (soft-delete)
+        del_resp = self.client.delete(f"{url}{member_id}/")
+        self.assertEqual(del_resp.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Re-add same user — should succeed (reactivation)
+        payload2 = {"user_id": str(self.member_user.id), "allocation_percentage": 50}
+        resp2 = self.client.post(url, payload2, format="json")
+        self.assertEqual(resp2.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp2.data["allocation_percentage"], 50)
