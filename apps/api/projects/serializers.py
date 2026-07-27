@@ -116,11 +116,13 @@ class ProjectDetailSerializer(ProjectListSerializer):
         fields = ProjectListSerializer.Meta.fields + ("members", "milestones")
 
     def get_members(self, obj):
-        qs = obj.members.filter(is_deleted=False).select_related("user", "team")[:self._NESTED_LIMIT]
+        qs = obj.members.filter(is_deleted=False).select_related("user", "team")[
+            : self._NESTED_LIMIT
+        ]
         return ProjectMemberReadSerializer(qs, many=True).data
 
     def get_milestones(self, obj):
-        qs = obj.milestones.filter(is_deleted=False)[:self._NESTED_LIMIT]
+        qs = obj.milestones.filter(is_deleted=False)[: self._NESTED_LIMIT]
         ctx = {**self.context, "project_pk": str(obj.pk)}
         return MilestoneSerializer(qs, many=True, context=ctx).data
 
@@ -286,15 +288,25 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
         # Duplicate membership check (only on create)
         project_pk = self.context.get("project_pk")
         if not self.instance and project_pk:
-            if user and ProjectMember.objects.filter(
-                project_id=project_pk, user=user, is_deleted=False
-            ).exists():
+            if (
+                user
+                and ProjectMember.objects.filter(
+                    project_id=project_pk, user=user, is_deleted=False
+                ).exists()
+            ):
                 raise serializers.ValidationError(
                     {"user_id": _("This user is already a member of this project.")}
                 )
-            if team and not user and ProjectMember.objects.filter(
-                project_id=project_pk, team=team, user__isnull=True, is_deleted=False
-            ).exists():
+            if (
+                team
+                and not user
+                and ProjectMember.objects.filter(
+                    project_id=project_pk,
+                    team=team,
+                    user__isnull=True,
+                    is_deleted=False,
+                ).exists()
+            ):
                 raise serializers.ValidationError(
                     {"team_id": _("This team is already a member of this project.")}
                 )
@@ -398,6 +410,7 @@ class MilestoneSerializer(serializers.ModelSerializer):
             "target_date",
             "completed_at",
             "sequence",
+            "weight",
             "task_count",
             "created_at",
             "updated_at",

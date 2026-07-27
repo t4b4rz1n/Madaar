@@ -208,6 +208,13 @@ class Milestone(BaseModel):
     sequence = models.PositiveSmallIntegerField(
         _("Sequence"), default=0, help_text=_("Phase order")
     )
+    weight = models.PositiveSmallIntegerField(
+        _("Weight"),
+        default=1,
+        help_text=_(
+            "Weight/Percentage of this milestone in overall project progress (e.g. 1 to 100)"
+        ),
+    )
 
     class Meta:
         verbose_name = _("Milestone")

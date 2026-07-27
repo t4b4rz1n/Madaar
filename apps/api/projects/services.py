@@ -149,7 +149,10 @@ class ProjectService:
             and old_status != Project.Status.ARCHIVED
         ):
             project.archived_at = now
-        elif new_status != Project.Status.ARCHIVED and old_status == Project.Status.ARCHIVED:
+        elif (
+            new_status != Project.Status.ARCHIVED
+            and old_status == Project.Status.ARCHIVED
+        ):
             # Only clear archived_at when moving BACK from archived.
             project.archived_at = None
 
@@ -234,17 +237,13 @@ class ProjectMemberService:
         reactivated = None
 
         if user:
-            reactivated = (
-                ProjectMember.all_objects
-                .filter(project=project, user=user, is_deleted=True)
-                .first()
-            )
+            reactivated = ProjectMember.all_objects.filter(
+                project=project, user=user, is_deleted=True
+            ).first()
         elif team:
-            reactivated = (
-                ProjectMember.all_objects
-                .filter(project=project, team=team, user__isnull=True, is_deleted=True)
-                .first()
-            )
+            reactivated = ProjectMember.all_objects.filter(
+                project=project, team=team, user__isnull=True, is_deleted=True
+            ).first()
 
         if reactivated:
             reactivated.is_deleted = False
@@ -393,7 +392,6 @@ class MilestoneService:
         ):
             # Only clear completed_at when moving BACK from completed.
             milestone.completed_at = None
-
 
         milestone.save()
 
