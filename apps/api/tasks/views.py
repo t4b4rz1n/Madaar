@@ -80,6 +80,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.save(update_fields=["is_deleted"])
         from .cascade_services import TaskCascadeService
+
         TaskCascadeService.soft_delete_board(instance)
 
     @extend_schema(request=BoardReorderSerializer)
@@ -301,6 +302,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             task_status = TaskStatus.objects.filter(id=status_id).first()
             if not task_status:
                 from rest_framework.exceptions import ValidationError
+
                 raise ValidationError({"status_id": ["Invalid status ID."]})
 
         updated_task = TaskService.move_task(
@@ -426,13 +428,14 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
         user_id = self.request.query_params.get("user")
         if user_id:
             role = get_user_org_role(self.request)
-            is_admin = user.is_staff or user.is_superuser or role in ["owner", "admin", "hr"]
+            is_admin = (
+                user.is_staff or user.is_superuser or role in ["owner", "admin", "hr"]
+            )
             if str(user_id) != str(user.id) and not is_admin:
                 if role == "team_lead":
                     team_ids = user.team_memberships.values_list("team_id", flat=True)
                     has_access = AsyncStandup.objects.filter(
-                        user_id=user_id,
-                        user__team_memberships__team_id__in=team_ids
+                        user_id=user_id, user__team_memberships__team_id__in=team_ids
                     ).exists()
                     if not has_access:
                         return qs.none()

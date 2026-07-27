@@ -134,6 +134,7 @@ class TaskStatusService:
         status_obj.is_deleted = True
         status_obj.save(update_fields=["is_deleted"])
         from .cascade_services import TaskCascadeService
+
         TaskCascadeService.soft_delete_status(status_obj)
 
         if actor:
@@ -324,6 +325,7 @@ class TaskService:
         task.is_deleted = True
         task.save(update_fields=["is_deleted"])
         from .cascade_services import TaskCascadeService
+
         TaskCascadeService.soft_delete_task(task)
 
         TaskActivityLog.objects.create(

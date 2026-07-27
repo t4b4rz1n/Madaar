@@ -28,7 +28,7 @@ class Board(BaseModel):
         verbose_name=_("Project"),
         null=False,
         blank=False,
-        )
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -36,7 +36,7 @@ class Board(BaseModel):
         verbose_name=_("Created By"),
         null=True,
         blank=True,
-        )
+    )
     order = models.PositiveIntegerField(_("Order"), default=0)
 
     class Meta:
@@ -114,7 +114,7 @@ class Task(BaseModel):
         verbose_name=_("Project"),
         null=False,
         blank=False,
-        )
+    )
     milestone = models.ForeignKey(
         "projects.Milestone",
         on_delete=models.SET_NULL,
@@ -122,7 +122,7 @@ class Task(BaseModel):
         verbose_name=_("Milestone"),
         null=True,
         blank=True,
-        )
+    )
     title = models.CharField(_("Title"), max_length=255)
     description = models.TextField(_("Description"), blank=True, null=True)
     status = models.ForeignKey(
@@ -130,13 +130,13 @@ class Task(BaseModel):
         on_delete=models.PROTECT,
         related_name="tasks",
         verbose_name=_("Status"),
-        )
+    )
     priority = models.CharField(
         _("Priority"),
         max_length=20,
         choices=Priority.choices,
         default=Priority.MEDIUM,
-        )
+    )
     assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -144,7 +144,7 @@ class Task(BaseModel):
         verbose_name=_("Assignee"),
         null=True,
         blank=True,
-        )
+    )
     reporter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -152,7 +152,7 @@ class Task(BaseModel):
         verbose_name=_("Reporter"),
         null=True,
         blank=True,
-        )
+    )
     due_date = models.DateTimeField(_("Due date"), null=True, blank=True)
     progress_cache = models.DecimalField(
         _("Progress Percent"), max_digits=5, decimal_places=2, default=0
@@ -174,7 +174,7 @@ class Task(BaseModel):
         verbose_name=_("Parent Task"),
         null=True,
         blank=True,
-        )
+    )
     order = models.PositiveIntegerField(_("Kanban Order"), default=0)
 
     class Meta:
@@ -266,7 +266,9 @@ class TaskChecklistItem(BaseModel):
         ordering = ["created_at"]
         indexes = [
             models.Index(fields=["task"]),
-            models.Index(fields=["task", "is_completed"], name="chk_task_completed_idx"),
+            models.Index(
+                fields=["task", "is_completed"], name="chk_task_completed_idx"
+            ),
         ]
 
     def __str__(self):
@@ -371,7 +373,11 @@ class TaskActivityLog(BaseModel):
         ]
 
     def __str__(self):
-        target = f"Task {self.task_id}" if self.task_id else (f"Board {self.board_id}" if self.board_id else "Global")
+        target = (
+            f"Task {self.task_id}"
+            if self.task_id
+            else (f"Board {self.board_id}" if self.board_id else "Global")
+        )
         return f"{target} - {self.action} @ {self.created_at}"
 
 
@@ -388,7 +394,7 @@ class AsyncStandup(BaseModel):
         verbose_name=_("User"),
         null=True,
         blank=True,
-        )
+    )
     yesterday_work = models.TextField(_("Yesterday's Work"))
     today_work = models.TextField(_("Today's Work"))
     blockers = models.TextField(_("Blockers"), blank=True, null=True)

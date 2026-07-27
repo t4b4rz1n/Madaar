@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from projects.models import Project
+from tasks.cascade_services import TaskCascadeService
 from tasks.models import Board, Task, TaskChecklistItem, TaskComment, TaskStatus
 
 User = get_user_model()
@@ -40,11 +41,9 @@ class TaskCascadeTestCase(TestCase):
         )
 
     def test_soft_delete_and_restore_board_cascade(self):
-        # Soft delete board
-        self.board.is_deleted = True
-        self.board.save()
+        TaskCascadeService.soft_delete_board(self.board)
+        self.board.refresh_from_db()
 
-        # Check cascaded soft deletion
         self.status.refresh_from_db()
         self.task.refresh_from_db()
         self.subtask.refresh_from_db()
@@ -58,9 +57,8 @@ class TaskCascadeTestCase(TestCase):
         self.assertTrue(self.checklist_item.is_deleted)
         self.assertTrue(self.comment.is_deleted)
 
-        # Restore board
-        self.board.is_deleted = False
-        self.board.save()
+        TaskCascadeService.restore_board(self.board)
+        self.board.refresh_from_db()
 
         self.status.refresh_from_db()
         self.task.refresh_from_db()

@@ -20,8 +20,8 @@ def update_parent_task_progress(sender, instance, **kwargs):
         _update_task_progress_cache(parent_task)
 
 
-def _update_task_progress_cache(task):
-    if not task:
+def _update_task_progress_cache(task, depth=0):
+    if not task or depth > 10:
         return
 
     new_progress = task._progress_percent_internal()
@@ -32,4 +32,4 @@ def _update_task_progress_cache(task):
 
         if task.parent_task_id:
             parent = Task.all_objects.filter(id=task.parent_task_id).first()
-            _update_task_progress_cache(parent)
+            _update_task_progress_cache(parent, depth + 1)

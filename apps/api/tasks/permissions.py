@@ -57,11 +57,14 @@ def extract_organization_id(obj_or_request):
                 if proj_id:
                     from projects.models import Project
 
-                    project = Project.objects.filter(id=proj_id).first()
                     user = getattr(obj_or_request, "user", None)
-                    if project and user and user.is_authenticated:
+                    if user and user.is_authenticated:
                         if is_user_project_member(obj_or_request, proj_id):
-                            return project.organization_id
+                            return (
+                                Project.objects.filter(id=proj_id)
+                                .values_list("organization_id", flat=True)
+                                .first()
+                            )
                 org_id = data.get("organization") or data.get("organization_id")
                 if org_id:
                     return org_id
@@ -376,6 +379,9 @@ class IsAsyncStandupPermission(BaseMadaarPermission):
             return True
         org_id = extract_organization_id(request)
         return get_user_org_role(request, org_id) is not None
+
+    def has_object_permission(self, request, view, obj):
+        return self.check_object_permission(request, view, obj)
 
     def check_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:

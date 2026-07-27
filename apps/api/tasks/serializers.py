@@ -284,7 +284,12 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             seen = {self.instance.id}
             from .models import Task
 
+            depth = 0
             while ancestor_id:
+                if depth > 10:
+                    raise serializers.ValidationError(
+                        {"parent_task": _("Parent task hierarchy is too deep.")}
+                    )
                 if ancestor_id in seen:
                     raise serializers.ValidationError(
                         {"parent_task": _("Circular parent task detected.")}
@@ -295,6 +300,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
                     .values_list("parent_task_id", flat=True)
                     .first()
                 )
+                depth += 1
 
         # Ensure status belongs to the same project
         if task_status and project and task_status.board.project_id != project.id:
@@ -347,12 +353,12 @@ class OrderItemSerializer(serializers.Serializer):
 class BoardReorderSerializer(serializers.Serializer):
     project_id = serializers.UUIDField(help_text=_("UUID of the project"))
     orders = OrderItemSerializer(
-        many=True, help_text=_("List of board ordering objects")
+        many=True, allow_empty=False, help_text=_("List of board ordering objects")
     )
 
 
 class StatusReorderSerializer(serializers.Serializer):
     board_id = serializers.UUIDField(help_text=_("UUID of the board"))
     orders = OrderItemSerializer(
-        many=True, help_text=_("List of status ordering objects")
+        many=True, allow_empty=False, help_text=_("List of status ordering objects")
     )
