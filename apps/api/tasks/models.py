@@ -47,27 +47,6 @@ class Board(BaseModel):
     def __str__(self):
         return self.title
 
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        old_is_deleted = False
-        if not is_new:
-            old = (
-                Board.all_objects.filter(pk=self.pk)
-                .values_list("is_deleted", flat=True)
-                .first()
-            )
-            old_is_deleted = old if old is not None else False
-
-        super().save(*args, **kwargs)
-
-        if not is_new and self.is_deleted != old_is_deleted:
-            from .cascade_services import TaskCascadeService
-
-            if self.is_deleted:
-                TaskCascadeService.soft_delete_board(self)
-            else:
-                TaskCascadeService.restore_board(self)
-
 
 class TaskStatus(BaseModel):
     """
@@ -81,7 +60,8 @@ class TaskStatus(BaseModel):
         on_delete=models.CASCADE,
         related_name="statuses",
         verbose_name=_("Board"),
-        )
+        db_index=True,
+    )
     code = models.SlugField(
         _("Code"),
         max_length=50,
@@ -110,30 +90,12 @@ class TaskStatus(BaseModel):
         ]
 
     def __str__(self):
-        if "board" in self.__dict__ and self.board:
-            return f"{self.board.title} - {self.name}"
+        if self.board_id:
+            try:
+                return f"{self.board.title} - {self.name}"
+            except Exception:
+                pass
         return self.name
-
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        old_is_deleted = False
-        if not is_new:
-            old = (
-                TaskStatus.all_objects.filter(pk=self.pk)
-                .values_list("is_deleted", flat=True)
-                .first()
-            )
-            old_is_deleted = old if old is not None else False
-
-        super().save(*args, **kwargs)
-
-        if not is_new and self.is_deleted != old_is_deleted:
-            from .cascade_services import TaskCascadeService
-
-            if self.is_deleted:
-                TaskCascadeService.soft_delete_status(self)
-            else:
-                TaskCascadeService.restore_status(self)
 
 
 class Task(BaseModel):
@@ -226,15 +188,21 @@ class Task(BaseModel):
         ]
 
     def __str__(self):
-        if "status" in self.__dict__ and self.status:
-            return f"{self.title} [{self.status.name}]"
+        if self.status_id:
+            try:
+                return f"{self.title} [{self.status.name}]"
+            except Exception:
+                pass
         return self.title
 
     @property
     def is_completed(self):
         """Returns True if the task status code is 'done'."""
-        if "status" in self.__dict__ and self.status:
-            return self.status.code == "done"
+        if self.status_id:
+            try:
+                return self.status.code == "done"
+            except Exception:
+                pass
         return False
 
     def _progress_percent_internal(self, seen=None):
@@ -279,27 +247,6 @@ class Task(BaseModel):
         """Returns the cached progress percent."""
         return self.progress_cache
 
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        old_is_deleted = False
-        if not is_new:
-            old = (
-                Task.all_objects.filter(pk=self.pk)
-                .values_list("is_deleted", flat=True)
-                .first()
-            )
-            old_is_deleted = old if old is not None else False
-
-        super().save(*args, **kwargs)
-
-        if not is_new and self.is_deleted != old_is_deleted:
-            from .cascade_services import TaskCascadeService
-
-            if self.is_deleted:
-                TaskCascadeService.soft_delete_task(self)
-            else:
-                TaskCascadeService.restore_task(self)
-
 
 class TaskChecklistItem(BaseModel):
     """Checklist items belonging to a task."""
@@ -318,7 +265,8 @@ class TaskChecklistItem(BaseModel):
         verbose_name_plural = _("Task Checklist Items")
         ordering = ["created_at"]
         indexes = [
-            models.Index(fields=["task", "is_completed"], name="chk_task_completed_idx")
+            models.Index(fields=["task"]),
+            models.Index(fields=["task", "is_completed"], name="chk_task_completed_idx"),
         ]
 
     def __str__(self):
@@ -373,9 +321,10 @@ class TaskComment(BaseModel):
         verbose_name_plural = _("Task Comments")
         ordering = ["created_at"]
         indexes = [
+            models.Index(fields=["task"]),
             models.Index(
                 fields=["task", "-created_at"], name="comment_task_created_idx"
-            )
+            ),
         ]
 
     def __str__(self):
@@ -450,4 +399,5 @@ class AsyncStandup(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Standup by User {self.user_id} on {self.created_at.date()}"
+        user_info = f"User {self.user_id}" if self.user_id else "Unknown User"
+        return f"Standup by {user_info} on {self.created_at.date()}"

@@ -76,11 +76,19 @@ class BoardViewSet(viewsets.ModelViewSet):
         )
         serializer.instance = board
 
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save(update_fields=["is_deleted"])
+        from .cascade_services import TaskCascadeService
+        TaskCascadeService.soft_delete_board(instance)
+
     @extend_schema(request=BoardReorderSerializer)
     @action(detail=False, methods=["post"], url_path="reorder-boards")
     def reorder_boards(self, request):
-        project_id = request.data.get("project_id")
-        orders = request.data.get("orders", [])
+        serializer = BoardReorderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        project_id = serializer.validated_data.get("project_id")
+        orders = serializer.validated_data.get("orders", [])
         from projects.models import Project
 
         project = Project.objects.filter(id=project_id).first()
@@ -107,6 +115,13 @@ class BoardViewSet(viewsets.ModelViewSet):
         logs = TaskActivityLog.objects.filter(board=board).select_related(
             "board", "actor"
         )
+        page = self.paginate_queryset(logs)
+        if page is not None:
+            serializer = TaskActivityLogSerializer(
+                page, many=True, context={"request": request}
+            )
+            return self.get_paginated_response(serializer.data)
+
         return Response(
             TaskActivityLogSerializer(
                 logs, many=True, context={"request": request}
@@ -165,11 +180,13 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
 # Task ViewSet
 class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTaskPermission]
+    serializer_class = TaskListSerializer
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
         qs = (
             Task.objects.select_related("project", "status", "assignee", "reporter")
-            .prefetch_related("subtasks", "checklist_items", "comments")
+            .prefetch_related("checklist_items", "comments")
             .annotate(
                 annotated_subtasks_count=Count(
                     "subtasks", filter=Q(subtasks__is_deleted=False), distinct=True
@@ -279,9 +296,12 @@ class TaskViewSet(viewsets.ModelViewSet):
         status_id = request.data.get("status_id")
         new_order = request.data.get("order")
 
-        task_status = (
-            TaskStatus.objects.filter(id=status_id).first() if status_id else None
-        )
+        task_status = None
+        if status_id:
+            task_status = TaskStatus.objects.filter(id=status_id).first()
+            if not task_status:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({"status_id": ["Invalid status ID."]})
 
         updated_task = TaskService.move_task(
             task=task,
@@ -302,6 +322,13 @@ class TaskViewSet(viewsets.ModelViewSet):
         logs = TaskActivityLog.objects.filter(task=task).select_related(
             "board", "actor"
         )
+        page = self.paginate_queryset(logs)
+        if page is not None:
+            serializer = TaskActivityLogSerializer(
+                page, many=True, context={"request": request}
+            )
+            return self.get_paginated_response(serializer.data)
+
         return Response(
             TaskActivityLogSerializer(
                 logs, many=True, context={"request": request}
@@ -380,6 +407,10 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
             qs = qs.filter(task_id=task_id)
         return qs
 
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save(update_fields=["is_deleted"])
+
 
 class AsyncStandupViewSet(viewsets.ModelViewSet):
     serializer_class = AsyncStandupSerializer
@@ -394,6 +425,19 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
 
         user_id = self.request.query_params.get("user")
         if user_id:
+            role = get_user_org_role(self.request)
+            is_admin = user.is_staff or user.is_superuser or role in ["owner", "admin", "hr"]
+            if str(user_id) != str(user.id) and not is_admin:
+                if role == "team_lead":
+                    team_ids = user.team_memberships.values_list("team_id", flat=True)
+                    has_access = AsyncStandup.objects.filter(
+                        user_id=user_id,
+                        user__team_memberships__team_id__in=team_ids
+                    ).exists()
+                    if not has_access:
+                        return qs.none()
+                else:
+                    return qs.none()
             qs = qs.filter(user_id=user_id)
 
         if user.is_staff or user.is_superuser:

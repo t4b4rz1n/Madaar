@@ -62,6 +62,7 @@ class BoardService:
         """
         board_orders: list of dicts [{'id': uuid, 'order': int}, ...]
         """
+        boards_to_update = []
         board_ids = [item["id"] for item in board_orders if "id" in item]
         if board_ids:
             boards_dict = {
@@ -70,7 +71,6 @@ class BoardService:
                     id__in=board_ids, project=project
                 ).select_for_update()
             }
-            boards_to_update = []
             for item in board_orders:
                 board_obj = boards_dict.get(str(item["id"]))
                 if board_obj:
@@ -80,8 +80,8 @@ class BoardService:
             if boards_to_update:
                 Board.objects.bulk_update(boards_to_update, ["order"])
 
-        if actor:
-            first_board = boards_to_update[0] if boards_to_update else None
+        if actor and boards_to_update:
+            first_board = boards_to_update[0]
             TaskActivityLog.objects.create(
                 board=first_board,
                 actor=actor,
@@ -128,15 +128,13 @@ class TaskStatusService:
     @staticmethod
     @transaction.atomic
     def delete_status(status_obj, actor=None):
-        if Task.objects.filter(status=status_obj).exists():
-            raise ValidationError(
-                _("Cannot delete status '%(name)s': tasks are still using it.")
-                % {"name": status_obj.name}
-            )
-
         board = status_obj.board
         name = status_obj.name
-        status_obj.delete()
+
+        status_obj.is_deleted = True
+        status_obj.save(update_fields=["is_deleted"])
+        from .cascade_services import TaskCascadeService
+        TaskCascadeService.soft_delete_status(status_obj)
 
         if actor:
             TaskActivityLog.objects.create(
@@ -302,6 +300,7 @@ class TaskService:
 
         if new_order is not None and task.order != new_order:
             task.order = new_order
+            action_parts.append(str(_("Order changed")))
             changed = True
 
         if changed:
@@ -322,8 +321,13 @@ class TaskService:
         """Soft deletes task and logs activity."""
         title = task.title
         board = task.status.board if task.status else None
-        task.delete()
+        task.is_deleted = True
+        task.save(update_fields=["is_deleted"])
+        from .cascade_services import TaskCascadeService
+        TaskCascadeService.soft_delete_task(task)
+
         TaskActivityLog.objects.create(
+            task=task,
             board=board,
             actor=actor,
             action=Truncator(
@@ -378,7 +382,8 @@ class ChecklistService:
     def delete_item(item, actor=None):
         task = item.task
         desc = item.description
-        item.delete()
+        item.is_deleted = True
+        item.save(update_fields=["is_deleted"])
 
         if actor:
             TaskActivityLog.objects.create(
