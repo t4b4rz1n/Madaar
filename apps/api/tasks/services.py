@@ -281,6 +281,12 @@ class TaskService:
     @transaction.atomic
     def move_task(task, actor, new_status=None, new_order=None):
         """Handles Drag & Drop movement across Kanban statuses."""
+        if task.assignee != actor and not actor.is_staff and not actor.is_superuser:
+            role = actor.org_memberships.filter(organization_id=task.project.organization_id).values_list("role", flat=True).first()
+            if role not in ["owner", "admin", "lead"]:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied(_("Only the assignee or a project manager can move this task."))
+
         action_parts = []
 
         changed = False
@@ -301,6 +307,7 @@ class TaskService:
 
             # Handle timer auto-start/stop
             from attendance.services import TimeLogService
+
             code = new_status.code.lower() if new_status.code else ""
             if code == "doing":
                 # Only start if the actor is the assignee
@@ -309,9 +316,10 @@ class TaskService:
             elif code in ["review", "done"]:
                 # Stop timers for anyone working on this task
                 from attendance.models import TimeLog
+
                 active_timers = TimeLog.objects.filter(task=task, is_active=True)
                 for timer in active_timers:
-                    TimeLogService.stop_timer(timer.user, task)
+                    TimeLogService.stop_timer(timer.user, timer.id)
 
         if new_order is not None and task.order != new_order:
             task.order = new_order
