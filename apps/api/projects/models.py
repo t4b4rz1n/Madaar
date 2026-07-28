@@ -62,8 +62,18 @@ class Project(BaseModel):
         default=Status.DRAFT,
         db_index=True,
     )
-    start_date = models.DateField(_("Start date"), null=True, blank=True)
-    deadline = models.DateField(_("Deadline"), null=True, blank=True)
+    start_date = models.DateField(
+        _("Start date"),
+        null=True,
+        blank=True,
+        help_text=_("The date when the project officially begins."),
+    )
+    deadline = models.DateField(
+        _("Deadline"),
+        null=True,
+        blank=True,
+        help_text=_("The absolute final date for project completion."),
+    )
     completed_at = models.DateTimeField(_("Completed at"), null=True, blank=True)
     archived_at = models.DateTimeField(_("Archived at"), null=True, blank=True)
 
@@ -135,10 +145,20 @@ class ProjectMember(BaseModel):
         ),
     )
     allocation_start_date = models.DateField(
-        _("Allocation start date"), null=True, blank=True
+        _("Allocation start date"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "When this member starts working on the project. May differ from the project start date."
+        ),
     )
     allocation_end_date = models.DateField(
-        _("Allocation end date"), null=True, blank=True
+        _("Allocation end date"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "When this member stops working on the project. May differ from the project deadline."
+        ),
     )
     is_active = models.BooleanField(_("Is active"), default=True, db_index=True)
 
@@ -200,8 +220,16 @@ class Milestone(BaseModel):
         default=Status.PENDING,
         db_index=True,
     )
-    start_date = models.DateField(_("Start date"), null=True, blank=True)
-    target_date = models.DateField(_("Target date"))
+    start_date = models.DateField(
+        _("Start date"),
+        null=True,
+        blank=True,
+        help_text=_("When work on this milestone begins."),
+    )
+    target_date = models.DateField(
+        _("Target date"),
+        help_text=_("The expected completion date for this milestone."),
+    )
     completed_at = models.DateTimeField(_("Completed at"), null=True, blank=True)
     sequence = models.PositiveSmallIntegerField(
         _("Sequence"), default=0, help_text=_("Phase order")

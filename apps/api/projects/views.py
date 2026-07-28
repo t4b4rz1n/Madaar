@@ -69,7 +69,7 @@ from .services import MilestoneService, ProjectMemberService, ProjectService
     list=extend_schema(
         summary=_("List projects"),
         description=_(
-            "Returns all non-deleted projects accessible to the authenticated user."
+            "Return all non-deleted projects accessible to the authenticated user."
         ),
         tags=["projects"],
     ),
@@ -120,6 +120,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
     # -- Queryset ----------------------------------------------------------
 
     def get_queryset(self):
+        """
+        Return the queryset of projects the current user can access.
+
+        Staff users can see all projects. Regular users can only see projects
+        where they are the owner, a project member, or a member of the project's
+        organization.
+        """
         if getattr(self, "swagger_fake_view", False):
             return Project.objects.none()
 
@@ -182,14 +189,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary=_("List project teams"),
-        description=_(
-            "Returns a list of all teams involved in this project (both the main team and member teams)."
-        ),
         tags=["projects"],
         responses={200: TeamMinimalSerializer(many=True)},
     )
     @action(detail=True, methods=["get"], url_path="teams")
     def teams(self, request, pk=None):
+        """
+        Return a list of all teams involved in this project.
+
+        Includes both the main team assigned to the project and any teams
+        that are part of the project memberships.
+        """
         project = self.get_object()
         team_filter = Q(
             project_memberships__project=project, project_memberships__is_deleted=False
@@ -202,12 +212,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary=_("Archive a project"),
-        description=_("Convenience endpoint to move a project to ARCHIVED status."),
         tags=["projects"],
         request=None,
+        responses={200: ProjectDetailSerializer},
     )
     @action(detail=True, methods=["post"], url_path="archive")
     def archive(self, request, pk=None):
+        """Move a project to ARCHIVED status."""
         project = self.get_object()
         updated = ProjectService.update(
             project=project,
@@ -220,12 +231,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary=_("Complete a project"),
-        description=_("Convenience endpoint to move a project to COMPLETED status."),
         tags=["projects"],
         request=None,
+        responses={200: ProjectDetailSerializer},
     )
     @action(detail=True, methods=["post"], url_path="complete")
     def complete(self, request, pk=None):
+        """Move a project to COMPLETED status."""
         project = self.get_object()
         updated = ProjectService.update(
             project=project,
@@ -428,7 +440,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
 @extend_schema_view(
     list=extend_schema(
         summary=_("List project activities"),
-        description=_("Returns the live activity timeline for a project."),
+        description=_("Return the live activity timeline for a project."),
         tags=["projects"],
     ),
     retrieve=extend_schema(

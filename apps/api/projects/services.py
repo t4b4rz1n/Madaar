@@ -128,7 +128,6 @@ class ProjectService:
         for attr, value in validated_data.items():
             setattr(project, attr, value)
 
-        # Lifecycle timestamps ------------------------------------------
         now = timezone.now()
         if (
             new_status == Project.Status.COMPLETED
@@ -158,7 +157,6 @@ class ProjectService:
 
         project.save()
 
-        # Activity log --------------------------------------------------
         metadata: dict[str, Any] = {"updated_fields": list(validated_data.keys())}
         if old_status != new_status:
             metadata["status_changed"] = {"from": old_status, "to": new_status}
@@ -182,7 +180,6 @@ class ProjectService:
         Activities are soft-deleted *before* the deletion log is written
         so the deletion event itself remains visible in the audit trail.
         """
-        # First: soft-delete existing activities
         project.activities.filter(is_deleted=False).update(is_deleted=True)
 
         # Then: log the deletion event (this new record stays is_deleted=False)
@@ -195,7 +192,6 @@ class ProjectService:
             metadata={"name": project.name},
         )
 
-        # Finally: soft-delete members, milestones, tasks, and the project itself
         project.members.filter(is_deleted=False).update(is_deleted=True)
         project.milestones.filter(is_deleted=False).update(is_deleted=True)
         if hasattr(project, "tasks"):
