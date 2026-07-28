@@ -1,5 +1,6 @@
 import datetime
 from django.utils import timezone
+from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -31,13 +32,25 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return AttendanceSerializer
 
     def get_queryset(self):
-        qs = Attendance.objects.select_related("user").filter(is_deleted=False)
-        if getattr(self.request.user, "is_superuser", False) or getattr(self.request.user, "is_staff", False):
+        qs = Attendance.objects.select_related("user", "organization").filter(is_deleted=False)
+        user = self.request.user
+        if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             return qs.all()
-        return qs.filter(user=self.request.user)
+            
+        orgs_managed = user.org_memberships.filter(role__in=["owner", "admin", "hr"]).values_list('organization_id', flat=True)
+        teams_lead = user.team_memberships.filter(role="lead").values_list('team__memberships__user_id', flat=True)
+        
+        return qs.filter(
+            Q(user=user) | 
+            Q(organization_id__in=orgs_managed) | 
+            Q(user_id__in=teams_lead)
+        ).distinct()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        AttendanceService.save_manual_attendance(self.request.user, serializer.validated_data)
+        
+    def perform_update(self, serializer):
+        AttendanceService.save_manual_attendance(self.request.user, serializer.validated_data, instance=serializer.instance)
 
     @action(detail=False, methods=["post"], url_path="check-in")
     def check_in(self, request):
@@ -71,13 +84,39 @@ class TimeLogViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = TimeLog.objects.select_related("user", "task", "project").filter(is_deleted=False)
-        if getattr(self.request.user, "is_superuser", False) or getattr(self.request.user, "is_staff", False):
+        user = self.request.user
+        if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             return qs.all()
-        return qs.filter(user=self.request.user)
+            
+        orgs_managed = user.org_memberships.filter(role__in=["owner", "admin", "hr"]).values_list('organization_id', flat=True)
+        teams_lead = user.team_memberships.filter(role="lead").values_list('team__memberships__user_id', flat=True)
+        
+        return qs.filter(
+            Q(user=user) | 
+            Q(project__organization_id__in=orgs_managed) | 
+            Q(user_id__in=teams_lead)
+        ).distinct()
 
     def perform_create(self, serializer):
         task = serializer.validated_data.get("task")
-        serializer.save(user=self.request.user, project=task.project)
+        start_time = serializer.validated_data.get("start_time")
+        end_time = serializer.validated_data.get("end_time")
+        
+        duration = 0
+        if start_time and end_time:
+            duration = int((end_time - start_time).total_seconds())
+            
+        serializer.save(user=self.request.user, project=task.project if task else None, duration_seconds=duration, is_active=not bool(end_time))
+
+    def perform_update(self, serializer):
+        start_time = serializer.validated_data.get("start_time", serializer.instance.start_time)
+        end_time = serializer.validated_data.get("end_time", serializer.instance.end_time)
+        
+        duration = 0
+        if start_time and end_time:
+            duration = int((end_time - start_time).total_seconds())
+            
+        serializer.save(duration_seconds=duration, is_active=not bool(end_time))
 
     @action(detail=False, methods=["post"], url_path="start-timer")
     def start_timer(self, request):
@@ -115,10 +154,19 @@ class TimeOffRequestViewSet(viewsets.ModelViewSet):
         return TimeOffRequestSerializer
 
     def get_queryset(self):
-        qs = TimeOffRequest.objects.select_related("user", "approved_by").filter(is_deleted=False)
-        if getattr(self.request.user, "is_superuser", False) or getattr(self.request.user, "is_staff", False):
+        qs = TimeOffRequest.objects.select_related("user", "approved_by", "organization").filter(is_deleted=False)
+        user = self.request.user
+        if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             return qs.all()
-        return qs.filter(user=self.request.user)
+            
+        orgs_managed = user.org_memberships.filter(role__in=["owner", "admin", "hr"]).values_list('organization_id', flat=True)
+        teams_lead = user.team_memberships.filter(role="lead").values_list('team__memberships__user_id', flat=True)
+        
+        return qs.filter(
+            Q(user=user) | 
+            Q(organization_id__in=orgs_managed) | 
+            Q(user_id__in=teams_lead)
+        ).distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

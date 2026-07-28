@@ -59,6 +59,29 @@ class AttendanceService:
     def get_user_attendance(user, start_date, end_date):
         return Attendance.objects.select_related("user", "organization").filter(user=user, date__range=(start_date, end_date))
 
+    @staticmethod
+    @transaction.atomic
+    def save_manual_attendance(user, data, instance=None):
+        if instance:
+            for attr, value in data.items():
+                setattr(instance, attr, value)
+        else:
+            instance = Attendance(user=user, **data)
+        
+        # Recalculate overtime
+        if instance.check_in and instance.check_out:
+            setting = AttendanceSetting.objects.filter(organization=instance.organization).first()
+            if setting:
+                duration = (instance.check_out - instance.check_in).total_seconds() / 3600.0
+                expected = float(setting.expected_daily_hours)
+                if duration > expected:
+                    instance.overtime_minutes = int((duration - expected) * 60)
+                else:
+                    instance.overtime_minutes = 0
+                    
+        instance.save()
+        return instance
+
 
 class TimeLogService:
     @staticmethod

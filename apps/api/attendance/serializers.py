@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from .models import Attendance, TimeLog, TimeOffRequest, Holiday
 from accounts.models import User
 
@@ -34,7 +35,21 @@ class AttendanceSerializer(serializers.ModelSerializer):
 class AttendanceWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
-        fields = ("id", "organization", "is_remote")
+        fields = ("id", "organization", "date", "check_in", "check_out", "is_remote")
+
+    def validate(self, attrs):
+        check_in = attrs.get('check_in')
+        check_out = attrs.get('check_out')
+        date = attrs.get('date')
+
+        if date and date > timezone.localdate():
+            raise serializers.ValidationError({"date": _("Date cannot be in the future.")})
+            
+        if check_in and check_out:
+            if check_out <= check_in:
+                raise serializers.ValidationError({"check_out": _("Check-out time must be after check-in time.")})
+                
+        return attrs
 
 
 class TimeLogSerializer(serializers.ModelSerializer):
