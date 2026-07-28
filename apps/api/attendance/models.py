@@ -173,13 +173,16 @@ class Holiday(BaseModel):
         "organizations.Organization", on_delete=models.CASCADE, related_name="holidays", null=True, blank=True
     )
     description = models.TextField(_("Description"), blank=True)
-    date = models.DateField(_("Date"), unique=True, db_index=True)
+    date = models.DateField(_("Date"), db_index=True)
     is_official = models.BooleanField(_("Is Official Holiday"), default=True)
 
     class Meta:
         verbose_name = _("Holiday")
         verbose_name_plural = _("Holidays")
         ordering = ["-date"]
+        constraints = [
+            models.UniqueConstraint(fields=["date", "organization"], name="unique_holiday_org_date")
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.date})"
