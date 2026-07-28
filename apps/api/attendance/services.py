@@ -21,7 +21,7 @@ class AttendanceService:
         if not created and not attendance.check_in:
             attendance.check_in = timezone.now()
             attendance.save(update_fields=['check_in'])
-        return attendance
+        return attendance, created
 
     @staticmethod
     @transaction.atomic
@@ -37,7 +37,7 @@ class AttendanceService:
         
         # Stop any active timers
         active_timer = TimeLogService.get_active_timer(user)
-        if active_timer:
+        if active_timer and active_timer.id:
             TimeLogService.stop_timer(user, active_timer.id)
 
         # Auto calculate overtime if setting exists
@@ -93,7 +93,7 @@ class TimeLogService:
         
         # Stop existing active timer
         active = TimeLogService.get_active_timer(user)
-        if active:
+        if active and active.id:
             TimeLogService.stop_timer(user, active.id)
 
         now = timezone.now()
@@ -106,8 +106,8 @@ class TimeLogService:
             is_active=True
         )
 
-        # Auto-move task to Doing if in To Do
-        if task.status and task.status.code.lower() == 'todo':
+        # Auto-move task to Doing if it's not already in Doing
+        if task.status and task.status.code.lower() != 'doing':
             doing_status = TaskStatus.objects.filter(board=task.status.board, code__iexact='doing').first()
             if doing_status:
                 from tasks.services import TaskService
@@ -207,13 +207,13 @@ class TimeOffRequestService:
     @staticmethod
     @transaction.atomic
     def approve(request_id, manager):
-        from .permissions import BaseAttendancePermission
         req = TimeOffRequest.objects.get(id=request_id)
         
         # Check permissions explicitly in service
-        role = BaseAttendancePermission().get_user_org_role(type("DummyReq", (object,), {"user": manager})(), req.organization_id)
-        if role not in ["owner", "admin", "lead"] and not manager.is_staff:
-            raise PermissionDenied(_("You do not have permission to approve requests in this organization."))
+        if not manager.is_staff and not manager.is_superuser:
+            role = manager.org_memberships.filter(organization_id=req.organization_id).values_list("role", flat=True).first()
+            if role not in ["owner", "admin", "lead"]:
+                raise PermissionDenied(_("You do not have permission to approve requests in this organization."))
             
         if req.status != TimeOffRequest.Status.PENDING:
             raise ValidationError(_("Only pending requests can be approved."))
@@ -225,12 +225,13 @@ class TimeOffRequestService:
     @staticmethod
     @transaction.atomic
     def reject(request_id, manager, note=""):
-        from .permissions import BaseAttendancePermission
         req = TimeOffRequest.objects.get(id=request_id)
         
-        role = BaseAttendancePermission().get_user_org_role(type("DummyReq", (object,), {"user": manager})(), req.organization_id)
-        if role not in ["owner", "admin", "lead"] and not manager.is_staff:
-            raise PermissionDenied(_("You do not have permission to reject requests in this organization."))
+        # Check permissions explicitly in service
+        if not manager.is_staff and not manager.is_superuser:
+            role = manager.org_memberships.filter(organization_id=req.organization_id).values_list("role", flat=True).first()
+            if role not in ["owner", "admin", "lead"]:
+                raise PermissionDenied(_("You do not have permission to reject requests in this organization."))
             
         if req.status != TimeOffRequest.Status.PENDING:
             raise ValidationError(_("Only pending requests can be rejected."))
@@ -295,12 +296,15 @@ class TimesheetService:
 
     @staticmethod
     def get_team_timesheet(manager, organization, start_date, end_date):
+        managed_teams = list(manager.team_memberships.filter(
+            role="lead", team__organization=organization
+        ).values_list("team_id", flat=True))
+
         qs = TimeLog.objects.filter(
-            user__team_memberships__team__memberships__user=manager,
-            user__team_memberships__team__memberships__role="lead",
+            user__team_memberships__team_id__in=managed_teams,
             task__project__organization=organization,
             date__range=(start_date, end_date)
-        ).distinct()
+        )
         return qs.values('user__username', 'date').annotate(total_seconds=Sum('duration_seconds')).order_by('user__username', 'date')
 
     @staticmethod
