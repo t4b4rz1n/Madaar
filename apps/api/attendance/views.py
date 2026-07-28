@@ -2,6 +2,8 @@ import datetime
 from django.utils import timezone
 from django.db.models import Q
 from rest_framework import viewsets, status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -25,6 +27,8 @@ from .permissions import (
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAttendanceOwnerOrAdmin]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update", "check_in"]:
@@ -52,14 +56,19 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         AttendanceService.save_manual_attendance(self.request.user, serializer.validated_data, instance=serializer.instance)
 
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save(update_fields=["is_deleted"])
+
     @action(detail=False, methods=["post"], url_path="check-in")
     def check_in(self, request):
         org_id = request.data.get("organization")
         if not org_id:
             return Response({"error": "Organization ID is required"}, status=status.HTTP_400_BAD_REQUEST)
         org = get_object_or_404(Organization, id=org_id)
-        attendance = AttendanceService.check_in(request.user, org)
-        return Response(AttendanceSerializer(attendance).data, status=status.HTTP_201_CREATED)
+        attendance, created = AttendanceService.check_in(request.user, org)
+        resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(AttendanceSerializer(attendance).data, status=resp_status)
 
     @action(detail=False, methods=["post"], url_path="check-out")
     def check_out(self, request):
@@ -76,6 +85,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
 class TimeLogViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTimeLogOwnerOrAdmin]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -106,7 +117,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         if start_time and end_time:
             duration = int((end_time - start_time).total_seconds())
             
-        serializer.save(user=self.request.user, project=task.project if task else None, duration_seconds=duration, is_active=not bool(end_time))
+        serializer.save(user=self.request.user, project=task.project if task else None, duration_seconds=duration, is_active=serializer.validated_data.get("is_active", not bool(end_time)))
 
     def perform_update(self, serializer):
         start_time = serializer.validated_data.get("start_time", serializer.instance.start_time)
@@ -116,7 +127,11 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         if start_time and end_time:
             duration = int((end_time - start_time).total_seconds())
             
-        serializer.save(duration_seconds=duration, is_active=not bool(end_time))
+        serializer.save(duration_seconds=duration, is_active=serializer.validated_data.get("is_active", not bool(end_time)))
+
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save(update_fields=["is_deleted"])
 
     @action(detail=False, methods=["post"], url_path="start-timer")
     def start_timer(self, request):
@@ -147,6 +162,8 @@ class TimeLogViewSet(viewsets.ModelViewSet):
 
 class TimeOffRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTimeOffRequestPermission]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -171,6 +188,10 @@ class TimeOffRequestViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save(update_fields=["is_deleted"])
+
     @action(detail=True, methods=["post"], url_path="approve")
     def approve(self, request, pk=None):
         req = TimeOffRequestService.approve(pk, request.user)
@@ -188,15 +209,27 @@ class TimeOffRequestViewSet(viewsets.ModelViewSet):
 
 
 class HolidayViewSet(viewsets.ModelViewSet):
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     serializer_class = HolidaySerializer
     permission_classes = [IsAuthenticated, IsHolidayPermission]
 
     def get_queryset(self):
-        return Holiday.objects.filter(is_deleted=False)
+        qs = Holiday.objects.filter(is_deleted=False)
+        org_id = self.request.query_params.get("organization")
+        if org_id:
+            qs = qs.filter(Q(organization_id=org_id) | Q(organization__isnull=True))
+        return qs
+
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save(update_fields=["is_deleted"])
 
 
 class TimesheetViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated, IsTimesheetPermission]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     
     def paginate_and_respond(self, data, serializer_class):
         page = self.paginate_queryset(data)
