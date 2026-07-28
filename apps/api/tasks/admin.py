@@ -36,13 +36,12 @@ class BoardAdmin(admin.ModelAdmin):
         else:
             super().save_model(request, obj, form, change)
 
-    def delete_queryset(self, request, queryset):
-        from .cascade_services import TaskCascadeService
+    def delete_model(self, request, obj):
+        obj.hard_delete()
 
+    def delete_queryset(self, request, queryset):
         for obj in queryset:
-            obj.is_deleted = True
-            obj.save(update_fields=["is_deleted"])
-            TaskCascadeService.soft_delete_board(obj)
+            obj.hard_delete()
 
 
 @admin.register(TaskStatus)
@@ -70,13 +69,12 @@ class TaskStatusAdmin(admin.ModelAdmin):
         else:
             super().save_model(request, obj, form, change)
 
-    def delete_queryset(self, request, queryset):
-        from .cascade_services import TaskCascadeService
+    def delete_model(self, request, obj):
+        obj.hard_delete()
 
+    def delete_queryset(self, request, queryset):
         for obj in queryset:
-            obj.is_deleted = True
-            obj.save(update_fields=["is_deleted"])
-            TaskCascadeService.soft_delete_status(obj)
+            obj.hard_delete()
 
 
 @admin.register(Task)
@@ -121,13 +119,12 @@ class TaskAdmin(admin.ModelAdmin):
         else:
             super().save_model(request, obj, form, change)
 
-    def delete_queryset(self, request, queryset):
-        from .cascade_services import TaskCascadeService
+    def delete_model(self, request, obj):
+        obj.hard_delete()
 
+    def delete_queryset(self, request, queryset):
         for obj in queryset:
-            obj.is_deleted = True
-            obj.save(update_fields=["is_deleted"])
-            TaskCascadeService.soft_delete_task(obj)
+            obj.hard_delete()
 
 
 @admin.register(TaskChecklistItem)
@@ -139,6 +136,13 @@ class TaskChecklistItemAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return self.model.all_objects.all()
+
+    def delete_model(self, request, obj):
+        obj.hard_delete()
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj.hard_delete()
 
 
 @admin.register(TaskComment)
@@ -152,6 +156,13 @@ class TaskCommentAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return self.model.all_objects.all()
 
+    def delete_model(self, request, obj):
+        obj.hard_delete()
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj.hard_delete()
+
 
 @admin.register(TaskActivityLog)
 class TaskActivityLogAdmin(admin.ModelAdmin):
@@ -164,6 +175,13 @@ class TaskActivityLogAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return self.model.all_objects.all()
 
+    def delete_model(self, request, obj):
+        obj.hard_delete()
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj.hard_delete()
+
 
 @admin.register(AsyncStandup)
 class AsyncStandupAdmin(admin.ModelAdmin):
@@ -175,3 +193,10 @@ class AsyncStandupAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return self.model.all_objects.all()
+
+    def delete_model(self, request, obj):
+        obj.hard_delete()
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj.hard_delete()
