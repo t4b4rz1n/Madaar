@@ -7,7 +7,7 @@ from common.models import BaseModel
 
 class AttendanceSetting(BaseModel):
     """
-    تنظیمات ساعت کاری سازمان
+    Organization working hours settings
     """
     organization = models.OneToOneField(
         "organizations.Organization", on_delete=models.CASCADE, related_name="attendance_setting"
@@ -26,7 +26,7 @@ class AttendanceSetting(BaseModel):
 
 class Attendance(BaseModel):
     """
-    ثبت ورود/خروج روزانه
+    Daily check-in/out records
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attendances"
@@ -65,7 +65,7 @@ class Attendance(BaseModel):
 
 class TimeLog(BaseModel):
     """
-    ثبت زمان روی تسک
+    Time tracking on tasks
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="time_logs"
@@ -114,7 +114,7 @@ class TimeLog(BaseModel):
 
 class TimeOffRequest(BaseModel):
     """
-    درخواست مرخصی/دورکاری/اضافه‌کاری
+    Leave/Remote/Overtime requests
     """
     class Type(models.TextChoices):
         VACATION = "vacation", _("Vacation")
@@ -165,7 +165,7 @@ class TimeOffRequest(BaseModel):
 
 class Holiday(BaseModel):
     """
-    تعطیلات رسمی
+    Official holidays
     """
     name = models.CharField(_("Holiday Name"), max_length=255)
     date = models.DateField(_("Date"), unique=True, db_index=True)
