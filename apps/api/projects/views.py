@@ -127,13 +127,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         qs = ProjectService.get_base_queryset()
 
         if not user.is_staff:
-            org_ids = OrganizationMembership.objects.filter(
-                user=user,
-                is_deleted=False,
-            ).values_list("organization_id", flat=True)
-
             qs = qs.filter(
-                Q(organization_id__in=org_ids)
+                Q(
+                    organization__memberships__user=user,
+                    organization__memberships__is_deleted=False,
+                )
                 | Q(members__user=user, members__is_deleted=False)
                 | Q(owner=user)
             ).distinct()
@@ -216,7 +214,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             actor=request.user,
             validated_data={"status": Project.Status.ARCHIVED},
         )
-        return Response(ProjectDetailSerializer(updated).data)
+        return Response(ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary=_("Complete a project"),
@@ -232,7 +230,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             actor=request.user,
             validated_data={"status": Project.Status.COMPLETED},
         )
-        return Response(ProjectDetailSerializer(updated).data)
+        return Response(ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK)
 
 
 # ---------------------------------------------------------------------------
@@ -451,4 +449,4 @@ class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
             return ProjectActivity.objects.none()
         return ProjectActivity.objects.filter(
             project_id=self.kwargs["project_pk"]
-        ).select_related("actor")
+        ).select_related("actor", "project")

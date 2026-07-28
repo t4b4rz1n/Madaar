@@ -13,6 +13,7 @@ Design:
       model instances that have not yet been annotated by the queryset.
 """
 
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -112,8 +113,16 @@ class ProjectDetailSerializer(ProjectListSerializer):
     members = serializers.SerializerMethodField()
     milestones = serializers.SerializerMethodField()
 
+    has_more_members = serializers.SerializerMethodField()
+    has_more_milestones = serializers.SerializerMethodField()
+
     class Meta(ProjectListSerializer.Meta):
-        fields = ProjectListSerializer.Meta.fields + ("members", "milestones")
+        fields = ProjectListSerializer.Meta.fields + (
+            "members",
+            "milestones",
+            "has_more_members",
+            "has_more_milestones",
+        )
 
     def get_members(self, obj):
         qs = obj.members.filter(is_deleted=False).select_related("user", "team")[
@@ -121,10 +130,16 @@ class ProjectDetailSerializer(ProjectListSerializer):
         ]
         return ProjectMemberReadSerializer(qs, many=True).data
 
+    def get_has_more_members(self, obj) -> bool:
+        return obj.members.filter(is_deleted=False).count() > self._NESTED_LIMIT
+
     def get_milestones(self, obj):
         qs = obj.milestones.filter(is_deleted=False)[: self._NESTED_LIMIT]
         ctx = {**self.context, "project_pk": str(obj.pk)}
         return MilestoneSerializer(qs, many=True, context=ctx).data
+
+    def get_has_more_milestones(self, obj) -> bool:
+        return obj.milestones.filter(is_deleted=False).count() > self._NESTED_LIMIT
 
 
 class ProjectWriteSerializer(serializers.ModelSerializer):
@@ -169,6 +184,37 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"deadline": _("Deadline must be on or after the start date.")}
             )
+
+        if self.instance:
+            if start:
+                if self.instance.milestones.filter(
+                    Q(start_date__lt=start) | Q(target_date__lt=start), is_deleted=False
+                ).exists():
+                    raise serializers.ValidationError(
+                        {"start_date": _("Start date cannot be after an existing milestone.")}
+                    )
+                if self.instance.members.filter(
+                    Q(allocation_start_date__lt=start) | Q(allocation_end_date__lt=start),
+                    is_deleted=False,
+                ).exists():
+                    raise serializers.ValidationError(
+                        {"start_date": _("Start date cannot be after an existing member allocation.")}
+                    )
+
+            if deadline:
+                if self.instance.milestones.filter(
+                    Q(start_date__gt=deadline) | Q(target_date__gt=deadline), is_deleted=False
+                ).exists():
+                    raise serializers.ValidationError(
+                        {"deadline": _("Deadline cannot be before an existing milestone.")}
+                    )
+                if self.instance.members.filter(
+                    Q(allocation_start_date__gt=deadline) | Q(allocation_end_date__gt=deadline),
+                    is_deleted=False,
+                ).exists():
+                    raise serializers.ValidationError(
+                        {"deadline": _("Deadline cannot be before an existing member allocation.")}
+                    )
 
         # Resolve org and related objects once
         org = attrs.get("organization", getattr(self.instance, "organization", None))
@@ -285,28 +331,25 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Duplicate membership check (only on create)
-        project_pk = self.context.get("project_pk")
-        if not self.instance and project_pk:
-            if (
-                user
-                and ProjectMember.objects.filter(
-                    project_id=project_pk, user=user, is_deleted=False
-                ).exists()
-            ):
+        # Duplicate membership check
+        project_pk = getattr(self.instance, "project_id", self.context.get("project_pk"))
+        if project_pk:
+            user_exists = ProjectMember.objects.filter(
+                project_id=project_pk, user=user, is_deleted=False
+            )
+            team_exists = ProjectMember.objects.filter(
+                project_id=project_pk, team=team, user__isnull=True, is_deleted=False
+            )
+            
+            if self.instance:
+                user_exists = user_exists.exclude(pk=self.instance.pk)
+                team_exists = team_exists.exclude(pk=self.instance.pk)
+
+            if user and user_exists.exists():
                 raise serializers.ValidationError(
                     {"user_id": _("This user is already a member of this project.")}
                 )
-            if (
-                team
-                and not user
-                and ProjectMember.objects.filter(
-                    project_id=project_pk,
-                    team=team,
-                    user__isnull=True,
-                    is_deleted=False,
-                ).exists()
-            ):
+            if team and not user and team_exists.exists():
                 raise serializers.ValidationError(
                     {"team_id": _("This team is already a member of this project.")}
                 )

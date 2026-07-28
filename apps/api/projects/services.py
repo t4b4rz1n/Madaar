@@ -195,9 +195,11 @@ class ProjectService:
             metadata={"name": project.name},
         )
 
-        # Finally: soft-delete members, milestones, and the project itself
+        # Finally: soft-delete members, milestones, tasks, and the project itself
         project.members.filter(is_deleted=False).update(is_deleted=True)
         project.milestones.filter(is_deleted=False).update(is_deleted=True)
+        if hasattr(project, "tasks"):
+            project.tasks.filter(is_deleted=False).update(is_deleted=True)
         project.delete()  # BaseModel.delete → sets is_deleted=True
         logger.info("Project soft-deleted: %s (by %s)", project.pk, actor)
 

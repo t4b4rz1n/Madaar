@@ -148,9 +148,9 @@ class CanCreateProject(permissions.BasePermission):
                 is_deleted=False,
             ).exists()
 
-        # Fallback: if no org_id provided, allow through and let
-        # the serializer raise a validation error for the missing field.
-        return True
+        # If no org_id provided, deny permission immediately.
+        # This prevents bypassing authorization checks.
+        return False
 
 
 # ---------------------------------------------------------------------------
