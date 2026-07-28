@@ -7,42 +7,56 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0018_remove_task_tasks_task_assigne_a1ddb3_idx_and_more'),
+        ("tasks", "0018_remove_task_tasks_task_assigne_a1ddb3_idx_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='board',
-            name='order',
-            field=models.PositiveIntegerField(default=0, verbose_name='Order'),
+            model_name="board",
+            name="order",
+            field=models.PositiveIntegerField(default=0, verbose_name="Order"),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='order',
-            field=models.PositiveIntegerField(default=0, verbose_name='Kanban Order'),
+            model_name="task",
+            name="order",
+            field=models.PositiveIntegerField(default=0, verbose_name="Kanban Order"),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='priority',
-            field=models.CharField(choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('critical', 'Critical')], default='medium', max_length=20, verbose_name='Priority'),
+            model_name="task",
+            name="priority",
+            field=models.CharField(
+                choices=[
+                    ("low", "Low"),
+                    ("medium", "Medium"),
+                    ("high", "High"),
+                    ("critical", "Critical"),
+                ],
+                default="medium",
+                max_length=20,
+                verbose_name="Priority",
+            ),
         ),
         migrations.AlterField(
-            model_name='taskchecklistitem',
-            name='is_completed',
-            field=models.BooleanField(default=False, verbose_name='Completed'),
+            model_name="taskchecklistitem",
+            name="is_completed",
+            field=models.BooleanField(default=False, verbose_name="Completed"),
         ),
         migrations.AlterField(
-            model_name='taskstatus',
-            name='order',
-            field=models.PositiveIntegerField(default=0, help_text='Order in Kanban board columns', verbose_name='Order'),
+            model_name="taskstatus",
+            name="order",
+            field=models.PositiveIntegerField(
+                default=0,
+                help_text="Order in Kanban board columns",
+                verbose_name="Order",
+            ),
         ),
         migrations.AddIndex(
-            model_name='taskchecklistitem',
-            index=models.Index(fields=['task'], name='tasks_taskc_task_id_5f00b2_idx'),
+            model_name="taskchecklistitem",
+            index=models.Index(fields=["task"], name="tasks_taskc_task_id_5f00b2_idx"),
         ),
         migrations.AddIndex(
-            model_name='taskcomment',
-            index=models.Index(fields=['task'], name='tasks_taskc_task_id_8332b2_idx'),
+            model_name="taskcomment",
+            index=models.Index(fields=["task"], name="tasks_taskc_task_id_8332b2_idx"),
         ),
     ]
