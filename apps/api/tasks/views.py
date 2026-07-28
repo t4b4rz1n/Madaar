@@ -321,24 +321,32 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="toggle-done")
     def toggle_done(self, request, pk=None):
         task = self.get_object()
-        
-        is_done = task.status and task.status.code and task.status.code.lower() == 'done'
-        target_code = 'todo' if is_done else 'done'
-        
-        target_status = TaskStatus.objects.filter(board=task.status.board, code__iexact=target_code).first()
+
+        is_done = (
+            task.status and task.status.code and task.status.code.lower() == "done"
+        )
+        target_code = "todo" if is_done else "done"
+
+        target_status = TaskStatus.objects.filter(
+            board=task.status.board, code__iexact=target_code
+        ).first()
         if not target_status:
             from rest_framework.exceptions import ValidationError
-            raise ValidationError({"error": f"Target status '{target_code}' not found on this board."})
-            
-        updated_task = TaskService.move_task(
-            task=task,
-            actor=request.user,
-            new_status=target_status
-        )
-        
-        annotated_task = self.get_queryset().filter(id=updated_task.id).first() or updated_task
-        return Response(TaskDetailSerializer(annotated_task, context={"request": request}).data)
 
+            raise ValidationError(
+                {"error": f"Target status '{target_code}' not found on this board."}
+            )
+
+        updated_task = TaskService.move_task(
+            task=task, actor=request.user, new_status=target_status
+        )
+
+        annotated_task = (
+            self.get_queryset().filter(id=updated_task.id).first() or updated_task
+        )
+        return Response(
+            TaskDetailSerializer(annotated_task, context={"request": request}).data
+        )
 
     @action(detail=True, methods=["get"], url_path="activities")
     def activities(self, request, pk=None):

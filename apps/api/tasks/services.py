@@ -282,10 +282,19 @@ class TaskService:
     def move_task(task, actor, new_status=None, new_order=None):
         """Handles Drag & Drop movement across Kanban statuses."""
         if task.assignee != actor and not actor.is_staff and not actor.is_superuser:
-            role = actor.org_memberships.filter(organization_id=task.project.organization_id).values_list("role", flat=True).first()
+            role = (
+                actor.org_memberships.filter(
+                    organization_id=task.project.organization_id
+                )
+                .values_list("role", flat=True)
+                .first()
+            )
             if role not in ["owner", "admin", "lead"]:
                 from rest_framework.exceptions import PermissionDenied
-                raise PermissionDenied(_("Only the assignee or a project manager can move this task."))
+
+                raise PermissionDenied(
+                    _("Only the assignee or a project manager can move this task.")
+                )
 
         action_parts = []
 
