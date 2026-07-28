@@ -56,8 +56,12 @@ class IsTimeLogOwnerOrAdmin(BaseAttendancePermission):
         if obj.user == request.user:
             return True
         
-        # Check org from project
-        org_id = obj.project.organization_id if obj.project else None
+        # Check org from project or task
+        org_id = None
+        if obj.project:
+            org_id = obj.project.organization_id
+        elif obj.task and obj.task.project:
+            org_id = obj.task.project.organization_id
         role = self.get_user_org_role(request, org_id)
         return role in ["owner", "admin", "lead"]
 
