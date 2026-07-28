@@ -71,10 +71,10 @@ class TimeLog(BaseModel):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="time_logs"
     )
     task = models.ForeignKey(
-        "tasks.Task", on_delete=models.CASCADE, related_name="time_logs"
+        "tasks.Task", on_delete=models.SET_NULL, null=True, blank=True, related_name="time_logs"
     )
     project = models.ForeignKey(
-        "projects.Project", on_delete=models.CASCADE, related_name="time_logs"
+        "projects.Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="time_logs"
     )
     date = models.DateField(_("Date"), db_index=True)
     start_time = models.DateTimeField(_("Start Time"), db_index=True)
@@ -144,6 +144,7 @@ class TimeOffRequest(BaseModel):
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_timeoffs"
     )
+    manager_note = models.TextField(_("Manager Note"), blank=True)
 
     class Meta:
         verbose_name = _("Time Off Request")
@@ -168,6 +169,10 @@ class Holiday(BaseModel):
     Official holidays
     """
     name = models.CharField(_("Holiday Name"), max_length=255)
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="holidays", null=True, blank=True
+    )
+    description = models.TextField(_("Description"), blank=True)
     date = models.DateField(_("Date"), unique=True, db_index=True)
     is_official = models.BooleanField(_("Is Official Holiday"), default=True)
 

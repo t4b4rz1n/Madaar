@@ -88,8 +88,15 @@ class IsHolidayPermission(BaseAttendancePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
             
-        # Only HR/Admins can create/edit holidays (for simplicity, staff/superuser here)
-        return request.user.is_staff or request.user.is_superuser
+        if request.user.is_staff or request.user.is_superuser:
+            return True
+            
+        org_id = self.extract_organization_id(request, view)
+        if not org_id:
+            return False
+            
+        role = self.get_user_org_role(request, org_id)
+        return role in ["owner", "admin", "hr"]
 
 
 class IsTimesheetPermission(BaseAttendancePermission):

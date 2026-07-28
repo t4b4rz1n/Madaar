@@ -10,6 +10,13 @@ class MinimalUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "first_name", "last_name", "email", "avatar")
+        
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        request = self.context.get('request')
+        if instance.avatar and request:
+            ret['avatar'] = request.build_absolute_uri(instance.avatar.url)
+        return ret
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
@@ -68,7 +75,7 @@ class TimeOffRequestSerializer(serializers.ModelSerializer):
 class TimeOffRequestWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeOffRequest
-        fields = ("id", "organization", "request_type", "start_datetime", "end_datetime", "reason")
+        fields = ("id", "organization", "request_type", "start_datetime", "end_datetime", "reason", "manager_note")
 
     def validate(self, attrs):
         start = attrs.get("start_datetime")
@@ -83,7 +90,7 @@ class TimeOffRequestWriteSerializer(serializers.ModelSerializer):
 class HolidaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Holiday
-        fields = ("id", "name", "date", "is_official", "created_at")
+        fields = ("id", "name", "organization", "description", "date", "is_official", "created_at")
         read_only_fields = ("id", "created_at")
 
 

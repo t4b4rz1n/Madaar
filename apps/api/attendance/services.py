@@ -57,7 +57,7 @@ class AttendanceService:
 
     @staticmethod
     def get_user_attendance(user, start_date, end_date):
-        return Attendance.objects.filter(user=user, date__range=(start_date, end_date))
+        return Attendance.objects.select_related("user", "organization").filter(user=user, date__range=(start_date, end_date))
 
 
 class TimeLogService:
@@ -90,6 +90,13 @@ class TimeLogService:
                 from tasks.services import TaskService
                 TaskService.move_task(task, user, new_status=doing_status)
                 
+        # Log activity
+        from tasks.models import TaskActivityLog
+        TaskActivityLog.objects.create(
+            task=task, board=task.status.board if task.status else None, 
+            actor=user, action="Started time tracking timer"
+        )
+                
         return timer
 
     @staticmethod
@@ -106,6 +113,13 @@ class TimeLogService:
 
         timer.task.spent_hours = float(timer.task.spent_hours) + (timer.duration_seconds / 3600.0)
         timer.task.save(update_fields=['spent_hours'])
+
+        # Log activity
+        from tasks.models import TaskActivityLog
+        TaskActivityLog.objects.create(
+            task=timer.task, board=timer.task.status.board if timer.task.status else None, 
+            actor=user, action=f"Stopped timer after {timer.duration_seconds} seconds"
+        )
         return timer
 
     @staticmethod
@@ -146,9 +160,11 @@ class TimeLogService:
             timer.task.spent_hours = max(0, float(timer.task.spent_hours) - (timer.duration_seconds / 3600.0))
             timer.task.save(update_fields=['spent_hours'])
         
+        
         timer.is_deleted = True
         timer.is_active = False
-        timer.save(update_fields=['is_deleted', 'is_active'])
+        timer.duration_seconds = 0
+        timer.save(update_fields=['is_deleted', 'is_active', 'duration_seconds'])
         return timer
 
 
@@ -168,7 +184,14 @@ class TimeOffRequestService:
     @staticmethod
     @transaction.atomic
     def approve(request_id, manager):
+        from .permissions import BaseAttendancePermission
         req = TimeOffRequest.objects.get(id=request_id)
+        
+        # Check permissions explicitly in service
+        role = BaseAttendancePermission().get_user_org_role(type("DummyReq", (object,), {"user": manager})(), req.organization_id)
+        if role not in ["owner", "admin", "lead"] and not manager.is_staff:
+            raise PermissionDenied(_("You do not have permission to approve requests in this organization."))
+            
         if req.status != TimeOffRequest.Status.PENDING:
             raise ValidationError(_("Only pending requests can be approved."))
         req.status = TimeOffRequest.Status.APPROVED
@@ -179,12 +202,18 @@ class TimeOffRequestService:
     @staticmethod
     @transaction.atomic
     def reject(request_id, manager, note=""):
+        from .permissions import BaseAttendancePermission
         req = TimeOffRequest.objects.get(id=request_id)
+        
+        role = BaseAttendancePermission().get_user_org_role(type("DummyReq", (object,), {"user": manager})(), req.organization_id)
+        if role not in ["owner", "admin", "lead"] and not manager.is_staff:
+            raise PermissionDenied(_("You do not have permission to reject requests in this organization."))
+            
         if req.status != TimeOffRequest.Status.PENDING:
             raise ValidationError(_("Only pending requests can be rejected."))
         req.status = TimeOffRequest.Status.REJECTED
-        # Note can be saved in an ActivityLog if we build one for attendance, or added to a rejection_reason field
-        req.save(update_fields=['status'])
+        req.manager_note = note
+        req.save(update_fields=['status', 'manager_note'])
         return req
 
     @staticmethod
@@ -216,7 +245,9 @@ class HolidayService:
     @staticmethod
     @transaction.atomic
     def delete(holiday_id):
-        Holiday.objects.filter(id=holiday_id).update(is_deleted=True)
+        holiday = Holiday.objects.filter(id=holiday_id).first()
+        if holiday:
+            holiday.delete()
 
 
 class TimesheetService:
@@ -241,11 +272,12 @@ class TimesheetService:
 
     @staticmethod
     def get_team_timesheet(manager, organization, start_date, end_date):
-        # Implementation depends on how 'teams' are structured. For now, all users in org.
         qs = TimeLog.objects.filter(
+            user__team_memberships__team__memberships__user=manager,
+            user__team_memberships__team__memberships__role="lead",
             task__project__organization=organization,
             date__range=(start_date, end_date)
-        )
+        ).distinct()
         return qs.values('user__username', 'date').annotate(total_seconds=Sum('duration_seconds')).order_by('user__username', 'date')
 
     @staticmethod

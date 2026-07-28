@@ -46,7 +46,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({"error": "Organization ID is required"}, status=status.HTTP_400_BAD_REQUEST)
         org = get_object_or_404(Organization, id=org_id)
         attendance = AttendanceService.check_in(request.user, org)
-        return Response(AttendanceSerializer(attendance).data, status=status.HTTP_200_OK)
+        return Response(AttendanceSerializer(attendance).data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["post"], url_path="check-out")
     def check_out(self, request):
@@ -147,8 +147,14 @@ class HolidayViewSet(viewsets.ModelViewSet):
         return Holiday.objects.filter(is_deleted=False)
 
 
-class TimesheetViewSet(viewsets.ViewSet):
+class TimesheetViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated, IsTimesheetPermission]
+    
+    def paginate_and_respond(self, data, serializer_class):
+        page = self.paginate_queryset(data)
+        if page is not None:
+            return self.get_paginated_response(serializer_class(page, many=True).data)
+        return Response(serializer_class(data, many=True).data)
 
     @action(detail=False, methods=["get"], url_path="daily")
     def daily(self, request):
@@ -176,7 +182,7 @@ class TimesheetViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
             
         data = TimesheetService.get_weekly(request.user, date)
-        return Response(TimesheetDailySerializer(data, many=True).data)
+        return self.paginate_and_respond(data, TimesheetDailySerializer)
 
     @action(detail=False, methods=["get"], url_path="monthly")
     def monthly(self, request):
@@ -186,7 +192,7 @@ class TimesheetViewSet(viewsets.ViewSet):
             return Response({"error": "year and month are required"}, status=status.HTTP_400_BAD_REQUEST)
             
         data = TimesheetService.get_monthly(request.user, int(year), int(month))
-        return Response(TimesheetDailySerializer(data, many=True).data)
+        return self.paginate_and_respond(data, TimesheetDailySerializer)
 
     @action(detail=False, methods=["get"], url_path="team")
     def team(self, request):
@@ -197,7 +203,7 @@ class TimesheetViewSet(viewsets.ViewSet):
             return Response({"error": "organization, start_date, end_date are required"}, status=status.HTTP_400_BAD_REQUEST)
             
         data = TimesheetService.get_team_timesheet(request.user, org_id, start_date, end_date)
-        return Response(TimesheetTeamSerializer(data, many=True).data)
+        return self.paginate_and_respond(data, TimesheetTeamSerializer)
 
     @action(detail=False, methods=["get"], url_path="project")
     def project(self, request):
@@ -208,4 +214,4 @@ class TimesheetViewSet(viewsets.ViewSet):
             return Response({"error": "project, start_date, end_date are required"}, status=status.HTTP_400_BAD_REQUEST)
             
         data = TimesheetService.get_project_timesheet(project_id, start_date, end_date)
-        return Response(TimesheetTeamSerializer(data, many=True).data)
+        return self.paginate_and_respond(data, TimesheetTeamSerializer)
