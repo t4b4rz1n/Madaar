@@ -32,7 +32,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from organizations.models import OrganizationMembership, Team
+from organizations.models import Team
 
 from .filters import (
     MilestoneFilter,
@@ -214,7 +214,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             actor=request.user,
             validated_data={"status": Project.Status.ARCHIVED},
         )
-        return Response(ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK)
+        return Response(
+            ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK
+        )
 
     @extend_schema(
         summary=_("Complete a project"),
@@ -230,7 +232,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             actor=request.user,
             validated_data={"status": Project.Status.COMPLETED},
         )
-        return Response(ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK)
+        return Response(
+            ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK
+        )
 
 
 # ---------------------------------------------------------------------------

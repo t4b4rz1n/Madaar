@@ -36,12 +36,8 @@ router.register(r"", ProjectViewSet, basename="project")
 # Nested routers
 projects_router = routers.NestedDefaultRouter(router, r"", lookup="project")
 
-projects_router.register(
-    r"members", ProjectMemberViewSet, basename="project-member"
-)
-projects_router.register(
-    r"milestones", MilestoneViewSet, basename="project-milestone"
-)
+projects_router.register(r"members", ProjectMemberViewSet, basename="project-member")
+projects_router.register(r"milestones", MilestoneViewSet, basename="project-milestone")
 projects_router.register(
     r"activities", ProjectActivityViewSet, basename="project-activity"
 )
