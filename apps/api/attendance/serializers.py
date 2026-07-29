@@ -221,7 +221,7 @@ class TimesheetTeamSerializer(serializers.Serializer):
     Serializer for team/project timesheet querysets returned as dicts.
     Values are annotated dicts like {'user__username': ..., 'date': ..., 'total_seconds': ...}.
     """
-    user__username = serializers.CharField()
+    username = serializers.CharField(source='user__username')
     date = serializers.DateField()
     total_seconds = serializers.IntegerField()
 
