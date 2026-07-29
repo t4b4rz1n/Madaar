@@ -1,14 +1,14 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-from django.db.models import Q, F
+from django.db import models
+from django.db.models import F, Q
+from django.utils.translation import gettext_lazy as _
+
 from common.models import BaseModel
 
 
 class AttendanceSetting(BaseModel):
-    """
-    Organization working hours settings
-    """
+    """Per-organization working hours configuration."""
+
     organization = models.OneToOneField(
         "organizations.Organization", on_delete=models.CASCADE, related_name="attendance_setting"
     )
@@ -25,9 +25,7 @@ class AttendanceSetting(BaseModel):
 
 
 class Attendance(BaseModel):
-    """
-    Daily check-in/out records
-    """
+    """Daily check-in/out records per user."""
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attendances"
     )
@@ -65,9 +63,7 @@ class Attendance(BaseModel):
 
 
 class TimeLog(BaseModel):
-    """
-    Time tracking on tasks
-    """
+    """Time tracking entries linked to tasks and projects."""
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="time_logs"
     )
@@ -115,9 +111,7 @@ class TimeLog(BaseModel):
 
 
 class TimeOffRequest(BaseModel):
-    """
-    Leave/Remote/Overtime requests
-    """
+    """Leave, remote-work, and overtime requests."""
     class Type(models.TextChoices):
         VACATION = "vacation", _("Vacation")
         SICK = "sick", _("Sick Leave")
@@ -168,9 +162,7 @@ class TimeOffRequest(BaseModel):
 
 
 class Holiday(BaseModel):
-    """
-    Official holidays
-    """
+    """Official and organization-specific holidays."""
     name = models.CharField(_("Holiday Name"), max_length=255)
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="holidays", null=True, blank=True
