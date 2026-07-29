@@ -13,7 +13,7 @@ const createPaginatedResponse = <T>(
   results: T[],
   page: number,
   pageSize: number,
-  requestUrl: string
+  requestUrl: string,
 ) => {
   const totalResults = results.length;
   const totalPages = Math.ceil(totalResults / pageSize) || 1;
@@ -21,8 +21,12 @@ const createPaginatedResponse = <T>(
   const paginatedResults = results.slice(startIndex, startIndex + pageSize);
 
   const baseUrl = requestUrl.split("?")[0];
-  const nextPage = page < totalPages ? `${baseUrl}?page=${page + 1}&page_size=${pageSize}` : null;
-  const prevPage = page > 1 ? `${baseUrl}?page=${page - 1}&page_size=${pageSize}` : null;
+  const nextPage =
+    page < totalPages
+      ? `${baseUrl}?page=${page + 1}&page_size=${pageSize}`
+      : null;
+  const prevPage =
+    page > 1 ? `${baseUrl}?page=${page - 1}&page_size=${pageSize}` : null;
 
   return {
     status: true,
@@ -49,7 +53,7 @@ export const handlers = [
     }
     const credentials = (await request.json()) as LoginBody;
     const user = mockUsers.find(
-      (mockUser) => mockUser.username === credentials.username
+      (mockUser) => mockUser.username === credentials.username,
     );
 
     if (user && credentials.password) {
@@ -78,7 +82,7 @@ export const handlers = [
         message: "Invalid username or password",
         data: {},
       },
-      { status: 400 }
+      { status: 400 },
     );
   }),
 
@@ -100,7 +104,7 @@ export const handlers = [
           u.username.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
           (u.first_name || "").toLowerCase().includes(q) ||
-          (u.last_name || "").toLowerCase().includes(q)
+          (u.last_name || "").toLowerCase().includes(q),
       );
     }
 
@@ -133,16 +137,21 @@ export const handlers = [
       });
     }
 
-    const response = createPaginatedResponse(users, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      users,
+      page,
+      pageSize,
+      request.url,
+    );
     return HttpResponse.json(response);
   }),
 
   http.post("*/panel/users/", async ({ request }) => {
     const data = (await request.json()) as UserFormData;
 
-    const exists = db.users.getAll().some(
-      (u) => u.username === data.username || u.email === data.email
-    );
+    const exists = db.users
+      .getAll()
+      .some((u) => u.username === data.username || u.email === data.email);
 
     if (exists) {
       return HttpResponse.json(
@@ -151,7 +160,7 @@ export const handlers = [
           message: "Username or Email already exists",
           data: {},
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -184,7 +193,7 @@ export const handlers = [
           message: "User not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -206,7 +215,7 @@ export const handlers = [
           message: "User not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -232,7 +241,7 @@ export const handlers = [
       discounts = discounts.filter(
         (d) =>
           d.code.toLowerCase().includes(q) ||
-          d.description.toLowerCase().includes(q)
+          d.description.toLowerCase().includes(q),
       );
     }
 
@@ -260,16 +269,21 @@ export const handlers = [
       });
     }
 
-    const response = createPaginatedResponse(discounts, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      discounts,
+      page,
+      pageSize,
+      request.url,
+    );
     return HttpResponse.json(response);
   }),
 
   http.post("*/panel/discounts", async ({ request }) => {
     const data = (await request.json()) as DiscountFormData;
 
-    const exists = db.discounts.getAll().some(
-      (d) => d.code.toUpperCase() === data.code.toUpperCase()
-    );
+    const exists = db.discounts
+      .getAll()
+      .some((d) => d.code.toUpperCase() === data.code.toUpperCase());
 
     if (exists) {
       return HttpResponse.json(
@@ -278,7 +292,7 @@ export const handlers = [
           message: "Discount code already exists",
           data: {},
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -310,7 +324,7 @@ export const handlers = [
           message: "Discount coupon not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -332,7 +346,7 @@ export const handlers = [
           message: "Discount coupon not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -342,9 +356,6 @@ export const handlers = [
       data: {},
     });
   }),
-
-
-
   http.get("*/dashboard/notifications/", ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
@@ -376,7 +387,7 @@ export const handlers = [
       notifications,
       page,
       pageSize,
-      request.url
+      request.url,
     );
     return HttpResponse.json(response);
   }),
@@ -396,27 +407,26 @@ export const handlers = [
     });
   }),
 
-http.patch("*/accounts/profile/", async ({ request }) => {
-  const formData = await request.formData();
+  http.patch("*/accounts/profile/", async ({ request }) => {
+    const formData = await request.formData();
 
-  const first_name = formData.get("first_name");
-  const last_name = formData.get("last_name");
-  const profile_image = formData.get("profile_image"); // اسم محتمل فیلد عکس
+    const first_name = formData.get("first_name");
+    const last_name = formData.get("last_name");
+    const profile_image = formData.get("profile_image"); // اسم محتمل فیلد عکس
 
-  if (first_name !== null) mockProfile.first_name = String(first_name);
-  if (last_name !== null) mockProfile.last_name = String(last_name);
+    if (first_name !== null) mockProfile.first_name = String(first_name);
+    if (last_name !== null) mockProfile.last_name = String(last_name);
 
-  if (profile_image instanceof File) {
-    mockProfile.profile_image = URL.createObjectURL(profile_image);
-  }
+    if (profile_image instanceof File) {
+      mockProfile.profile_image = URL.createObjectURL(profile_image);
+    }
 
-  return HttpResponse.json({
-    status: true,
-    message: "Profile updated successfully",
-    data: mockProfile,
-  });
-}),
-
+    return HttpResponse.json({
+      status: true,
+      message: "Profile updated successfully",
+      data: mockProfile,
+    });
+  }),
 
   // ─── Tickets MSW Mocks ───────────────────────────────────────────────────────
   http.get("*/support/tickets/", ({ request }) => {
@@ -436,7 +446,7 @@ http.patch("*/accounts/profile/", async ({ request }) => {
         (t) =>
           t.title.toLowerCase().includes(q) ||
           t.user.username.toLowerCase().includes(q) ||
-          (t.user.email || "").toLowerCase().includes(q)
+          (t.user.email || "").toLowerCase().includes(q),
       );
     }
 
@@ -482,7 +492,12 @@ http.patch("*/accounts/profile/", async ({ request }) => {
       });
     }
 
-    const response = createPaginatedResponse(tickets, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      tickets,
+      page,
+      pageSize,
+      request.url,
+    );
     return HttpResponse.json(response);
   }),
 
@@ -497,7 +512,7 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           message: "Ticket not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -531,7 +546,7 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           message: "Ticket not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -549,7 +564,12 @@ http.patch("*/accounts/profile/", async ({ request }) => {
     const pageSize = Number(url.searchParams.get("page_size")) || 15;
 
     const messages = db.tickets.getMessages(id);
-    const response = createPaginatedResponse(messages, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      messages,
+      page,
+      pageSize,
+      request.url,
+    );
     return HttpResponse.json(response);
   }),
 
@@ -595,7 +615,12 @@ http.patch("*/accounts/profile/", async ({ request }) => {
       types = types.filter((t) => t.name.toLowerCase().includes(q));
     }
 
-    const response = createPaginatedResponse(types, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      types,
+      page,
+      pageSize,
+      request.url,
+    );
     return HttpResponse.json(response);
   }),
 
@@ -622,7 +647,7 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           message: "Ticket category not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -644,7 +669,7 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           message: "Ticket category not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -667,9 +692,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
         active_workers: 12,
         scans: {
           discovery: { launched: 245, finished: 240, failed: 5 },
-          vulnerability: { launched: 180, finished: 172, failed: 8 }
-        }
-      }
+          vulnerability: { launched: 180, finished: 172, failed: 8 },
+        },
+      },
     });
   }),
 
@@ -680,9 +705,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
         queues: [
           { queue_name: "Discovery Queue", pending_tasks: 15 },
           { queue_name: "Vulnerability Queue", pending_tasks: 22 },
-          { queue_name: "Web Scans Queue", pending_tasks: 8 }
-        ]
-      }
+          { queue_name: "Web Scans Queue", pending_tasks: 8 },
+        ],
+      },
     });
   }),
 
@@ -696,18 +721,18 @@ http.patch("*/accounts/profile/", async ({ request }) => {
             { label: "10:10", cpu: 60, memory: 58 },
             { label: "10:20", cpu: 35, memory: 62 },
             { label: "10:30", cpu: 70, memory: 64 },
-            { label: "10:40", cpu: 50, memory: 60 }
+            { label: "10:40", cpu: 50, memory: 60 },
           ],
           "Worker-02": [
             { label: "10:00", cpu: 30, memory: 40 },
             { label: "10:10", cpu: 42, memory: 41 },
             { label: "10:20", cpu: 55, memory: 45 },
             { label: "10:30", cpu: 28, memory: 48 },
-            { label: "10:40", cpu: 62, memory: 50 }
-          ]
+            { label: "10:40", cpu: 62, memory: 50 },
+          ],
         },
-        labels: ["10:00", "10:10", "10:20", "10:30", "10:40"]
-      }
+        labels: ["10:00", "10:10", "10:20", "10:30", "10:40"],
+      },
     });
   }),
 
@@ -721,9 +746,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { label: "Mar", value: 6 },
           { label: "Apr", value: 8 },
           { label: "May", value: 10 },
-          { label: "Jun", value: 12 }
-        ]
-      }
+          { label: "Jun", value: 12 },
+        ],
+      },
     });
   }),
 
@@ -737,9 +762,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { label: "Mar", value: 140 },
           { label: "Apr", value: 210 },
           { label: "May", value: 190 },
-          { label: "Jun", value: 348 }
-        ]
-      }
+          { label: "Jun", value: 348 },
+        ],
+      },
     });
   }),
 
@@ -752,9 +777,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { severity: "high", count: 68 },
           { severity: "medium", count: 112 },
           { severity: "low", count: 94 },
-          { severity: "info", count: 50 }
-        ]
-      }
+          { severity: "info", count: 50 },
+        ],
+      },
     });
   }),
 
@@ -768,9 +793,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { label: "Mar", value: 7800 },
           { label: "Apr", value: 9100 },
           { label: "May", value: 11000 },
-          { label: "Jun", value: 12450 }
-        ]
-      }
+          { label: "Jun", value: 12450 },
+        ],
+      },
     });
   }),
 
@@ -785,9 +810,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { label: "Thu", requests: 1400, requests_v: 95 },
           { label: "Fri", requests: 2100, results: 190 },
           { label: "Sat", requests: 800, results: 40 },
-          { label: "Sun", requests: 950, results: 55 }
-        ]
-      }
+          { label: "Sun", requests: 950, results: 55 },
+        ],
+      },
     });
   }),
 
@@ -799,9 +824,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { status: "completed", count: 312 },
           { status: "running", count: 14 },
           { status: "failed", count: 8 },
-          { status: "cancelled", count: 5 }
-        ]
-      }
+          { status: "cancelled", count: 5 },
+        ],
+      },
     });
   }),
 
@@ -815,9 +840,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { label: "Mar", value: 720 },
           { label: "Apr", value: 900 },
           { label: "May", value: 1100 },
-          { label: "Jun", value: 1280 }
-        ]
-      }
+          { label: "Jun", value: 1280 },
+        ],
+      },
     });
   }),
 
@@ -831,9 +856,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { label: "Mar", value: 310 },
           { label: "Apr", value: 450 },
           { label: "May", value: 680 },
-          { label: "Jun", value: 890 }
-        ]
-      }
+          { label: "Jun", value: 890 },
+        ],
+      },
     });
   }),
 
@@ -844,9 +869,9 @@ http.patch("*/accounts/profile/", async ({ request }) => {
         license_distribution: [
           { name: "Free", value: 450, color: "#a855f7" },
           { name: "Pro", value: 320, color: "#3b82f6" },
-          { name: "Enterprise", value: 120, color: "#10b981" }
-        ]
-      }
+          { name: "Enterprise", value: 120, color: "#10b981" },
+        ],
+      },
     });
   }),
 
@@ -859,9 +884,42 @@ http.patch("*/accounts/profile/", async ({ request }) => {
           { label: "SecOps", value: 120 },
           { label: "Dev Team B", value: 98 },
           { label: "Platform", value: 85 },
-          { label: "Audit Org", value: 62 }
-        ]
-      }
+          { label: "Audit Org", value: 62 },
+        ],
+      },
     });
+  }),
+  http.get("*/roles", ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page")) || 1;
+    const pageSize = Number(url.searchParams.get("page_size")) || 10;
+    const search = url.searchParams.get("search");
+    const isActive = url.searchParams.get("is_active");
+
+    let roles = [...db.roles.getAll()];
+    // 1. Search Filtering
+    if (search) {
+      const q = search.toLowerCase();
+      roles = roles.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          (r.description || "").toLowerCase().includes(q),
+      );
+    }
+
+    // 2. Active Filtering
+    if (isActive !== null && isActive !== undefined && isActive !== "") {
+      const activeBool = isActive === "true";
+      roles = roles.filter((r) => r.is_active === activeBool);
+    }
+
+    // 4. Create Paginated Response
+    const response = createPaginatedResponse(
+      roles,
+      page,
+      pageSize,
+      request.url,
+    );
+    return HttpResponse.json(response);
   }),
 ];

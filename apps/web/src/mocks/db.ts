@@ -3,7 +3,12 @@ import type { Discount } from "../features/discounts/types";
 
 import type { Notification } from "../features/notifications/types";
 import type { UserProfile } from "../features/profile/types";
-import type { Ticket, TicketTypeItem, TicketMessage, TicketFormData } from "../features/tickets/types";
+import type {
+  Ticket,
+  TicketTypeItem,
+  TicketMessage,
+  TicketFormData,
+} from "../features/tickets/types";
 
 // Stateful mock database held in memory
 export const mockProfile: UserProfile = {
@@ -207,7 +212,53 @@ export let mockDiscounts: Discount[] = [
   },
 ];
 
+export type MockPermission = {
+  id: string;
+  name: string;
+};
 
+export type MockRole = {
+  id: number;
+  name: string;
+  description: string;
+  is_active: boolean;
+  permissions: MockPermission[];
+};
+
+export const mockPermissions: MockPermission[] = [
+  { id: "user.create", name: "Create User" },
+  { id: "user.read", name: "Read Users" },
+  { id: "role.create", name: "Create Role" },
+  { id: "role.update", name: "Update Role" },
+  { id: "ticket.manage", name: "Manage Tickets" },
+];
+
+export let mockRoles: MockRole[] = [
+  {
+    id: 1,
+    name: "Super Admin",
+    description:
+      "Full access to the entire system and management of users and permissions.",
+    is_active: true,
+    permissions: [...mockPermissions],
+  },
+  {
+    id: 2,
+    name: "Support",
+    description: "Manage tickets and notifications.",
+    is_active: true,
+    permissions: mockPermissions.filter((permission) =>
+      ["ticket.manage", "user.read"].includes(permission.id),
+    ),
+  },
+  {
+    id: 3,
+    name: "Regular User",
+    description: "Basic role with minimum permissions.",
+    is_active: true,
+    permissions: [],
+  },
+];
 
 export const mockNotifications: Notification[] = [
   {
@@ -314,7 +365,8 @@ export const db = {
     getAll: () => mockUsers,
     getById: (id: number) => mockUsers.find((u) => u.id === id),
     create: (user: Omit<User, "id">) => {
-      const nextId = mockUsers.length > 0 ? Math.max(...mockUsers.map((u) => u.id)) + 1 : 1;
+      const nextId =
+        mockUsers.length > 0 ? Math.max(...mockUsers.map((u) => u.id)) + 1 : 1;
       const newUser = { ...user, id: nextId };
       mockUsers.unshift(newUser); // Add to beginning of list
       return newUser;
@@ -336,7 +388,12 @@ export const db = {
   discounts: {
     getAll: () => mockDiscounts,
     getById: (id: string) => mockDiscounts.find((d) => d.id === id),
-    create: (discount: Omit<Discount, "id" | "current_usage" | "is_expired" | "is_fully_used" | "created_at">) => {
+    create: (
+      discount: Omit<
+        Discount,
+        "id" | "current_usage" | "is_expired" | "is_fully_used" | "created_at"
+      >,
+    ) => {
       const nextId = `d${mockDiscounts.length + 1}`;
       const now = new Date();
       const expDate = new Date(discount.expiration_date);
@@ -373,7 +430,9 @@ export const db = {
 
   notifications: {
     getAll: () => mockNotifications,
-    create: (notification: Omit<Notification, "id" | "seen" | "created_at">) => {
+    create: (
+      notification: Omit<Notification, "id" | "seen" | "created_at">,
+    ) => {
       const nextId = `n${mockNotifications.length + 1}`;
       const newNotification: Notification = {
         ...notification,
@@ -389,9 +448,12 @@ export const db = {
     getAll: () => mockTickets,
     getById: (id: number) => mockTickets.find((t) => t.id === id),
     create: (ticketData: TicketFormData) => {
-      const nextId = mockTickets.length > 0 ? Math.max(...mockTickets.map((t) => Number(t.id))) + 1 : 1;
+      const nextId =
+        mockTickets.length > 0
+          ? Math.max(...mockTickets.map((t) => Number(t.id))) + 1
+          : 1;
       const typeItem = mockTicketTypes.find(
-        (t) => String(t.id) === ticketData.ticket_type
+        (t) => String(t.id) === ticketData.ticket_type,
       );
       const newTicket: Ticket = {
         id: nextId,
@@ -423,7 +485,14 @@ export const db = {
         text: messageText,
         sender: { username: "admin", is_staff: true },
         attachments: mediaUrl
-          ? [{ id: Date.now(), file: mediaUrl, file_type: "file", created_at: new Date().toISOString() }]
+          ? [
+              {
+                id: Date.now(),
+                file: mediaUrl,
+                file_type: "file",
+                created_at: new Date().toISOString(),
+              },
+            ]
           : [],
         created_at: new Date().toISOString(),
       };
@@ -434,7 +503,10 @@ export const db = {
     ticketTypes: {
       getAll: () => mockTicketTypes,
       create: (name: string) => {
-        const nextId = mockTicketTypes.length > 0 ? Math.max(...mockTicketTypes.map((t) => Number(t.id))) + 1 : 1;
+        const nextId =
+          mockTicketTypes.length > 0
+            ? Math.max(...mockTicketTypes.map((t) => Number(t.id))) + 1
+            : 1;
         const newItem: TicketTypeItem = {
           id: nextId,
           name,
@@ -456,6 +528,49 @@ export const db = {
         mockTicketTypes = mockTicketTypes.filter((t) => t.id !== id);
         return mockTicketTypes.length < initialLength;
       },
+    },
+  },
+  roles: {
+    getAll: () => mockRoles,
+    getById: (id: number) => mockRoles.find((role) => role.id === id),
+    create: (role: Omit<MockRole, "id">) => {
+      const nextId =
+        mockRoles.length > 0
+          ? Math.max(...mockRoles.map((role) => role.id)) + 1
+          : 1;
+
+      const newRole: MockRole = {
+        ...role,
+        id: nextId,
+      };
+
+      mockRoles.unshift(newRole);
+      return newRole;
+    },
+    update: (id: number, updates: Partial<MockRole>) => {
+      const idx = mockRoles.findIndex((role) => role.id === id);
+
+      if (idx !== -1) {
+        mockRoles[idx] = { ...mockRoles[idx], ...updates };
+        return mockRoles[idx];
+      }
+
+      return null;
+    },
+    delete: (id: number) => {
+      const initialLength = mockRoles.length;
+      mockRoles = mockRoles.filter((role) => role.id !== id);
+      return mockRoles.length < initialLength;
+    },
+  },
+
+  permission: {
+    getAll: () => mockPermissions,
+    getById: (id: string) =>
+      mockPermissions.find((permission) => permission.id === id),
+    create: (permission: MockPermission) => {
+      mockPermissions.push(permission);
+      return permission;
     },
   },
 };
