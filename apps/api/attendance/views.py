@@ -1,6 +1,7 @@
 import datetime
 from django.utils import timezone
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
@@ -39,16 +40,32 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         qs = Attendance.objects.select_related("user", "organization").filter(is_deleted=False)
         user = self.request.user
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-            return qs.all()
-            
-        orgs_managed = user.org_memberships.filter(role__in=["owner", "admin", "hr"]).values_list('organization_id', flat=True)
-        teams_lead = user.team_memberships.filter(role="lead").values_list('team__memberships__user_id', flat=True)
-        
-        return qs.filter(
-            Q(user=user) | 
-            Q(organization_id__in=orgs_managed) | 
-            Q(user_id__in=teams_lead)
-        ).distinct()
+            qs = qs.all()
+        else:
+            orgs_managed = user.org_memberships.filter(
+                role__in=["owner", "admin", "hr"]
+            ).values_list('organization_id', flat=True)
+            teams_lead = user.team_memberships.filter(
+                role="lead"
+            ).values_list('team__memberships__user_id', flat=True)
+
+            qs = qs.filter(
+                Q(user=user) |
+                Q(organization_id__in=orgs_managed) |
+                Q(user_id__in=teams_lead)
+            ).distinct()
+
+        # Optional filters
+        org_id = self.request.query_params.get("organization")
+        if org_id:
+            qs = qs.filter(organization_id=org_id)
+        date_from = self.request.query_params.get("date_from")
+        date_to = self.request.query_params.get("date_to")
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+        return qs
 
     def perform_create(self, serializer):
         AttendanceService.save_manual_attendance(self.request.user, serializer.validated_data)
@@ -94,30 +111,53 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         return TimeLogSerializer
 
     def get_queryset(self):
-        qs = TimeLog.objects.select_related("user", "task", "project").filter(is_deleted=False)
+        qs = TimeLog.objects.select_related(
+            "user", "task", "task__status", "project"
+        ).filter(is_deleted=False)
         user = self.request.user
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-            return qs.all()
-            
-        orgs_managed = user.org_memberships.filter(role__in=["owner", "admin", "hr"]).values_list('organization_id', flat=True)
-        teams_lead = user.team_memberships.filter(role="lead").values_list('team__memberships__user_id', flat=True)
-        
-        return qs.filter(
-            Q(user=user) | 
-            Q(project__organization_id__in=orgs_managed) | 
-            Q(user_id__in=teams_lead)
-        ).distinct()
+            qs = qs.all()
+        else:
+            orgs_managed = user.org_memberships.filter(
+                role__in=["owner", "admin", "hr"]
+            ).values_list('organization_id', flat=True)
+            teams_lead = user.team_memberships.filter(
+                role="lead"
+            ).values_list('team__memberships__user_id', flat=True)
+
+            qs = qs.filter(
+                Q(user=user) |
+                Q(project__organization_id__in=orgs_managed) |
+                Q(user_id__in=teams_lead)
+            ).distinct()
+
+        # Optional filters
+        task_id = self.request.query_params.get("task")
+        if task_id:
+            qs = qs.filter(task_id=task_id)
+        project_id = self.request.query_params.get("project")
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+        is_active = self.request.query_params.get("is_active")
+        if is_active is not None:
+            qs = qs.filter(is_active=is_active.lower() == 'true')
+        return qs
 
     def perform_create(self, serializer):
         task = serializer.validated_data.get("task")
         start_time = serializer.validated_data.get("start_time")
         end_time = serializer.validated_data.get("end_time")
-        
+
         duration = 0
         if start_time and end_time:
             duration = int((end_time - start_time).total_seconds())
-            
-        serializer.save(user=self.request.user, project=task.project if task else None, duration_seconds=duration, is_active=serializer.validated_data.get("is_active", not bool(end_time)))
+
+        serializer.save(
+            user=self.request.user,
+            project=task.project if task else None,
+            duration_seconds=duration,
+            is_active=serializer.validated_data.get("is_active", not bool(end_time))
+        )
 
     def perform_update(self, serializer):
         start_time = serializer.validated_data.get("start_time", serializer.instance.start_time)
@@ -171,19 +211,34 @@ class TimeOffRequestViewSet(viewsets.ModelViewSet):
         return TimeOffRequestSerializer
 
     def get_queryset(self):
-        qs = TimeOffRequest.objects.select_related("user", "approved_by", "organization").filter(is_deleted=False)
+        qs = TimeOffRequest.objects.select_related(
+            "user", "approved_by", "organization"
+        ).filter(is_deleted=False)
         user = self.request.user
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-            return qs.all()
-            
-        orgs_managed = user.org_memberships.filter(role__in=["owner", "admin", "hr"]).values_list('organization_id', flat=True)
-        teams_lead = user.team_memberships.filter(role="lead").values_list('team__memberships__user_id', flat=True)
-        
-        return qs.filter(
-            Q(user=user) | 
-            Q(organization_id__in=orgs_managed) | 
-            Q(user_id__in=teams_lead)
-        ).distinct()
+            qs = qs.all()
+        else:
+            orgs_managed = user.org_memberships.filter(
+                role__in=["owner", "admin", "hr"]
+            ).values_list('organization_id', flat=True)
+            teams_lead = user.team_memberships.filter(
+                role="lead"
+            ).values_list('team__memberships__user_id', flat=True)
+
+            qs = qs.filter(
+                Q(user=user) |
+                Q(organization_id__in=orgs_managed) |
+                Q(user_id__in=teams_lead)
+            ).distinct()
+
+        # Optional filters
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        org_id = self.request.query_params.get("organization")
+        if org_id:
+            qs = qs.filter(organization_id=org_id)
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

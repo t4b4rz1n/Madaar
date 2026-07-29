@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from .models import (
     AsyncStandup,
@@ -216,6 +216,15 @@ class TaskService:
         spent_hours=0,
         order=0,
     ):
+        # Validate that reporter is a project member (unless staff/superuser)
+        if project and reporter and not (getattr(reporter, 'is_staff', False) or getattr(reporter, 'is_superuser', False)):
+            from projects.models import ProjectMember
+            is_member = ProjectMember.objects.filter(
+                project=project, user=reporter, is_active=True
+            ).exists()
+            if not is_member:
+                raise PermissionDenied(_("You are not a member of this project."))
+
         if not status:
             if project:
                 status = TaskStatus.objects.filter(

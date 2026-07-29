@@ -43,6 +43,7 @@ class Attendance(BaseModel):
     class Meta:
         verbose_name = _("Attendance")
         verbose_name_plural = _("Attendances")
+        ordering = ["-date", "-created_at"]
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "date"], 
@@ -86,6 +87,7 @@ class TimeLog(BaseModel):
     class Meta:
         verbose_name = _("Time Log")
         verbose_name_plural = _("Time Logs")
+        ordering = ["-date", "-start_time"]
         indexes = [
             models.Index(fields=["user", "date"]),
             models.Index(fields=["task", "date"]),
@@ -149,6 +151,7 @@ class TimeOffRequest(BaseModel):
     class Meta:
         verbose_name = _("Time Off Request")
         verbose_name_plural = _("Time Off Requests")
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["user", "status"]),
             models.Index(fields=["organization", "status"]),

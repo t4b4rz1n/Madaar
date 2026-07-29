@@ -2,8 +2,10 @@ from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 from .models import (
     AsyncStandup,
@@ -50,13 +52,22 @@ from .services import (
 class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
     permission_classes = [IsAuthenticated, IsBoardPermission]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
+        user = self.request.user
+        # Org isolation: find all orgs the user belongs to
+        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+
         qs = (
             Board.objects.select_related("project", "created_by")
             .prefetch_related("statuses")
-            .all()
+            .filter(is_deleted=False)
         )
+        if org_ids is not None:
+            qs = qs.filter(project__organization_id__in=org_ids)
+
         project_id = self.request.query_params.get("project")
         if project_id:
             qs = qs.filter(project_id=project_id)
@@ -134,9 +145,17 @@ class BoardViewSet(viewsets.ModelViewSet):
 class TaskStatusViewSet(viewsets.ModelViewSet):
     serializer_class = TaskStatusSerializer
     permission_classes = [IsAuthenticated, IsTaskStatusPermission]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
-        qs = TaskStatus.objects.select_related("board").all()
+        user = self.request.user
+        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+
+        qs = TaskStatus.objects.select_related("board", "board__project").filter(is_deleted=False)
+        if org_ids is not None:
+            qs = qs.filter(board__project__organization_id__in=org_ids)
+
         board_id = self.request.query_params.get("board")
         if board_id:
             qs = qs.filter(board_id=board_id)
@@ -183,8 +202,13 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTaskPermission]
     serializer_class = TaskListSerializer
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
+        user = self.request.user
+        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+
         qs = (
             Task.objects.select_related("project", "status", "assignee", "reporter")
             .prefetch_related("checklist_items", "comments")
@@ -206,8 +230,12 @@ class TaskViewSet(viewsets.ModelViewSet):
                     distinct=True,
                 ),
             )
-            .all()
+            .filter(is_deleted=False)
         )
+        # Org isolation
+        if org_ids is not None:
+            qs = qs.filter(project__organization_id__in=org_ids)
+
         project_id = self.request.query_params.get("project")
         if project_id:
             qs = qs.filter(project_id=project_id)
@@ -408,9 +436,17 @@ class TaskViewSet(viewsets.ModelViewSet):
 class TaskChecklistItemViewSet(viewsets.ModelViewSet):
     serializer_class = TaskChecklistItemSerializer
     permission_classes = [IsAuthenticated, IsTaskChecklistPermission]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
-        qs = TaskChecklistItem.objects.select_related("task").all()
+        user = self.request.user
+        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+
+        qs = TaskChecklistItem.objects.select_related("task", "task__project").filter(is_deleted=False)
+        if org_ids is not None:
+            qs = qs.filter(task__project__organization_id__in=org_ids)
+
         task_id = self.request.query_params.get("task")
         if task_id:
             qs = qs.filter(task_id=task_id)
@@ -439,9 +475,17 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
 class TaskCommentViewSet(viewsets.ModelViewSet):
     serializer_class = TaskCommentSerializer
     permission_classes = [IsAuthenticated, IsTaskCommentPermission]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
-        qs = TaskComment.objects.select_related("author", "task").all()
+        user = self.request.user
+        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+
+        qs = TaskComment.objects.select_related("author", "task", "task__project").filter(is_deleted=False)
+        if org_ids is not None:
+            qs = qs.filter(task__project__organization_id__in=org_ids)
+
         task_id = self.request.query_params.get("task")
         if task_id:
             qs = qs.filter(task_id=task_id)
@@ -467,13 +511,24 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
 class AsyncStandupViewSet(viewsets.ModelViewSet):
     serializer_class = AsyncStandupSerializer
     permission_classes = [IsAuthenticated, IsAsyncStandupPermission]
+    pagination_class = PageNumberPagination
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
         user = self.request.user
         if not user or not user.is_authenticated:
             return AsyncStandup.objects.none()
 
-        qs = AsyncStandup.objects.select_related("user").all()
+        # Org isolation: user can only see standups in their orgs
+        org_ids = user.org_memberships.values_list('organization_id', flat=True)
+
+        qs = AsyncStandup.objects.select_related("user").filter(
+            is_deleted=False,
+            user__org_memberships__organization_id__in=org_ids
+        ).distinct()
+
+        if user.is_staff or user.is_superuser:
+            qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
 
         user_id = self.request.query_params.get("user")
         if user_id:

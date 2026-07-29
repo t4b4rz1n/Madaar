@@ -8,15 +8,24 @@ from accounts.models import User
 # and a simple representation for reads)
 
 class MinimalUserSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = User
-        fields = ("id", "username", "first_name", "last_name", "email", "avatar")
-        
-    def to_representation(self, instance):  
-        ret = super().to_representation(instance)
+        fields = ("id", "username", "first_name", "last_name", "email", "avatar", "avatar_url")
+
+    def get_avatar_url(self, obj):
+        if not obj.avatar:
+            return None
         request = self.context.get('request')
-        if instance.avatar and request:
-            ret['avatar'] = request.build_absolute_uri(instance.avatar.url)
+        if request is not None:
+            return request.build_absolute_uri(obj.avatar.url)
+        return obj.avatar.url
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Remove raw avatar field, keep only avatar_url
+        ret.pop('avatar', None)
         return ret
 
 
@@ -62,7 +71,7 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
         if organization:
             request = self.context.get('request')
             if request and request.user and request.user.is_authenticated:
-                is_member = request.user.org_memberships.filter(organization=organization, is_active=True).exists()
+                is_member = request.user.org_memberships.filter(organization=organization, ).exists()
                 if not is_member and not (request.user.is_staff or request.user.is_superuser):
                     raise serializers.ValidationError({"organization": _("You are not a member of this organization.")})
                 
@@ -118,7 +127,7 @@ class TimeLogWriteSerializer(serializers.ModelSerializer):
         if org:
             request = self.context.get('request')
             if request and request.user and request.user.is_authenticated:
-                is_member = request.user.org_memberships.filter(organization=org, is_active=True).exists()
+                is_member = request.user.org_memberships.filter(organization=org, ).exists()
                 if not is_member and not (request.user.is_staff or request.user.is_superuser):
                     raise serializers.ValidationError({"organization": _("You are not a member of this organization.")})
         
@@ -160,7 +169,7 @@ class TimeOffRequestWriteSerializer(serializers.ModelSerializer):
         if organization:
             request = self.context.get('request')
             if request and request.user and request.user.is_authenticated:
-                is_member = request.user.org_memberships.filter(organization=organization, is_active=True).exists()
+                is_member = request.user.org_memberships.filter(organization=organization, ).exists()
                 if not is_member and not (request.user.is_staff or request.user.is_superuser):
                     raise serializers.ValidationError({"organization": _("You are not a member of this organization.")})
         
@@ -189,9 +198,8 @@ class HolidaySerializer(serializers.ModelSerializer):
             if organization:
                 if request.user and request.user.is_authenticated:
                     is_admin = request.user.org_memberships.filter(
-                        organization=organization, 
-                        role__in=['owner', 'admin', 'hr'],
-                        is_active=True
+                        organization=organization,
+                        role__in=['owner', 'admin', 'hr']
                     ).exists()
                     if not is_admin and not (request.user.is_staff or request.user.is_superuser):
                         raise serializers.ValidationError({"organization": _("You do not have permission to manage holidays for this organization.")})
@@ -209,6 +217,11 @@ class TimesheetDailySerializer(serializers.Serializer):
 
 
 class TimesheetTeamSerializer(serializers.Serializer):
-    username = serializers.CharField(source='user__username')
+    """
+    Serializer for team/project timesheet querysets returned as dicts.
+    Values are annotated dicts like {'user__username': ..., 'date': ..., 'total_seconds': ...}.
+    """
+    user__username = serializers.CharField()
     date = serializers.DateField()
     total_seconds = serializers.IntegerField()
+

@@ -3,11 +3,11 @@ from django.db import transaction
 from django.utils import timezone
 from django.db.models import Sum, F, Q
 from django.db.models.functions import TruncDate
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from .models import Attendance, TimeLog, TimeOffRequest, Holiday, AttendanceSetting
-from tasks.models import Task, TaskStatus
 
 class AttendanceService:
     @staticmethod
@@ -84,14 +84,21 @@ class AttendanceService:
 
 
 class TimeLogService:
+    # Guard flag to prevent start_timer → move_task → start_timer infinite loop
+    _in_start_timer = False
+
     @staticmethod
     @transaction.atomic
     def start_timer(user, task):
         # Anti-fraud check: only assignee can start timer
         if task.assignee != user:
             raise PermissionDenied(_("You can only start a timer for tasks assigned to you."))
-        
-        # Stop existing active timer
+
+        # Guard against re-entrant calls (move_task → start_timer loop)
+        if TimeLogService._in_start_timer:
+            return None
+
+        # Stop existing active timer for this user
         active = TimeLogService.get_active_timer(user)
         if active and active.id:
             TimeLogService.stop_timer(user, active.id)
@@ -107,25 +114,37 @@ class TimeLogService:
         )
 
         # Auto-move task to Doing if it's not already in Doing
+        # Use guard to prevent circular: start_timer → move_task → start_timer
         if task.status and task.status.code.lower() != 'doing':
-            doing_status = TaskStatus.objects.filter(board=task.status.board, code__iexact='doing').first()
+            from tasks.models import TaskStatus
+            doing_status = TaskStatus.objects.filter(
+                board=task.status.board, code__iexact='doing'
+            ).first()
             if doing_status:
-                from tasks.services import TaskService
-                TaskService.move_task(task, user, new_status=doing_status)
-                
+                TimeLogService._in_start_timer = True
+                try:
+                    from tasks.services import TaskService
+                    TaskService.move_task(task, user, new_status=doing_status)
+                finally:
+                    TimeLogService._in_start_timer = False
+
         # Log activity
         from tasks.models import TaskActivityLog
         TaskActivityLog.objects.create(
-            task=task, board=task.status.board if task.status else None, 
-            actor=user, action="Started time tracking timer"
+            task=task,
+            board=task.status.board if task.status else None,
+            actor=user,
+            action="Started time tracking timer"
         )
-                
+
         return timer
 
     @staticmethod
     @transaction.atomic
     def stop_timer(user, log_id):
-        timer = TimeLog.objects.filter(id=log_id, user=user, is_active=True).first()
+        timer = TimeLog.objects.select_related('task', 'task__status').filter(
+            id=log_id, user=user, is_active=True
+        ).first()
         if not timer:
             raise ValidationError(_("Timer not found or already stopped."))
 
@@ -134,14 +153,19 @@ class TimeLogService:
         timer.is_active = False
         timer.save(update_fields=['end_time', 'duration_seconds', 'is_active'])
 
-        timer.task.spent_hours = float(timer.task.spent_hours) + (timer.duration_seconds / 3600.0)
-        timer.task.save(update_fields=['spent_hours'])
+        # Use F() expression to avoid Race Condition on concurrent timer stops
+        from tasks.models import Task
+        Task.objects.filter(pk=timer.task_id).update(
+            spent_hours=F('spent_hours') + timer.duration_seconds / 3600.0
+        )
 
         # Log activity
         from tasks.models import TaskActivityLog
         TaskActivityLog.objects.create(
-            task=timer.task, board=timer.task.status.board if timer.task.status else None, 
-            actor=user, action=f"Stopped timer after {timer.duration_seconds} seconds"
+            task=timer.task,
+            board=timer.task.status.board if timer.task.status else None,
+            actor=user,
+            action=f"Stopped timer after {timer.duration_seconds} seconds"
         )
         return timer
 
@@ -163,8 +187,11 @@ class TimeLogService:
             is_active=False,
             description=description
         )
-        task.spent_hours = float(task.spent_hours) + (duration_seconds / 3600.0)
-        task.save(update_fields=['spent_hours'])
+        # Use F() to avoid Race Condition
+        from tasks.models import Task
+        Task.objects.filter(pk=task.pk).update(
+            spent_hours=F('spent_hours') + duration_seconds / 3600.0
+        )
         return log
 
     @staticmethod
@@ -174,16 +201,17 @@ class TimeLogService:
     @staticmethod
     @transaction.atomic
     def cancel_timer(user, log_id):
-        timer = TimeLog.objects.filter(id=log_id, user=user).first()
+        timer = TimeLog.objects.select_related('task').filter(id=log_id, user=user).first()
         if not timer:
             raise ValidationError(_("Time log not found."))
-        
-        # Revert task spent hours if it was finished
-        if not timer.is_active:
-            timer.task.spent_hours = max(0, float(timer.task.spent_hours) - (timer.duration_seconds / 3600.0))
-            timer.task.save(update_fields=['spent_hours'])
-        
-        
+
+        # Revert task spent_hours if the timer had already been stopped (has duration)
+        if not timer.is_active and timer.duration_seconds:
+            from tasks.models import Task
+            Task.objects.filter(pk=timer.task_id).update(
+                spent_hours=F('spent_hours') - timer.duration_seconds / 3600.0
+            )
+
         timer.is_deleted = True
         timer.is_active = False
         timer.duration_seconds = 0
@@ -207,14 +235,16 @@ class TimeOffRequestService:
     @staticmethod
     @transaction.atomic
     def approve(request_id, manager):
-        req = TimeOffRequest.objects.get(id=request_id)
-        
+        req = get_object_or_404(TimeOffRequest, id=request_id)
+
         # Check permissions explicitly in service
         if not manager.is_staff and not manager.is_superuser:
-            role = manager.org_memberships.filter(organization_id=req.organization_id).values_list("role", flat=True).first()
+            role = manager.org_memberships.filter(
+                organization_id=req.organization_id
+            ).values_list("role", flat=True).first()
             if role not in ["owner", "admin", "lead"]:
                 raise PermissionDenied(_("You do not have permission to approve requests in this organization."))
-            
+
         if req.status != TimeOffRequest.Status.PENDING:
             raise ValidationError(_("Only pending requests can be approved."))
         req.status = TimeOffRequest.Status.APPROVED
@@ -225,14 +255,16 @@ class TimeOffRequestService:
     @staticmethod
     @transaction.atomic
     def reject(request_id, manager, note=""):
-        req = TimeOffRequest.objects.get(id=request_id)
-        
+        req = get_object_or_404(TimeOffRequest, id=request_id)
+
         # Check permissions explicitly in service
         if not manager.is_staff and not manager.is_superuser:
-            role = manager.org_memberships.filter(organization_id=req.organization_id).values_list("role", flat=True).first()
+            role = manager.org_memberships.filter(
+                organization_id=req.organization_id
+            ).values_list("role", flat=True).first()
             if role not in ["owner", "admin", "lead"]:
                 raise PermissionDenied(_("You do not have permission to reject requests in this organization."))
-            
+
         if req.status != TimeOffRequest.Status.PENDING:
             raise ValidationError(_("Only pending requests can be rejected."))
         req.status = TimeOffRequest.Status.REJECTED
@@ -243,7 +275,7 @@ class TimeOffRequestService:
     @staticmethod
     @transaction.atomic
     def cancel(user, request_id):
-        req = TimeOffRequest.objects.get(id=request_id, user=user)
+        req = get_object_or_404(TimeOffRequest, id=request_id, user=user)
         if req.status != TimeOffRequest.Status.PENDING:
             raise ValidationError(_("Only pending requests can be cancelled."))
         req.is_deleted = True
@@ -265,13 +297,6 @@ class HolidayService:
     @staticmethod
     def get_year_holidays(year):
         return Holiday.objects.filter(date__year=year)
-
-    @staticmethod
-    @transaction.atomic
-    def delete(holiday_id):
-        holiday = Holiday.objects.filter(id=holiday_id).first()
-        if holiday:
-            holiday.delete()
 
 
 class TimesheetService:
@@ -304,10 +329,18 @@ class TimesheetService:
             user__team_memberships__team_id__in=managed_teams,
             task__project__organization=organization,
             date__range=(start_date, end_date)
+        ).distinct()  # distinct() prevents duplicate rows when a user belongs to multiple teams
+        return (
+            qs.values('user__username', 'date')
+            .annotate(total_seconds=Sum('duration_seconds'))
+            .order_by('user__username', 'date')
         )
-        return qs.values('user__username', 'date').annotate(total_seconds=Sum('duration_seconds')).order_by('user__username', 'date')
 
     @staticmethod
     def get_project_timesheet(project, start_date, end_date):
         qs = TimeLog.objects.filter(project=project, date__range=(start_date, end_date))
-        return qs.values('user__username', 'date').annotate(total_seconds=Sum('duration_seconds')).order_by('user__username', 'date')
+        return (
+            qs.values('user__username', 'date')
+            .annotate(total_seconds=Sum('duration_seconds'))
+            .order_by('user__username', 'date')
+        )
