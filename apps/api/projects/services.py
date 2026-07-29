@@ -89,6 +89,34 @@ class ProjectService:
         )
 
     @classmethod
+    def get_accessible_queryset(cls, user) -> QuerySet[Project]:
+        """Return projects accessible by the given user."""
+        qs = cls.get_base_queryset()
+        if not user.is_staff:
+            qs = qs.filter(
+                Q(
+                    organization__memberships__user=user,
+                    organization__memberships__is_deleted=False,
+                )
+                | Q(members__user=user, members__is_deleted=False)
+                | Q(owner=user)
+            ).distinct()
+        return qs
+
+    @staticmethod
+    def get_project_teams(project: Project) -> QuerySet:
+        """Return all teams involved in the project."""
+        # Avoid circular imports by importing Team here or assuming it's available
+        from organizations.models import Team
+
+        team_filter = Q(
+            project_memberships__project=project, project_memberships__is_deleted=False
+        )
+        if project.team_id:
+            team_filter |= Q(id=project.team_id)
+        return Team.objects.filter(team_filter).distinct()
+
+    @classmethod
     def get_with_annotations(cls, pk) -> Project:
         """Fetch a single project with all standard annotations.
 
@@ -171,6 +199,26 @@ class ProjectService:
         )
         logger.info("Project updated: %s (by %s)", project.pk, actor)
         return cls.get_with_annotations(project.pk)
+
+    @classmethod
+    @transaction.atomic
+    def archive(cls, *, project: Project, actor) -> Project:
+        """Move a project to ARCHIVED status."""
+        return cls.update(
+            project=project,
+            actor=actor,
+            validated_data={"status": Project.Status.ARCHIVED},
+        )
+
+    @classmethod
+    @transaction.atomic
+    def complete(cls, *, project: Project, actor) -> Project:
+        """Move a project to COMPLETED status."""
+        return cls.update(
+            project=project,
+            actor=actor,
+            validated_data={"status": Project.Status.COMPLETED},
+        )
 
     @classmethod
     @transaction.atomic
@@ -434,4 +482,19 @@ class MilestoneService:
             milestone.pk,
             project.pk,
             actor,
+        )
+
+
+# ---------------------------------------------------------------------------
+# ProjectActivityService
+# ---------------------------------------------------------------------------
+
+
+class ProjectActivityService:
+    """Handles all ProjectActivity queries."""
+
+    @staticmethod
+    def get_base_queryset(project_id: str) -> QuerySet[ProjectActivity]:
+        return ProjectActivity.objects.filter(project_id=project_id).select_related(
+            "actor", "project"
         )

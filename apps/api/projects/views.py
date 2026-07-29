@@ -22,7 +22,6 @@ URL structure (registered via ``projects/urls.py``)::
     /api/v1/projects/<project_pk>/activities/         → ProjectActivityViewSet
 """
 
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
@@ -31,8 +30,6 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from organizations.models import Team
 
 from .filters import (
     MilestoneFilter,
@@ -58,7 +55,30 @@ from .serializers import (
     ProjectWriteSerializer,
     TeamMinimalSerializer,
 )
-from .services import MilestoneService, ProjectMemberService, ProjectService
+from .services import (
+    MilestoneService,
+    ProjectActivityService,
+    ProjectMemberService,
+    ProjectService,
+)
+
+# ---------------------------------------------------------------------------
+# Mixins
+# ---------------------------------------------------------------------------
+
+
+class NestedProjectMixin:
+    """Provides a shared _get_project helper for nested viewsets."""
+
+    def _get_project(self) -> Project:
+        """Return the parent project; raises 404 if it does not exist."""
+        if not hasattr(self, "_project_cache"):
+            self._project_cache = get_object_or_404(
+                Project.objects.filter(is_deleted=False),
+                pk=self.kwargs["project_pk"],
+            )
+        return self._project_cache
+
 
 # ---------------------------------------------------------------------------
 # Project ViewSet
@@ -130,20 +150,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return Project.objects.none()
 
-        user = self.request.user
-        qs = ProjectService.get_base_queryset()
-
-        if not user.is_staff:
-            qs = qs.filter(
-                Q(
-                    organization__memberships__user=user,
-                    organization__memberships__is_deleted=False,
-                )
-                | Q(members__user=user, members__is_deleted=False)
-                | Q(owner=user)
-            ).distinct()
-
-        return qs
+        return ProjectService.get_accessible_queryset(self.request.user)
 
     # -- Serializer --------------------------------------------------------
 
@@ -201,12 +208,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         that are part of the project memberships.
         """
         project = self.get_object()
-        team_filter = Q(
-            project_memberships__project=project, project_memberships__is_deleted=False
-        )
-        if project.team_id:
-            team_filter |= Q(id=project.team_id)
-        teams_qs = Team.objects.filter(team_filter).distinct()
+        teams_qs = ProjectService.get_project_teams(project)
         serializer = TeamMinimalSerializer(teams_qs, many=True)
         return Response(serializer.data)
 
@@ -220,11 +222,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def archive(self, request, pk=None):
         """Move a project to ARCHIVED status."""
         project = self.get_object()
-        updated = ProjectService.update(
-            project=project,
-            actor=request.user,
-            validated_data={"status": Project.Status.ARCHIVED},
-        )
+        updated = ProjectService.archive(project=project, actor=request.user)
         return Response(
             ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK
         )
@@ -239,11 +237,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def complete(self, request, pk=None):
         """Move a project to COMPLETED status."""
         project = self.get_object()
-        updated = ProjectService.update(
-            project=project,
-            actor=request.user,
-            validated_data={"status": Project.Status.COMPLETED},
-        )
+        updated = ProjectService.complete(project=project, actor=request.user)
         return Response(
             ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK
         )
@@ -264,7 +258,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ),
     destroy=extend_schema(summary=_("Remove a project member"), tags=["projects"]),
 )
-class ProjectMemberViewSet(viewsets.ModelViewSet):
+class ProjectMemberViewSet(NestedProjectMixin, viewsets.ModelViewSet):
     """CRUD for ProjectMembers, nested under a Project."""
 
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -278,17 +272,6 @@ class ProjectMemberViewSet(viewsets.ModelViewSet):
         if self.action in ("list", "retrieve"):
             return [IsAuthenticated()]
         return [IsAuthenticated(), CanManageProjectMember()]
-
-    # -- Helpers -----------------------------------------------------------
-
-    def _get_project(self) -> Project:
-        """Return the parent project; raises 404 if it does not exist."""
-        if not hasattr(self, "_project_cache"):
-            self._project_cache = get_object_or_404(
-                Project.objects.filter(is_deleted=False),
-                pk=self.kwargs["project_pk"],
-            )
-        return self._project_cache
 
     # -- Queryset & serializer ---------------------------------------------
 
@@ -358,7 +341,7 @@ class ProjectMemberViewSet(viewsets.ModelViewSet):
     ),
     destroy=extend_schema(summary=_("Soft-delete a milestone"), tags=["projects"]),
 )
-class MilestoneViewSet(viewsets.ModelViewSet):
+class MilestoneViewSet(NestedProjectMixin, viewsets.ModelViewSet):
     """CRUD for Milestones, nested under a Project."""
 
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -372,16 +355,6 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         if self.action in ("list", "retrieve"):
             return [IsAuthenticated()]
         return [IsAuthenticated(), CanManageMilestone()]
-
-    # -- Helpers -----------------------------------------------------------
-
-    def _get_project(self) -> Project:
-        if not hasattr(self, "_project_cache"):
-            self._project_cache = get_object_or_404(
-                Project.objects.filter(is_deleted=False),
-                pk=self.kwargs["project_pk"],
-            )
-        return self._project_cache
 
     # -- Queryset & serializer ---------------------------------------------
 
@@ -463,6 +436,6 @@ class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return ProjectActivity.objects.none()
-        return ProjectActivity.objects.filter(
+        return ProjectActivityService.get_base_queryset(
             project_id=self.kwargs["project_pk"]
-        ).select_related("actor", "project")
+        )
