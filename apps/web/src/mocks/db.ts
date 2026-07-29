@@ -222,6 +222,7 @@ export type MockRole = {
   name: string;
   description: string;
   is_active: boolean;
+  is_staff: boolean;
   permissions: MockPermission[];
 };
 
@@ -240,6 +241,7 @@ export let mockRoles: MockRole[] = [
     description:
       "Full access to the entire system and management of users and permissions.",
     is_active: true,
+    is_staff: true,
     permissions: [...mockPermissions],
   },
   {
@@ -247,6 +249,7 @@ export let mockRoles: MockRole[] = [
     name: "Support",
     description: "Manage tickets and notifications.",
     is_active: true,
+    is_staff: false,
     permissions: mockPermissions.filter((permission) =>
       ["ticket.manage", "user.read"].includes(permission.id),
     ),
@@ -256,6 +259,7 @@ export let mockRoles: MockRole[] = [
     name: "Regular User",
     description: "Basic role with minimum permissions.",
     is_active: true,
+    is_staff: false,
     permissions: [],
   },
 ];

@@ -922,4 +922,59 @@ export const handlers = [
     );
     return HttpResponse.json(response);
   }),
+    // ─── Roles MSW Mocks ────────────────────────────────────────────────────────
+  http.post("*/roles", async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string;
+      description?: string;
+      is_active?: boolean;
+      is_staff?: boolean;
+    };
+
+    // Validation ساده شبیه بک‌اند
+    if (!body?.name?.trim()) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Role name is required",
+          data: {},
+        },
+        { status: 400 },
+      );
+    }
+
+    // Duplicate check (optional ولی خیلی کاربردیه)
+    const exists = db.roles
+      .getAll()
+      .some((r) => r.name.toLowerCase() === body.name.trim().toLowerCase());
+
+    if (exists) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Role name already exists",
+          data: {},
+        },
+        { status: 400 },
+      );
+    }
+
+    const newRole = db.roles.create({
+      name: body.name.trim(),
+      description: body.description?.trim?.() ?? "",
+      is_active: body.is_active ?? true,
+      is_staff: body.is_staff ?? true,
+      permissions: [],
+    });
+
+    return HttpResponse.json(
+      {
+        status: true,
+        message: "Role created successfully",
+        data: newRole,
+      },
+      { status: 201 },
+    );
+  }),
+
 ];

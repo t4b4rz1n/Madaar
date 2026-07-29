@@ -1,10 +1,22 @@
 // @apps/web/src/features/roles/pages/RolesListPage.tsx
-
+import { useState } from "react";
+import { CreateRoleModal } from "../components/CreateRoleModal";
 import { useRoles } from "../hooks/useRoles";
 
+interface Role {
+  id: number;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  permissions?: any[];
+}
+
 const RolesListPage = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // ۲. اینجا به تایپ‌اسکریپت می‌گیم که دیتا دقیقاً چه شکلیه
   const { data, isLoading, isError } = useRoles();
-  const roles = data?.results ?? [];
+  const roles: Role[] = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -37,14 +49,18 @@ const RolesListPage = () => {
           </p>
         </div>
 
-        <button className="btn btn-primary shadow-sm hover:shadow-md transition-all duration-200 w-full sm:w-auto font-medium">
+        <button
+          type="button"
+          className="btn btn-primary rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 w-full sm:w-auto font-medium"
+          onClick={() => setIsModalOpen(true)}
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
             stroke="currentColor"
-            className="w-5 h-5 mr-1 inline"
+            className="w-5 h-5 me-1 inline"
           >
             <path
               strokeLinecap="round"
@@ -54,6 +70,11 @@ const RolesListPage = () => {
           </svg>
           Create Role
         </button>
+
+        <CreateRoleModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
       </div>
 
       {/* Modern panel and table */}
@@ -81,59 +102,76 @@ const RolesListPage = () => {
 
               <tbody className="divide-y divide-base-200">
                 {roles.length > 0 ? (
-                  roles.map((role) => (
-                    <tr
-                      key={role.id}
-                      className="hover:bg-base-200/30 transition-colors duration-150"
-                    >
-                      {/* Role name */}
-                      <td className="py-4 pl-6">
-                        <div className="font-semibold text-base-content text-[15px]">
-                          {role.name}
-                        </div>
-                      </td>
+                  roles.map((role) => {
+                    // اینجا داخل map تعریف می‌کنیم تا TypeScript خطا نده
+                    const desc = role.description?.trim() ?? "";
+                    const shouldTip = desc.length > 40;
 
-                      {/* Description - hidden on mobile */}
-                      <td className="hidden md:table-cell py-4 text-sm text-base-content/70 max-w-xs truncate">
-                        {role.description || (
-                          <span className="text-base-content/30">—</span>
-                        )}
-                      </td>
+                    return (
+                      <tr
+                        key={role.id}
+                        className="hover:bg-base-200/30 transition-colors duration-150"
+                      >
+                        {/* Role name */}
+                        <td className="py-4 pl-6">
+                          <div className="font-semibold text-base-content text-[15px]">
+                            {role.name}
+                          </div>
+                        </td>
 
-                      {/* Permission count as modern compact badge */}
-                      <td className="py-4 text-center">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                          {role.permissions?.length ?? 0} Keys
-                        </div>
-                      </td>
+                        {/* Description - hidden on mobile, now with proper Tooltip logic */}
+                        <td className="hidden md:table-cell py-4 max-w-xs">
+                          {shouldTip ? (
+                            <div
+                              className="tooltip tooltip-top tooltip-primary block w-full"
+                              data-tip={desc}
+                            >
+                              <span className="block truncate text-sm text-base-content/70">
+                                {desc}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="block truncate text-sm text-base-content/70">
+                              {desc || "—"}
+                            </span>
+                          )}
+                        </td>
 
-                      {/* Active or inactive status */}
-                      <td className="py-4 text-center">
-                        {role.is_active ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-base-300 text-base-content/50 border border-base-300">
-                            Inactive
-                          </span>
-                        )}
-                      </td>
+                        {/* Permission count as modern compact badge */}
+                        <td className="py-4 text-center">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                            {role.permissions?.length ?? 0} Keys
+                          </div>
+                        </td>
 
-                      {/* Small and stylish action buttons */}
-                      <td className="py-4 pr-6 text-end">
-                        <div className="inline-flex gap-1">
-                          <button className="btn btn-sm btn-ghost text-base-content/70 hover:bg-base-200 hover:text-base-content transition-all">
-                            Edit
-                          </button>
-                          <button className="btn btn-sm btn-ghost text-error/80 hover:bg-error/10 hover:text-error transition-all">
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        {/* Active or inactive status */}
+                        <td className="py-4 text-center">
+                          {role.is_active ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-base-300 text-base-content/50 border border-base-300">
+                              Inactive
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Small and stylish action buttons */}
+                        <td className="py-4 pr-6 text-end">
+                          <div className="inline-flex gap-1">
+                            <button className="btn btn-sm btn-ghost text-base-content/70 hover:bg-base-200 hover:text-base-content transition-all">
+                              Edit
+                            </button>
+                            <button className="btn btn-sm btn-ghost text-error/80 hover:bg-error/10 hover:text-error transition-all">
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={5} className="py-16 text-center">

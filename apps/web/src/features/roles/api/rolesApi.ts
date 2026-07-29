@@ -1,28 +1,51 @@
-// @apps/web/src/features/roles/api/rolesApi.ts
+// apps/web/src/features/roles/api/rolesApi.ts
 
 import ApiService from "../../../core/api/apiService";
-import type { ApiResponseList } from "../../../core/api/apiService"; // ایمپورت تایپ لیست
-import type { Role, RoleFormData, RoleUpdateData } from "../types";
+import type { ApiResponseList } from "../../../core/api/apiService";
+import type { Role, RoleFormData, RoleUpdateData } from "../types"; // مطمئن شو این تایپ‌ها رو توی فایل types.ts داری
 
-// دریافت لیست تمام نقش‌ها با ساختار صفحه‌بندی شده
-export const getRoles = async (): Promise<ApiResponseList<Role>> => {
-  const response = await ApiService.getList<Role>('/roles');
-  return response.data; // خروجی ما الان شامل results و بقیه فیلدهای صفحه‌بندی هست
+const ROLES_ENDPOINT = "/roles";
+
+// --- تایپ‌ها و توابع برای Query ---
+
+export type GetRolesParams = {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  ordering?: string;
 };
 
-// ایجاد نقش جدید
+export const getRoles = async (
+  params?: GetRolesParams,
+): Promise<ApiResponseList<Role>> => {
+  // از ساختار { params: params } استفاده می‌کنیم که getList درست کار کنه
+  const response = await ApiService.getList<Role>(ROLES_ENDPOINT, {
+    params: params,
+  });
+  return response.data;
+};
+
+// --- توابع برای Mutation ---
+
 export const createRole = async (payload: RoleFormData): Promise<Role> => {
-  const response = await ApiService.post<Role>('/roles', payload);
+  const response = await ApiService.post<Role>(ROLES_ENDPOINT, payload);
+  // چون ApiService خود data رو در خروجی ApiResponse برمی‌گردونه، نیازی به return response.data نیست
+  // اما چون ساختار شما رو دیدم که ApiResponse رو wrap می‌کنه،
+  // فرض می‌کنم هدف نهایی یکپارچگی با Promise<Role> هست.
   return response.data;
 };
 
-// ویرایش نقش
-export const updateRole = async (id: number, payload: RoleUpdateData): Promise<Role> => {
-  const response = await ApiService.patch<Role>(`/roles/${id}`, payload);
+export const updateRole = async (
+  id: number,
+  payload: RoleUpdateData,
+): Promise<Role> => {
+  const response = await ApiService.patch<Role>(
+    `${ROLES_ENDPOINT}/${id}`,
+    payload,
+  );
   return response.data;
 };
 
-// حذف نقش
 export const deleteRole = async (id: number): Promise<void> => {
-  await ApiService.delete(`/roles/${id}`);
+  await ApiService.delete(`${ROLES_ENDPOINT}/${id}`);
 };

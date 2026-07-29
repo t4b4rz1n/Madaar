@@ -6,12 +6,13 @@ export interface Role {
   is_active: boolean;
 }
 
-export interface RoleFormData {
+export type RoleFormData = {
   name: string;
-  description: string;
-  permissions: string[];
+  description?: string;
   is_active: boolean;
-}
+  is_staff: boolean;
+};
+
 
 export interface RoleUpdateData {
   name?: string;
