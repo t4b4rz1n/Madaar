@@ -1,4 +1,4 @@
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Exists, OuterRef
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -243,6 +243,14 @@ class TaskViewSet(viewsets.ModelViewSet):
                     ),
                     distinct=True,
                 ),
+            )
+            .annotate(
+                has_active_timer=Exists(
+                    # We need to import TimeLog inside the method or at the top. Let's do it inside to avoid circular import if needed, or better, we can import it at the top. Wait, attendance models might not be imported yet. Let's do it inline to be safe.
+                    __import__('attendance.models', fromlist=['TimeLog']).TimeLog.objects.filter(
+                        task=OuterRef('pk'), is_active=True, is_deleted=False
+                    )
+                )
             )
             .filter(is_deleted=False)
         )

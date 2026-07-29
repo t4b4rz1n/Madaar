@@ -582,6 +582,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             title="Move Task",
             reporter=self.user,
             status=self.status_todo,
+            spent_hours=1,  # Required to move to done
         )
         url = reverse("task-move-task", kwargs={"pk": task.id})
         res = self.client.post(
@@ -737,6 +738,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         task = Task.objects.create(
             project=self.project, title="Toggle Task",
             reporter=self.user, status=self.status_todo,
+            spent_hours=1,  # Required to move to done
         )
         url = reverse("task-toggle-done", kwargs={"pk": task.id})
         res = self.client.post(url)
@@ -744,7 +746,8 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         task.refresh_from_db()
         self.assertEqual(task.status.code, "done")
 
+        # Second toggle should fail because task is locked in 'done'
         res2 = self.client.post(url)
-        self.assertEqual(res2.status_code, status.HTTP_200_OK)
+        self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
         task.refresh_from_db()
-        self.assertEqual(task.status.code, "todo")
+        self.assertEqual(task.status.code, "done")

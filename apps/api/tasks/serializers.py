@@ -176,6 +176,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     progress_percent = serializers.FloatField(read_only=True)
     is_completed = serializers.BooleanField(read_only=True)
     checklist_stats = serializers.SerializerMethodField()
+    has_active_timer = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Task
@@ -201,6 +202,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             "progress_percent",
             "subtasks_count",
             "checklist_stats",
+            "has_active_timer",
             "created_at",
             "updated_at",
         )

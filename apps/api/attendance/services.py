@@ -141,7 +141,7 @@ class TimeLogService:
 
     @staticmethod
     @transaction.atomic
-    def stop_timer(user, log_id):
+    def stop_timer(user, log_id, auto_move=True):
         timer = TimeLog.objects.select_related('task', 'task__status').filter(
             id=log_id, user=user, is_active=True
         ).first()
@@ -167,6 +167,18 @@ class TimeLogService:
             actor=user,
             action=f"Stopped timer after {timer.duration_seconds} seconds"
         )
+
+        if auto_move and timer.task.status and timer.task.status.code.lower() == 'doing':
+            from tasks.models import TaskStatus
+            review_status = TaskStatus.objects.filter(
+                board=timer.task.status.board, code__iexact='review'
+            ).first()
+            if review_status:
+                from tasks.services import TaskService
+                # Refresh task so it gets updated spent_hours etc. (not strictly necessary but safe)
+                timer.task.refresh_from_db()
+                TaskService.move_task(timer.task, user, new_status=review_status)
+
         return timer
 
     @staticmethod
