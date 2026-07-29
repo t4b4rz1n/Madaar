@@ -217,8 +217,16 @@ class TaskService:
         order=0,
     ):
         # Validate that reporter is a project member (unless staff/superuser)
-        if project and reporter and not (getattr(reporter, 'is_staff', False) or getattr(reporter, 'is_superuser', False)):
+        if (
+            project
+            and reporter
+            and not (
+                getattr(reporter, "is_staff", False)
+                or getattr(reporter, "is_superuser", False)
+            )
+        ):
             from projects.models import ProjectMember
+
             is_member = ProjectMember.objects.filter(
                 project=project, user=reporter, is_active=True
             ).exists()

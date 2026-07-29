@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from .models import (
     AsyncStandup,
@@ -58,7 +58,11 @@ class BoardViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         # Org isolation: find all orgs the user belongs to
-        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+        org_ids = (
+            user.org_memberships.values_list("organization_id", flat=True)
+            if not (user.is_staff or user.is_superuser)
+            else None
+        )
 
         qs = (
             Board.objects.select_related("project", "created_by")
@@ -150,9 +154,15 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+        org_ids = (
+            user.org_memberships.values_list("organization_id", flat=True)
+            if not (user.is_staff or user.is_superuser)
+            else None
+        )
 
-        qs = TaskStatus.objects.select_related("board", "board__project").filter(is_deleted=False)
+        qs = TaskStatus.objects.select_related("board", "board__project").filter(
+            is_deleted=False
+        )
         if org_ids is not None:
             qs = qs.filter(board__project__organization_id__in=org_ids)
 
@@ -207,7 +217,11 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+        org_ids = (
+            user.org_memberships.values_list("organization_id", flat=True)
+            if not (user.is_staff or user.is_superuser)
+            else None
+        )
 
         qs = (
             Task.objects.select_related("project", "status", "assignee", "reporter")
@@ -441,9 +455,15 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+        org_ids = (
+            user.org_memberships.values_list("organization_id", flat=True)
+            if not (user.is_staff or user.is_superuser)
+            else None
+        )
 
-        qs = TaskChecklistItem.objects.select_related("task", "task__project").filter(is_deleted=False)
+        qs = TaskChecklistItem.objects.select_related("task", "task__project").filter(
+            is_deleted=False
+        )
         if org_ids is not None:
             qs = qs.filter(task__project__organization_id__in=org_ids)
 
@@ -480,9 +500,15 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        org_ids = user.org_memberships.values_list('organization_id', flat=True) if not (user.is_staff or user.is_superuser) else None
+        org_ids = (
+            user.org_memberships.values_list("organization_id", flat=True)
+            if not (user.is_staff or user.is_superuser)
+            else None
+        )
 
-        qs = TaskComment.objects.select_related("author", "task", "task__project").filter(is_deleted=False)
+        qs = TaskComment.objects.select_related(
+            "author", "task", "task__project"
+        ).filter(is_deleted=False)
         if org_ids is not None:
             qs = qs.filter(task__project__organization_id__in=org_ids)
 
@@ -520,12 +546,15 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             return AsyncStandup.objects.none()
 
         # Org isolation: user can only see standups in their orgs
-        org_ids = user.org_memberships.values_list('organization_id', flat=True)
+        org_ids = user.org_memberships.values_list("organization_id", flat=True)
 
-        qs = AsyncStandup.objects.select_related("user").filter(
-            is_deleted=False,
-            user__org_memberships__organization_id__in=org_ids
-        ).distinct()
+        qs = (
+            AsyncStandup.objects.select_related("user")
+            .filter(
+                is_deleted=False, user__org_memberships__organization_id__in=org_ids
+            )
+            .distinct()
+        )
 
         if user.is_staff or user.is_superuser:
             qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
