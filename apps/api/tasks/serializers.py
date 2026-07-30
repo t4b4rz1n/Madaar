@@ -328,12 +328,13 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "user_detail",
+            "organization",
             "yesterday_work",
             "today_work",
             "blockers",
             "created_at",
         )
-        read_only_fields = ("id", "user", "created_at")
+        read_only_fields = ("id", "user", "organization", "created_at")
 
     def validate(self, attrs):
         yw = attrs.get("yesterday_work", "").strip()

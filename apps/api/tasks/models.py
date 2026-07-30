@@ -195,6 +195,20 @@ class Task(BaseModel):
                 pass
         return self.title
 
+    def clean(self):
+        super().clean()
+        if self.status_id and self.project_id:
+            try:
+                if self.status.board and self.status.board.project_id != self.project_id:
+                    from django.core.exceptions import ValidationError
+                    raise ValidationError({"status": _("Status must belong to a board in the same project.")})
+            except Exception:
+                pass
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     @property
     def is_completed(self):
         """Returns True if the task status code is 'done'."""
@@ -392,6 +406,14 @@ class AsyncStandup(BaseModel):
         on_delete=models.SET_NULL,
         related_name="standups",
         verbose_name=_("User"),
+        null=True,
+        blank=True,
+    )
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.CASCADE,
+        related_name="standups",
+        verbose_name=_("Organization"),
         null=True,
         blank=True,
     )

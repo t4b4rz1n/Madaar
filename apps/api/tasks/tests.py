@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
+import datetime
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -17,6 +19,7 @@ from tasks.models import (
     TaskStatus,
 )
 from tasks.services import BoardService
+from attendance.models import TimeLog
 
 User = get_user_model()
 
@@ -422,11 +425,11 @@ class TasksRBACTestCase(APITestCase):
 
     def test_employee_standups_filtered_to_own_only(self):
         """Employee role should only see their own standup reports when listing standups."""
-        AsyncStandup.objects.create(
-            user=self.admin, yesterday_work="Admin Y", today_work="Admin T"
+        admin_standup = AsyncStandup.objects.create(
+            user=self.admin, yesterday_work="Admin Y", today_work="Admin T", organization=self.org
         )
         emp_standup = AsyncStandup.objects.create(
-            user=self.employee, yesterday_work="Emp Y", today_work="Emp T"
+            user=self.employee, yesterday_work="Emp Y", today_work="Emp T", organization=self.org
         )
 
         self.client.force_authenticate(user=self.employee)
@@ -466,7 +469,7 @@ class TasksRBACTestCase(APITestCase):
 
     def test_standup_retrieve(self):
         standup = AsyncStandup.objects.create(
-            user=self.employee, yesterday_work="Y", today_work="T"
+            user=self.employee, yesterday_work="Y", today_work="T", organization=self.org
         )
         self.client.force_authenticate(user=self.employee)
         url = reverse("task-standup-detail", kwargs={"pk": standup.id})
@@ -536,6 +539,57 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         self.assertTrue(activities.exists())
         self.assertIn("Task created", activities.first().action)
 
+    def test_create_task_creates_timer(self):
+        """Task creation should automatically create an active timer."""
+        res = self.client.post(
+            reverse("task-list"),
+            {
+                "project": self.project.id,
+                "title": "Timer Task",
+                "assignee": self.assignee.id,
+            },
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        task = Task.objects.get(id=res.data["id"])
+        time_logs = TimeLog.objects.filter(task=task)
+        self.assertEqual(time_logs.count(), 1)
+        self.assertTrue(time_logs.first().is_active)
+        self.assertEqual(time_logs.first().user, self.assignee)
+
+    def test_create_task_timer_for_reporter_when_no_assignee(self):
+        """When no assignee is set, timer should be created for the reporter."""
+        res = self.client.post(
+            reverse("task-list"),
+            {
+                "project": self.project.id,
+                "title": "No Assignee Task",
+            },
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        task = Task.objects.get(id=res.data["id"])
+        time_logs = TimeLog.objects.filter(task=task)
+        self.assertEqual(time_logs.count(), 1)
+        self.assertTrue(time_logs.first().is_active)
+        self.assertEqual(time_logs.first().user, self.user)
+
+    def test_move_task_requires_timer(self):
+        """A task without a timer cannot be moved to any status."""
+        task = Task.objects.create(
+            project=self.project,
+            title="No Timer Task",
+            reporter=self.user,
+            status=self.status_todo,
+        )
+        # Manually delete the auto-created timer to test the validation
+        TimeLog.objects.filter(task=task).delete()
+
+        url = reverse("task-move-task", kwargs={"pk": task.id})
+        res = self.client.post(
+            url,
+            {"status_id": str(self.status_todo.id), "order": 1},
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_create_subtask(self):
         """Creating a subtask should link to parent task."""
         parent = Task.objects.create(
@@ -584,6 +638,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             status=self.status_todo,
             spent_hours=1,  # Required to move to done
         )
+        TimeLog.objects.create(task=task, user=self.user, date=timezone.now().date(), start_time=timezone.now() - datetime.timedelta(hours=1))
         url = reverse("task-move-task", kwargs={"pk": task.id})
         res = self.client.post(
             url,
@@ -592,7 +647,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
                 "order": 5,
             },
         )
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.status_code, status.HTTP_200_OK, msg=f"Failed to move task: {res.data}")
         task.refresh_from_db()
         self.assertEqual(task.status, self.status_done)
         self.assertEqual(task.order, 5)
@@ -740,6 +795,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             reporter=self.user, status=self.status_todo,
             spent_hours=1,  # Required to move to done
         )
+        TimeLog.objects.create(task=task, user=self.user, date=timezone.now().date(), start_time=timezone.now() - datetime.timedelta(hours=1))
         url = reverse("task-toggle-done", kwargs={"pk": task.id})
         res = self.client.post(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)

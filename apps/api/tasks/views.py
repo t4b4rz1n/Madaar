@@ -1,4 +1,5 @@
 from django.db.models import Count, Q, Exists, OuterRef
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -375,7 +376,14 @@ class TaskViewSet(viewsets.ModelViewSet):
         is_done = (
             task.status and task.status.code and task.status.code.lower() == "done"
         )
-        target_code = "todo" if is_done else "done"
+        
+        if is_done:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                {"error": _("Task is completed (Done) and locked. It cannot be moved to another status.")}
+            )
+
+        target_code = "done"
 
         target_status = TaskStatus.objects.filter(
             board=task.status.board, code__iexact=target_code
@@ -559,7 +567,7 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
         qs = (
             AsyncStandup.objects.select_related("user")
             .filter(
-                is_deleted=False, user__org_memberships__organization_id__in=org_ids
+                is_deleted=False, organization_id__in=org_ids
             )
             .distinct()
         )
@@ -604,6 +612,7 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         standup = StandupService.create_standup(
             user=self.request.user,
+            organization=serializer.validated_data.get("organization"),
             yesterday_work=serializer.validated_data.get("yesterday_work"),
             today_work=serializer.validated_data.get("today_work"),
             blockers=serializer.validated_data.get("blockers"),
