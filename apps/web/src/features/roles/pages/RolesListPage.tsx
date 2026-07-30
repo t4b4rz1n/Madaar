@@ -1,7 +1,6 @@
-// @apps/web/src/features/roles/pages/RolesListPage.tsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CreateRoleModal } from "../components/CreateRoleModal";
-import { useRoles } from "../hooks/useRoles";
+import { useRoles, useDeleteRole } from "../hooks/useRoles";
 
 interface Role {
   id: number;
@@ -14,10 +13,54 @@ interface Role {
 
 const RolesListPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  );
 
-  // ۲. اینجا به تایپ‌اسکریپت می‌گیم که دیتا دقیقاً چه شکلیه
   const { data, isLoading, isError } = useRoles();
+  const { mutate: deleteRole, isPending: isDeleting } = useDeleteRole();
+
   const roles: Role[] = data?.results ?? [];
+
+  const deleteTitle = useMemo(() => {
+    if (!roleToDelete) return "Delete Role";
+    return `Delete role «${roleToDelete.name}»`;
+  }, [roleToDelete]);
+
+  const handleDeleteClick = (roleId: number) => {
+    const found = roles.find((r) => r.id === roleId) ?? null;
+    setRoleToDelete(found);
+    setDeleteErrorMessage(null);
+    setIsDeleteOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (isDeleting) return; // موقع حذف شدن اجازه بستن نده
+    setIsDeleteOpen(false);
+    setRoleToDelete(null);
+    setDeleteErrorMessage(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!roleToDelete) return;
+
+    setDeleteErrorMessage(null);
+
+    deleteRole(roleToDelete.id, {
+      onSuccess: () => {
+        closeDeleteModal();
+      },
+      onError: (error: any) => {
+        const msg =
+          error?.response?.data?.detail ||
+          error?.message ||
+          "Failed to delete role. Please check server logs or permissions.";
+        setDeleteErrorMessage(msg);
+      },
+    });
+  };
 
   if (isLoading) {
     return (
@@ -39,7 +82,7 @@ const RolesListPage = () => {
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8">
-      {/* Page header with modern and colorful create button */}
+      {/* Page header with modern create button */}
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-base-content sm:text-3xl tracking-tight">
@@ -104,7 +147,6 @@ const RolesListPage = () => {
               <tbody className="divide-y divide-base-200">
                 {roles.length > 0 ? (
                   roles.map((role) => {
-                    // اینجا داخل map تعریف می‌کنیم تا TypeScript خطا نده
                     const desc = role.description?.trim() ?? "";
                     const shouldTip = desc.length > 40;
 
@@ -113,14 +155,12 @@ const RolesListPage = () => {
                         key={role.id}
                         className="hover:bg-base-200/30 transition-colors duration-150"
                       >
-                        {/* Role name */}
                         <td className="py-4 pl-6">
                           <div className="font-semibold text-base-content text-[15px]">
                             {role.name}
                           </div>
                         </td>
 
-                        {/* Description - hidden on mobile, now with proper Tooltip logic */}
                         <td className="hidden md:table-cell py-4 max-w-xs">
                           {shouldTip ? (
                             <div
@@ -138,7 +178,6 @@ const RolesListPage = () => {
                           )}
                         </td>
 
-                        {/* Permission count as modern compact badge */}
                         <td className="py-4 text-center">
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -146,7 +185,6 @@ const RolesListPage = () => {
                           </div>
                         </td>
 
-                        {/* Active or inactive status */}
                         <td className="py-4 text-center">
                           <div className="flex flex-wrap items-center justify-center gap-2">
                             {role.is_active ? (
@@ -167,13 +205,15 @@ const RolesListPage = () => {
                           </div>
                         </td>
 
-                        {/* Small and stylish action buttons */}
                         <td className="py-4 pr-6 text-end">
                           <div className="inline-flex gap-1">
                             <button className="btn btn-sm btn-ghost text-base-content/70 hover:bg-base-200 hover:text-base-content transition-all">
                               Edit
                             </button>
-                            <button className="btn btn-sm btn-ghost text-error/80 hover:bg-error/10 hover:text-error transition-all">
+                            <button
+                              className="btn btn-sm btn-ghost text-error/80 hover:bg-error/10 hover:text-error transition-all"
+                              onClick={() => handleDeleteClick(role.id)}
+                            >
                               Delete
                             </button>
                           </div>
@@ -211,6 +251,72 @@ const RolesListPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteOpen && (
+        <dialog className="modal modal-open backdrop-blur-sm">
+          <div className="modal-box w-full max-w-lg rounded-3xl border border-base-300/80 bg-base-100 shadow-2xl">
+            <h3 className="text-xl font-bold text-base-content">
+              {deleteTitle}
+            </h3>
+
+            <p className="py-4 text-base-content/70">
+              Are you sure? This action cannot be undone.
+            </p>
+
+            {roleToDelete && (
+              <div className="alert alert-warning shadow-md border border-warning/20 rounded-2xl mt-2">
+                <span>
+                  Role{" "}
+                  <span className="font-semibold">{roleToDelete.name}</span>{" "}
+                  will be deleted.
+                </span>
+              </div>
+            )}
+
+            {deleteErrorMessage && (
+              <div className="alert alert-error shadow-md border border-error/20 rounded-2xl mt-3">
+                <span className="text-sm">{deleteErrorMessage}</span>
+              </div>
+            )}
+
+            <div className="modal-action mt-8">
+              <button
+                type="button"
+                className="btn btn-ghost rounded-2xl px-6"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-error rounded-2xl px-8 shadow-lg shadow-error/20"
+                onClick={handleConfirmDelete}
+                disabled={!roleToDelete || isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="loading loading-spinner loading-xs" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
+
+          <form
+            method="dialog"
+            className="modal-backdrop"
+            onClick={closeDeleteModal}
+          >
+            <button aria-label="Close modal">close</button>
+          </form>
+        </dialog>
+      )}
     </div>
   );
 };

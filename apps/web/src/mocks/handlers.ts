@@ -889,7 +889,7 @@ export const handlers = [
       },
     });
   }),
-  http.get("*/roles", ({ request }) => {
+  http.get("*/roles/", ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
     const pageSize = Number(url.searchParams.get("page_size")) || 10;
@@ -922,17 +922,49 @@ export const handlers = [
     );
     return HttpResponse.json(response);
   }),
-    // ─── Roles MSW Mocks ────────────────────────────────────────────────────────
-  http.post("*/roles", async ({ request }) => {
+  // ─── Roles MSW Mocks ────────────────────────────────────────────────────────
+  // ─── Roles MSW Mocks ────────────────────────────────────────────────────────
+  http.get("*/roles/", ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page")) || 1;
+    const pageSize = Number(url.searchParams.get("page_size")) || 10;
+    const search = url.searchParams.get("search");
+    const isActive = url.searchParams.get("is_active");
+
+    let roles = [...db.roles.getAll()];
+
+    if (search) {
+      const q = search.toLowerCase();
+      roles = roles.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          (r.description || "").toLowerCase().includes(q),
+      );
+    }
+
+    if (isActive !== null && isActive !== undefined && isActive !== "") {
+      const activeBool = isActive === "true";
+      roles = roles.filter((r) => r.is_active === activeBool);
+    }
+
+    const response = createPaginatedResponse(
+      roles,
+      page,
+      pageSize,
+      request.url,
+    );
+    return HttpResponse.json(response);
+  }),
+
+  http.post("*/roles/", async ({ request }) => {
     const body = (await request.json()) as {
       name: string;
       description?: string;
       is_active?: boolean;
       is_staff?: boolean;
-      permissions?: string[]; // تایپ دریافت پرمیشن‌ها رو اضافه کردیم
+      permissions?: string[];
     };
 
-    // Validation ساده شبیه بک‌اند
     if (!body?.name?.trim()) {
       return HttpResponse.json(
         {
@@ -944,7 +976,6 @@ export const handlers = [
       );
     }
 
-    // Duplicate check
     const exists = db.roles
       .getAll()
       .some((r) => r.name.toLowerCase() === body.name.trim().toLowerCase());
@@ -960,13 +991,12 @@ export const handlers = [
       );
     }
 
-    // ذخیره نقش جدید همراه با لیست پرمیشن‌های دریافتی از فرم
     const newRole = db.roles.create({
       name: body.name.trim(),
       description: body.description?.trim?.() ?? "",
       is_active: body.is_active ?? true,
       is_staff: body.is_staff ?? false,
-      permissions: body.permissions ?? [], // اینجا آرایه پرمیشن‌های انتخابی کاربر ذخیره میشه
+      permissions: body.permissions ?? [],
     });
 
     return HttpResponse.json(
@@ -977,5 +1007,23 @@ export const handlers = [
       },
       { status: 201 },
     );
+  }),
+
+  http.delete("*/roles/:id/", ({ params }) => {
+    const id = Number(params.id);
+    const success = db.roles.delete(id);
+
+    if (!success) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Role not found",
+          data: {},
+        },
+        { status: 404 },
+      );
+    }
+
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
