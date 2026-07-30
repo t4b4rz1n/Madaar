@@ -8,6 +8,7 @@ interface Role {
   name: string;
   description?: string;
   is_active: boolean;
+  is_staff: boolean;
   permissions?: any[];
 }
 
@@ -147,15 +148,23 @@ const RolesListPage = () => {
 
                         {/* Active or inactive status */}
                         <td className="py-4 text-center">
-                          {role.is_active ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-base-300 text-base-content/50 border border-base-300">
-                              Inactive
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center justify-center gap-2">
+                            {role.is_active ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-base-300 bg-base-300 px-2.5 py-1 text-xs font-semibold text-base-content/50">
+                                Inactive
+                              </span>
+                            )}
+
+                            {role.is_staff && (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-info/20 bg-info/10 px-2.5 py-1 text-xs font-semibold text-info">
+                                Staff
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Small and stylish action buttons */}

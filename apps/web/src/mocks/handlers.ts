@@ -929,6 +929,7 @@ export const handlers = [
       description?: string;
       is_active?: boolean;
       is_staff?: boolean;
+      permissions?: string[]; // تایپ دریافت پرمیشن‌ها رو اضافه کردیم
     };
 
     // Validation ساده شبیه بک‌اند
@@ -943,7 +944,7 @@ export const handlers = [
       );
     }
 
-    // Duplicate check (optional ولی خیلی کاربردیه)
+    // Duplicate check
     const exists = db.roles
       .getAll()
       .some((r) => r.name.toLowerCase() === body.name.trim().toLowerCase());
@@ -959,12 +960,13 @@ export const handlers = [
       );
     }
 
+    // ذخیره نقش جدید همراه با لیست پرمیشن‌های دریافتی از فرم
     const newRole = db.roles.create({
       name: body.name.trim(),
       description: body.description?.trim?.() ?? "",
       is_active: body.is_active ?? true,
-      is_staff: body.is_staff ?? true,
-      permissions: [],
+      is_staff: body.is_staff ?? false,
+      permissions: body.permissions ?? [], // اینجا آرایه پرمیشن‌های انتخابی کاربر ذخیره میشه
     });
 
     return HttpResponse.json(
@@ -976,5 +978,4 @@ export const handlers = [
       { status: 201 },
     );
   }),
-
 ];

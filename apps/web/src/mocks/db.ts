@@ -212,27 +212,14 @@ export let mockDiscounts: Discount[] = [
   },
 ];
 
-export type MockPermission = {
-  id: string;
-  name: string;
-};
-
 export type MockRole = {
   id: number;
   name: string;
   description: string;
   is_active: boolean;
   is_staff: boolean;
-  permissions: MockPermission[];
+  permissions: string[]; // تغییر از MockPermission[] به string[]
 };
-
-export const mockPermissions: MockPermission[] = [
-  { id: "user.create", name: "Create User" },
-  { id: "user.read", name: "Read Users" },
-  { id: "role.create", name: "Create Role" },
-  { id: "role.update", name: "Update Role" },
-  { id: "ticket.manage", name: "Manage Tickets" },
-];
 
 export let mockRoles: MockRole[] = [
   {
@@ -242,17 +229,28 @@ export let mockRoles: MockRole[] = [
       "Full access to the entire system and management of users and permissions.",
     is_active: true,
     is_staff: true,
-    permissions: [...mockPermissions],
+    permissions: [
+      "users.view",
+      "users.create",
+      "users.edit",
+      "users.delete",
+      "roles.view",
+      "roles.create",
+      "roles.edit",
+      "roles.delete",
+      "teams.view",
+      "teams.manage",
+      "tickets.view",
+      "tickets.manage",
+    ],
   },
   {
     id: 2,
     name: "Support",
-    description: "Manage tickets and notifications.",
+    description: "Manage tickets and view users.",
     is_active: true,
     is_staff: false,
-    permissions: mockPermissions.filter((permission) =>
-      ["ticket.manage", "user.read"].includes(permission.id),
-    ),
+    permissions: ["tickets.view", "tickets.manage", "users.view"],
   },
   {
     id: 3,
@@ -565,16 +563,6 @@ export const db = {
       const initialLength = mockRoles.length;
       mockRoles = mockRoles.filter((role) => role.id !== id);
       return mockRoles.length < initialLength;
-    },
-  },
-
-  permission: {
-    getAll: () => mockPermissions,
-    getById: (id: string) =>
-      mockPermissions.find((permission) => permission.id === id),
-    create: (permission: MockPermission) => {
-      mockPermissions.push(permission);
-      return permission;
     },
   },
 };
