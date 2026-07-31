@@ -5,6 +5,7 @@ import {
   Ticket,
   User,
   Category,
+  ShieldSecurity,
 } from "iconsax-reactjs";
 
 export type DrawerItem = {
@@ -20,6 +21,12 @@ export const drawerItems: DrawerItem[] = [
     title: "Dashboard",
     link: "dashboard",
     icon: <Category variant="Outline" />,
+  },
+  {
+    title: "Roles Management",
+    link: "roles",
+    icon: <ShieldSecurity size="20" />,
+    staffOnly: true, // این باعث میشه فقط ادمین‌ها ببینن
   },
   {
     title: "Users Management",
@@ -49,4 +56,5 @@ export const drawerItems: DrawerItem[] = [
     link: "profile",
     icon: <User variant="Outline" />,
   },
+
 ];
