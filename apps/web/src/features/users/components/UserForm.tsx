@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Lock, Message, TickSquare, User } from "iconsax-reactjs";
+import { Lock, Message, TickSquare, User, Hierarchy } from "iconsax-reactjs";
 import { Controller } from "react-hook-form";
 import InputField from "../../../components/InputField";
+import { useRoles } from "../../roles/hooks/useRoles";
 
 interface UserFormProps {
   control: any;
@@ -10,6 +11,9 @@ interface UserFormProps {
 }
 
 export const UserForm = ({ control, errors, editMode }: UserFormProps) => {
+  const { data: rolesData, isLoading: isLoadingRoles } = useRoles();
+  const roles = rolesData?.results || [];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -65,36 +69,84 @@ export const UserForm = ({ control, errors, editMode }: UserFormProps) => {
         />
       </div>
 
-      {!editMode && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {!editMode && (
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => (
+              <label className="form-control w-full">
+                <div className="label mb-2">
+                  <span className="label-text font-semibold">Password</span>
+                </div>
+                <InputField
+                  type="password"
+                  {...field}
+                  placeholder="Enter password"
+                  classNameInput={errors.password ? "input-error" : ""}
+                  icon={<Lock size={18} />}
+                />
+                {errors.password ? (
+                  <span className="text-error text-xs mt-1">
+                    {errors.password.message}
+                  </span>
+                ) : (
+                  <span className="text-xs text-base-content/60 mt-1">
+                    At least 8 characters with upper, lower, and numbers
+                  </span>
+                )}
+              </label>
+            )}
+          />
+        )}
+
         <Controller
-          name="password"
+          name="role_id"
           control={control}
           render={({ field }) => (
             <label className="form-control w-full">
               <div className="label mb-2">
-                <span className="label-text font-semibold">Password</span>
+                <span className="label-text font-semibold">User Role</span>
               </div>
-              <InputField
-                type="password"
-                {...field}
-                placeholder="Enter password"
-                classNameInput={errors.password ? "input-error" : ""}
-                icon={<Lock size={18} />}
-              />
-              {errors.password ? (
+
+              <div className="relative">
+                <select
+                  name={field.name}
+                  ref={field.ref}
+                  value={field.value ?? ""}
+                  onBlur={field.onBlur}
+                  onChange={(e) =>
+                    field.onChange(
+                      e.target.value === "" ? null : Number(e.target.value),
+                    )
+                  }
+                  className={`select select-bordered w-full pl-10 ${
+                    errors.role_id ? "select-error" : ""
+                  }`}
+                  disabled={isLoadingRoles}
+                >
+                  <option value="">Select a role</option>
+                  {roles.map((role: any) => (
+                    <option key={role.id} value={String(role.id)}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
+                  <Hierarchy size={18} />
+                </div>
+              </div>
+
+              {errors.role_id && (
                 <span className="text-error text-xs mt-1">
-                  {errors.password.message}
-                </span>
-              ) : (
-                <span className="text-xs text-base-content/60 mt-1">
-                  Must be at least 8 characters with uppercase, lowercase, and
-                  numbers
+                  {errors.role_id.message}
                 </span>
               )}
             </label>
           )}
         />
-      )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Controller
@@ -150,7 +202,7 @@ export const UserForm = ({ control, errors, editMode }: UserFormProps) => {
             <label className="label cursor-pointer justify-start gap-3">
               <input
                 type="checkbox"
-                checked={field.value}
+                checked={!!field.value}
                 onChange={(e) => field.onChange(e.target.checked)}
                 className="checkbox checkbox-primary"
               />
@@ -169,7 +221,7 @@ export const UserForm = ({ control, errors, editMode }: UserFormProps) => {
             <label className="label cursor-pointer justify-start gap-3">
               <input
                 type="checkbox"
-                checked={field.value}
+                checked={!!field.value}
                 onChange={(e) => field.onChange(e.target.checked)}
                 className="checkbox checkbox-primary"
               />

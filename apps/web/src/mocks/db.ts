@@ -30,6 +30,7 @@ export let mockUsers: User[] = [
     last_name: "Doe",
     is_active: true,
     is_staff: true,
+    role_id: 1,
     profile_image: null,
   },
   {
@@ -40,6 +41,7 @@ export let mockUsers: User[] = [
     last_name: "Kerrigan",
     is_active: true,
     is_staff: false,
+    role_id: 2,
     profile_image: null,
   },
   {
@@ -50,6 +52,7 @@ export let mockUsers: User[] = [
     last_name: "Raynor",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -60,6 +63,7 @@ export let mockUsers: User[] = [
     last_name: "Protos",
     is_active: false,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -70,6 +74,7 @@ export let mockUsers: User[] = [
     last_name: "Hierarch",
     is_active: true,
     is_staff: true,
+    role_id: 4,
     profile_image: null,
   },
   {
@@ -80,6 +85,7 @@ export let mockUsers: User[] = [
     last_name: "Terra",
     is_active: true,
     is_staff: false,
+    role_id: 5,
     profile_image: null,
   },
   {
@@ -90,6 +96,7 @@ export let mockUsers: User[] = [
     last_name: "Templar",
     is_active: false,
     is_staff: true,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -100,6 +107,7 @@ export let mockUsers: User[] = [
     last_name: "Steward",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -110,6 +118,7 @@ export let mockUsers: User[] = [
     last_name: "Mengsk",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -120,6 +129,7 @@ export let mockUsers: User[] = [
     last_name: "Zerg",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -130,6 +140,7 @@ export let mockUsers: User[] = [
     last_name: "Primal",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -140,6 +151,7 @@ export let mockUsers: User[] = [
     last_name: "Taldirim",
     is_active: true,
     is_staff: true,
+    role_id: 1,
     profile_image: null,
   },
 ];
@@ -244,8 +256,36 @@ export let mockRoles: MockRole[] = [
       "tickets.manage",
     ],
   },
-  {
+    {
     id: 2,
+    name: "Frontend",
+    description: "Frontend developer role for UI and client-side features.",
+    is_active: true,
+    is_staff: true,
+    permissions: [
+      "users.view",
+      "roles.view",
+      "tickets.view",
+      // بعداً هرچی لازم داشتی اضافه می‌کنیم
+    ],
+  },
+
+  // ✅ new
+  {
+    id: 3,
+    name: "Backend",
+    description: "Backend developer role for API and server-side features.",
+    is_active: true,
+    is_staff: true,
+    permissions: [
+      "users.view",
+      "roles.view",
+      "tickets.view",
+      // بعداً هرچی لازم داشتی اضافه می‌کنیم
+    ],
+  },
+  {
+    id: 4,
     name: "Support",
     description: "Manage tickets and view users.",
     is_active: true,
@@ -253,13 +293,14 @@ export let mockRoles: MockRole[] = [
     permissions: ["tickets.view", "tickets.manage", "users.view"],
   },
   {
-    id: 3,
+    id: 5,
     name: "Regular User",
     description: "Basic role with minimum permissions.",
     is_active: true,
     is_staff: false,
     permissions: [],
   },
+
 ];
 
 export const mockNotifications: Notification[] = [

@@ -51,6 +51,7 @@ export const handlers = [
       username?: string;
       password?: string;
     }
+
     const credentials = (await request.json()) as LoginBody;
     const user = mockUsers.find(
       (mockUser) => mockUser.username === credentials.username,
@@ -94,6 +95,7 @@ export const handlers = [
     const ordering = url.searchParams.get("ordering");
     const isActive = url.searchParams.get("is_active");
     const isStaff = url.searchParams.get("is_staff");
+    const roleId = url.searchParams.get("role_id");
 
     let users = [...db.users.getAll()];
 
@@ -115,12 +117,23 @@ export const handlers = [
 
     if (isStaff !== null && isStaff !== undefined && isStaff !== "") {
       const staffBool = isStaff === "true";
-      users = users.filter((u) => u.is_staff === staffBool);
+
+      users = users.filter((user) => Boolean(user.is_staff) === staffBool);
+    }
+
+    if (roleId !== null && roleId !== undefined && roleId !== "") {
+      const normalizedRoleId = Number(roleId);
+
+      users = users.filter(
+        (user) =>
+          user.role_id !== null && Number(user.role_id) === normalizedRoleId,
+      );
     }
 
     if (ordering) {
       const isDesc = ordering.startsWith("-");
       const field = isDesc ? ordering.slice(1) : ordering;
+
       users.sort((a, b) => {
         let valA = (a as unknown as Record<string, unknown>)[field];
         let valB = (b as unknown as Record<string, unknown>)[field];
@@ -143,6 +156,7 @@ export const handlers = [
       pageSize,
       request.url,
     );
+
     return HttpResponse.json(response);
   }),
 
@@ -151,7 +165,9 @@ export const handlers = [
 
     const exists = db.users
       .getAll()
-      .some((u) => u.username === data.username || u.email === data.email);
+      .some(
+        (user) => user.username === data.username || user.email === data.email,
+      );
 
     if (exists) {
       return HttpResponse.json(
@@ -163,14 +179,18 @@ export const handlers = [
         { status: 400 },
       );
     }
-
+    
     const newUser = db.users.create({
       username: data.username,
       email: data.email,
       first_name: data.first_name,
       last_name: data.last_name,
-      is_active: data.is_active,
-      is_staff: data.is_staff,
+      is_active: Boolean(data.is_active),
+      is_staff: Boolean(data.is_staff),
+      role_id:
+        data.role_id === null || data.role_id === undefined
+          ? null
+          : Number(data.role_id),
       profile_image: null,
     });
 
@@ -185,7 +205,18 @@ export const handlers = [
     const id = Number(params.id);
     const data = (await request.json()) as UserUpdateData;
 
-    const updated = db.users.update(id, data);
+    const updated = db.users.update(id, {
+      username: data.username,
+      email: data.email,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      is_active: Boolean(data.is_active),
+      is_staff: Boolean(data.is_staff),
+      ...(data.role_id !== undefined && {
+        role_id: data.role_id === null ? null : Number(data.role_id),
+      }),
+    });
+
     if (!updated) {
       return HttpResponse.json(
         {
@@ -253,6 +284,7 @@ export const handlers = [
     if (ordering) {
       const isDesc = ordering.startsWith("-");
       const field = isDesc ? ordering.slice(1) : ordering;
+
       discounts.sort((a, b) => {
         let valA = (a as unknown as Record<string, unknown>)[field];
         let valB = (b as unknown as Record<string, unknown>)[field];
@@ -275,6 +307,7 @@ export const handlers = [
       pageSize,
       request.url,
     );
+
     return HttpResponse.json(response);
   }),
 
@@ -317,6 +350,7 @@ export const handlers = [
     const data = (await request.json()) as DiscountFormData;
 
     const updated = db.discounts.update(id, data);
+
     if (!updated) {
       return HttpResponse.json(
         {
@@ -356,6 +390,7 @@ export const handlers = [
       data: {},
     });
   }),
+
   http.get("*/dashboard/notifications/", ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
@@ -367,6 +402,7 @@ export const handlers = [
     if (ordering) {
       const isDesc = ordering.startsWith("-");
       const field = isDesc ? ordering.slice(1) : ordering;
+
       notifications.sort((a, b) => {
         let valA = (a as unknown as Record<string, unknown>)[field];
         let valB = (b as unknown as Record<string, unknown>)[field];
@@ -389,6 +425,7 @@ export const handlers = [
       pageSize,
       request.url,
     );
+
     return HttpResponse.json(response);
   }),
 
@@ -410,15 +447,20 @@ export const handlers = [
   http.patch("*/accounts/profile/", async ({ request }) => {
     const formData = await request.formData();
 
-    const first_name = formData.get("first_name");
-    const last_name = formData.get("last_name");
-    const profile_image = formData.get("profile_image"); // اسم محتمل فیلد عکس
+    const firstName = formData.get("first_name");
+    const lastName = formData.get("last_name");
+    const profileImage = formData.get("profile_image");
 
-    if (first_name !== null) mockProfile.first_name = String(first_name);
-    if (last_name !== null) mockProfile.last_name = String(last_name);
+    if (firstName !== null) {
+      mockProfile.first_name = String(firstName);
+    }
 
-    if (profile_image instanceof File) {
-      mockProfile.profile_image = URL.createObjectURL(profile_image);
+    if (lastName !== null) {
+      mockProfile.last_name = String(lastName);
+    }
+
+    if (profileImage instanceof File) {
+      mockProfile.profile_image = URL.createObjectURL(profileImage);
     }
 
     return HttpResponse.json({
@@ -428,7 +470,6 @@ export const handlers = [
     });
   }),
 
-  // ─── Tickets MSW Mocks ───────────────────────────────────────────────────────
   http.get("*/support/tickets/", ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
@@ -461,6 +502,7 @@ export const handlers = [
     if (ordering) {
       const isDesc = ordering.startsWith("-");
       const field = isDesc ? ordering.slice(1) : ordering;
+
       tickets.sort((a, b) => {
         let valA: string | number | undefined | null = null;
         let valB: string | number | undefined | null = null;
@@ -471,11 +513,13 @@ export const handlers = [
         } else {
           const rawA = a[field as keyof Ticket];
           const rawB = b[field as keyof Ticket];
+
           if (typeof rawA === "string") {
             valA = rawA.toLowerCase();
           } else if (typeof rawA === "number") {
             valA = rawA;
           }
+
           if (typeof rawB === "string") {
             valB = rawB.toLowerCase();
           } else if (typeof rawB === "number") {
@@ -498,6 +542,7 @@ export const handlers = [
       pageSize,
       request.url,
     );
+
     return HttpResponse.json(response);
   }),
 
@@ -570,20 +615,21 @@ export const handlers = [
       pageSize,
       request.url,
     );
+
     return HttpResponse.json(response);
   }),
 
   http.post("*/support/tickets/:id/messages/", async ({ params, request }) => {
     const id = Number(params.id);
-
-    // Check if multipart/form-data (file upload)
     const contentType = request.headers.get("content-type") || "";
+
     let text = "";
-    let mediaUrl: string | undefined = undefined;
+    let mediaUrl: string | undefined;
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       text = (formData.get("text") as string) || "";
+
       const mediaFile = formData.get("media") as File | null;
       if (mediaFile) {
         mediaUrl = URL.createObjectURL(mediaFile);
@@ -621,6 +667,7 @@ export const handlers = [
       pageSize,
       request.url,
     );
+
     return HttpResponse.json(response);
   }),
 
@@ -680,7 +727,6 @@ export const handlers = [
     });
   }),
 
-  // --- Dashboard Mock Endpoints ---
   http.get("*/admin-panel/dashboard/overview/", () => {
     return HttpResponse.json({
       status: true,
@@ -889,41 +935,7 @@ export const handlers = [
       },
     });
   }),
-  http.get("*/roles/", ({ request }) => {
-    const url = new URL(request.url);
-    const page = Number(url.searchParams.get("page")) || 1;
-    const pageSize = Number(url.searchParams.get("page_size")) || 10;
-    const search = url.searchParams.get("search");
-    const isActive = url.searchParams.get("is_active");
 
-    let roles = [...db.roles.getAll()];
-    // 1. Search Filtering
-    if (search) {
-      const q = search.toLowerCase();
-      roles = roles.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          (r.description || "").toLowerCase().includes(q),
-      );
-    }
-
-    // 2. Active Filtering
-    if (isActive !== null && isActive !== undefined && isActive !== "") {
-      const activeBool = isActive === "true";
-      roles = roles.filter((r) => r.is_active === activeBool);
-    }
-
-    // 4. Create Paginated Response
-    const response = createPaginatedResponse(
-      roles,
-      page,
-      pageSize,
-      request.url,
-    );
-    return HttpResponse.json(response);
-  }),
-  // ─── Roles MSW Mocks ────────────────────────────────────────────────────────
-  // ─── Roles MSW Mocks ────────────────────────────────────────────────────────
   http.get("*/roles/", ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
@@ -953,6 +965,7 @@ export const handlers = [
       pageSize,
       request.url,
     );
+
     return HttpResponse.json(response);
   }),
 
@@ -1026,28 +1039,40 @@ export const handlers = [
 
     return new HttpResponse(null, { status: 204 });
   }),
-  // ─── Update Role (PATCH) ──────────────────────────────────────────────────
+
   http.patch("*/roles/:id/", async ({ params, request }) => {
     const id = Number(params.id);
-    const body = (await request.json()) as any;
+    const body = (await request.json()) as {
+      name?: string;
+      description?: string;
+      is_active?: boolean;
+      is_staff?: boolean;
+      permissions?: string[];
+    };
 
-    // 1. Find the role using the getById method you wrote
     const role = db.roles.getById(id);
 
     if (!role) {
       return HttpResponse.json(
-        { status: false, message: "Role not found", data: {} },
+        {
+          status: false,
+          message: "Role not found",
+          data: {},
+        },
         { status: 404 },
       );
     }
 
-    // 2. Update using your method (two arguments: id and new data)
     const updatedRole = db.roles.update(id, {
       name: body.name !== undefined ? body.name.trim() : role.name,
-      description: body.description !== undefined ? body.description.trim() : (role.description ?? ""),
+      description:
+        body.description !== undefined
+          ? body.description.trim()
+          : (role.description ?? ""),
       is_active: body.is_active !== undefined ? body.is_active : role.is_active,
       is_staff: body.is_staff !== undefined ? body.is_staff : role.is_staff,
-      permissions: body.permissions !== undefined ? body.permissions : role.permissions,
+      permissions:
+        body.permissions !== undefined ? body.permissions : role.permissions,
     });
 
     return HttpResponse.json(

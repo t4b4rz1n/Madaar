@@ -6,7 +6,7 @@ import { Add, Edit, CloseCircle } from "iconsax-reactjs";
 import { createPortal } from "react-dom";
 import { useCreateUser, useUpdateUser } from "../hooks/useUsers";
 import { UserForm } from "./UserForm";
-import type { User, UserFormData, UserUpdateData } from "../types"; //
+import type { User, UserFormData, UserUpdateData } from "../types";
 import { createUserSchema, updateUserSchema } from "../validation";
 
 const backdropVariants = { hidden: { opacity: 0 }, visible: { opacity: 1 } };
@@ -28,8 +28,6 @@ export const CreateEditUserModal = ({
   user,
 }: CreateEditUserModalProps) => {
   const isEditMode = !!user;
-
-  // Select the appropriate schema based on mode
   const schema = isEditMode ? updateUserSchema : createUserSchema;
 
   const {
@@ -38,8 +36,6 @@ export const CreateEditUserModal = ({
     reset,
     formState: { errors },
   } = useForm<UserFormData>({
-    // We cast to 'any' here because updateUserSchema output (UserUpdateData)
-    // is a subset of UserFormData (missing password), which confuses useForm types.
     resolver: zodResolver(schema) as any,
     defaultValues: {
       username: "",
@@ -49,6 +45,7 @@ export const CreateEditUserModal = ({
       last_name: "",
       is_active: true,
       is_staff: false,
+      role_id: null,
     },
   });
 
@@ -56,39 +53,46 @@ export const CreateEditUserModal = ({
   const updateMutation = useUpdateUser();
 
   useEffect(() => {
-    if (isOpen) {
-      if (user) {
-        reset({
-          username: user.username,
-          email: user.email,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          is_active: user.is_active,
-          is_staff: user.is_staff,
-          password: "", // Password field exists in form state but is unused in edit
-        });
-      } else {
-        reset({
-          username: "",
-          email: "",
-          password: "",
-          first_name: "",
-          last_name: "",
-          is_active: true,
-          is_staff: false,
-        });
-      }
+    if (!isOpen) return;
+
+    if (user) {
+      reset({
+        username: user.username ?? "",
+        email: user.email ?? "",
+        first_name: user.first_name ?? "",
+        last_name: user.last_name ?? "",
+        is_active: !!user.is_active,
+        is_staff: !!user.is_staff,
+        role_id: user.role_id ?? null,
+        password: "",
+      });
+    } else {
+      reset({
+        username: "",
+        email: "",
+        password: "",
+        first_name: "",
+        last_name: "",
+        is_active: true,
+        is_staff: false,
+        role_id: null,
+      });
     }
   }, [isOpen, user, reset]);
 
   const onSubmit = handleSubmit((data) => {
     if (isEditMode && user) {
-      // Remove password from the data object
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...rest } = data;
+      const updatePayload: UserUpdateData = {
+        username: data.username,
+        email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        is_active: !!data.is_active,
+        is_staff: !!data.is_staff,
+        role_id: data.role_id ?? null,
+      };
 
-      // Cast the remaining fields to UserUpdateData to satisfy the mutation type
-      const updatePayload = rest as UserUpdateData;
+      console.log("UPDATE USER PAYLOAD:", updatePayload);
 
       updateMutation.mutate(
         { id: user.id, data: updatePayload },
@@ -96,16 +100,30 @@ export const CreateEditUserModal = ({
           onSuccess: () => {
             onClose();
           },
-        }
-      );
-    } else {
-      // In create mode, data is already fully compliant UserFormData
-      createMutation.mutate(data, {
-        onSuccess: () => {
-          onClose();
         },
-      });
+      );
+
+      return;
     }
+
+    const createPayload: UserFormData = {
+      username: data.username,
+      email: data.email,
+      password: data.password,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      is_active: !!data.is_active,
+      is_staff: !!data.is_staff,
+      role_id: data.role_id ?? null,
+    };
+
+    console.log("CREATE USER PAYLOAD:", createPayload);
+
+    createMutation.mutate(createPayload, {
+      onSuccess: () => {
+        onClose();
+      },
+    });
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
@@ -126,7 +144,6 @@ export const CreateEditUserModal = ({
             className="relative w-full max-w-2xl bg-base-100 rounded-2xl shadow-xl m-4 max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="p-6 flex-shrink-0 border-b border-base-content/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -154,7 +171,6 @@ export const CreateEditUserModal = ({
               </div>
             </div>
 
-            {/* Form Content */}
             <div className="flex-1 overflow-y-auto px-6 pt-6">
               <form onSubmit={onSubmit}>
                 <UserForm
@@ -165,7 +181,6 @@ export const CreateEditUserModal = ({
               </form>
             </div>
 
-            {/* Footer */}
             <div className="p-6 flex-shrink-0 border-t border-base-content/10 bg-base-200/30 rounded-b-2xl">
               <div className="flex justify-end gap-3">
                 <button
