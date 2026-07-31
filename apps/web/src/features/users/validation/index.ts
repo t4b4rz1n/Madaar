@@ -7,6 +7,7 @@ const baseUserSchema = z.object({
   last_name: z.string().optional(),
   is_active: z.boolean(),
   is_staff: z.boolean(),
+  role_id: z.number().nullable(),
 });
 
 export const createUserSchema = baseUserSchema.extend({
