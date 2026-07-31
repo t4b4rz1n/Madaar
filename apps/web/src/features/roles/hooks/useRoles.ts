@@ -1,5 +1,3 @@
-// @apps/web/src/features/roles/hooks/useRoles.ts
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRole, deleteRole, getRoles, updateRole } from "../api/rolesApi";
 import type { ApiResponseList } from "../../../core/api/apiService";

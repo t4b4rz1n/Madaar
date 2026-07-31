@@ -1,18 +1,13 @@
 import { useMemo, useState } from "react";
 import { CreateRoleModal } from "../components/CreateRoleModal";
+import { EditRoleModal } from "../components/EditRoleModal";
 import { useRoles, useDeleteRole } from "../hooks/useRoles";
-
-interface Role {
-  id: number;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  is_staff: boolean;
-  permissions?: any[];
-}
+import type { Role } from "../types";
 
 const RolesListPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
@@ -36,8 +31,21 @@ const RolesListPage = () => {
     setIsDeleteOpen(true);
   };
 
+  const handleEditClick = (roleId: number) => {
+    const found = roles.find((r) => r.id === roleId) ?? null;
+    setRoleToEdit(found);
+    setIsEditOpen(true);
+  };
+
+  const closeEditModal = () => {
+    if (isEditOpen) {
+      setIsEditOpen(false);
+      setRoleToEdit(null);
+    }
+  };
+
   const closeDeleteModal = () => {
-    if (isDeleting) return; // موقع حذف شدن اجازه بستن نده
+    if (isDeleting) return;
     setIsDeleteOpen(false);
     setRoleToDelete(null);
     setDeleteErrorMessage(null);
@@ -82,7 +90,6 @@ const RolesListPage = () => {
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8">
-      {/* Page header with modern create button */}
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-base-content sm:text-3xl tracking-tight">
@@ -114,14 +121,19 @@ const RolesListPage = () => {
           </svg>
           Create Role
         </button>
-
-        <CreateRoleModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-        />
       </div>
 
-      {/* Modern panel and table */}
+      <CreateRoleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
+      <EditRoleModal
+        isOpen={isEditOpen}
+        role={roleToEdit}
+        onClose={closeEditModal}
+      />
+
       <div className="card border border-base-300 bg-base-100 shadow-sm overflow-hidden">
         <div className="card-body p-0">
           <div className="overflow-x-auto">
@@ -207,10 +219,15 @@ const RolesListPage = () => {
 
                         <td className="py-4 pr-6 text-end">
                           <div className="inline-flex gap-1">
-                            <button className="btn btn-sm btn-ghost text-base-content/70 hover:bg-base-200 hover:text-base-content transition-all">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-ghost text-base-content/70 hover:bg-base-200 hover:text-base-content transition-all"
+                              onClick={() => handleEditClick(role.id)}
+                            >
                               Edit
                             </button>
                             <button
+                              type="button"
                               className="btn btn-sm btn-ghost text-error/80 hover:bg-error/10 hover:text-error transition-all"
                               onClick={() => handleDeleteClick(role.id)}
                             >
@@ -252,7 +269,6 @@ const RolesListPage = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {isDeleteOpen && (
         <dialog className="modal modal-open backdrop-blur-sm">
           <div className="modal-box w-full max-w-lg rounded-3xl border border-base-300/80 bg-base-100 shadow-2xl">

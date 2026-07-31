@@ -1026,4 +1026,37 @@ export const handlers = [
 
     return new HttpResponse(null, { status: 204 });
   }),
+  // ─── Update Role (PATCH) ──────────────────────────────────────────────────
+  http.patch("*/roles/:id/", async ({ params, request }) => {
+    const id = Number(params.id);
+    const body = (await request.json()) as any;
+
+    // 1. Find the role using the getById method you wrote
+    const role = db.roles.getById(id);
+
+    if (!role) {
+      return HttpResponse.json(
+        { status: false, message: "Role not found", data: {} },
+        { status: 404 },
+      );
+    }
+
+    // 2. Update using your method (two arguments: id and new data)
+    const updatedRole = db.roles.update(id, {
+      name: body.name !== undefined ? body.name.trim() : role.name,
+      description: body.description !== undefined ? body.description.trim() : (role.description ?? ""),
+      is_active: body.is_active !== undefined ? body.is_active : role.is_active,
+      is_staff: body.is_staff !== undefined ? body.is_staff : role.is_staff,
+      permissions: body.permissions !== undefined ? body.permissions : role.permissions,
+    });
+
+    return HttpResponse.json(
+      {
+        status: true,
+        message: "Role updated successfully",
+        data: updatedRole,
+      },
+      { status: 200 },
+    );
+  }),
 ];
