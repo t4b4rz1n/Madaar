@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "apps/web/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/web-ci.yml"
   push:
     branches: [main, develop]
@@ -11,7 +13,7 @@ on:
 jobs:
   web:
     runs-on: ubuntu-latest
-    # حذف کردیم working-directory رو از اینجا تا دستورات از ریشه اجرا بشن
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,19 +21,15 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          # آدرس لاک‌فایل درست در ریشه پروژه
           cache-dependency-path: package-lock.json
 
-      # نصب تمام وابستگی‌ها از روی لاک‌فایل ریشه (روش اصولی ورک‌اسپیس)
       - name: Install dependencies
         run: npm ci
 
-      # اجرای لینت فقط برای بخش وب
-      - name: Lint web app
+      - name: Lint web
         run: npm run lint -w apps/web
 
-      # اجرای بیلد برای بخش وب با متغیرهای محیطی
-      - name: Build web app
+      - name: Build web
         run: npm run build -w apps/web
         env:
           VITE_API_BASE_URL: /api
