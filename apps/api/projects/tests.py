@@ -363,3 +363,65 @@ class ProjectAPITests(APITestCase):
         resp2 = self.client.post(url, payload2, format="json")
         self.assertEqual(resp2.status_code, status.HTTP_201_CREATED)
         self.assertEqual(resp2.data["allocation_percentage"], 50)
+
+    # -- Filter tests ------------------------------------------------------
+
+    def test_my_projects_filter(self):
+        self.client.force_authenticate(user=self.member_user)
+        # member_user is in Madaar Org but has no projects explicitly assigned.
+        # Create a project where member_user is the owner
+        ProjectService.create(
+            actor=self.member_user,
+            validated_data={
+                "name": "My Proj",
+                "organization": self.org,
+                "owner": self.member_user,
+            },
+        )
+        # Create another project in org, but member_user is not an owner or direct member
+        # (Though they can access it via org membership, it shouldn't show in my_projects)
+        ProjectService.create(
+            actor=self.admin,
+            validated_data={
+                "name": "Admin Proj",
+                "organization": self.org,
+                "owner": self.admin,
+            },
+        )
+
+        response = self.client.get("/api/v1/projects/?my_projects=true")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get("results", response.data)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "My Proj")
+
+    def test_upcoming_milestones_filter(self):
+        self.client.force_authenticate(user=self.admin)
+        url = f"/api/v1/projects/{self.project.id}/milestones/"
+
+        # Upcoming milestone (3 days from now)
+        today = datetime.date.today()
+        self.client.post(
+            url,
+            {
+                "title": "Upcoming",
+                "target_date": str(today + datetime.timedelta(days=3)),
+            },
+            format="json",
+        )
+
+        # Future milestone (15 days from now)
+        self.client.post(
+            url,
+            {
+                "title": "Future",
+                "target_date": str(today + datetime.timedelta(days=15)),
+            },
+            format="json",
+        )
+
+        response = self.client.get(f"{url}?upcoming=true")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get("results", response.data)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["title"], "Upcoming")
