@@ -5,7 +5,11 @@ django-filter FilterSet classes for the projects app.
 Enables powerful URL-based filtering on list endpoints.
 """
 
+from datetime import timedelta
+
 import django_filters
+from django.db.models import Q
+from django.utils import timezone
 
 from .models import Milestone, Project, ProjectActivity, ProjectMember
 
@@ -27,15 +31,21 @@ class ProjectFilter(django_filters.FilterSet):
     organization = django_filters.UUIDFilter(field_name="organization__id")
     owner = django_filters.UUIDFilter(field_name="owner__id")
     team = django_filters.UUIDFilter(field_name="team__id")
-    deadline_before = django_filters.DateFilter(
-        field_name="deadline", lookup_expr="lte"
-    )
+    deadline_before = django_filters.DateFilter(field_name="deadline", lookup_expr="lte")
     deadline_after = django_filters.DateFilter(field_name="deadline", lookup_expr="gte")
-    start_date_after = django_filters.DateFilter(
-        field_name="start_date", lookup_expr="gte"
-    )
+    start_date_after = django_filters.DateFilter(field_name="start_date", lookup_expr="gte")
     budget_min = django_filters.NumberFilter(field_name="budget", lookup_expr="gte")
     budget_max = django_filters.NumberFilter(field_name="budget", lookup_expr="lte")
+    my_projects = django_filters.BooleanFilter(method="filter_my_projects")
+
+    def filter_my_projects(self, queryset, name, value):
+        if value:
+            user = self.request.user
+            if user.is_authenticated:
+                return queryset.filter(
+                    Q(owner=user) | Q(members__user=user, members__is_deleted=False)
+                ).distinct()
+        return queryset
 
     class Meta:
         model = Project
@@ -82,12 +92,16 @@ class MilestoneFilter(django_filters.FilterSet):
     """
 
     status = django_filters.ChoiceFilter(choices=Milestone.Status.choices)
-    target_date_before = django_filters.DateFilter(
-        field_name="target_date", lookup_expr="lte"
-    )
-    target_date_after = django_filters.DateFilter(
-        field_name="target_date", lookup_expr="gte"
-    )
+    target_date_before = django_filters.DateFilter(field_name="target_date", lookup_expr="lte")
+    target_date_after = django_filters.DateFilter(field_name="target_date", lookup_expr="gte")
+    upcoming = django_filters.BooleanFilter(method="filter_upcoming")
+
+    def filter_upcoming(self, queryset, name, value):
+        if value:
+            today = timezone.now().date()
+            next_week = today + timedelta(days=7)
+            return queryset.filter(target_date__range=[today, next_week])
+        return queryset
 
     class Meta:
         model = Milestone
@@ -104,9 +118,7 @@ class ProjectActivityFilter(django_filters.FilterSet):
     """
 
     event_type = django_filters.ChoiceFilter(choices=ProjectActivity.EventType.choices)
-    entity_type = django_filters.ChoiceFilter(
-        choices=ProjectActivity.EntityType.choices
-    )
+    entity_type = django_filters.ChoiceFilter(choices=ProjectActivity.EntityType.choices)
 
     class Meta:
         model = ProjectActivity
