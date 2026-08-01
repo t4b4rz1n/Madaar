@@ -13,18 +13,19 @@ User = get_user_model()
 
 
 class ProjectModelTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
             email="owner@example.com",
             username="owner",
             first_name="Project",
             last_name="Owner",
             password="password123",
         )
-        self.org = Organization.objects.create(
-            name="Test Org", slug="test-org", owner=self.user
+        cls.org = Organization.objects.create(
+            name="Test Org", slug="test-org", owner=cls.user
         )
-        self.team = Team.objects.create(name="Dev Team", organization=self.org)
+        cls.team = Team.objects.create(name="Dev Team", organization=cls.org)
 
     def test_project_str_and_creation(self):
         project = Project.objects.create(
@@ -67,16 +68,17 @@ class ProjectModelTests(TestCase):
 
 
 class ProjectServicesTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
             email="admin@example.com",
             username="admin",
             first_name="Admin",
             last_name="User",
             password="password123",
         )
-        self.org = Organization.objects.create(
-            name="Service Org", slug="service-org", owner=self.user
+        cls.org = Organization.objects.create(
+            name="Service Org", slug="service-org", owner=cls.user
         )
 
     def test_project_service_lifecycle_and_activities(self):
@@ -166,8 +168,9 @@ class ProjectServicesTests(TestCase):
 
 
 class ProjectAPITests(APITestCase):
-    def setUp(self):
-        self.admin = User.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin = User.objects.create_user(
             email="admin@madaar.io",
             username="admin_user",
             first_name="Admin",
@@ -175,14 +178,14 @@ class ProjectAPITests(APITestCase):
             password="Password123!",
             is_staff=True,
         )
-        self.member_user = User.objects.create_user(
+        cls.member_user = User.objects.create_user(
             email="member@madaar.io",
             username="member_user",
             first_name="Member",
             last_name="User",
             password="Password123!",
         )
-        self.outside_user = User.objects.create_user(
+        cls.outside_user = User.objects.create_user(
             email="outside@madaar.io",
             username="outside_user",
             first_name="Outside",
@@ -190,26 +193,26 @@ class ProjectAPITests(APITestCase):
             password="Password123!",
         )
 
-        self.org = Organization.objects.create(
-            name="Madaar Org", slug="madaar-org", owner=self.admin
+        cls.org = Organization.objects.create(
+            name="Madaar Org", slug="madaar-org", owner=cls.admin
         )
         OrganizationMembership.objects.create(
-            user=self.admin,
-            organization=self.org,
+            user=cls.admin,
+            organization=cls.org,
             role=OrganizationMembership.Role.OWNER,
         )
         OrganizationMembership.objects.create(
-            user=self.member_user,
-            organization=self.org,
+            user=cls.member_user,
+            organization=cls.org,
             role=OrganizationMembership.Role.EMPLOYEE,
         )
 
-        self.project = ProjectService.create(
-            actor=self.admin,
+        cls.project = ProjectService.create(
+            actor=cls.admin,
             validated_data={
                 "name": "Madaar Core",
-                "organization": self.org,
-                "owner": self.admin,
+                "organization": cls.org,
+                "owner": cls.admin,
                 "status": Project.Status.ACTIVE,
             },
         )
