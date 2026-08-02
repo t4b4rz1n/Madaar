@@ -63,7 +63,7 @@ export let mockUsers: User[] = [
     last_name: "Protos",
     is_active: false,
     is_staff: false,
-    role_id: 3,
+    role_id: 5,
     profile_image: null,
   },
   {
@@ -74,7 +74,7 @@ export let mockUsers: User[] = [
     last_name: "Hierarch",
     is_active: true,
     is_staff: true,
-    role_id: 4,
+    role_id: 6,
     profile_image: null,
   },
   {
@@ -85,7 +85,7 @@ export let mockUsers: User[] = [
     last_name: "Terra",
     is_active: true,
     is_staff: false,
-    role_id: 5,
+    role_id: 7,
     profile_image: null,
   },
   {
@@ -96,7 +96,7 @@ export let mockUsers: User[] = [
     last_name: "Templar",
     is_active: false,
     is_staff: true,
-    role_id: 3,
+    role_id: 8,
     profile_image: null,
   },
   {
@@ -237,13 +237,12 @@ export let mockRoles: MockRole[] = [
   {
     id: 1,
     name: "Super Admin",
-    description:
-      "Full access to the entire system and management of users and permissions.",
+    description: "Full access to system management, users, tickets, and roles.",
     is_active: true,
     is_staff: true,
     permissions: [
-      "users.manage", // جایگزین ۴ مورد قبلی
-      "roles.manage", // جایگزین ۴ مورد قبلی
+      "users.manage",
+      "roles.manage",
       "discounts.view",
       "notifications.view",
       "notifications.send",
@@ -256,19 +255,15 @@ export let mockRoles: MockRole[] = [
   {
     id: 2,
     name: "Frontend",
-    description: "Frontend developer role for UI and client-side features.",
+    description: "Frontend developer for UI design and client-side features.",
     is_active: true,
     is_staff: false,
-    permissions: [
-      "users.manage", // طبق خواسته تو: دسترسی کامل به بخش کاربرها
-      "roles.manage", // طبق خواسته تو: دسترسی کامل به بخش نقش‌ها
-      "tickets.view",
-    ],
+    permissions: ["users.manage", "roles.manage", "tickets.view"],
   },
   {
     id: 3,
     name: "Backend",
-    description: "Backend developer role for API and server-side features.",
+    description: "Backend developer for API management and system core.",
     is_active: true,
     is_staff: false,
     permissions: ["users.manage", "roles.manage", "tickets.view"],
@@ -276,22 +271,51 @@ export let mockRoles: MockRole[] = [
   {
     id: 4,
     name: "Support",
-    description: "Manage tickets and view users.",
+    description: "Technical system support and user ticket management.",
     is_active: true,
     is_staff: false,
-    permissions: [
-      "tickets.view",
-      "tickets.manage",
-      "users.manage", // چون گفتی اگر می‌بینه پس همه کار بتونه بکنه
-    ],
+    permissions: ["tickets.view", "tickets.manage", "users.manage"],
   },
   {
     id: 5,
     name: "Regular User",
-    description: "Basic role with minimum permissions.",
+    description: "Regular user with minimum basic system permissions.",
     is_active: true,
     is_staff: false,
     permissions: [],
+  },
+  // --- Adding business roles according to requirements document ---
+  {
+    id: 6,
+    name: "Team Lead",
+    description:
+      "Team lead; managing teams, coordinating members, and reviewing tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: [
+      "teams.view",
+      "teams.manage",
+      "tickets.view",
+      "tickets.manage",
+      "users.manage",
+    ],
+  },
+  {
+    id: 7,
+    name: "Accountant",
+    description: "Accountant; viewing discount codes and financial tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["discounts.view", "tickets.view"],
+  },
+  {
+    id: 8,
+    name: "HR",
+    description:
+      "Human Resources; managing personnel status, users, and reviewing internal tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["users.manage", "tickets.view"],
   },
 ];
 
