@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { Role, RoleFormData, RoleUpdateData } from "../types";
 import { PERMISSIONS_BY_GROUP } from "../constants/permissions";
 
@@ -21,6 +21,8 @@ type RoleFormModalProps = {
   onSubmit: (data: RoleFormData | RoleUpdateData) => void;
 };
 
+const SUPER_ADMIN_ROLE_NAME = "Super Admin";
+
 export const RoleFormModal: React.FC<RoleFormModalProps> = ({
   isOpen,
   title,
@@ -39,10 +41,10 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
   );
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<RoleFormValues>({
@@ -55,11 +57,25 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
     },
   });
 
-  const isStaff = watch("is_staff");
-  // برای ردیابی اینکه آیا تغییر وضعیت staff توسط کاربر انجام شده یا لود اولیه است
+  const isStaff = useWatch({ control, name: "is_staff", defaultValue: false });
+  const watchedPermissions = useWatch({
+    control,
+    name: "permissions",
+    defaultValue: [],
+  });
+
   const isFirstRender = useRef(true);
 
-  // لود داده‌های اولیه هنگام باز شدن مودال
+  const hasAllPermissionsSelected = useMemo(() => {
+    return (
+      allPermissionIds.length > 0 &&
+      allPermissionIds.every((id) => watchedPermissions.includes(id))
+    );
+  }, [allPermissionIds, watchedPermissions]);
+
+  const isSuperAdminMode = isStaff || hasAllPermissionsSelected;
+
+  // ۱. لود اولیه داده‌ها
   useEffect(() => {
     if (!isOpen) {
       isFirstRender.current = true;
@@ -76,33 +92,49 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
         : (initialRole?.permissions ?? []),
     });
 
-    // بعد از انجام reset، فلگ رندر اول را غیرفعال می‌کنیم
     setTimeout(() => {
       isFirstRender.current = false;
     }, 0);
   }, [allPermissionIds, initialRole, isOpen, reset]);
 
-  // کنترل تغییر وضعیت Staff و تاثیر آن روی دسترسی‌ها
+  // ۲. مدیریت تغییرات Staff
+  // خط ۱۰۹: Dependency Array مربوط به useEffect مدیریت تغییرات Staff
   useEffect(() => {
     if (isFirstRender.current) return;
 
     if (isStaff) {
-      setValue("permissions", allPermissionIds, {
+      // اگر تیک استاف خورد، همه‌چیز پر شود
+      setValue("permissions", allPermissionIds, { shouldDirty: true });
+      setValue("name", SUPER_ADMIN_ROLE_NAME, { shouldDirty: true });
+    } else if (!hasAllPermissionsSelected) {
+      // فقط اگر تیک استاف برداشته شد و دستی هم همه‌چیز تیک نخورده بود، ریست شود
+      setValue("name", initialRole?.is_staff ? "" : (initialRole?.name ?? ""), {
         shouldDirty: true,
-        shouldValidate: true,
       });
-    } else {
-      // اگر کاربر دستی تیک Staff را برداشت، پرمیژن‌ها خالی یا به مقدار اولیه غیر-staff برگردند
       setValue(
         "permissions",
         initialRole?.is_staff ? [] : (initialRole?.permissions ?? []),
-        {
-          shouldDirty: true,
-          shouldValidate: true,
-        },
+        { shouldDirty: true },
       );
     }
-  }, [allPermissionIds, initialRole, isStaff, setValue]);
+  }, [
+    isStaff,
+    allPermissionIds,
+    setValue,
+    initialRole,
+    hasAllPermissionsSelected,
+  ]); // <-- این متغیر رو اضافه کردیم
+  // بقیه کدها تغییری نمی‌کنند
+
+  // ۳. مدیریت انتخاب دستی پرمیژن‌ها (بدون ایجاد چرخه بی‌پایان با استاف)
+  useEffect(() => {
+    if (isFirstRender.current) return;
+
+    // اگر کاربر دستی همه‌چیز رو تیک زد ولی هنوز استاف نیست، استاف رو فعال کن
+    if (hasAllPermissionsSelected && !isStaff) {
+      setValue("is_staff", true, { shouldDirty: true });
+    }
+  }, [hasAllPermissionsSelected, isStaff, setValue]);
 
   const submitHandler: SubmitHandler<RoleFormValues> = (values) => {
     onSubmit({
@@ -143,7 +175,8 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
               </label>
               <input
                 {...register("name", { required: "Role name is required" })}
-                className="input input-bordered w-full rounded-2xl"
+                disabled={isSuperAdminMode}
+                className="input input-bordered w-full rounded-2xl disabled:bg-base-200/50 disabled:cursor-not-allowed"
                 placeholder="e.g. Manager"
               />
               {errors.name && (
@@ -166,7 +199,6 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
                   />
                   <span className="text-sm">Active</span>
                 </label>
-
                 <label className="flex cursor-pointer items-center gap-2">
                   <input
                     {...register("is_staff")}
@@ -185,7 +217,8 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
             </label>
             <textarea
               {...register("description")}
-              className="textarea textarea-bordered h-20 rounded-2xl"
+              disabled={isSuperAdminMode}
+              className="textarea textarea-bordered h-20 rounded-2xl disabled:bg-base-200/50 disabled:cursor-not-allowed"
               placeholder="Short description..."
             />
           </div>
@@ -194,29 +227,23 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
             <h4 className="border-s-4 border-primary ps-2 text-sm font-bold text-base-content/80">
               Manage Permissions
             </h4>
-
             <div className="grid grid-cols-1 gap-6 rounded-3xl border border-base-300 bg-base-200/30 p-4 md:grid-cols-2">
               {Object.entries(PERMISSIONS_BY_GROUP).map(([group, perms]) => (
                 <div key={group} className="space-y-2">
                   <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-base-content/40">
                     {group}
                   </p>
-
                   <div className="flex flex-col gap-2">
                     {perms.map((p) => (
                       <label
                         key={p.id}
-                        className={`group flex items-center gap-3 ${
-                          isStaff
-                            ? "cursor-not-allowed opacity-60"
-                            : "cursor-pointer"
-                        }`}
+                        className={`group flex items-center gap-3 ${isSuperAdminMode ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
                       >
                         <input
                           type="checkbox"
                           value={p.id}
                           {...register("permissions")}
-                          disabled={isStaff}
+                          disabled={isSuperAdminMode}
                           className="checkbox checkbox-primary checkbox-xs"
                         />
                         <span className="text-sm text-base-content/70 transition-colors group-hover:text-primary">
@@ -229,10 +256,14 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
               ))}
             </div>
 
-            {isStaff && (
-              <p className="text-xs text-info">
-                Staff roles automatically receive all permissions.
-              </p>
+            {isSuperAdminMode && (
+              <div className="alert alert-info rounded-2xl flex flex-col items-start gap-1 p-3 text-xs">
+                <span className="font-bold">Info:</span>
+                <p>
+                  A role with all permissions already exists as "Super Admin".
+                  There is no need to recreate or edit it.
+                </p>
+              </div>
             )}
           </div>
 
@@ -247,7 +278,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
             <button
               type="submit"
               className="btn btn-primary rounded-2xl px-8 shadow-lg shadow-primary/20"
-              disabled={isPending}
+              disabled={isPending || isSuperAdminMode}
             >
               {isPending ? "Saving..." : submitLabel}
             </button>
