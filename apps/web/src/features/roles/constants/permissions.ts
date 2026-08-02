@@ -1,4 +1,4 @@
-// @apps/web/src/features/roles/constants/permissions.ts
+// apps/web/src/features/roles/constants/permissions.ts
 
 export interface PermissionItem {
   id: string;
@@ -7,30 +7,41 @@ export interface PermissionItem {
 }
 
 export const SYSTEM_PERMISSIONS: PermissionItem[] = [
-  // Users module
-  { id: "users.view", label: "View Users", group: "Users" },
-  { id: "users.create", label: "Create User", group: "Users" },
-  { id: "users.edit", label: "Edit User", group: "Users" },
-  { id: "users.delete", label: "Delete User", group: "Users" },
+  // Users
+  { id: "users.manage", label: "Manage Users", group: "USERS" },
 
-  // Roles module
-  { id: "roles.view", label: "View Roles", group: "Roles" },
-  { id: "roles.create", label: "Create Role", group: "Roles" },
-  { id: "roles.edit", label: "Edit Role", group: "Roles" },
-  { id: "roles.delete", label: "Delete Role", group: "Roles" },
+  // Roles
+  { id: "roles.manage", label: "Manage Roles", group: "ROLES" },
 
-  // Teams module
-  { id: "teams.view", label: "View Teams", group: "Teams" },
-  { id: "teams.manage", label: "Manage Teams", group: "Teams" },
+  // Discounts module
+  { id: "discounts.view", label: "View Discounts", group: "Discounts" },
+  // Notifications
+  {
+    id: "notifications.view",
+    label: "View Notifications",
+    group: "NOTIFICATIONS",
+  },
+  {
+    id: "notifications.send",
+    label: "Send Notifications",
+    group: "NOTIFICATIONS",
+  },
 
-  // Tickets module
-  { id: "tickets.view", label: "View Tickets", group: "Tickets" },
-  { id: "tickets.manage", label: "Manage Tickets", group: "Tickets" },
+  // Teams
+  { id: "teams.view", label: "View Teams", group: "TEAMS" },
+  { id: "teams.manage", label: "Manage Teams", group: "TEAMS" },
+
+  // Tickets
+  { id: "tickets.view", label: "View Tickets", group: "TICKETS" },
+  { id: "tickets.manage", label: "Manage Tickets", group: "TICKETS" },
 ];
 
-// For easier access by groups in UI
-export const PERMISSIONS_BY_GROUP = SYSTEM_PERMISSIONS.reduce((acc, curr) => {
-  if (!acc[curr.group]) acc[curr.group] = [];
-  acc[curr.group].push(curr);
-  return acc;
-}, {} as Record<string, PermissionItem[]>);
+export const PERMISSIONS_BY_GROUP = SYSTEM_PERMISSIONS.reduce(
+  (acc, curr) => {
+    const groupName = curr.group;
+    if (!acc[groupName]) acc[groupName] = [];
+    acc[groupName].push(curr);
+    return acc;
+  },
+  {} as Record<string, PermissionItem[]>,
+);

@@ -242,47 +242,36 @@ export let mockRoles: MockRole[] = [
     is_active: true,
     is_staff: true,
     permissions: [
-      "users.view",
-      "users.create",
-      "users.edit",
-      "users.delete",
-      "roles.view",
-      "roles.create",
-      "roles.edit",
-      "roles.delete",
+      "users.manage", // جایگزین ۴ مورد قبلی
+      "roles.manage", // جایگزین ۴ مورد قبلی
+      "discounts.view",
+      "notifications.view",
+      "notifications.send",
       "teams.view",
       "teams.manage",
       "tickets.view",
       "tickets.manage",
     ],
   },
-    {
+  {
     id: 2,
     name: "Frontend",
     description: "Frontend developer role for UI and client-side features.",
     is_active: true,
-    is_staff: true,
+    is_staff: false,
     permissions: [
-      "users.view",
-      "roles.view",
+      "users.manage", // طبق خواسته تو: دسترسی کامل به بخش کاربرها
+      "roles.manage", // طبق خواسته تو: دسترسی کامل به بخش نقش‌ها
       "tickets.view",
-      // بعداً هرچی لازم داشتی اضافه می‌کنیم
     ],
   },
-
-  // ✅ new
   {
     id: 3,
     name: "Backend",
     description: "Backend developer role for API and server-side features.",
     is_active: true,
-    is_staff: true,
-    permissions: [
-      "users.view",
-      "roles.view",
-      "tickets.view",
-      // بعداً هرچی لازم داشتی اضافه می‌کنیم
-    ],
+    is_staff: false,
+    permissions: ["users.manage", "roles.manage", "tickets.view"],
   },
   {
     id: 4,
@@ -290,7 +279,11 @@ export let mockRoles: MockRole[] = [
     description: "Manage tickets and view users.",
     is_active: true,
     is_staff: false,
-    permissions: ["tickets.view", "tickets.manage", "users.view"],
+    permissions: [
+      "tickets.view",
+      "tickets.manage",
+      "users.manage", // چون گفتی اگر می‌بینه پس همه کار بتونه بکنه
+    ],
   },
   {
     id: 5,
@@ -300,7 +293,6 @@ export let mockRoles: MockRole[] = [
     is_staff: false,
     permissions: [],
   },
-
 ];
 
 export const mockNotifications: Notification[] = [
