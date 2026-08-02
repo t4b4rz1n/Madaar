@@ -2,9 +2,7 @@ import ApiService from "../../../core/api/apiService";
 import type { User, UserFormData, UserUpdateData } from "../types";
 
 export const getUsers = (params: URLSearchParams) => {
-  // تبدیل URLSearchParams به یک آبجکت ساده برای ApiService
-  const paramsObj = Object.fromEntries(params.entries());
-  return ApiService.getList<User>("panel/users/", paramsObj);
+  return ApiService.getList<User>(`panel/users/?${params.toString()}`);
 };
 
 export const createUser = (data: UserFormData) =>

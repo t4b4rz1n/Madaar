@@ -9,9 +9,9 @@ import { createUser, deleteUser, getUsers, updateUser } from "../api/usersApi";
 import type { UserFormData, UserUpdateData } from "../types";
 
 export const useUsers = (params: URLSearchParams) => {
-  const queryKey = ["users", params.toString()];
+  const serializedParams = params.toString();
   return useQuery({
-    queryKey,
+    queryKey: ["users", serializedParams],
     queryFn: async () => {
       const response = await getUsers(params);
       return response.data;
