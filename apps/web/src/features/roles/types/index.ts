@@ -1,3 +1,5 @@
+// apps/web/src/features/roles/constants/index.ts
+
 export interface Role {
   id: number;
   name: string;

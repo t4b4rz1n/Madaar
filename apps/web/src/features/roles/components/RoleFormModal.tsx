@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import type { Role, RoleFormData, RoleUpdateData } from "../types";
 import { PERMISSIONS_BY_GROUP } from "../constants/permissions";
@@ -56,36 +56,53 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
   });
 
   const isStaff = watch("is_staff");
+  // برای ردیابی اینکه آیا تغییر وضعیت staff توسط کاربر انجام شده یا لود اولیه است
+  const isFirstRender = useRef(true);
 
+  // لود داده‌های اولیه هنگام باز شدن مودال
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      isFirstRender.current = true;
+      return;
+    }
 
     reset({
       name: initialRole?.name ?? "",
       description: initialRole?.description ?? "",
       is_active: initialRole?.is_active ?? true,
       is_staff: initialRole?.is_staff ?? false,
-      permissions:
-        initialRole?.is_staff ? allPermissionIds : initialRole?.permissions ?? [],
+      permissions: initialRole?.is_staff
+        ? allPermissionIds
+        : (initialRole?.permissions ?? []),
     });
+
+    // بعد از انجام reset، فلگ رندر اول را غیرفعال می‌کنیم
+    setTimeout(() => {
+      isFirstRender.current = false;
+    }, 0);
   }, [allPermissionIds, initialRole, isOpen, reset]);
 
+  // کنترل تغییر وضعیت Staff و تاثیر آن روی دسترسی‌ها
   useEffect(() => {
+    if (isFirstRender.current) return;
+
     if (isStaff) {
       setValue("permissions", allPermissionIds, {
         shouldDirty: true,
         shouldValidate: true,
       });
-      return;
+    } else {
+      // اگر کاربر دستی تیک Staff را برداشت، پرمیژن‌ها خالی یا به مقدار اولیه غیر-staff برگردند
+      setValue(
+        "permissions",
+        initialRole?.is_staff ? [] : (initialRole?.permissions ?? []),
+        {
+          shouldDirty: true,
+          shouldValidate: true,
+        },
+      );
     }
-
-    if (!initialRole?.is_staff) {
-      setValue("permissions", [], {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-  }, [allPermissionIds, initialRole?.is_staff, isStaff, setValue]);
+  }, [allPermissionIds, initialRole, isStaff, setValue]);
 
   const submitHandler: SubmitHandler<RoleFormValues> = (values) => {
     onSubmit({

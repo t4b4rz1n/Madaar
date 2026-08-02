@@ -1,3 +1,4 @@
+// @apps/web/src/features/roles/components/EditRoleModal.tsx
 import React from "react";
 import { useUpdateRole } from "../hooks/useRoles";
 import type { Role, RoleUpdateData } from "../types";
