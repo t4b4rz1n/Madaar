@@ -1,12 +1,19 @@
+export interface UserRole {
+  id: number;
+  name: string;
+  permissions: string[];
+}
+
 export interface User {
   id: number;
   username: string;
   email: string;
   first_name?: string;
   last_name?: string;
-  role?: string;
-  profile_image_url?: string | null;
   is_staff?: boolean;
+  role_id?: number | null;
+  role?: UserRole | null;
+  profile_image_url?: string | null;
 }
 
 export interface AuthResponse {

@@ -258,7 +258,7 @@ export let mockRoles: MockRole[] = [
     description: "Frontend developer for UI design and client-side features.",
     is_active: true,
     is_staff: false,
-    permissions: ["users.manage", "roles.manage", "tickets.view"],
+    permissions: ["notifications.view", "notifications.send", "tickets.view", "tickets.manage"],
   },
   {
     id: 3,
@@ -266,7 +266,7 @@ export let mockRoles: MockRole[] = [
     description: "Backend developer for API management and system core.",
     is_active: true,
     is_staff: false,
-    permissions: ["users.manage", "roles.manage", "tickets.view"],
+    permissions: ["notifications.view", "notifications.send", "tickets.view", "tickets.manage"],
   },
   {
     id: 4,
