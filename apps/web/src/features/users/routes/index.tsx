@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { StaffRoute } from "../../../core/router/StaffRoute";
+import { Navigate } from "react-router-dom";
+import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const UsersListPage = lazy(() => import("../pages/UsersListPage"));
 
@@ -7,9 +8,12 @@ export const usersRoutes = [
   {
     path: "users",
     element: (
-      <StaffRoute>
+      <PermissionGuard
+        permissions={["users.manage"]}
+        fallback={<Navigate to="/dashboard" replace />}
+      >
         <UsersListPage />
-      </StaffRoute>
+      </PermissionGuard>
     ),
   },
 ];

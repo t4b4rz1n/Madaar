@@ -8,7 +8,8 @@ import { NotificationHistoryList } from "../components/NotificationHistoryList";
 import { NotificationsToolbar } from "../components/NotificationsToolbar"; // Import Toolbar
 import { SendNotificationModal } from "../components/SendNotificationModal";
 import { useNotificationHistory } from "../hooks/useNotifications";
-import { useAuthStore } from "../../auth/store/authStore";
+// import { useAuthStore } from "../../auth/store/authStore";
+import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -23,7 +24,7 @@ const NotificationsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
+  // const isStaff = useAuthStore((state) => state.user?.is_staff === true);
   const {
     data: notificationsResponse,
     isLoading,
@@ -124,7 +125,7 @@ const NotificationsPage = () => {
               setViewMode={setViewMode}
               className="w-auto"
             />
-            {isStaff && (
+            <PermissionGuard permissions={["notifications.send"]}>
               <button
                 className="btn btn-primary rounded-xl"
                 onClick={openSendModal}
@@ -132,7 +133,7 @@ const NotificationsPage = () => {
                 <Send />
                 <span>Send New Notification</span>
               </button>
-            )}
+            </PermissionGuard>
           </div>
         </motion.div>
 

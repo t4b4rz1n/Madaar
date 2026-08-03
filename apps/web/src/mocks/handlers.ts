@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { db, mockProfile, mockUsers } from "./db";
+import { db, mockProfile, mockRoles, mockUsers } from "./db";
 import type { UserFormData, UserUpdateData } from "../features/users/types";
 import type { DiscountFormData } from "../features/discounts/types";
 import type { NotificationFormData } from "../features/notifications/types";
@@ -58,6 +58,10 @@ export const handlers = [
     );
 
     if (user && credentials.password) {
+      // پیدا کردن نقش کاربر از دیتابیس موک
+      const userRole = user.role_id
+        ? mockRoles.find((r) => r.id === user.role_id)
+        : null;
       return HttpResponse.json({
         status: true,
         message: "Login successful",
@@ -71,7 +75,15 @@ export const handlers = [
             first_name: user.first_name,
             last_name: user.last_name,
             is_staff: user.is_staff,
-            profile_image: user.profile_image,
+            role_id: user.role_id ?? null,
+            role: userRole
+              ? {
+                  id: userRole.id,
+                  name: userRole.name,
+                  permissions: userRole.permissions,
+                }
+              : null,
+            profile_image_url: user.profile_image,
           },
         },
       });

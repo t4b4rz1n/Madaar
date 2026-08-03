@@ -3,6 +3,7 @@ import { ArrowLeft2, Logout, Setting2, User } from "iconsax-reactjs";
 import { Link, useLocation } from "react-router-dom";
 import { useLogout } from "../auth/hooks/useAuth";
 import { useAuthStore } from "../auth/store/authStore";
+import { usePermissions } from "../auth/hooks/usePermissions"; // ایمپورت هوک پرمیشن‌ها
 import { drawerItems } from "./DrawerItems";
 import { useLayoutStore } from "./store/layoutStore";
 import logoUrl from "/images/base-logo1.png";
@@ -36,64 +37,76 @@ export const Sidebar = () => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const isStaff = user?.is_staff === true;
+  const { hasAllPermissions } = usePermissions(); // دریافت تابع بررسی پرمیشن
   const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen } =
     useLayoutStore();
   const logout = useLogout();
 
-const renderNavItems = () =>
-  drawerItems
-    .filter((item) => !item.staffOnly || isStaff)
-    .map((item, index) => {
-      const isDashboardItem = item.link === "dashboard";
-      const itemLink = isDashboardItem && isStaff ? "admin" : item.link;
-      const itemTitle = isDashboardItem && isStaff ? "Admin Panel" : item.title;
+  const renderNavItems = () =>
+    drawerItems
+      .filter((item) => {
+        // ۱. اگر آیتم فقط برای staff باشد و کاربر staff نباشد، فیلتر می‌شود
+        if (item.staffOnly && !isStaff) return false;
 
-      const isActive =
-        itemLink === ""
-          ? location.pathname === "/"
-          : location.pathname === `/${itemLink}` ||
-            location.pathname.startsWith(`/${itemLink}/`);
+        // ۲. اگر آیتم نیاز به پرمیشن خاصی داشته باشد، آن را بررسی می‌کنیم
+        // (هوک usePermissions خودش به کاربرهای is_staff دسترسی کامل می‌دهد)
+        if (item.permission && !hasAllPermissions([item.permission])) {
+          return false;
+        }
 
-      return (
-        <motion.li
-          key={item.link}
-          variants={navItemVariants}
-          custom={index}
-          initial="hidden"
-          animate="visible"
-        >
-          <Link
-            to={`/${itemLink}`}
-            onClick={() => setSidebarOpen(false)}
-            className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-200 h-12 overflow-hidden ${
-              isActive
-                ? "bg-primary text-primary-content shadow-md shadow-primary/20"
-                : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
-            }`}
-            title={isCollapsed ? itemTitle : ""}
+        return true;
+      })
+      .map((item, index) => {
+        const isDashboardItem = item.link === "dashboard";
+        const itemLink = isDashboardItem && isStaff ? "admin" : item.link;
+        const itemTitle =
+          isDashboardItem && isStaff ? "Admin Panel" : item.title;
+
+        const isActive =
+          itemLink === ""
+            ? location.pathname === "/"
+            : location.pathname === `/${itemLink}` ||
+              location.pathname.startsWith(`/${itemLink}/`);
+
+        return (
+          <motion.li
+            key={item.link}
+            variants={navItemVariants}
+            custom={index}
+            initial="hidden"
+            animate="visible"
           >
-            <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
-              {item.icon}
-            </div>
+            <Link
+              to={`/${itemLink}`}
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-200 h-12 overflow-hidden ${
+                isActive
+                  ? "bg-primary text-primary-content shadow-md shadow-primary/20"
+                  : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
+              }`}
+              title={isCollapsed ? itemTitle : ""}
+            >
+              <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                {item.icon}
+              </div>
 
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.span
-                  variants={textVariants}
-                  initial="collapsed"
-                  animate="expanded"
-                  exit="collapsed"
-                  className="font-medium whitespace-nowrap"
-                >
-                  {itemTitle}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </Link>
-        </motion.li>
-      );
-    });
-
+              <AnimatePresence>
+                {!isCollapsed && (
+                  <motion.span
+                    variants={textVariants}
+                    initial="collapsed"
+                    animate="expanded"
+                    exit="collapsed"
+                    className="font-medium whitespace-nowrap"
+                  >
+                    {itemTitle}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+          </motion.li>
+        );
+      });
 
   return (
     <>
