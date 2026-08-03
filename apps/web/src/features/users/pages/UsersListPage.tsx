@@ -40,7 +40,12 @@ export default function UsersListPage() {
   // Default to grid view, but check params
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  const { data: usersResponse, isLoading, isFetching, isError } = useUsers(searchParams);
+  const {
+    data: usersResponse,
+    isLoading,
+    isFetching,
+    isError,
+  } = useUsers(searchParams);
   const showLoading = isLoading || isFetching;
 
   const updateSearchParams = useCallback(
@@ -58,35 +63,54 @@ export default function UsersListPage() {
         return newParams;
       });
     },
-    [setSearchParams]
-  );
-
-  const handleSearch = useCallback(
-    (query: string) => updateSearchParams("search", query),
-    [updateSearchParams]
-  );
-
-  const handleSort = useCallback(
-    (sortKey: string) => updateSearchParams("ordering", sortKey),
-    [updateSearchParams]
+    [setSearchParams],
   );
 
   const handleFilter = useCallback(
     (filters: Record<string, string>) => {
       setSearchParams((prev) => {
         const newParams = new URLSearchParams(prev);
+        newParams.delete("is_active");
+        newParams.delete("role_id");
         Object.entries(filters).forEach(([key, value]) => {
-          if (value) {
+          if (value !== undefined && value !== null && value !== "") {
             newParams.set(key, value);
-          } else {
-            newParams.delete(key);
           }
         });
+
         newParams.set("page", "1");
         return newParams;
       });
     },
-    [setSearchParams]
+    [setSearchParams],
+  );
+
+  const handleSort = useCallback(
+    (sortKey: string) => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set("ordering", sortKey);
+        newParams.set("page", "1");
+        return newParams;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        if (query) {
+          newParams.set("search", query);
+        } else {
+          newParams.delete("search");
+        }
+        newParams.set("page", "1");
+        return newParams;
+      });
+    },
+    [setSearchParams],
   );
 
   const currentPage = usersResponse?.current_page || 1;
@@ -96,12 +120,12 @@ export default function UsersListPage() {
 
   const handlePageChange = useCallback(
     (page: number) => updateSearchParams("page", page.toString()),
-    [updateSearchParams]
+    [updateSearchParams],
   );
 
   const handlePageSizeChange = useCallback(
     (size: number) => updateSearchParams("page_size", size.toString()),
-    [updateSearchParams]
+    [updateSearchParams],
   );
 
   const handleCreateUser = () => {
@@ -118,9 +142,8 @@ export default function UsersListPage() {
 
   const users = useMemo(
     () => usersResponse?.results || [],
-    [usersResponse?.results]
+    [usersResponse?.results],
   );
-
   return (
     <>
       <motion.div

@@ -1,19 +1,42 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Lock, Message, TickSquare, User, Hierarchy } from "iconsax-reactjs";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import InputField from "../../../components/InputField";
 import { useRoles } from "../../roles/hooks/useRoles";
 
 interface UserFormProps {
   control: any;
   errors: any;
+  setValue: any;
   editMode?: boolean;
 }
 
-export const UserForm = ({ control, errors, editMode }: UserFormProps) => {
+export const UserForm = ({
+  control,
+  errors,
+  setValue,
+  editMode,
+}: UserFormProps) => {
   const { data: rolesData, isLoading: isLoadingRoles } = useRoles();
   const roles = rolesData?.results || [];
 
+  const selectedRoleId = useWatch({
+    control,
+    name: "role_id",
+  });
+
+  const selectedRole = roles.find((role: any) => role.id === selectedRoleId);
+
+  const isSuperAdmin =
+    selectedRole?.name?.trim().toLowerCase() === "super admin";
+
+  useEffect(() => {
+    setValue("is_staff", isSuperAdmin, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [isSuperAdmin, setValue]);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -218,11 +241,18 @@ export const UserForm = ({ control, errors, editMode }: UserFormProps) => {
           name="is_staff"
           control={control}
           render={({ field }) => (
-            <label className="label cursor-pointer justify-start gap-3">
+            <label
+              className={`label justify-start gap-3 ${
+                isSuperAdmin
+                  ? "cursor-pointer"
+                  : "cursor-not-allowed opacity-50"
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={!!field.value}
                 onChange={(e) => field.onChange(e.target.checked)}
+                disabled={!isSuperAdmin}
                 className="checkbox checkbox-primary"
               />
               <div className="flex items-center gap-2">

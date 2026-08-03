@@ -35,36 +35,31 @@ export const UsersToolbar = ({
 }: ToolbarProps) => {
   const [searchParams] = useSearchParams();
 
+  // فقط برای فیلد سرچ استیت محلی نگه می‌داریم تا Debounce بشه
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("search") || "",
   );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const [activeFilter, setActiveFilter] = useState(
-    () => searchParams.get("is_active") || "",
+  // بقیه فیلترها مستقیماً از URL خوانده می‌شوند (تک‌منبع حقیقت یا Single Source of Truth)
+  const activeFilter = searchParams.get("is_active") || "";
+  const roleFilter = searchParams.get("role_id") || "";
+
+  const { data: rolesData } = useRoles();
+
+  const roleOptions = useMemo(
+    () => [
+      { value: "", label: "All Roles" },
+      ...(rolesData?.results ?? []).map((role: Role) => ({
+        value: String(role.id),
+        label: role.name,
+      })),
+    ],
+    [rolesData?.results],
   );
-  const [roleFilter, setRoleFilter] = useState(
-    () => searchParams.get("role_id") || "",
-  );
 
-const { data: rolesData } = useRoles();
-
-const roleOptions = useMemo(
-  () => [
-    { value: "", label: "All Roles" },
-    ...(rolesData?.results ?? []).map((role: Role) => ({
-      value: String(role.id),
-      label: role.name,
-    })),
-  ],
-  [rolesData?.results],
-);
-
-
-  const [sortConfig, setSortConfig] = useState<{
-    key: SortKey;
-    dir: SortDirection;
-  }>(() => {
+  // محاسبه سورت فعلی مستقیماً از روی URL
+  const sortConfig = useMemo<{ key: SortKey; dir: SortDirection }>(() => {
     const ordering = searchParams.get("ordering") || "";
     const isDesc = ordering.startsWith("-");
     const key = (isDesc ? ordering.slice(1) : ordering) as SortKey;
@@ -73,54 +68,56 @@ const roleOptions = useMemo(
       key: sortOptions.some((opt) => opt.key === key) ? key : "date_joined",
       dir: isDesc ? "desc" : "asc",
     };
-  });
+  }, [searchParams]);
 
   const filterRef = useRef<HTMLDivElement>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const onSearchRef = useRef(onSearch);
-  const onFilterChangeRef = useRef(onFilterChange);
-  const onSortChangeRef = useRef(onSortChange);
-
   useEffect(() => {
     onSearchRef.current = onSearch;
-    onFilterChangeRef.current = onFilterChange;
-    onSortChangeRef.current = onSortChange;
-  }, [onSearch, onFilterChange, onSortChange]);
+  }, [onSearch]);
 
+  // همگام‌سازی استیت سرچ متنی در صورتی که URL از بیرون تغییر کند (مثل کلیک روی ریست فیلترها)
+  useEffect(() => {
+    setSearchQuery(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  // اعمال دبانس سرچ
   const isFirstSearch = useRef(true);
   useEffect(() => {
     if (isFirstSearch.current) {
       isFirstSearch.current = false;
       return;
     }
-
     onSearchRef.current(debouncedSearchQuery);
   }, [debouncedSearchQuery]);
 
-  const isFirstFilter = useRef(true);
-  useEffect(() => {
-    if (isFirstFilter.current) {
-      isFirstFilter.current = false;
-      return;
-    }
-
-    onFilterChangeRef.current({
-      is_active: activeFilter,
+  // هندلرهای مستقیم برای اعمال تغییرات بدون نیاز به افکت‌های مزاحم
+  const handleActiveFilterChange = (value: string) => {
+    onFilterChange({
+      is_active: value,
       role_id: roleFilter,
     });
-  }, [activeFilter, roleFilter]);
+  };
 
-  const isFirstSort = useRef(true);
-  useEffect(() => {
-    if (isFirstSort.current) {
-      isFirstSort.current = false;
-      return;
-    }
+  const handleRoleFilterChange = (value: string) => {
+    onFilterChange({
+      is_active: activeFilter,
+      role_id: value,
+    });
+  };
 
+  const handleSortKeyChange = (key: SortKey) => {
     const sortPrefix = sortConfig.dir === "desc" ? "-" : "";
-    onSortChangeRef.current(`${sortPrefix}${sortConfig.key}`);
-  }, [sortConfig]);
+    onSortChange(`${sortPrefix}${key}`);
+  };
+
+  const toggleSortDirection = () => {
+    const nextDir = sortConfig.dir === "asc" ? "desc" : "asc";
+    const sortPrefix = nextDir === "desc" ? "-" : "";
+    onSortChange(`${sortPrefix}${sortConfig.key}`);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -133,7 +130,6 @@ const roleOptions = useMemo(
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -194,7 +190,7 @@ const roleOptions = useMemo(
                     <select
                       className="select select-sm w-full border-base-300 !shadow-none"
                       value={activeFilter}
-                      onChange={(e) => setActiveFilter(e.target.value)}
+                      onChange={(e) => handleActiveFilterChange(e.target.value)}
                     >
                       <option value="">All Users</option>
                       <option value="true">Active Only</option>
@@ -211,7 +207,7 @@ const roleOptions = useMemo(
                     <select
                       className="select select-sm w-full border-base-300 !shadow-none"
                       value={roleFilter}
-                      onChange={(e) => setRoleFilter(e.target.value)}
+                      onChange={(e) => handleRoleFilterChange(e.target.value)}
                     >
                       {roleOptions.map((role) => (
                         <option key={role.value || "all"} value={role.value}>
@@ -243,12 +239,7 @@ const roleOptions = useMemo(
             className="dropdown-content z-[1] mt-2 w-48 rounded-box border border-base-content/10 bg-base-100 p-2 shadow-lg menu"
           >
             {sortOptions.map((opt) => (
-              <li
-                key={opt.key}
-                onClick={() =>
-                  setSortConfig((prev) => ({ ...prev, key: opt.key }))
-                }
-              >
+              <li key={opt.key} onClick={() => handleSortKeyChange(opt.key)}>
                 <a className={sortConfig.key === opt.key ? "active" : ""}>
                   {opt.label}
                 </a>
@@ -259,12 +250,7 @@ const roleOptions = useMemo(
 
         <button
           type="button"
-          onClick={() =>
-            setSortConfig((prev) => ({
-              ...prev,
-              dir: prev.dir === "asc" ? "desc" : "asc",
-            }))
-          }
+          onClick={toggleSortDirection}
           className={`${buttonBaseClass} btn-circle`}
         >
           {sortConfig.dir === "asc" ? (

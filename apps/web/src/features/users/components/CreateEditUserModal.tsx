@@ -34,6 +34,7 @@ export const CreateEditUserModal = ({
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<UserFormData>({
     resolver: zodResolver(schema) as any,
@@ -92,8 +93,6 @@ export const CreateEditUserModal = ({
         role_id: data.role_id ?? null,
       };
 
-      console.log("UPDATE USER PAYLOAD:", updatePayload);
-
       updateMutation.mutate(
         { id: user.id, data: updatePayload },
         {
@@ -117,7 +116,6 @@ export const CreateEditUserModal = ({
       role_id: data.role_id ?? null,
     };
 
-    console.log("CREATE USER PAYLOAD:", createPayload);
 
     createMutation.mutate(createPayload, {
       onSuccess: () => {
@@ -177,6 +175,7 @@ export const CreateEditUserModal = ({
                   control={control}
                   errors={errors}
                   editMode={isEditMode}
+                  setValue={setValue}
                 />
               </form>
             </div>
