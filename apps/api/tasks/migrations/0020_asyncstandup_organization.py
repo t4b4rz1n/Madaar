@@ -7,14 +7,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('organizations', '0002_team_parent_team'),
-        ('tasks', '0019_alter_board_order_alter_task_order_and_more'),
+        ("organizations", "0002_team_parent_team"),
+        ("tasks", "0019_alter_board_order_alter_task_order_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='asyncstandup',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='standups', to='organizations.organization', verbose_name='Organization'),
+            model_name="asyncstandup",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="standups",
+                to="organizations.organization",
+                verbose_name="Organization",
+            ),
         ),
     ]

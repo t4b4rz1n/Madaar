@@ -6,18 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0020_asyncstandup_organization'),
+        ("tasks", "0020_asyncstandup_organization"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='is_finished',
-            field=models.BooleanField(db_index=True, default=False, verbose_name='Is Finished'),
+            model_name="task",
+            name="is_finished",
+            field=models.BooleanField(
+                db_index=True, default=False, verbose_name="Is Finished"
+            ),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='due_date',
-            field=models.DateTimeField(blank=True, db_index=True, null=True, verbose_name='Due date'),
+            model_name="task",
+            name="due_date",
+            field=models.DateTimeField(
+                blank=True, db_index=True, null=True, verbose_name="Due date"
+            ),
         ),
     ]
