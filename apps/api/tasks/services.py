@@ -274,14 +274,15 @@ class TaskService:
         from attendance.models import TimeLog
 
         timer_user = assignee if assignee else reporter
-        TimeLog.objects.create(
-            user=timer_user,
-            task=task,
-            project=project,
-            date=timezone.now().date(),
-            start_time=timezone.now(),
-            is_active=True,
-        )
+        if timer_user and project:
+            TimeLog.objects.create(
+                user=timer_user,
+                task=task,
+                project=project,
+                date=timezone.now().date(),
+                start_time=timezone.now(),
+                is_active=True,
+            )
 
         return task
 
@@ -327,16 +328,11 @@ class TaskService:
                     _("Only the assignee or a project manager can move this task.")
                 )
 
-        # Ensure task has at least one time log (timer)
-        from attendance.models import TimeLog
-
-        if not TimeLog.objects.filter(task=task).exists():
-            raise ValidationError(
-                _("Task must have a timer before it can be moved to any status.")
-            )
-
-        if task.status and task.status.code and task.status.code.lower() == 'done' and new_status and task.status != new_status:
+        task_code = task.status.code.lower() if task.status and task.status.code else ""
+        if task_code == 'done' and new_status and task.status != new_status:
             raise ValidationError(_("Task is completed (Done) and locked. It cannot be moved to another status."))
+
+
 
         action_parts = []
 
@@ -374,11 +370,14 @@ class TaskService:
 
                 if code == "done":
                     # Check if any time was tracked (spent_hours > 0)
-                    from .models import Task
                     current_spent = Task.objects.filter(pk=task.pk).values_list('spent_hours', flat=True).first()
                     if not current_spent or current_spent <= 0:
-                        raise ValidationError(_("Cannot move to Done: No time has been tracked for this task."))
+                        raise ValidationError({
+                            "detail": _("Cannot move to Done: No time has been tracked for this task."),
+                            "code": "NEEDS_MANUAL_TIME"
+                        })
                     task.spent_hours = current_spent
+                    task.is_finished = True
 
         if new_order is not None and task.order != new_order:
             task.order = new_order
