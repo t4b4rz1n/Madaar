@@ -572,8 +572,8 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         self.assertTrue(time_logs.first().is_active)
         self.assertEqual(time_logs.first().user, self.user)
 
-    def test_move_task_requires_timer(self):
-        """A task without a timer cannot be moved to any status."""
+    def test_move_task_requires_timer_for_done(self):
+        """A task without a timer cannot be moved to Done."""
         task = Task.objects.create(
             project=self.project,
             title="No Timer Task",
@@ -586,9 +586,10 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         url = reverse("task-move-task", kwargs={"pk": task.id})
         res = self.client.post(
             url,
-            {"status_id": str(self.status_todo.id), "order": 1},
+            {"status_id": str(self.status_done.id), "order": 1},
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["code"], "NEEDS_MANUAL_TIME")
 
     def test_create_subtask(self):
         """Creating a subtask should link to parent task."""
@@ -789,21 +790,23 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    def test_toggle_done_endpoint(self):
+    def test_mark_done_endpoint(self):
         task = Task.objects.create(
-            project=self.project, title="Toggle Task",
+            project=self.project, title="Mark Done Task",
             reporter=self.user, status=self.status_todo,
             spent_hours=1,  # Required to move to done
         )
         TimeLog.objects.create(task=task, user=self.user, date=timezone.now().date(), start_time=timezone.now() - datetime.timedelta(hours=1))
-        url = reverse("task-toggle-done", kwargs={"pk": task.id})
+        url = reverse("task-mark-done", kwargs={"pk": task.id})
         res = self.client.post(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         task.refresh_from_db()
         self.assertEqual(task.status.code, "done")
+        self.assertTrue(task.is_finished)
 
         # Second toggle should fail because task is locked in 'done'
         res2 = self.client.post(url)
         self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
         task.refresh_from_db()
         self.assertEqual(task.status.code, "done")
+        self.assertTrue(task.is_finished)
