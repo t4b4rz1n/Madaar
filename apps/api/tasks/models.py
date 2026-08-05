@@ -153,7 +153,7 @@ class Task(BaseModel):
         null=True,
         blank=True,
     )
-    due_date = models.DateTimeField(_("Due date"), null=True, blank=True)
+    due_date = models.DateTimeField(_("Due date"), null=True, blank=True, db_index=True)
     progress_cache = models.DecimalField(
         _("Progress Percent"), max_digits=5, decimal_places=2, default=0
     )
@@ -176,6 +176,9 @@ class Task(BaseModel):
         blank=True,
     )
     order = models.PositiveIntegerField(_("Kanban Order"), default=0)
+    is_finished = models.BooleanField(
+        _("Is Finished"), default=False, db_index=True
+    )
 
     class Meta:
         verbose_name = _("Task")
@@ -206,18 +209,12 @@ class Task(BaseModel):
                 pass
 
     def save(self, *args, **kwargs):
-        self.clean()
         super().save(*args, **kwargs)
 
     @property
     def is_completed(self):
-        """Returns True if the task status code is 'done'."""
-        if self.status_id:
-            try:
-                return self.status.code == "done"
-            except Exception:
-                pass
-        return False
+        """Returns True if the task is finished."""
+        return self.is_finished
 
     def _progress_percent_internal(self, seen=None):
         """Recursive progress calculation with cycle detection."""
