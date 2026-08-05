@@ -1,7 +1,6 @@
 import datetime
 from django.utils import timezone
 from django.db.models import Q
-from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
@@ -19,7 +18,7 @@ from .serializers import (
     TimeOffRequestSerializer, TimeOffRequestWriteSerializer,
     HolidaySerializer, TimesheetDailySerializer, TimesheetTeamSerializer
 )
-from .services import TimeLogService, AttendanceService, TimeOffRequestService, HolidayService, TimesheetService
+from .services import TimeLogService, AttendanceService, TimeOffRequestService, TimesheetService
 from .permissions import (
     IsAttendanceOwnerOrAdmin, IsTimeLogOwnerOrAdmin,
     IsTimeOffRequestPermission, IsHolidayPermission, IsTimesheetPermission
@@ -173,6 +172,21 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.save(update_fields=["is_deleted"])
 
+    @action(detail=False, methods=["post"], url_path="manual-timer")
+    def manual_timer(self, request):
+        serializer = TimeLogWriteSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        task = serializer.validated_data.get("task")
+        start_time = serializer.validated_data.get("start_time")
+        end_time = serializer.validated_data.get("end_time")
+        description = serializer.validated_data.get("description", "")
+        
+        if not start_time or not end_time:
+            return Response({"error": "start_time and end_time are required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        log = TimeLogService.create_manual_log(request.user, task, start_time, end_time, description)
+        return Response(TimeLogSerializer(log).data, status=status.HTTP_201_CREATED)
+
     @action(detail=False, methods=["post"], url_path="start-timer")
     def start_timer(self, request):
         task_id = request.data.get("task")
@@ -184,7 +198,8 @@ class TimeLogViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="stop-timer")
     def stop_timer(self, request, pk=None):
-        timer = TimeLogService.stop_timer(request.user, pk)
+        # Manual stop by user → task stays in current status (auto_move=False)
+        timer = TimeLogService.stop_timer(request.user, pk, auto_move=False)
         return Response(TimeLogSerializer(timer).data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"], url_path="active-timer")
@@ -198,6 +213,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     def cancel_timer(self, request, pk=None):
         timer = TimeLogService.cancel_timer(request.user, pk)
         return Response(TimeLogSerializer(timer).data, status=status.HTTP_200_OK)
+
 
 
 class TimeOffRequestViewSet(viewsets.ModelViewSet):
