@@ -7,7 +7,7 @@ from accounts.models import User
 # (Assuming we have basic serializers for User and Org, we use PrimaryKeyRelatedField for writes, 
 # and a simple representation for reads)
 
-class MinimalUserSerializer(serializers.ModelSerializer):
+class UserMinimalSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -30,7 +30,7 @@ class MinimalUserSerializer(serializers.ModelSerializer):
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
-    user = MinimalUserSerializer(read_only=True)
+    user = UserMinimalSerializer(read_only=True)
     
     class Meta:
         model = Attendance
@@ -79,7 +79,7 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
 
 
 class TimeLogSerializer(serializers.ModelSerializer):
-    user = MinimalUserSerializer(read_only=True)
+    user = UserMinimalSerializer(read_only=True)
     
     class Meta:
         model = TimeLog
@@ -135,8 +135,8 @@ class TimeLogWriteSerializer(serializers.ModelSerializer):
 
 
 class TimeOffRequestSerializer(serializers.ModelSerializer):
-    user = MinimalUserSerializer(read_only=True)
-    approved_by = MinimalUserSerializer(read_only=True)
+    user = UserMinimalSerializer(read_only=True)
+    approved_by = UserMinimalSerializer(read_only=True)
 
     class Meta:
         model = TimeOffRequest
