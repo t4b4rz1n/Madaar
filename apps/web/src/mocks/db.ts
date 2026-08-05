@@ -73,7 +73,7 @@ export let mockUsers: User[] = [
     first_name: "Artanis",
     last_name: "Hierarch",
     is_active: true,
-    is_staff: true,
+    is_staff: false,
     role_id: 6,
     profile_image: null,
   },
@@ -242,6 +242,7 @@ export let mockRoles: MockRole[] = [
     is_staff: true,
     permissions: [
       "users.manage",
+      "users.view",
       "roles.manage",
       "discounts.view",
       "notifications.view",
@@ -258,7 +259,12 @@ export let mockRoles: MockRole[] = [
     description: "Frontend developer for UI design and client-side features.",
     is_active: true,
     is_staff: false,
-    permissions: ["notifications.view", "notifications.send", "tickets.view", "tickets.manage"],
+    permissions: [
+      "notifications.view",
+      "notifications.send",
+      "tickets.view",
+      "tickets.manage",
+    ],
   },
   {
     id: 3,
@@ -266,7 +272,12 @@ export let mockRoles: MockRole[] = [
     description: "Backend developer for API management and system core.",
     is_active: true,
     is_staff: false,
-    permissions: ["notifications.view", "notifications.send", "tickets.view", "tickets.manage"],
+    permissions: [
+      "notifications.view",
+      "notifications.send",
+      "tickets.view",
+      "tickets.manage",
+    ],
   },
   {
     id: 4,
@@ -292,13 +303,7 @@ export let mockRoles: MockRole[] = [
       "Team lead; managing teams, coordinating members, and reviewing tickets.",
     is_active: true,
     is_staff: false,
-    permissions: [
-      "teams.view",
-      "teams.manage",
-      "tickets.view",
-      "tickets.manage",
-      "users.manage",
-    ],
+    permissions: ["teams.view", "teams.manage", "tickets.view", "users.view"],
   },
   {
     id: 7,

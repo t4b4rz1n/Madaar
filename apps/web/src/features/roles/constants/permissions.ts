@@ -9,6 +9,7 @@ export interface PermissionItem {
 export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   // Users
   { id: "users.manage", label: "Manage Users", group: "USERS" },
+  { id: "users.view", label: "View Users", group: "USERS" },
 
   // Roles
   { id: "roles.manage", label: "Manage Roles", group: "ROLES" },
