@@ -16,6 +16,7 @@ from .models import (
     TaskStatus,
 )
 
+
 class UserMinimalSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField(read_only=True)
 
@@ -38,6 +39,7 @@ class UserMinimalSerializer(serializers.ModelSerializer):
         if request is not None:
             return request.build_absolute_uri(obj.avatar.url)
         return obj.avatar.url
+
 
 class BoardMinimalSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)

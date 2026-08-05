@@ -176,9 +176,7 @@ class Task(BaseModel):
         blank=True,
     )
     order = models.PositiveIntegerField(_("Kanban Order"), default=0)
-    is_finished = models.BooleanField(
-        _("Is Finished"), default=False, db_index=True
-    )
+    is_finished = models.BooleanField(_("Is Finished"), default=False, db_index=True)
 
     class Meta:
         verbose_name = _("Task")
@@ -202,9 +200,19 @@ class Task(BaseModel):
         super().clean()
         if self.status_id and self.project_id:
             try:
-                if self.status.board and self.status.board.project_id != self.project_id:
+                if (
+                    self.status.board
+                    and self.status.board.project_id != self.project_id
+                ):
                     from django.core.exceptions import ValidationError
-                    raise ValidationError({"status": _("Status must belong to a board in the same project.")})
+
+                    raise ValidationError(
+                        {
+                            "status": _(
+                                "Status must belong to a board in the same project."
+                            )
+                        }
+                    )
             except Exception:
                 pass
 

@@ -1,4 +1,4 @@
-from django.db.models import Count, Q, Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef, Q
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -250,7 +250,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             .annotate(
                 is_active_timer_running=Exists(
                     TimeLog.objects.filter(
-                        task=OuterRef('pk'), is_active=True, is_deleted=False
+                        task=OuterRef("pk"), is_active=True, is_deleted=False
                     )
                 )
             )
@@ -376,16 +376,24 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         if not task.status or not task.status.board:
             from rest_framework.exceptions import ValidationError
-            raise ValidationError(
-                {"error": _("Task has no valid status.")}
-            )
 
-        is_done = task.status.code.lower() == "done" if task.status and task.status.code else False
+            raise ValidationError({"error": _("Task has no valid status.")})
+
+        is_done = (
+            task.status.code.lower() == "done"
+            if task.status and task.status.code
+            else False
+        )
 
         if is_done:
             from rest_framework.exceptions import ValidationError
+
             raise ValidationError(
-                {"error": _("Task is completed (Done) and locked. It cannot be moved to another status.")}
+                {
+                    "error": _(
+                        "Task is completed (Done) and locked. It cannot be moved to another status."
+                    )
+                }
             )
 
         target_code = "done"
@@ -571,9 +579,7 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
 
         qs = (
             AsyncStandup.objects.select_related("user")
-            .filter(
-                is_deleted=False, organization_id__in=org_ids
-            )
+            .filter(is_deleted=False, organization_id__in=org_ids)
             .distinct()
         )
 

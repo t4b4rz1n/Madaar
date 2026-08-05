@@ -329,10 +329,12 @@ class TaskService:
                 )
 
         task_code = task.status.code.lower() if task.status and task.status.code else ""
-        if task_code == 'done' and new_status and task.status != new_status:
-            raise ValidationError(_("Task is completed (Done) and locked. It cannot be moved to another status."))
-
-
+        if task_code == "done" and new_status and task.status != new_status:
+            raise ValidationError(
+                _(
+                    "Task is completed (Done) and locked. It cannot be moved to another status."
+                )
+            )
 
         action_parts = []
 
@@ -370,12 +372,20 @@ class TaskService:
 
                 if code == "done":
                     # Check if any time was tracked (spent_hours > 0)
-                    current_spent = Task.objects.filter(pk=task.pk).values_list('spent_hours', flat=True).first()
+                    current_spent = (
+                        Task.objects.filter(pk=task.pk)
+                        .values_list("spent_hours", flat=True)
+                        .first()
+                    )
                     if not current_spent or current_spent <= 0:
-                        raise ValidationError({
-                            "detail": _("Cannot move to Done: No time has been tracked for this task."),
-                            "code": "NEEDS_MANUAL_TIME"
-                        })
+                        raise ValidationError(
+                            {
+                                "detail": _(
+                                    "Cannot move to Done: No time has been tracked for this task."
+                                ),
+                                "code": "NEEDS_MANUAL_TIME",
+                            }
+                        )
                     task.spent_hours = current_spent
                     task.is_finished = True
 

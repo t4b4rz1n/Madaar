@@ -1,11 +1,13 @@
+import datetime
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-import datetime
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from attendance.models import TimeLog
 from organizations.models import Organization, OrganizationMembership
 from projects.models import Project, ProjectMember
 from tasks.cascade_services import TaskCascadeService
@@ -19,7 +21,6 @@ from tasks.models import (
     TaskStatus,
 )
 from tasks.services import BoardService
-from attendance.models import TimeLog
 
 User = get_user_model()
 
@@ -426,10 +427,16 @@ class TasksRBACTestCase(APITestCase):
     def test_employee_standups_filtered_to_own_only(self):
         """Employee role should only see their own standup reports when listing standups."""
         admin_standup = AsyncStandup.objects.create(
-            user=self.admin, yesterday_work="Admin Y", today_work="Admin T", organization=self.org
+            user=self.admin,
+            yesterday_work="Admin Y",
+            today_work="Admin T",
+            organization=self.org,
         )
         emp_standup = AsyncStandup.objects.create(
-            user=self.employee, yesterday_work="Emp Y", today_work="Emp T", organization=self.org
+            user=self.employee,
+            yesterday_work="Emp Y",
+            today_work="Emp T",
+            organization=self.org,
         )
 
         self.client.force_authenticate(user=self.employee)
@@ -469,7 +476,10 @@ class TasksRBACTestCase(APITestCase):
 
     def test_standup_retrieve(self):
         standup = AsyncStandup.objects.create(
-            user=self.employee, yesterday_work="Y", today_work="T", organization=self.org
+            user=self.employee,
+            yesterday_work="Y",
+            today_work="T",
+            organization=self.org,
         )
         self.client.force_authenticate(user=self.employee)
         url = reverse("task-standup-detail", kwargs={"pk": standup.id})
@@ -639,7 +649,12 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             status=self.status_todo,
             spent_hours=1,  # Required to move to done
         )
-        TimeLog.objects.create(task=task, user=self.user, date=timezone.now().date(), start_time=timezone.now() - datetime.timedelta(hours=1))
+        TimeLog.objects.create(
+            task=task,
+            user=self.user,
+            date=timezone.now().date(),
+            start_time=timezone.now() - datetime.timedelta(hours=1),
+        )
         url = reverse("task-move-task", kwargs={"pk": task.id})
         res = self.client.post(
             url,
@@ -648,7 +663,9 @@ class TaskCRUDAndProgressTestCase(APITestCase):
                 "order": 5,
             },
         )
-        self.assertEqual(res.status_code, status.HTTP_200_OK, msg=f"Failed to move task: {res.data}")
+        self.assertEqual(
+            res.status_code, status.HTTP_200_OK, msg=f"Failed to move task: {res.data}"
+        )
         task.refresh_from_db()
         self.assertEqual(task.status, self.status_done)
         self.assertEqual(task.order, 5)
@@ -783,8 +800,10 @@ class TaskCRUDAndProgressTestCase(APITestCase):
 
     def test_task_activities_endpoint(self):
         task = Task.objects.create(
-            project=self.project, title="Activity Test",
-            reporter=self.user, status=self.status_todo,
+            project=self.project,
+            title="Activity Test",
+            reporter=self.user,
+            status=self.status_todo,
         )
         url = reverse("task-activities", kwargs={"pk": task.id})
         res = self.client.get(url)
@@ -792,11 +811,18 @@ class TaskCRUDAndProgressTestCase(APITestCase):
 
     def test_mark_done_endpoint(self):
         task = Task.objects.create(
-            project=self.project, title="Mark Done Task",
-            reporter=self.user, status=self.status_todo,
+            project=self.project,
+            title="Mark Done Task",
+            reporter=self.user,
+            status=self.status_todo,
             spent_hours=1,  # Required to move to done
         )
-        TimeLog.objects.create(task=task, user=self.user, date=timezone.now().date(), start_time=timezone.now() - datetime.timedelta(hours=1))
+        TimeLog.objects.create(
+            task=task,
+            user=self.user,
+            date=timezone.now().date(),
+            start_time=timezone.now() - datetime.timedelta(hours=1),
+        )
         url = reverse("task-mark-done", kwargs={"pk": task.id})
         res = self.client.post(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
