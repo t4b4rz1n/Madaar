@@ -1,13 +1,17 @@
 import datetime
+import threading
 from django.db import transaction
 from django.utils import timezone
-from django.db.models import Sum, F, Q
-from django.db.models.functions import TruncDate
+from django.db.models import Sum, F
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from .models import Attendance, TimeLog, TimeOffRequest, Holiday, AttendanceSetting
+
+# Thread-local flag to prevent recursive start_timer → move_task → start_timer calls
+_start_timer_local = threading.local()
+
 
 class AttendanceService:
     @staticmethod
@@ -84,8 +88,6 @@ class AttendanceService:
 
 
 class TimeLogService:
-    # Guard flag to prevent start_timer → move_task → start_timer infinite loop
-    _in_start_timer = False
 
     @staticmethod
     @transaction.atomic
@@ -94,12 +96,25 @@ class TimeLogService:
         if task.assignee != user:
             raise PermissionDenied(_("You can only start a timer for tasks assigned to you."))
 
+        # Org isolation check
+        if task.project and task.project.organization_id:
+            if not user.is_staff and not user.is_superuser:
+                is_member = user.org_memberships.filter(
+                    organization_id=task.project.organization_id
+                ).exists()
+                if not is_member:
+                    raise PermissionDenied(
+                        _("You are not a member of this organization.")
+                    )
+
         # Guard against re-entrant calls (move_task → start_timer loop)
-        if TimeLogService._in_start_timer:
+        if getattr(_start_timer_local, 'in_start_timer', False):
             return None
 
         # Stop existing active timer for this user
-        active = TimeLogService.get_active_timer(user)
+        active = TimeLog.objects.select_for_update().filter(
+            user=user, is_active=True, is_deleted=False
+        ).first()
         if active and active.id:
             TimeLogService.stop_timer(user, active.id)
 
@@ -113,20 +128,20 @@ class TimeLogService:
             is_active=True
         )
 
-        # Auto-move task to Doing if it's not already in Doing
-        # Use guard to prevent circular: start_timer → move_task → start_timer
-        if task.status and task.status.code.lower() != 'doing':
+        # Auto-move task to Doing ONLY if it's currently in Todo
+        # If task is in Review or any other status, timer starts but no status change happens
+        if task.status and task.status.code.lower() == 'todo':
             from tasks.models import TaskStatus
             doing_status = TaskStatus.objects.filter(
                 board=task.status.board, code__iexact='doing'
             ).first()
             if doing_status:
-                TimeLogService._in_start_timer = True
+                _start_timer_local.in_start_timer = True
                 try:
                     from tasks.services import TaskService
                     TaskService.move_task(task, user, new_status=doing_status)
                 finally:
-                    TimeLogService._in_start_timer = False
+                    _start_timer_local.in_start_timer = False
 
         # Log activity
         from tasks.models import TaskActivityLog
@@ -168,6 +183,8 @@ class TimeLogService:
             action=f"Stopped timer after {timer.duration_seconds} seconds"
         )
 
+        # auto_move=True means this is a system-triggered stop (e.g., drag to Review/Done).
+        # auto_move=False means the user manually pressed Stop → task stays in current status.
         if auto_move and timer.task.status and timer.task.status.code.lower() == 'doing':
             from tasks.models import TaskStatus
             review_status = TaskStatus.objects.filter(
@@ -175,7 +192,6 @@ class TimeLogService:
             ).first()
             if review_status:
                 from tasks.services import TaskService
-                # Refresh task so it gets updated spent_hours etc. (not strictly necessary but safe)
                 timer.task.refresh_from_db()
                 TaskService.move_task(timer.task, user, new_status=review_status)
 
@@ -204,6 +220,17 @@ class TimeLogService:
         Task.objects.filter(pk=task.pk).update(
             spent_hours=F('spent_hours') + duration_seconds / 3600.0
         )
+
+        # Auto-move task to Doing ONLY if it's in Todo
+        if task.status and task.status.code.lower() == 'todo':
+            from tasks.models import TaskStatus
+            from tasks.services import TaskService
+            doing_status = TaskStatus.objects.filter(
+                board=task.status.board, code__iexact='doing'
+            ).first()
+            if doing_status:
+                TaskService.move_task(task, user, new_status=doing_status)
+
         return log
 
     @staticmethod
