@@ -7,19 +7,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('attendance', '0004_add_ordering_to_models'),
-        ('projects', '0003_alter_projectmember_options_and_more'),
-        ('tasks', '0021_task_is_finished_alter_task_due_date'),
+        ("attendance", "0004_add_ordering_to_models"),
+        ("projects", "0003_alter_projectmember_options_and_more"),
+        ("tasks", "0021_task_is_finished_alter_task_due_date"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='timelog',
-            index=models.Index(fields=['user', 'is_active'], name='attendance__user_id_367424_idx'),
+            model_name="timelog",
+            index=models.Index(
+                fields=["user", "is_active"], name="attendance__user_id_367424_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='timelog',
-            index=models.Index(fields=['task', 'is_active'], name='attendance__task_id_654297_idx'),
+            model_name="timelog",
+            index=models.Index(
+                fields=["task", "is_active"], name="attendance__task_id_654297_idx"
+            ),
         ),
     ]

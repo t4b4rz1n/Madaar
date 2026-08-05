@@ -11,112 +11,363 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('organizations', '0002_team_parent_team'),
-        ('projects', '0003_alter_projectmember_options_and_more'),
-        ('tasks', '0019_alter_board_order_alter_task_order_and_more'),
+        ("organizations", "0002_team_parent_team"),
+        ("projects", "0003_alter_projectmember_options_and_more"),
+        ("tasks", "0019_alter_board_order_alter_task_order_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Holiday',
+            name="Holiday",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('is_deleted', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=255, verbose_name='Holiday Name')),
-                ('date', models.DateField(db_index=True, unique=True, verbose_name='Date')),
-                ('is_official', models.BooleanField(default=True, verbose_name='Is Official Holiday')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=255, verbose_name="Holiday Name")),
+                (
+                    "date",
+                    models.DateField(db_index=True, unique=True, verbose_name="Date"),
+                ),
+                (
+                    "is_official",
+                    models.BooleanField(
+                        default=True, verbose_name="Is Official Holiday"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Holiday',
-                'verbose_name_plural': 'Holidays',
-                'ordering': ['-date'],
+                "verbose_name": "Holiday",
+                "verbose_name_plural": "Holidays",
+                "ordering": ["-date"],
             },
         ),
         migrations.CreateModel(
-            name='AttendanceSetting',
+            name="AttendanceSetting",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('is_deleted', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('expected_daily_hours', models.DecimalField(decimal_places=2, default=8.0, max_digits=4, verbose_name='Expected Daily Working Hours')),
-                ('organization', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='attendance_setting', to='organizations.organization')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "expected_daily_hours",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=8.0,
+                        max_digits=4,
+                        verbose_name="Expected Daily Working Hours",
+                    ),
+                ),
+                (
+                    "organization",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attendance_setting",
+                        to="organizations.organization",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Attendance Setting',
-                'verbose_name_plural': 'Attendance Settings',
+                "verbose_name": "Attendance Setting",
+                "verbose_name_plural": "Attendance Settings",
             },
         ),
         migrations.CreateModel(
-            name='Attendance',
+            name="Attendance",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('is_deleted', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('date', models.DateField(db_index=True, verbose_name='Date')),
-                ('check_in', models.DateTimeField(blank=True, null=True, verbose_name='Check-in Time')),
-                ('check_out', models.DateTimeField(blank=True, null=True, verbose_name='Check-out Time')),
-                ('is_remote', models.BooleanField(default=False, verbose_name='Is Remote Work')),
-                ('overtime_minutes', models.PositiveIntegerField(default=0, verbose_name='Overtime Minutes')),
-                ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendances', to='organizations.organization')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendances', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("date", models.DateField(db_index=True, verbose_name="Date")),
+                (
+                    "check_in",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Check-in Time"
+                    ),
+                ),
+                (
+                    "check_out",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Check-out Time"
+                    ),
+                ),
+                (
+                    "is_remote",
+                    models.BooleanField(default=False, verbose_name="Is Remote Work"),
+                ),
+                (
+                    "overtime_minutes",
+                    models.PositiveIntegerField(
+                        default=0, verbose_name="Overtime Minutes"
+                    ),
+                ),
+                (
+                    "organization",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attendances",
+                        to="organizations.organization",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attendances",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Attendance',
-                'verbose_name_plural': 'Attendances',
-                'indexes': [models.Index(fields=['user', 'date'], name='attendance__user_id_c01e0c_idx'), models.Index(fields=['organization', 'date'], name='attendance__organiz_886ec1_idx')],
-                'constraints': [models.UniqueConstraint(condition=models.Q(('is_deleted', False)), fields=('user', 'date'), name='unique_daily_attendance'), models.CheckConstraint(condition=models.Q(('check_out__gte', models.F('check_in')), ('check_out__isnull', True), _connector='OR'), name='check_out_after_check_in')],
+                "verbose_name": "Attendance",
+                "verbose_name_plural": "Attendances",
+                "indexes": [
+                    models.Index(
+                        fields=["user", "date"], name="attendance__user_id_c01e0c_idx"
+                    ),
+                    models.Index(
+                        fields=["organization", "date"],
+                        name="attendance__organiz_886ec1_idx",
+                    ),
+                ],
+                "constraints": [
+                    models.UniqueConstraint(
+                        condition=models.Q(("is_deleted", False)),
+                        fields=("user", "date"),
+                        name="unique_daily_attendance",
+                    ),
+                    models.CheckConstraint(
+                        condition=models.Q(
+                            ("check_out__gte", models.F("check_in")),
+                            ("check_out__isnull", True),
+                            _connector="OR",
+                        ),
+                        name="check_out_after_check_in",
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='TimeLog',
+            name="TimeLog",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('is_deleted', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('date', models.DateField(db_index=True, verbose_name='Date')),
-                ('start_time', models.DateTimeField(db_index=True, verbose_name='Start Time')),
-                ('end_time', models.DateTimeField(blank=True, null=True, verbose_name='End Time')),
-                ('duration_seconds', models.PositiveIntegerField(default=0, verbose_name='Duration in Seconds')),
-                ('is_active', models.BooleanField(db_index=True, default=True, verbose_name='Is Active Timer')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='time_logs', to='projects.project')),
-                ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='time_logs', to='tasks.task')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='time_logs', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("date", models.DateField(db_index=True, verbose_name="Date")),
+                (
+                    "start_time",
+                    models.DateTimeField(db_index=True, verbose_name="Start Time"),
+                ),
+                (
+                    "end_time",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="End Time"
+                    ),
+                ),
+                (
+                    "duration_seconds",
+                    models.PositiveIntegerField(
+                        default=0, verbose_name="Duration in Seconds"
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        db_index=True, default=True, verbose_name="Is Active Timer"
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(blank=True, verbose_name="Description"),
+                ),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="time_logs",
+                        to="projects.project",
+                    ),
+                ),
+                (
+                    "task",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="time_logs",
+                        to="tasks.task",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="time_logs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Time Log',
-                'verbose_name_plural': 'Time Logs',
-                'indexes': [models.Index(fields=['user', 'date'], name='attendance__user_id_d3fc6b_idx'), models.Index(fields=['task', 'date'], name='attendance__task_id_ffe2a7_idx'), models.Index(fields=['project', 'date'], name='attendance__project_0e1a14_idx')],
-                'constraints': [models.UniqueConstraint(condition=models.Q(('is_active', True), ('is_deleted', False)), fields=('user',), name='unique_active_timer_per_user'), models.CheckConstraint(condition=models.Q(('end_time__gte', models.F('start_time')), ('end_time__isnull', True), _connector='OR'), name='end_time_after_start_time')],
+                "verbose_name": "Time Log",
+                "verbose_name_plural": "Time Logs",
+                "indexes": [
+                    models.Index(
+                        fields=["user", "date"], name="attendance__user_id_d3fc6b_idx"
+                    ),
+                    models.Index(
+                        fields=["task", "date"], name="attendance__task_id_ffe2a7_idx"
+                    ),
+                    models.Index(
+                        fields=["project", "date"],
+                        name="attendance__project_0e1a14_idx",
+                    ),
+                ],
+                "constraints": [
+                    models.UniqueConstraint(
+                        condition=models.Q(("is_active", True), ("is_deleted", False)),
+                        fields=("user",),
+                        name="unique_active_timer_per_user",
+                    ),
+                    models.CheckConstraint(
+                        condition=models.Q(
+                            ("end_time__gte", models.F("start_time")),
+                            ("end_time__isnull", True),
+                            _connector="OR",
+                        ),
+                        name="end_time_after_start_time",
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='TimeOffRequest',
+            name="TimeOffRequest",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('is_deleted', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('request_type', models.CharField(choices=[('vacation', 'Vacation'), ('sick', 'Sick Leave'), ('hourly', 'Hourly Leave'), ('remote', 'Remote Work Request'), ('overtime', 'Overtime')], max_length=20, verbose_name='Request Type')),
-                ('start_datetime', models.DateTimeField(verbose_name='Start Date/Time')),
-                ('end_datetime', models.DateTimeField(verbose_name='End Date/Time')),
-                ('reason', models.TextField(blank=True, verbose_name='Reason')),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')], db_index=True, default='pending', max_length=20, verbose_name='Status')),
-                ('approved_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_timeoffs', to=settings.AUTH_USER_MODEL)),
-                ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='timeoff_requests', to='organizations.organization')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='timeoff_requests', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "request_type",
+                    models.CharField(
+                        choices=[
+                            ("vacation", "Vacation"),
+                            ("sick", "Sick Leave"),
+                            ("hourly", "Hourly Leave"),
+                            ("remote", "Remote Work Request"),
+                            ("overtime", "Overtime"),
+                        ],
+                        max_length=20,
+                        verbose_name="Request Type",
+                    ),
+                ),
+                (
+                    "start_datetime",
+                    models.DateTimeField(verbose_name="Start Date/Time"),
+                ),
+                ("end_datetime", models.DateTimeField(verbose_name="End Date/Time")),
+                ("reason", models.TextField(blank=True, verbose_name="Reason")),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("approved", "Approved"),
+                            ("rejected", "Rejected"),
+                        ],
+                        db_index=True,
+                        default="pending",
+                        max_length=20,
+                        verbose_name="Status",
+                    ),
+                ),
+                (
+                    "approved_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="approved_timeoffs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "organization",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="timeoff_requests",
+                        to="organizations.organization",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="timeoff_requests",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Time Off Request',
-                'verbose_name_plural': 'Time Off Requests',
-                'indexes': [models.Index(fields=['user', 'status'], name='attendance__user_id_5567b4_idx'), models.Index(fields=['organization', 'status'], name='attendance__organiz_515c30_idx')],
-                'constraints': [models.CheckConstraint(condition=models.Q(('end_datetime__gte', models.F('start_datetime'))), name='end_datetime_after_start_datetime')],
+                "verbose_name": "Time Off Request",
+                "verbose_name_plural": "Time Off Requests",
+                "indexes": [
+                    models.Index(
+                        fields=["user", "status"], name="attendance__user_id_5567b4_idx"
+                    ),
+                    models.Index(
+                        fields=["organization", "status"],
+                        name="attendance__organiz_515c30_idx",
+                    ),
+                ],
+                "constraints": [
+                    models.CheckConstraint(
+                        condition=models.Q(
+                            ("end_datetime__gte", models.F("start_datetime"))
+                        ),
+                        name="end_datetime_after_start_datetime",
+                    )
+                ],
             },
         ),
     ]

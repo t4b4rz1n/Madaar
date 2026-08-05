@@ -7,36 +7,54 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('attendance', '0001_initial'),
-        ('organizations', '0002_team_parent_team'),
-        ('projects', '0003_alter_projectmember_options_and_more'),
-        ('tasks', '0019_alter_board_order_alter_task_order_and_more'),
+        ("attendance", "0001_initial"),
+        ("organizations", "0002_team_parent_team"),
+        ("projects", "0003_alter_projectmember_options_and_more"),
+        ("tasks", "0019_alter_board_order_alter_task_order_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='holiday',
-            name='description',
-            field=models.TextField(blank=True, verbose_name='Description'),
+            model_name="holiday",
+            name="description",
+            field=models.TextField(blank=True, verbose_name="Description"),
         ),
         migrations.AddField(
-            model_name='holiday',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='holidays', to='organizations.organization'),
+            model_name="holiday",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="holidays",
+                to="organizations.organization",
+            ),
         ),
         migrations.AddField(
-            model_name='timeoffrequest',
-            name='manager_note',
-            field=models.TextField(blank=True, verbose_name='Manager Note'),
+            model_name="timeoffrequest",
+            name="manager_note",
+            field=models.TextField(blank=True, verbose_name="Manager Note"),
         ),
         migrations.AlterField(
-            model_name='timelog',
-            name='project',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='time_logs', to='projects.project'),
+            model_name="timelog",
+            name="project",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="time_logs",
+                to="projects.project",
+            ),
         ),
         migrations.AlterField(
-            model_name='timelog',
-            name='task',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='time_logs', to='tasks.task'),
+            model_name="timelog",
+            name="task",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="time_logs",
+                to="tasks.task",
+            ),
         ),
     ]

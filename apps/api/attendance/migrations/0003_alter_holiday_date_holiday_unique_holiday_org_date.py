@@ -6,18 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('attendance', '0002_holiday_description_holiday_organization_and_more'),
-        ('organizations', '0002_team_parent_team'),
+        ("attendance", "0002_holiday_description_holiday_organization_and_more"),
+        ("organizations", "0002_team_parent_team"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='holiday',
-            name='date',
-            field=models.DateField(db_index=True, verbose_name='Date'),
+            model_name="holiday",
+            name="date",
+            field=models.DateField(db_index=True, verbose_name="Date"),
         ),
         migrations.AddConstraint(
-            model_name='holiday',
-            constraint=models.UniqueConstraint(fields=('date', 'organization'), name='unique_holiday_org_date'),
+            model_name="holiday",
+            constraint=models.UniqueConstraint(
+                fields=("date", "organization"), name="unique_holiday_org_date"
+            ),
         ),
     ]
