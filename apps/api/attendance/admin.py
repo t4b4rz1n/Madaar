@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Attendance, TimeLog, TimeOffRequest, Holiday, AttendanceSetting
+
+from .models import Attendance, AttendanceSetting, Holiday, TimeLog, TimeOffRequest
+
 
 @admin.register(AttendanceSetting)
 class AttendanceSettingAdmin(admin.ModelAdmin):
@@ -19,9 +21,18 @@ class AttendanceSettingAdmin(admin.ModelAdmin):
         for obj in queryset:
             obj.hard_delete()
 
+
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ("user", "organization", "date", "check_in", "check_out", "overtime_minutes", "is_remote")
+    list_display = (
+        "user",
+        "organization",
+        "date",
+        "check_in",
+        "check_out",
+        "overtime_minutes",
+        "is_remote",
+    )
     list_select_related = ("user", "organization")
     list_filter = ("date", "is_remote", "is_deleted", "organization")
     search_fields = ("user__username", "user__email")
@@ -37,9 +48,19 @@ class AttendanceAdmin(admin.ModelAdmin):
         for obj in queryset:
             obj.hard_delete()
 
+
 @admin.register(TimeLog)
 class TimeLogAdmin(admin.ModelAdmin):
-    list_display = ("user", "task", "project", "date", "start_time", "end_time", "is_active", "duration_seconds")
+    list_display = (
+        "user",
+        "task",
+        "project",
+        "date",
+        "start_time",
+        "end_time",
+        "is_active",
+        "duration_seconds",
+    )
     list_select_related = ("user", "task", "project")
     list_filter = ("is_active", "date", "is_deleted")
     search_fields = ("user__username", "task__title", "project__name")
@@ -55,9 +76,17 @@ class TimeLogAdmin(admin.ModelAdmin):
         for obj in queryset:
             obj.hard_delete()
 
+
 @admin.register(TimeOffRequest)
 class TimeOffRequestAdmin(admin.ModelAdmin):
-    list_display = ("user", "organization", "request_type", "status", "start_datetime", "end_datetime")
+    list_display = (
+        "user",
+        "organization",
+        "request_type",
+        "status",
+        "start_datetime",
+        "end_datetime",
+    )
     list_select_related = ("user", "organization", "approved_by")
     list_filter = ("status", "request_type", "is_deleted", "organization")
     search_fields = ("user__username", "reason")
@@ -73,6 +102,7 @@ class TimeOffRequestAdmin(admin.ModelAdmin):
         for obj in queryset:
             obj.hard_delete()
 
+
 @admin.register(Holiday)
 class HolidayAdmin(admin.ModelAdmin):
     list_display = ("name", "date", "is_official")
@@ -82,7 +112,6 @@ class HolidayAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return self.model.all_objects.all()
-
 
     def delete_model(self, request, obj):
         obj.hard_delete()

@@ -1,27 +1,42 @@
 import datetime
-from django.utils import timezone
-from django.db.models import Q
-from rest_framework import viewsets, status
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from tasks.models import Task
-from organizations.models import Organization
 
-from .models import Attendance, TimeLog, TimeOffRequest, Holiday
-from .serializers import (
-    AttendanceSerializer, AttendanceWriteSerializer,
-    TimeLogSerializer, TimeLogWriteSerializer,
-    TimeOffRequestSerializer, TimeOffRequestWriteSerializer,
-    HolidaySerializer, TimesheetDailySerializer, TimesheetTeamSerializer
-)
-from .services import TimeLogService, AttendanceService, TimeOffRequestService, TimesheetService
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+
+from organizations.models import Organization
+from tasks.models import Task
+
+from .models import Attendance, Holiday, TimeLog, TimeOffRequest
 from .permissions import (
-    IsAttendanceOwnerOrAdmin, IsTimeLogOwnerOrAdmin,
-    IsTimeOffRequestPermission, IsHolidayPermission, IsTimesheetPermission
+    IsAttendanceOwnerOrAdmin,
+    IsHolidayPermission,
+    IsTimeLogOwnerOrAdmin,
+    IsTimeOffRequestPermission,
+    IsTimesheetPermission,
+)
+from .serializers import (
+    AttendanceSerializer,
+    AttendanceWriteSerializer,
+    HolidaySerializer,
+    TimeLogSerializer,
+    TimeLogWriteSerializer,
+    TimeOffRequestSerializer,
+    TimeOffRequestWriteSerializer,
+    TimesheetDailySerializer,
+    TimesheetTeamSerializer,
+)
+from .services import (
+    AttendanceService,
+    TimeLogService,
+    TimeOffRequestService,
+    TimesheetService,
 )
 
 
@@ -36,22 +51,24 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return AttendanceSerializer
 
     def get_queryset(self):
-        qs = Attendance.objects.select_related("user", "organization").filter(is_deleted=False)
+        qs = Attendance.objects.select_related("user", "organization").filter(
+            is_deleted=False
+        )
         user = self.request.user
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             qs = qs.all()
         else:
             orgs_managed = user.org_memberships.filter(
                 role__in=["owner", "admin", "hr"]
-            ).values_list('organization_id', flat=True)
-            teams_lead = user.team_memberships.filter(
-                role="lead"
-            ).values_list('team__memberships__user_id', flat=True)
+            ).values_list("organization_id", flat=True)
+            teams_lead = user.team_memberships.filter(role="lead").values_list(
+                "team__memberships__user_id", flat=True
+            )
 
             qs = qs.filter(
-                Q(user=user) |
-                Q(organization_id__in=orgs_managed) |
-                Q(user_id__in=teams_lead)
+                Q(user=user)
+                | Q(organization_id__in=orgs_managed)
+                | Q(user_id__in=teams_lead)
             ).distinct()
 
         # Optional filters
@@ -67,10 +84,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        AttendanceService.save_manual_attendance(self.request.user, serializer.validated_data)
-        
+        AttendanceService.save_manual_attendance(
+            self.request.user, serializer.validated_data
+        )
+
     def perform_update(self, serializer):
-        AttendanceService.save_manual_attendance(self.request.user, serializer.validated_data, instance=serializer.instance)
+        AttendanceService.save_manual_attendance(
+            self.request.user, serializer.validated_data, instance=serializer.instance
+        )
 
     def perform_destroy(self, instance):
         instance.is_deleted = True
@@ -80,7 +101,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def check_in(self, request):
         org_id = request.data.get("organization")
         if not org_id:
-            return Response({"error": "Organization ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Organization ID is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         org = get_object_or_404(Organization, id=org_id)
         attendance, created = AttendanceService.check_in(request.user, org)
         resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
@@ -89,13 +113,17 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"], url_path="check-out")
     def check_out(self, request):
         attendance = AttendanceService.check_out(request.user)
-        return Response(AttendanceSerializer(attendance).data, status=status.HTTP_200_OK)
+        return Response(
+            AttendanceSerializer(attendance).data, status=status.HTTP_200_OK
+        )
 
     @action(detail=False, methods=["get"], url_path="my-today")
     def my_today(self, request):
         attendance = AttendanceService.get_today_attendance(request.user)
         if not attendance:
-            return Response({"detail": "Not checked in today."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Not checked in today."}, status=status.HTTP_404_NOT_FOUND
+            )
         return Response(AttendanceSerializer(attendance).data)
 
 
@@ -119,15 +147,15 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         else:
             orgs_managed = user.org_memberships.filter(
                 role__in=["owner", "admin", "hr"]
-            ).values_list('organization_id', flat=True)
-            teams_lead = user.team_memberships.filter(
-                role="lead"
-            ).values_list('team__memberships__user_id', flat=True)
+            ).values_list("organization_id", flat=True)
+            teams_lead = user.team_memberships.filter(role="lead").values_list(
+                "team__memberships__user_id", flat=True
+            )
 
             qs = qs.filter(
-                Q(user=user) |
-                Q(project__organization_id__in=orgs_managed) |
-                Q(user_id__in=teams_lead)
+                Q(user=user)
+                | Q(project__organization_id__in=orgs_managed)
+                | Q(user_id__in=teams_lead)
             ).distinct()
 
         # Optional filters
@@ -139,7 +167,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             qs = qs.filter(project_id=project_id)
         is_active = self.request.query_params.get("is_active")
         if is_active is not None:
-            qs = qs.filter(is_active=is_active.lower() == 'true')
+            qs = qs.filter(is_active=is_active.lower() == "true")
         return qs
 
     def perform_create(self, serializer):
@@ -155,18 +183,25 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             user=self.request.user,
             project=task.project if task else None,
             duration_seconds=duration,
-            is_active=serializer.validated_data.get("is_active", not bool(end_time))
+            is_active=serializer.validated_data.get("is_active", not bool(end_time)),
         )
 
     def perform_update(self, serializer):
-        start_time = serializer.validated_data.get("start_time", serializer.instance.start_time)
-        end_time = serializer.validated_data.get("end_time", serializer.instance.end_time)
-        
+        start_time = serializer.validated_data.get(
+            "start_time", serializer.instance.start_time
+        )
+        end_time = serializer.validated_data.get(
+            "end_time", serializer.instance.end_time
+        )
+
         duration = 0
         if start_time and end_time:
             duration = int((end_time - start_time).total_seconds())
-            
-        serializer.save(duration_seconds=duration, is_active=serializer.validated_data.get("is_active", not bool(end_time)))
+
+        serializer.save(
+            duration_seconds=duration,
+            is_active=serializer.validated_data.get("is_active", not bool(end_time)),
+        )
 
     def perform_destroy(self, instance):
         instance.is_deleted = True
@@ -174,24 +209,33 @@ class TimeLogViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="manual-timer")
     def manual_timer(self, request):
-        serializer = TimeLogWriteSerializer(data=request.data, context={'request': request})
+        serializer = TimeLogWriteSerializer(
+            data=request.data, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
         task = serializer.validated_data.get("task")
         start_time = serializer.validated_data.get("start_time")
         end_time = serializer.validated_data.get("end_time")
         description = serializer.validated_data.get("description", "")
-        
+
         if not start_time or not end_time:
-            return Response({"error": "start_time and end_time are required"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        log = TimeLogService.create_manual_log(request.user, task, start_time, end_time, description)
+            return Response(
+                {"error": "start_time and end_time are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        log = TimeLogService.create_manual_log(
+            request.user, task, start_time, end_time, description
+        )
         return Response(TimeLogSerializer(log).data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["post"], url_path="start-timer")
     def start_timer(self, request):
         task_id = request.data.get("task")
         if not task_id:
-            return Response({"error": "task ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "task ID is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
         task = get_object_or_404(Task, id=task_id)
         timer = TimeLogService.start_timer(request.user, task)
         return Response(TimeLogSerializer(timer).data, status=status.HTTP_200_OK)
@@ -206,14 +250,15 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     def active_timer(self, request):
         timer = TimeLogService.get_active_timer(request.user)
         if not timer:
-            return Response({"detail": "No active timer."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "No active timer."}, status=status.HTTP_404_NOT_FOUND
+            )
         return Response(TimeLogSerializer(timer).data)
 
     @action(detail=True, methods=["post"], url_path="cancel")
     def cancel_timer(self, request, pk=None):
         timer = TimeLogService.cancel_timer(request.user, pk)
         return Response(TimeLogSerializer(timer).data, status=status.HTTP_200_OK)
-
 
 
 class TimeOffRequestViewSet(viewsets.ModelViewSet):
@@ -236,15 +281,15 @@ class TimeOffRequestViewSet(viewsets.ModelViewSet):
         else:
             orgs_managed = user.org_memberships.filter(
                 role__in=["owner", "admin", "hr"]
-            ).values_list('organization_id', flat=True)
-            teams_lead = user.team_memberships.filter(
-                role="lead"
-            ).values_list('team__memberships__user_id', flat=True)
+            ).values_list("organization_id", flat=True)
+            teams_lead = user.team_memberships.filter(role="lead").values_list(
+                "team__memberships__user_id", flat=True
+            )
 
             qs = qs.filter(
-                Q(user=user) |
-                Q(organization_id__in=orgs_managed) |
-                Q(user_id__in=teams_lead)
+                Q(user=user)
+                | Q(organization_id__in=orgs_managed)
+                | Q(user_id__in=teams_lead)
             ).distinct()
 
         # Optional filters
@@ -301,7 +346,7 @@ class TimesheetViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated, IsTimesheetPermission]
     pagination_class = PageNumberPagination
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    
+
     def paginate_and_respond(self, data, serializer_class):
         page = self.paginate_queryset(data)
         if page is not None:
@@ -316,8 +361,11 @@ class TimesheetViewSet(viewsets.GenericViewSet):
         try:
             date = datetime.date.fromisoformat(date_str)
         except ValueError:
-            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response(
+                {"error": "Invalid date format. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         data = TimesheetService.get_daily(request.user, date)
         # aggregate returns {'total_seconds': value}
         total = data.get("total_seconds") or 0
@@ -327,12 +375,17 @@ class TimesheetViewSet(viewsets.GenericViewSet):
     def weekly(self, request):
         date_str = request.query_params.get("week_start")
         if not date_str:
-            return Response({"error": "week_start is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "week_start is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
         try:
             date = datetime.date.fromisoformat(date_str)
         except ValueError:
-            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response(
+                {"error": "Invalid date format. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         data = TimesheetService.get_weekly(request.user, date)
         return self.paginate_and_respond(data, TimesheetDailySerializer)
 
@@ -341,8 +394,11 @@ class TimesheetViewSet(viewsets.GenericViewSet):
         year = request.query_params.get("year")
         month = request.query_params.get("month")
         if not year or not month:
-            return Response({"error": "year and month are required"}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response(
+                {"error": "year and month are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         data = TimesheetService.get_monthly(request.user, int(year), int(month))
         return self.paginate_and_respond(data, TimesheetDailySerializer)
 
@@ -352,9 +408,14 @@ class TimesheetViewSet(viewsets.GenericViewSet):
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
         if not org_id or not start_date or not end_date:
-            return Response({"error": "organization, start_date, end_date are required"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        data = TimesheetService.get_team_timesheet(request.user, org_id, start_date, end_date)
+            return Response(
+                {"error": "organization, start_date, end_date are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = TimesheetService.get_team_timesheet(
+            request.user, org_id, start_date, end_date
+        )
         return self.paginate_and_respond(data, TimesheetTeamSerializer)
 
     @action(detail=False, methods=["get"], url_path="project")
@@ -363,7 +424,10 @@ class TimesheetViewSet(viewsets.GenericViewSet):
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
         if not project_id or not start_date or not end_date:
-            return Response({"error": "project, start_date, end_date are required"}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response(
+                {"error": "project, start_date, end_date are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         data = TimesheetService.get_project_timesheet(project_id, start_date, end_date)
         return self.paginate_and_respond(data, TimesheetTeamSerializer)

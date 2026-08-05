@@ -10,27 +10,32 @@ class AttendanceSetting(BaseModel):
     """Per-organization working hours configuration."""
 
     organization = models.OneToOneField(
-        "organizations.Organization", on_delete=models.CASCADE, related_name="attendance_setting"
+        "organizations.Organization",
+        on_delete=models.CASCADE,
+        related_name="attendance_setting",
     )
     expected_daily_hours = models.DecimalField(
         _("Expected Daily Working Hours"), max_digits=4, decimal_places=2, default=8.00
     )
-    
+
     class Meta:
         verbose_name = _("Attendance Setting")
         verbose_name_plural = _("Attendance Settings")
-        
+
     def __str__(self):
         return f"Settings for {self.organization}"
 
 
 class Attendance(BaseModel):
     """Daily check-in/out records per user."""
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attendances"
     )
     organization = models.ForeignKey(
-        "organizations.Organization", on_delete=models.CASCADE, related_name="attendances"
+        "organizations.Organization",
+        on_delete=models.CASCADE,
+        related_name="attendances",
     )
     date = models.DateField(_("Date"), db_index=True)
     check_in = models.DateTimeField(_("Check-in Time"), null=True, blank=True)
@@ -44,14 +49,14 @@ class Attendance(BaseModel):
         ordering = ["-date", "-created_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "date"], 
+                fields=["user", "date"],
                 condition=Q(is_deleted=False),
-                name="unique_daily_attendance"
+                name="unique_daily_attendance",
             ),
             models.CheckConstraint(
-                check=Q(check_out__gte=F('check_in')) | Q(check_out__isnull=True),
-                name="check_out_after_check_in"
-            )
+                check=Q(check_out__gte=F("check_in")) | Q(check_out__isnull=True),
+                name="check_out_after_check_in",
+            ),
         ]
         indexes = [
             models.Index(fields=["user", "date"]),
@@ -64,14 +69,23 @@ class Attendance(BaseModel):
 
 class TimeLog(BaseModel):
     """Time tracking entries linked to tasks and projects."""
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="time_logs"
     )
     task = models.ForeignKey(
-        "tasks.Task", on_delete=models.SET_NULL, null=True, blank=True, related_name="time_logs"
+        "tasks.Task",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="time_logs",
     )
     project = models.ForeignKey(
-        "projects.Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="time_logs"
+        "projects.Project",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="time_logs",
     )
     date = models.DateField(_("Date"), db_index=True)
     start_time = models.DateTimeField(_("Start Time"), db_index=True)
@@ -95,12 +109,12 @@ class TimeLog(BaseModel):
             models.UniqueConstraint(
                 fields=["user"],
                 condition=Q(is_active=True, is_deleted=False),
-                name="unique_active_timer_per_user"
+                name="unique_active_timer_per_user",
             ),
             models.CheckConstraint(
-                check=Q(end_time__gte=F('start_time')) | Q(end_time__isnull=True),
-                name="end_time_after_start_time"
-            )
+                check=Q(end_time__gte=F("start_time")) | Q(end_time__isnull=True),
+                name="end_time_after_start_time",
+            ),
         ]
 
     def save(self, *args, **kwargs):
@@ -114,6 +128,7 @@ class TimeLog(BaseModel):
 
 class TimeOffRequest(BaseModel):
     """Leave, remote-work, and overtime requests."""
+
     class Type(models.TextChoices):
         VACATION = "vacation", _("Vacation")
         SICK = "sick", _("Sick Leave")
@@ -127,20 +142,34 @@ class TimeOffRequest(BaseModel):
         REJECTED = "rejected", _("Rejected")
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timeoff_requests"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="timeoff_requests",
     )
     organization = models.ForeignKey(
-        "organizations.Organization", on_delete=models.CASCADE, related_name="timeoff_requests"
+        "organizations.Organization",
+        on_delete=models.CASCADE,
+        related_name="timeoff_requests",
     )
-    request_type = models.CharField(_("Request Type"), max_length=20, choices=Type.choices)
+    request_type = models.CharField(
+        _("Request Type"), max_length=20, choices=Type.choices
+    )
     start_datetime = models.DateTimeField(_("Start Date/Time"))
     end_datetime = models.DateTimeField(_("End Date/Time"))
     reason = models.TextField(_("Reason"), blank=True)
     status = models.CharField(
-        _("Status"), max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
+        _("Status"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
     )
     approved_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_timeoffs"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_timeoffs",
     )
     manager_note = models.TextField(_("Manager Note"), blank=True)
 
@@ -154,8 +183,8 @@ class TimeOffRequest(BaseModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=Q(end_datetime__gte=F('start_datetime')),
-                name="end_datetime_after_start_datetime"
+                check=Q(end_datetime__gte=F("start_datetime")),
+                name="end_datetime_after_start_datetime",
             )
         ]
 
@@ -165,9 +194,14 @@ class TimeOffRequest(BaseModel):
 
 class Holiday(BaseModel):
     """Official and organization-specific holidays."""
+
     name = models.CharField(_("Holiday Name"), max_length=255)
     organization = models.ForeignKey(
-        "organizations.Organization", on_delete=models.CASCADE, related_name="holidays", null=True, blank=True
+        "organizations.Organization",
+        on_delete=models.CASCADE,
+        related_name="holidays",
+        null=True,
+        blank=True,
     )
     description = models.TextField(_("Description"), blank=True)
     date = models.DateField(_("Date"), db_index=True)
@@ -178,7 +212,9 @@ class Holiday(BaseModel):
         verbose_name_plural = _("Holidays")
         ordering = ["-date"]
         constraints = [
-            models.UniqueConstraint(fields=["date", "organization"], name="unique_holiday_org_date")
+            models.UniqueConstraint(
+                fields=["date", "organization"], name="unique_holiday_org_date"
+            )
         ]
 
     def __str__(self):
