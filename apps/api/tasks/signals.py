@@ -15,6 +15,7 @@ def update_task_progress_on_checklist_change(sender, instance, **kwargs):
 @receiver(post_save, sender=Task)
 @receiver(post_delete, sender=Task)
 def update_parent_task_progress(sender, instance, **kwargs):
+    _update_task_progress_cache(instance)
     if instance.parent_task_id:
         parent_task = Task.all_objects.filter(id=instance.parent_task_id).first()
         _update_task_progress_cache(parent_task)
