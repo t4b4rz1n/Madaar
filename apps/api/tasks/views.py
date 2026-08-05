@@ -8,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
+from attendance.models import TimeLog
+
 from .models import (
     AsyncStandup,
     Board,
@@ -246,9 +248,8 @@ class TaskViewSet(viewsets.ModelViewSet):
                 ),
             )
             .annotate(
-                has_active_timer=Exists(
-                    # We need to import TimeLog inside the method or at the top. Let's do it inside to avoid circular import if needed, or better, we can import it at the top. Wait, attendance models might not be imported yet. Let's do it inline to be safe.
-                    __import__('attendance.models', fromlist=['TimeLog']).TimeLog.objects.filter(
+                is_active_timer_running=Exists(
+                    TimeLog.objects.filter(
                         task=OuterRef('pk'), is_active=True, is_deleted=False
                     )
                 )
@@ -369,14 +370,18 @@ class TaskViewSet(viewsets.ModelViewSet):
             TaskDetailSerializer(annotated_task, context={"request": request}).data
         )
 
-    @action(detail=True, methods=["post"], url_path="toggle-done")
-    def toggle_done(self, request, pk=None):
+    @action(detail=True, methods=["post"], url_path="mark-done")
+    def mark_done(self, request, pk=None):
         task = self.get_object()
 
-        is_done = (
-            task.status and task.status.code and task.status.code.lower() == "done"
-        )
-        
+        if not task.status or not task.status.board:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                {"error": _("Task has no valid status.")}
+            )
+
+        is_done = task.status.code.lower() == "done" if task.status and task.status.code else False
+
         if is_done:
             from rest_framework.exceptions import ValidationError
             raise ValidationError(
