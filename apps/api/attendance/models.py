@@ -88,6 +88,8 @@ class TimeLog(BaseModel):
             models.Index(fields=["user", "date"]),
             models.Index(fields=["task", "date"]),
             models.Index(fields=["project", "date"]),
+            models.Index(fields=["user", "is_active"]),
+            models.Index(fields=["task", "is_active"]),
         ]
         constraints = [
             models.UniqueConstraint(
