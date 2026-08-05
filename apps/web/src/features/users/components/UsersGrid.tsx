@@ -13,6 +13,7 @@ import { ConfirmationModal } from "../../../components/ConfirmationModal";
 import { useRoles } from "../../roles/hooks/useRoles";
 import { useDeleteUser } from "../hooks/useUsers";
 import type { User } from "../types";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 import {
   getRoleBadgeClass,
   getRoleName,
@@ -42,7 +43,10 @@ export const UsersGrid = ({
   const deleteMutation = useDeleteUser();
   const { data: rolesData } = useRoles();
   const roles = rolesData?.results || [];
+  const { hasAllPermissions } = usePermissions();
 
+  const hasUserManagePermission = hasAllPermissions(["users.manage"]);
+  const showActionButtons = canManage || hasUserManagePermission;
   const handleDelete = () => {
     if (deleteModalState.user) {
       deleteMutation.mutate(deleteModalState.user.id, {
@@ -206,7 +210,7 @@ export const UsersGrid = ({
                     : null}
                 </div>
 
-                {canManage && (
+                {showActionButtons && (
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => onEdit(user)}

@@ -9,7 +9,7 @@ export const usersRoutes = [
     path: "users",
     element: (
       <PermissionGuard
-        permissions={["users.manage"]}
+        permissions={["users.view"]}
         fallback={<Navigate to="/dashboard" replace />}
       >
         <UsersListPage />

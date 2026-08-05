@@ -4,13 +4,14 @@ import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../../components/Pagination";
 import { ViewSwitcher } from "../../../components/ViewSwitcher";
-import { useAuthStore } from "../../auth/store/authStore";
+// import { useAuthStore } from "../../auth/store/authStore";
 import { CreateEditUserModal } from "../components/CreateEditUserModal";
 import { UsersGrid } from "../components/UsersGrid";
 import { UsersTable } from "../components/UsersTable";
 import { UsersToolbar } from "../components/UsersToolbar";
 import { useUsers } from "../hooks/useUsers";
 import type { User } from "../types";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 
 type ViewMode = "grid" | "table";
 
@@ -30,7 +31,10 @@ const itemVariants = {
 };
 
 export default function UsersListPage() {
-  const canManageUsers = useAuthStore((state) => state.user?.is_staff === true);
+  const { hasAllPermissions } = usePermissions();
+
+  const canManageUsers = hasAllPermissions(["users.manage"]);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [modalState, setModalState] = useState<{
     open: boolean;

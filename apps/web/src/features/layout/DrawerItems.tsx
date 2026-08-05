@@ -14,7 +14,7 @@ export type DrawerItem = {
   link: string;
   icon: React.ReactNode;
   staffOnly?: boolean;
-  permission?: string; // اضافه شدن فیلد پرمیشن برای کنترل دسترسی پویا
+  permission?: string;
 };
 
 export const drawerItems: DrawerItem[] = [
@@ -33,7 +33,7 @@ export const drawerItems: DrawerItem[] = [
     title: "Users Management",
     link: "users",
     icon: <People variant="Outline" />,
-    permission: "users.manage", // تغییر به کنترل مبتنی بر پرمیشن
+    permission: "users.view", // تغییر به کنترل مبتنی بر پرمیشن
   },
   {
     title: "Discounts",
