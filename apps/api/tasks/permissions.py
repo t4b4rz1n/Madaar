@@ -1,17 +1,14 @@
 from rest_framework import permissions
-
-
 def get_user_org_role(request, organization_id=None):
-    """Retrieves and caches the user's role in an organization (prevents N+1 DB queries)."""
     user = request.user
     if not user or not user.is_authenticated:
         return None
     if user.is_staff or user.is_superuser:
         return "owner"
-
+    
     if not hasattr(request, "_user_org_roles_cache"):
         request._user_org_roles_cache = {}
-
+        
     cache_key = str(organization_id) if organization_id else "default"
     if cache_key in request._user_org_roles_cache:
         return request._user_org_roles_cache[cache_key]
@@ -21,14 +18,9 @@ def get_user_org_role(request, organization_id=None):
         qs = qs.filter(organization_id=organization_id)
 
     membership = qs.first()
-    if membership:
-        role = membership.role.lower()
-    else:
-        role = None
-
+    role = membership.role.lower() if membership else None
     request._user_org_roles_cache[cache_key] = role
     return role
-
 
 def extract_organization_id(obj_or_request):
     """Extracts organization_id from object or request context."""
