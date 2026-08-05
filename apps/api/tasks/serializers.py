@@ -16,7 +16,6 @@ from .models import (
     TaskStatus,
 )
 
-
 class UserMinimalSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField(read_only=True)
 
@@ -39,7 +38,6 @@ class UserMinimalSerializer(serializers.ModelSerializer):
         if request is not None:
             return request.build_absolute_uri(obj.avatar.url)
         return obj.avatar.url
-
 
 class BoardMinimalSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
@@ -174,9 +172,9 @@ class TaskListSerializer(serializers.ModelSerializer):
     reporter_detail = UserMinimalSerializer(source="reporter", read_only=True)
     subtasks_count = serializers.SerializerMethodField()
     progress_percent = serializers.FloatField(read_only=True)
-    is_completed = serializers.BooleanField(read_only=True)
+    is_finished = serializers.BooleanField(read_only=True)
     checklist_stats = serializers.SerializerMethodField()
-    has_active_timer = serializers.BooleanField(read_only=True)
+    is_active_timer_running = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -198,15 +196,18 @@ class TaskListSerializer(serializers.ModelSerializer):
             "spent_hours",
             "parent_task",
             "order",
-            "is_completed",
+            "is_finished",
             "progress_percent",
             "subtasks_count",
             "checklist_stats",
-            "has_active_timer",
+            "is_active_timer_running",
             "created_at",
             "updated_at",
         )
         read_only_fields = ("id", "reporter", "created_at", "updated_at")
+
+    def get_is_active_timer_running(self, obj):
+        return getattr(obj, "is_active_timer_running", False)
 
     def get_subtasks_count(self, obj):
         if hasattr(obj, "annotated_subtasks_count"):
@@ -255,8 +256,10 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             "due_date",
             "estimated_hours",
             "parent_task",
+            "order",
+            "is_finished",
         )
-        read_only_fields = ("id",)
+        read_only_fields = ("id", "is_finished")
 
     def validate_estimated_hours(self, value):
         if value is not None and value < 0:
