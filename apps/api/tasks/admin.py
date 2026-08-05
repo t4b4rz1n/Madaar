@@ -88,6 +88,7 @@ class TaskAdmin(admin.ModelAdmin):
         "assignee",
         "reporter",
         "due_date",
+        "is_finished",
         "created_at",
     )
     list_select_related = ("project", "milestone", "status", "assignee", "reporter")
