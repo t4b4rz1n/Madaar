@@ -4,23 +4,23 @@
 /* 🎨 MAIN THEME CONFIGURATION */
 @plugin "daisyui/theme" {
   name: "light";
-  prefersdark: false;
+  default: true;
   color-scheme: "light";
 
   /* Backgrounds */
-  --color-base-100: oklch(100% 0 0); /* #ffffff */
-  --color-base-200: oklch(98% 0 0); /* #fafafa */
-  --color-base-300: oklch(95% 0 0); /* #f3f3f3 */
-  --color-base-content: oklch(21% 0.006 285.885); /* #333333 */
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(98% 0 0);
+  --color-base-300: oklch(95% 0 0);
+  --color-base-content: oklch(21% 0.006 285.885);
 
   /* Brand Colors */
-  --color-primary: #38b6ff; /* Main Brand Blue */
+  --color-primary: #38b6ff;
   --color-primary-content: #ffffff;
-  --color-secondary: #4a90a4; /* Teal/Slate */
+  --color-secondary: #4a90a4;
   --color-secondary-content: #ffffff;
-  --color-accent: #00d1b2; /* Bright Teal */
+  --color-accent: #00d1b2;
   --color-accent-content: #ffffff;
-  --color-neutral: #1f2937; /* Dark Gray */
+  --color-neutral: #1f2937;
   --color-neutral-content: #ffffff;
 
   /* Functional Colors */
@@ -44,6 +44,49 @@
   --noise: 0;
 }
 
+/* 🌙 DARK THEME - ORGANIZATIONAL / CLEAN / PREMIUM */
+@plugin "daisyui/theme" {
+  name: "dark";
+  prefersdark: true;
+  color-scheme: "dark";
+
+  /* Backgrounds */
+  --color-base-100: oklch(18% 0.02 255);
+  --color-base-200: oklch(16% 0.018 255);
+  --color-base-300: oklch(13% 0.016 255);
+  --color-base-content: oklch(96% 0.01 250);
+
+  /* Brand Colors */
+  --color-primary: #38b6ff;
+  --color-primary-content: #ffffff;
+  --color-secondary: #7dd3fc;
+  --color-secondary-content: #082f49;
+  --color-accent: #22c55e;
+  --color-accent-content: #052e16;
+  --color-neutral: #0f172a;
+  --color-neutral-content: #e2e8f0;
+
+  /* Functional Colors */
+  --color-info: #38bdf8;
+  --color-info-content: #082f49;
+  --color-success: #22c55e;
+  --color-success-content: #052e16;
+  --color-warning: #f59e0b;
+  --color-warning-content: #111827;
+  --color-error: #f87171;
+  --color-error-content: #450a0a;
+
+  /* Shape Settings */
+  --radius-selector: 0.5rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
 /* 🎨 CUSTOM UTILITY COLORS
    These are specific colors found hardcoded in component files
    (AuthLayout, Platforms, ContactCards) added here for reusability.
@@ -57,7 +100,7 @@
   --color-whatsapp-text: #00d95f;
   --color-whatsapp-badge: #00d95f33;
 
-  --color-instagram-bg: #e4405f33; /* Low opacity bg */
+  --color-instagram-bg: #e4405f33;
   --color-instagram-text: #e4405f;
 
   --color-eitaa-bg: #fae4cc;
@@ -67,7 +110,7 @@
   --color-rubika-text: #4d3884;
 
   /* Specific UI Elements */
-  --color-border-subtle: #e2e2e2; /* Used in ContactCard borders */
+  --color-border-subtle: #e2e2e2;
 
   /* Auth Page Gradients (found in AuthLayout.tsx) */
   --color-auth-grad-1-start: #dff6ff;
@@ -81,4 +124,25 @@
 *::after,
 *::before {
   font-family: "Vazirmatn", sans-serif;
+}
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+*,
+*::before,
+*::after {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }

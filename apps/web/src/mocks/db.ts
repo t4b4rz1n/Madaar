@@ -3,7 +3,12 @@ import type { Discount } from "../features/discounts/types";
 
 import type { Notification } from "../features/notifications/types";
 import type { UserProfile } from "../features/profile/types";
-import type { Ticket, TicketTypeItem, TicketMessage, TicketFormData } from "../features/tickets/types";
+import type {
+  Ticket,
+  TicketTypeItem,
+  TicketMessage,
+  TicketFormData,
+} from "../features/tickets/types";
 
 // Stateful mock database held in memory
 export const mockProfile: UserProfile = {
@@ -25,6 +30,7 @@ export let mockUsers: User[] = [
     last_name: "Doe",
     is_active: true,
     is_staff: true,
+    role_id: 1,
     profile_image: null,
   },
   {
@@ -35,6 +41,7 @@ export let mockUsers: User[] = [
     last_name: "Kerrigan",
     is_active: true,
     is_staff: false,
+    role_id: 2,
     profile_image: null,
   },
   {
@@ -45,6 +52,7 @@ export let mockUsers: User[] = [
     last_name: "Raynor",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -55,6 +63,7 @@ export let mockUsers: User[] = [
     last_name: "Protos",
     is_active: false,
     is_staff: false,
+    role_id: 5,
     profile_image: null,
   },
   {
@@ -64,7 +73,8 @@ export let mockUsers: User[] = [
     first_name: "Artanis",
     last_name: "Hierarch",
     is_active: true,
-    is_staff: true,
+    is_staff: false,
+    role_id: 6,
     profile_image: null,
   },
   {
@@ -75,6 +85,7 @@ export let mockUsers: User[] = [
     last_name: "Terra",
     is_active: true,
     is_staff: false,
+    role_id: 7,
     profile_image: null,
   },
   {
@@ -85,6 +96,7 @@ export let mockUsers: User[] = [
     last_name: "Templar",
     is_active: false,
     is_staff: true,
+    role_id: 8,
     profile_image: null,
   },
   {
@@ -95,6 +107,7 @@ export let mockUsers: User[] = [
     last_name: "Steward",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -105,6 +118,7 @@ export let mockUsers: User[] = [
     last_name: "Mengsk",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -115,6 +129,7 @@ export let mockUsers: User[] = [
     last_name: "Zerg",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -125,6 +140,7 @@ export let mockUsers: User[] = [
     last_name: "Primal",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -135,6 +151,7 @@ export let mockUsers: User[] = [
     last_name: "Taldirim",
     is_active: true,
     is_staff: true,
+    role_id: 1,
     profile_image: null,
   },
 ];
@@ -207,7 +224,105 @@ export let mockDiscounts: Discount[] = [
   },
 ];
 
+export type MockRole = {
+  id: number;
+  name: string;
+  description: string;
+  is_active: boolean;
+  is_staff: boolean;
+  permissions: string[]; // تغییر از MockPermission[] به string[]
+};
 
+export let mockRoles: MockRole[] = [
+  {
+    id: 1,
+    name: "Super Admin",
+    description: "Full access to system management, users, tickets, and roles.",
+    is_active: true,
+    is_staff: true,
+    permissions: [
+      "users.manage",
+      "users.view",
+      "roles.manage",
+      "discounts.view",
+      "notifications.view",
+      "notifications.send",
+      "teams.view",
+      "teams.manage",
+      "tickets.view",
+      "tickets.manage",
+    ],
+  },
+  {
+    id: 2,
+    name: "Frontend",
+    description: "Frontend developer for UI design and client-side features.",
+    is_active: true,
+    is_staff: false,
+    permissions: [
+      "notifications.view",
+      "notifications.send",
+      "tickets.view",
+      "tickets.manage",
+    ],
+  },
+  {
+    id: 3,
+    name: "Backend",
+    description: "Backend developer for API management and system core.",
+    is_active: true,
+    is_staff: false,
+    permissions: [
+      "notifications.view",
+      "notifications.send",
+      "tickets.view",
+      "tickets.manage",
+    ],
+  },
+  {
+    id: 4,
+    name: "Support",
+    description: "Technical system support and user ticket management.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["tickets.view", "tickets.manage", "users.manage"],
+  },
+  {
+    id: 5,
+    name: "Regular User",
+    description: "Regular user with minimum basic system permissions.",
+    is_active: true,
+    is_staff: false,
+    permissions: [],
+  },
+  // --- Adding business roles according to requirements document ---
+  {
+    id: 6,
+    name: "Team Lead",
+    description:
+      "Team lead; managing teams, coordinating members, and reviewing tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["teams.view", "teams.manage", "tickets.view", "users.view"],
+  },
+  {
+    id: 7,
+    name: "Accountant",
+    description: "Accountant; viewing discount codes and financial tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["discounts.view", "tickets.view"],
+  },
+  {
+    id: 8,
+    name: "HR",
+    description:
+      "Human Resources; managing personnel status, users, and reviewing internal tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["users.manage", "tickets.view"],
+  },
+];
 
 export const mockNotifications: Notification[] = [
   {
@@ -314,7 +429,8 @@ export const db = {
     getAll: () => mockUsers,
     getById: (id: number) => mockUsers.find((u) => u.id === id),
     create: (user: Omit<User, "id">) => {
-      const nextId = mockUsers.length > 0 ? Math.max(...mockUsers.map((u) => u.id)) + 1 : 1;
+      const nextId =
+        mockUsers.length > 0 ? Math.max(...mockUsers.map((u) => u.id)) + 1 : 1;
       const newUser = { ...user, id: nextId };
       mockUsers.unshift(newUser); // Add to beginning of list
       return newUser;
@@ -336,7 +452,12 @@ export const db = {
   discounts: {
     getAll: () => mockDiscounts,
     getById: (id: string) => mockDiscounts.find((d) => d.id === id),
-    create: (discount: Omit<Discount, "id" | "current_usage" | "is_expired" | "is_fully_used" | "created_at">) => {
+    create: (
+      discount: Omit<
+        Discount,
+        "id" | "current_usage" | "is_expired" | "is_fully_used" | "created_at"
+      >,
+    ) => {
       const nextId = `d${mockDiscounts.length + 1}`;
       const now = new Date();
       const expDate = new Date(discount.expiration_date);
@@ -373,7 +494,9 @@ export const db = {
 
   notifications: {
     getAll: () => mockNotifications,
-    create: (notification: Omit<Notification, "id" | "seen" | "created_at">) => {
+    create: (
+      notification: Omit<Notification, "id" | "seen" | "created_at">,
+    ) => {
       const nextId = `n${mockNotifications.length + 1}`;
       const newNotification: Notification = {
         ...notification,
@@ -389,9 +512,12 @@ export const db = {
     getAll: () => mockTickets,
     getById: (id: number) => mockTickets.find((t) => t.id === id),
     create: (ticketData: TicketFormData) => {
-      const nextId = mockTickets.length > 0 ? Math.max(...mockTickets.map((t) => Number(t.id))) + 1 : 1;
+      const nextId =
+        mockTickets.length > 0
+          ? Math.max(...mockTickets.map((t) => Number(t.id))) + 1
+          : 1;
       const typeItem = mockTicketTypes.find(
-        (t) => String(t.id) === ticketData.ticket_type
+        (t) => String(t.id) === ticketData.ticket_type,
       );
       const newTicket: Ticket = {
         id: nextId,
@@ -423,7 +549,14 @@ export const db = {
         text: messageText,
         sender: { username: "admin", is_staff: true },
         attachments: mediaUrl
-          ? [{ id: Date.now(), file: mediaUrl, file_type: "file", created_at: new Date().toISOString() }]
+          ? [
+              {
+                id: Date.now(),
+                file: mediaUrl,
+                file_type: "file",
+                created_at: new Date().toISOString(),
+              },
+            ]
           : [],
         created_at: new Date().toISOString(),
       };
@@ -434,7 +567,10 @@ export const db = {
     ticketTypes: {
       getAll: () => mockTicketTypes,
       create: (name: string) => {
-        const nextId = mockTicketTypes.length > 0 ? Math.max(...mockTicketTypes.map((t) => Number(t.id))) + 1 : 1;
+        const nextId =
+          mockTicketTypes.length > 0
+            ? Math.max(...mockTicketTypes.map((t) => Number(t.id))) + 1
+            : 1;
         const newItem: TicketTypeItem = {
           id: nextId,
           name,
@@ -456,6 +592,39 @@ export const db = {
         mockTicketTypes = mockTicketTypes.filter((t) => t.id !== id);
         return mockTicketTypes.length < initialLength;
       },
+    },
+  },
+  roles: {
+    getAll: () => mockRoles,
+    getById: (id: number) => mockRoles.find((role) => role.id === id),
+    create: (role: Omit<MockRole, "id">) => {
+      const nextId =
+        mockRoles.length > 0
+          ? Math.max(...mockRoles.map((role) => role.id)) + 1
+          : 1;
+
+      const newRole: MockRole = {
+        ...role,
+        id: nextId,
+      };
+
+      mockRoles.unshift(newRole);
+      return newRole;
+    },
+    update: (id: number, updates: Partial<MockRole>) => {
+      const idx = mockRoles.findIndex((role) => role.id === id);
+
+      if (idx !== -1) {
+        mockRoles[idx] = { ...mockRoles[idx], ...updates };
+        return mockRoles[idx];
+      }
+
+      return null;
+    },
+    delete: (id: number) => {
+      const initialLength = mockRoles.length;
+      mockRoles = mockRoles.filter((role) => role.id !== id);
+      return mockRoles.length < initialLength;
     },
   },
 };

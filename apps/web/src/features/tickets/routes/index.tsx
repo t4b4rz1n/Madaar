@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
-import { StaffRoute } from "../../../core/router/StaffRoute";
+import { Navigate } from "react-router-dom";
+import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const TicketsListPage = lazy(() => import("../pages/TicketsListPage"));
 const TicketDetailsPage = lazy(() => import("../pages/TicketDetailsPage"));
@@ -9,18 +10,35 @@ const TicketTypesListPage = lazy(() => import("../pages/TicketTypesListPage"));
 export const ticketsRoutes: RouteObject[] = [
   {
     path: "tickets",
-    element: <TicketsListPage />,
+    element: (
+      <PermissionGuard
+        permissions={["tickets.view"]}
+        fallback={<Navigate to="/dashbord" replace />}
+      >
+        <TicketsListPage />
+      </PermissionGuard>
+    ),
   },
   {
     path: "tickets/:id",
-    element: <TicketDetailsPage />,
+    element: (
+      <PermissionGuard
+        permissions={["tickets.view"]}
+        fallback={<Navigate to="/dashbord" replace />}
+      >
+        <TicketDetailsPage />
+      </PermissionGuard>
+    ),
   },
   {
     path: "ticket-types",
     element: (
-      <StaffRoute>
+      <PermissionGuard
+        permissions={["tickets.view"]}
+        fallback={<Navigate to="/dashbord" replace />}
+      >
         <TicketTypesListPage />
-      </StaffRoute>
+      </PermissionGuard>
     ),
   },
 ];

@@ -17,105 +17,338 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Task',
+            name="Task",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(max_length=255, verbose_name='Title')),
-                ('description', models.TextField(blank=True, null=True, verbose_name='Description')),
-                ('status', models.CharField(choices=[('todo', 'TODO'), ('in_progress', 'In Progress'), ('review', 'Review'), ('done', 'Done'), ('blocked', 'Blocked')], db_index=True, default='todo', max_length=20, verbose_name='Status')),
-                ('priority', models.CharField(choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('critical', 'Critical')], db_index=True, default='medium', max_length=20, verbose_name='Priority')),
-                ('due_date', models.DateField(blank=True, db_index=True, null=True, verbose_name='Due Date')),
-                ('estimated_hours', models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True, verbose_name='Estimated Hours')),
-                ('spent_hours', models.DecimalField(decimal_places=2, default=0, help_text='Hours logged by the assignee', max_digits=5, verbose_name='Spent Hours')),
-                ('order', models.PositiveIntegerField(db_index=True, default=0, verbose_name='Kanban Order')),
-                ('assignee', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks', to=settings.AUTH_USER_MODEL, verbose_name='Assignee')),
-                ('parent_task', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='subtasks', to='tasks.task', verbose_name='Parent Task')),
-                ('reporter', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reported_tasks', to=settings.AUTH_USER_MODEL, verbose_name='Reporter')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("title", models.CharField(max_length=255, verbose_name="Title")),
+                (
+                    "description",
+                    models.TextField(blank=True, null=True, verbose_name="Description"),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("todo", "TODO"),
+                            ("in_progress", "In Progress"),
+                            ("review", "Review"),
+                            ("done", "Done"),
+                            ("blocked", "Blocked"),
+                        ],
+                        db_index=True,
+                        default="todo",
+                        max_length=20,
+                        verbose_name="Status",
+                    ),
+                ),
+                (
+                    "priority",
+                    models.CharField(
+                        choices=[
+                            ("low", "Low"),
+                            ("medium", "Medium"),
+                            ("high", "High"),
+                            ("critical", "Critical"),
+                        ],
+                        db_index=True,
+                        default="medium",
+                        max_length=20,
+                        verbose_name="Priority",
+                    ),
+                ),
+                (
+                    "due_date",
+                    models.DateField(
+                        blank=True, db_index=True, null=True, verbose_name="Due Date"
+                    ),
+                ),
+                (
+                    "estimated_hours",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=5,
+                        null=True,
+                        verbose_name="Estimated Hours",
+                    ),
+                ),
+                (
+                    "spent_hours",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        help_text="Hours logged by the assignee",
+                        max_digits=5,
+                        verbose_name="Spent Hours",
+                    ),
+                ),
+                (
+                    "order",
+                    models.PositiveIntegerField(
+                        db_index=True, default=0, verbose_name="Kanban Order"
+                    ),
+                ),
+                (
+                    "assignee",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="tasks",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Assignee",
+                    ),
+                ),
+                (
+                    "parent_task",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subtasks",
+                        to="tasks.task",
+                        verbose_name="Parent Task",
+                    ),
+                ),
+                (
+                    "reporter",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="reported_tasks",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Reporter",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Task',
-                'verbose_name_plural': 'Tasks',
-                'ordering': ['order', '-created_at'],
+                "verbose_name": "Task",
+                "verbose_name_plural": "Tasks",
+                "ordering": ["order", "-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='TaskActivityLog',
+            name="TaskActivityLog",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('action', models.CharField(max_length=255, verbose_name='Action')),
-                ('timestamp', models.DateTimeField(db_index=True, default=django.utils.timezone.now, verbose_name='Timestamp')),
-                ('actor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='task_activities', to=settings.AUTH_USER_MODEL, verbose_name='Actor')),
-                ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='activity_logs', to='tasks.task', verbose_name='Task')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("action", models.CharField(max_length=255, verbose_name="Action")),
+                (
+                    "timestamp",
+                    models.DateTimeField(
+                        db_index=True,
+                        default=django.utils.timezone.now,
+                        verbose_name="Timestamp",
+                    ),
+                ),
+                (
+                    "actor",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="task_activities",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Actor",
+                    ),
+                ),
+                (
+                    "task",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="activity_logs",
+                        to="tasks.task",
+                        verbose_name="Task",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Task Activity Log',
-                'verbose_name_plural': 'Task Activity Logs',
-                'ordering': ['-timestamp'],
+                "verbose_name": "Task Activity Log",
+                "verbose_name_plural": "Task Activity Logs",
+                "ordering": ["-timestamp"],
             },
         ),
         migrations.CreateModel(
-            name='TaskChecklistItem',
+            name="TaskChecklistItem",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('description', models.CharField(max_length=255, verbose_name='Description')),
-                ('is_completed', models.BooleanField(db_index=True, default=False, verbose_name='Completed')),
-                ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='checklist_items', to='tasks.task', verbose_name='Task')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "description",
+                    models.CharField(max_length=255, verbose_name="Description"),
+                ),
+                (
+                    "is_completed",
+                    models.BooleanField(
+                        db_index=True, default=False, verbose_name="Completed"
+                    ),
+                ),
+                (
+                    "task",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="checklist_items",
+                        to="tasks.task",
+                        verbose_name="Task",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Task Checklist Item',
-                'verbose_name_plural': 'Task Checklist Items',
-                'ordering': ['id'],
+                "verbose_name": "Task Checklist Item",
+                "verbose_name_plural": "Task Checklist Items",
+                "ordering": ["id"],
             },
         ),
         migrations.CreateModel(
-            name='TaskComment',
+            name="TaskComment",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('content', models.TextField(verbose_name='Content')),
-                ('attached_file', models.FileField(blank=True, null=True, upload_to='task_attachments/', verbose_name='Attached file')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Created at')),
-                ('author', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='task_comments', to=settings.AUTH_USER_MODEL, verbose_name='Author')),
-                ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='tasks.task', verbose_name='Task')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("content", models.TextField(verbose_name="Content")),
+                (
+                    "attached_file",
+                    models.FileField(
+                        blank=True,
+                        null=True,
+                        upload_to="task_attachments/",
+                        verbose_name="Attached file",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Created at"),
+                ),
+                (
+                    "author",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="task_comments",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Author",
+                    ),
+                ),
+                (
+                    "task",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="comments",
+                        to="tasks.task",
+                        verbose_name="Task",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Task Comment',
-                'verbose_name_plural': 'Task Comments',
-                'ordering': ['-created_at'],
+                "verbose_name": "Task Comment",
+                "verbose_name_plural": "Task Comments",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='TaskDependency',
+            name="TaskDependency",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('dependency_type', models.CharField(choices=[('FS', 'Finish‑Start'), ('SS', 'Start‑Start'), ('FF', 'Finish‑Finish'), ('SF', 'Start‑Finish')], default='FS', max_length=2, verbose_name='Dependency Type')),
-                ('lag', models.IntegerField(default=0, verbose_name='Lag (days)')),
-                ('depends_on', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='dependents', to='tasks.task', verbose_name='Depends on')),
-                ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='dependencies', to='tasks.task', verbose_name='Task')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "dependency_type",
+                    models.CharField(
+                        choices=[
+                            ("FS", "Finish‑Start"),
+                            ("SS", "Start‑Start"),
+                            ("FF", "Finish‑Finish"),
+                            ("SF", "Start‑Finish"),
+                        ],
+                        default="FS",
+                        max_length=2,
+                        verbose_name="Dependency Type",
+                    ),
+                ),
+                ("lag", models.IntegerField(default=0, verbose_name="Lag (days)")),
+                (
+                    "depends_on",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="dependents",
+                        to="tasks.task",
+                        verbose_name="Depends on",
+                    ),
+                ),
+                (
+                    "task",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="dependencies",
+                        to="tasks.task",
+                        verbose_name="Task",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Task Dependency',
-                'verbose_name_plural': 'Task Dependencies',
+                "verbose_name": "Task Dependency",
+                "verbose_name_plural": "Task Dependencies",
             },
         ),
         migrations.AddIndex(
-            model_name='task',
-            index=models.Index(fields=['status', 'priority'], name='tasks_task_status_01b536_idx'),
+            model_name="task",
+            index=models.Index(
+                fields=["status", "priority"], name="tasks_task_status_01b536_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='task',
-            index=models.Index(fields=['assignee'], name='tasks_task_assigne_a1ddb3_idx'),
+            model_name="task",
+            index=models.Index(
+                fields=["assignee"], name="tasks_task_assigne_a1ddb3_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='taskdependency',
-            unique_together={('task', 'depends_on', 'dependency_type')},
+            name="taskdependency",
+            unique_together={("task", "depends_on", "dependency_type")},
         ),
     ]

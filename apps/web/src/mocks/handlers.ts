@@ -1,9 +1,9 @@
 import { http, HttpResponse } from "msw";
-import { db, mockProfile, mockUsers } from "./db";
+import { db, mockProfile, mockRoles, mockUsers } from "./db";
 import type { UserFormData, UserUpdateData } from "../features/users/types";
 import type { DiscountFormData } from "../features/discounts/types";
 import type { NotificationFormData } from "../features/notifications/types";
-import type { ProfileUpdateData } from "../features/profile/types";
+// import type { ProfileUpdateData } from "../features/profile/types";
 import type { Ticket, TicketFormData } from "../features/tickets/types";
 import { getApiUrl } from "../core/api/config";
 
@@ -13,7 +13,7 @@ const createPaginatedResponse = <T>(
   results: T[],
   page: number,
   pageSize: number,
-  requestUrl: string
+  requestUrl: string,
 ) => {
   const totalResults = results.length;
   const totalPages = Math.ceil(totalResults / pageSize) || 1;
@@ -21,8 +21,12 @@ const createPaginatedResponse = <T>(
   const paginatedResults = results.slice(startIndex, startIndex + pageSize);
 
   const baseUrl = requestUrl.split("?")[0];
-  const nextPage = page < totalPages ? `${baseUrl}?page=${page + 1}&page_size=${pageSize}` : null;
-  const prevPage = page > 1 ? `${baseUrl}?page=${page - 1}&page_size=${pageSize}` : null;
+  const nextPage =
+    page < totalPages
+      ? `${baseUrl}?page=${page + 1}&page_size=${pageSize}`
+      : null;
+  const prevPage =
+    page > 1 ? `${baseUrl}?page=${page - 1}&page_size=${pageSize}` : null;
 
   return {
     status: true,
@@ -47,12 +51,17 @@ export const handlers = [
       username?: string;
       password?: string;
     }
+
     const credentials = (await request.json()) as LoginBody;
     const user = mockUsers.find(
-      (mockUser) => mockUser.username === credentials.username
+      (mockUser) => mockUser.username === credentials.username,
     );
 
     if (user && credentials.password) {
+      // پیدا کردن نقش کاربر از دیتابیس موک
+      const userRole = user.role_id
+        ? mockRoles.find((r) => r.id === user.role_id)
+        : null;
       return HttpResponse.json({
         status: true,
         message: "Login successful",
@@ -66,7 +75,15 @@ export const handlers = [
             first_name: user.first_name,
             last_name: user.last_name,
             is_staff: user.is_staff,
-            profile_image: user.profile_image,
+            role_id: user.role_id ?? null,
+            role: userRole
+              ? {
+                  id: userRole.id,
+                  name: userRole.name,
+                  permissions: userRole.permissions,
+                }
+              : null,
+            profile_image_url: user.profile_image,
           },
         },
       });
@@ -78,11 +95,11 @@ export const handlers = [
         message: "Invalid username or password",
         data: {},
       },
-      { status: 400 }
+      { status: 400 },
     );
   }),
 
-  http.get("*/panel/users", ({ request }) => {
+  http.get("*/panel/users/", ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
     const pageSize = Number(url.searchParams.get("page_size")) || 10;
@@ -90,6 +107,7 @@ export const handlers = [
     const ordering = url.searchParams.get("ordering");
     const isActive = url.searchParams.get("is_active");
     const isStaff = url.searchParams.get("is_staff");
+    const roleId = url.searchParams.get("role_id");
 
     let users = [...db.users.getAll()];
 
@@ -100,7 +118,7 @@ export const handlers = [
           u.username.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
           (u.first_name || "").toLowerCase().includes(q) ||
-          (u.last_name || "").toLowerCase().includes(q)
+          (u.last_name || "").toLowerCase().includes(q),
       );
     }
 
@@ -111,12 +129,23 @@ export const handlers = [
 
     if (isStaff !== null && isStaff !== undefined && isStaff !== "") {
       const staffBool = isStaff === "true";
-      users = users.filter((u) => u.is_staff === staffBool);
+
+      users = users.filter((user) => Boolean(user.is_staff) === staffBool);
+    }
+
+    if (roleId !== null && roleId !== undefined && roleId !== "") {
+      const normalizedRoleId = Number(roleId);
+
+      users = users.filter(
+        (user) =>
+          user.role_id !== null && Number(user.role_id) === normalizedRoleId,
+      );
     }
 
     if (ordering) {
       const isDesc = ordering.startsWith("-");
       const field = isDesc ? ordering.slice(1) : ordering;
+
       users.sort((a, b) => {
         let valA = (a as unknown as Record<string, unknown>)[field];
         let valB = (b as unknown as Record<string, unknown>)[field];
@@ -133,16 +162,24 @@ export const handlers = [
       });
     }
 
-    const response = createPaginatedResponse(users, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      users,
+      page,
+      pageSize,
+      request.url,
+    );
+
     return HttpResponse.json(response);
   }),
 
   http.post("*/panel/users/", async ({ request }) => {
     const data = (await request.json()) as UserFormData;
 
-    const exists = db.users.getAll().some(
-      (u) => u.username === data.username || u.email === data.email
-    );
+    const exists = db.users
+      .getAll()
+      .some(
+        (user) => user.username === data.username || user.email === data.email,
+      );
 
     if (exists) {
       return HttpResponse.json(
@@ -151,7 +188,7 @@ export const handlers = [
           message: "Username or Email already exists",
           data: {},
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -160,8 +197,12 @@ export const handlers = [
       email: data.email,
       first_name: data.first_name,
       last_name: data.last_name,
-      is_active: data.is_active,
-      is_staff: data.is_staff,
+      is_active: Boolean(data.is_active),
+      is_staff: Boolean(data.is_staff),
+      role_id:
+        data.role_id === null || data.role_id === undefined
+          ? null
+          : Number(data.role_id),
       profile_image: null,
     });
 
@@ -176,7 +217,18 @@ export const handlers = [
     const id = Number(params.id);
     const data = (await request.json()) as UserUpdateData;
 
-    const updated = db.users.update(id, data);
+    const updated = db.users.update(id, {
+      username: data.username,
+      email: data.email,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      is_active: Boolean(data.is_active),
+      is_staff: Boolean(data.is_staff),
+      ...(data.role_id !== undefined && {
+        role_id: data.role_id === null ? null : Number(data.role_id),
+      }),
+    });
+
     if (!updated) {
       return HttpResponse.json(
         {
@@ -184,7 +236,7 @@ export const handlers = [
           message: "User not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -206,7 +258,7 @@ export const handlers = [
           message: "User not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -232,7 +284,7 @@ export const handlers = [
       discounts = discounts.filter(
         (d) =>
           d.code.toLowerCase().includes(q) ||
-          d.description.toLowerCase().includes(q)
+          d.description.toLowerCase().includes(q),
       );
     }
 
@@ -244,6 +296,7 @@ export const handlers = [
     if (ordering) {
       const isDesc = ordering.startsWith("-");
       const field = isDesc ? ordering.slice(1) : ordering;
+
       discounts.sort((a, b) => {
         let valA = (a as unknown as Record<string, unknown>)[field];
         let valB = (b as unknown as Record<string, unknown>)[field];
@@ -260,16 +313,22 @@ export const handlers = [
       });
     }
 
-    const response = createPaginatedResponse(discounts, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      discounts,
+      page,
+      pageSize,
+      request.url,
+    );
+
     return HttpResponse.json(response);
   }),
 
   http.post("*/panel/discounts", async ({ request }) => {
     const data = (await request.json()) as DiscountFormData;
 
-    const exists = db.discounts.getAll().some(
-      (d) => d.code.toUpperCase() === data.code.toUpperCase()
-    );
+    const exists = db.discounts
+      .getAll()
+      .some((d) => d.code.toUpperCase() === data.code.toUpperCase());
 
     if (exists) {
       return HttpResponse.json(
@@ -278,7 +337,7 @@ export const handlers = [
           message: "Discount code already exists",
           data: {},
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -303,6 +362,7 @@ export const handlers = [
     const data = (await request.json()) as DiscountFormData;
 
     const updated = db.discounts.update(id, data);
+
     if (!updated) {
       return HttpResponse.json(
         {
@@ -310,7 +370,7 @@ export const handlers = [
           message: "Discount coupon not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -332,7 +392,7 @@ export const handlers = [
           message: "Discount coupon not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -342,8 +402,6 @@ export const handlers = [
       data: {},
     });
   }),
-
-
 
   http.get("*/dashboard/notifications/", ({ request }) => {
     const url = new URL(request.url);
@@ -356,6 +414,7 @@ export const handlers = [
     if (ordering) {
       const isDesc = ordering.startsWith("-");
       const field = isDesc ? ordering.slice(1) : ordering;
+
       notifications.sort((a, b) => {
         let valA = (a as unknown as Record<string, unknown>)[field];
         let valB = (b as unknown as Record<string, unknown>)[field];
@@ -376,8 +435,9 @@ export const handlers = [
       notifications,
       page,
       pageSize,
-      request.url
+      request.url,
     );
+
     return HttpResponse.json(response);
   }),
 
@@ -397,10 +457,23 @@ export const handlers = [
   }),
 
   http.patch("*/accounts/profile/", async ({ request }) => {
-    const data = (await request.json()) as ProfileUpdateData;
+    const formData = await request.formData();
 
-    if (data.first_name !== undefined) mockProfile.first_name = data.first_name;
-    if (data.last_name !== undefined) mockProfile.last_name = data.last_name;
+    const firstName = formData.get("first_name");
+    const lastName = formData.get("last_name");
+    const profileImage = formData.get("profile_image");
+
+    if (firstName !== null) {
+      mockProfile.first_name = String(firstName);
+    }
+
+    if (lastName !== null) {
+      mockProfile.last_name = String(lastName);
+    }
+
+    if (profileImage instanceof File) {
+      mockProfile.profile_image = URL.createObjectURL(profileImage);
+    }
 
     return HttpResponse.json({
       status: true,
@@ -409,7 +482,6 @@ export const handlers = [
     });
   }),
 
-  // ─── Tickets MSW Mocks ───────────────────────────────────────────────────────
   http.get("*/support/tickets/", ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
@@ -427,7 +499,7 @@ export const handlers = [
         (t) =>
           t.title.toLowerCase().includes(q) ||
           t.user.username.toLowerCase().includes(q) ||
-          (t.user.email || "").toLowerCase().includes(q)
+          (t.user.email || "").toLowerCase().includes(q),
       );
     }
 
@@ -442,6 +514,7 @@ export const handlers = [
     if (ordering) {
       const isDesc = ordering.startsWith("-");
       const field = isDesc ? ordering.slice(1) : ordering;
+
       tickets.sort((a, b) => {
         let valA: string | number | undefined | null = null;
         let valB: string | number | undefined | null = null;
@@ -452,11 +525,13 @@ export const handlers = [
         } else {
           const rawA = a[field as keyof Ticket];
           const rawB = b[field as keyof Ticket];
+
           if (typeof rawA === "string") {
             valA = rawA.toLowerCase();
           } else if (typeof rawA === "number") {
             valA = rawA;
           }
+
           if (typeof rawB === "string") {
             valB = rawB.toLowerCase();
           } else if (typeof rawB === "number") {
@@ -473,7 +548,13 @@ export const handlers = [
       });
     }
 
-    const response = createPaginatedResponse(tickets, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      tickets,
+      page,
+      pageSize,
+      request.url,
+    );
+
     return HttpResponse.json(response);
   }),
 
@@ -488,7 +569,7 @@ export const handlers = [
           message: "Ticket not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -522,7 +603,7 @@ export const handlers = [
           message: "Ticket not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -540,21 +621,27 @@ export const handlers = [
     const pageSize = Number(url.searchParams.get("page_size")) || 15;
 
     const messages = db.tickets.getMessages(id);
-    const response = createPaginatedResponse(messages, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      messages,
+      page,
+      pageSize,
+      request.url,
+    );
+
     return HttpResponse.json(response);
   }),
 
   http.post("*/support/tickets/:id/messages/", async ({ params, request }) => {
     const id = Number(params.id);
-
-    // Check if multipart/form-data (file upload)
     const contentType = request.headers.get("content-type") || "";
+
     let text = "";
-    let mediaUrl: string | undefined = undefined;
+    let mediaUrl: string | undefined;
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       text = (formData.get("text") as string) || "";
+
       const mediaFile = formData.get("media") as File | null;
       if (mediaFile) {
         mediaUrl = URL.createObjectURL(mediaFile);
@@ -586,7 +673,13 @@ export const handlers = [
       types = types.filter((t) => t.name.toLowerCase().includes(q));
     }
 
-    const response = createPaginatedResponse(types, page, pageSize, request.url);
+    const response = createPaginatedResponse(
+      types,
+      page,
+      pageSize,
+      request.url,
+    );
+
     return HttpResponse.json(response);
   }),
 
@@ -613,7 +706,7 @@ export const handlers = [
           message: "Ticket category not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -635,7 +728,7 @@ export const handlers = [
           message: "Ticket category not found",
           data: {},
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -646,7 +739,6 @@ export const handlers = [
     });
   }),
 
-  // --- Dashboard Mock Endpoints ---
   http.get("*/admin-panel/dashboard/overview/", () => {
     return HttpResponse.json({
       status: true,
@@ -658,9 +750,9 @@ export const handlers = [
         active_workers: 12,
         scans: {
           discovery: { launched: 245, finished: 240, failed: 5 },
-          vulnerability: { launched: 180, finished: 172, failed: 8 }
-        }
-      }
+          vulnerability: { launched: 180, finished: 172, failed: 8 },
+        },
+      },
     });
   }),
 
@@ -671,9 +763,9 @@ export const handlers = [
         queues: [
           { queue_name: "Discovery Queue", pending_tasks: 15 },
           { queue_name: "Vulnerability Queue", pending_tasks: 22 },
-          { queue_name: "Web Scans Queue", pending_tasks: 8 }
-        ]
-      }
+          { queue_name: "Web Scans Queue", pending_tasks: 8 },
+        ],
+      },
     });
   }),
 
@@ -687,18 +779,18 @@ export const handlers = [
             { label: "10:10", cpu: 60, memory: 58 },
             { label: "10:20", cpu: 35, memory: 62 },
             { label: "10:30", cpu: 70, memory: 64 },
-            { label: "10:40", cpu: 50, memory: 60 }
+            { label: "10:40", cpu: 50, memory: 60 },
           ],
           "Worker-02": [
             { label: "10:00", cpu: 30, memory: 40 },
             { label: "10:10", cpu: 42, memory: 41 },
             { label: "10:20", cpu: 55, memory: 45 },
             { label: "10:30", cpu: 28, memory: 48 },
-            { label: "10:40", cpu: 62, memory: 50 }
-          ]
+            { label: "10:40", cpu: 62, memory: 50 },
+          ],
         },
-        labels: ["10:00", "10:10", "10:20", "10:30", "10:40"]
-      }
+        labels: ["10:00", "10:10", "10:20", "10:30", "10:40"],
+      },
     });
   }),
 
@@ -712,9 +804,9 @@ export const handlers = [
           { label: "Mar", value: 6 },
           { label: "Apr", value: 8 },
           { label: "May", value: 10 },
-          { label: "Jun", value: 12 }
-        ]
-      }
+          { label: "Jun", value: 12 },
+        ],
+      },
     });
   }),
 
@@ -728,9 +820,9 @@ export const handlers = [
           { label: "Mar", value: 140 },
           { label: "Apr", value: 210 },
           { label: "May", value: 190 },
-          { label: "Jun", value: 348 }
-        ]
-      }
+          { label: "Jun", value: 348 },
+        ],
+      },
     });
   }),
 
@@ -743,9 +835,9 @@ export const handlers = [
           { severity: "high", count: 68 },
           { severity: "medium", count: 112 },
           { severity: "low", count: 94 },
-          { severity: "info", count: 50 }
-        ]
-      }
+          { severity: "info", count: 50 },
+        ],
+      },
     });
   }),
 
@@ -759,9 +851,9 @@ export const handlers = [
           { label: "Mar", value: 7800 },
           { label: "Apr", value: 9100 },
           { label: "May", value: 11000 },
-          { label: "Jun", value: 12450 }
-        ]
-      }
+          { label: "Jun", value: 12450 },
+        ],
+      },
     });
   }),
 
@@ -776,9 +868,9 @@ export const handlers = [
           { label: "Thu", requests: 1400, requests_v: 95 },
           { label: "Fri", requests: 2100, results: 190 },
           { label: "Sat", requests: 800, results: 40 },
-          { label: "Sun", requests: 950, results: 55 }
-        ]
-      }
+          { label: "Sun", requests: 950, results: 55 },
+        ],
+      },
     });
   }),
 
@@ -790,9 +882,9 @@ export const handlers = [
           { status: "completed", count: 312 },
           { status: "running", count: 14 },
           { status: "failed", count: 8 },
-          { status: "cancelled", count: 5 }
-        ]
-      }
+          { status: "cancelled", count: 5 },
+        ],
+      },
     });
   }),
 
@@ -806,9 +898,9 @@ export const handlers = [
           { label: "Mar", value: 720 },
           { label: "Apr", value: 900 },
           { label: "May", value: 1100 },
-          { label: "Jun", value: 1280 }
-        ]
-      }
+          { label: "Jun", value: 1280 },
+        ],
+      },
     });
   }),
 
@@ -822,9 +914,9 @@ export const handlers = [
           { label: "Mar", value: 310 },
           { label: "Apr", value: 450 },
           { label: "May", value: 680 },
-          { label: "Jun", value: 890 }
-        ]
-      }
+          { label: "Jun", value: 890 },
+        ],
+      },
     });
   }),
 
@@ -835,9 +927,9 @@ export const handlers = [
         license_distribution: [
           { name: "Free", value: 450, color: "#a855f7" },
           { name: "Pro", value: 320, color: "#3b82f6" },
-          { name: "Enterprise", value: 120, color: "#10b981" }
-        ]
-      }
+          { name: "Enterprise", value: 120, color: "#10b981" },
+        ],
+      },
     });
   }),
 
@@ -850,9 +942,158 @@ export const handlers = [
           { label: "SecOps", value: 120 },
           { label: "Dev Team B", value: 98 },
           { label: "Platform", value: 85 },
-          { label: "Audit Org", value: 62 }
-        ]
-      }
+          { label: "Audit Org", value: 62 },
+        ],
+      },
     });
+  }),
+
+  http.get("*/roles/", ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page")) || 1;
+    const pageSize = Number(url.searchParams.get("page_size")) || 10;
+    const search = url.searchParams.get("search");
+    const isActive = url.searchParams.get("is_active");
+
+    let roles = [...db.roles.getAll()];
+
+    if (search) {
+      const q = search.toLowerCase();
+      roles = roles.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          (r.description || "").toLowerCase().includes(q),
+      );
+    }
+
+    if (isActive !== null && isActive !== undefined && isActive !== "") {
+      const activeBool = isActive === "true";
+      roles = roles.filter((r) => r.is_active === activeBool);
+    }
+
+    const response = createPaginatedResponse(
+      roles,
+      page,
+      pageSize,
+      request.url,
+    );
+
+    return HttpResponse.json(response);
+  }),
+
+  http.post("*/roles/", async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string;
+      description?: string;
+      is_active?: boolean;
+      is_staff?: boolean;
+      permissions?: string[];
+    };
+
+    if (!body?.name?.trim()) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Role name is required",
+          data: {},
+        },
+        { status: 400 },
+      );
+    }
+
+    const exists = db.roles
+      .getAll()
+      .some((r) => r.name.toLowerCase() === body.name.trim().toLowerCase());
+
+    if (exists) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Role name already exists",
+          data: {},
+        },
+        { status: 400 },
+      );
+    }
+
+    const newRole = db.roles.create({
+      name: body.name.trim(),
+      description: body.description?.trim?.() ?? "",
+      is_active: body.is_active ?? true,
+      is_staff: body.is_staff ?? false,
+      permissions: body.permissions ?? [],
+    });
+
+    return HttpResponse.json(
+      {
+        status: true,
+        message: "Role created successfully",
+        data: newRole,
+      },
+      { status: 201 },
+    );
+  }),
+
+  http.delete("*/roles/:id/", ({ params }) => {
+    const id = Number(params.id);
+    const success = db.roles.delete(id);
+
+    if (!success) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Role not found",
+          data: {},
+        },
+        { status: 404 },
+      );
+    }
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.patch("*/roles/:id/", async ({ params, request }) => {
+    const id = Number(params.id);
+    const body = (await request.json()) as {
+      name?: string;
+      description?: string;
+      is_active?: boolean;
+      is_staff?: boolean;
+      permissions?: string[];
+    };
+
+    const role = db.roles.getById(id);
+
+    if (!role) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Role not found",
+          data: {},
+        },
+        { status: 404 },
+      );
+    }
+
+    const updatedRole = db.roles.update(id, {
+      name: body.name !== undefined ? body.name.trim() : role.name,
+      description:
+        body.description !== undefined
+          ? body.description.trim()
+          : (role.description ?? ""),
+      is_active: body.is_active !== undefined ? body.is_active : role.is_active,
+      is_staff: body.is_staff !== undefined ? body.is_staff : role.is_staff,
+      permissions:
+        body.permissions !== undefined ? body.permissions : role.permissions,
+    });
+
+    return HttpResponse.json(
+      {
+        status: true,
+        message: "Role updated successfully",
+        data: updatedRole,
+      },
+      { status: 200 },
+    );
   }),
 ];

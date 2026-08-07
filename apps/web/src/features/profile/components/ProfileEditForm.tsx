@@ -116,7 +116,7 @@ export const ProfileEditForm = () => {
   };
 
   const currentProfileImage =
-    profileImagePreview || user.profile_image_url || "/images/base-logo.svg";
+    profileImagePreview || user.profile_image_url || "/images/base-logo2.png";
 
   const passwordsMatch =
     password && passwordConfirm && password === passwordConfirm;

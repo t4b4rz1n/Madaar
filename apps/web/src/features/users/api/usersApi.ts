@@ -2,7 +2,7 @@ import ApiService from "../../../core/api/apiService";
 import type { User, UserFormData, UserUpdateData } from "../types";
 
 export const getUsers = (params: URLSearchParams) => {
-  return ApiService.getList<User>(`panel/users?${params.toString()}`);
+  return ApiService.getList<User>(`panel/users/?${params.toString()}`);
 };
 
 export const createUser = (data: UserFormData) =>
