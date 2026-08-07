@@ -34,9 +34,7 @@ class BoardAndStatusTestCase(APITestCase):
             email="boarduser@example.com",
             password="Password123!",
         )
-        OrganizationMembership.objects.create(
-            user=cls.user, organization=cls.org, role="owner"
-        )
+        OrganizationMembership.objects.create(user=cls.user, organization=cls.org, role="owner")
         cls.project = Project.objects.create(
             name="Project 1", description="Desc", organization=cls.org
         )
@@ -143,9 +141,7 @@ class BoardAndStatusTestCase(APITestCase):
     def test_reorder_statuses(self):
         """Status reorder endpoint should update order values."""
         statuses = list(self.board.statuses.values_list("id", flat=True))
-        orders = [
-            {"id": str(s), "order": i + 1} for i, s in enumerate(reversed(statuses))
-        ]
+        orders = [{"id": str(s), "order": i + 1} for i, s in enumerate(reversed(statuses))]
         res = self.client.post(
             reverse("task-status-reorder"),
             {"board_id": str(self.board.id), "orders": orders},
@@ -172,16 +168,14 @@ class TaskCascadeTestCase(TestCase):
         cls.user = User.objects.create_user(
             email="test@example.com", username="testuser", password="password"
         )
-        OrganizationMembership.objects.create(
-            user=cls.user, organization=cls.org, role="owner"
+        OrganizationMembership.objects.create(user=cls.user, organization=cls.org, role="owner")
+        cls.project = Project.objects.create(
+            name="Test Project", owner=cls.user, organization=cls.org
         )
-        cls.project = Project.objects.create(name="Test Project", owner=cls.user)
         cls.board = Board.objects.create(
             title="Test Board", project=cls.project, created_by=cls.user
         )
-        cls.status = TaskStatus.objects.create(
-            board=cls.board, code="todo", name="To Do"
-        )
+        cls.status = TaskStatus.objects.create(board=cls.board, code="todo", name="To Do")
         cls.task = Task.objects.create(
             title="Parent Task",
             project=cls.project,
@@ -259,9 +253,7 @@ class ChecklistAndCommentTestCase(APITestCase):
             email="cluser@example.com",
             password="Password123!",
         )
-        OrganizationMembership.objects.create(
-            user=cls.user, organization=cls.org, role="owner"
-        )
+        OrganizationMembership.objects.create(user=cls.user, organization=cls.org, role="owner")
         cls.project = Project.objects.create(
             name="Project CL", description="Desc", organization=cls.org
         )
@@ -313,9 +305,7 @@ class TasksRBACTestCase(APITestCase):
     def setUp(self):
         self.org = Organization.objects.create(name="Test Org", slug="test-org")
 
-        self.admin = User.objects.create_user(
-            "admin_user", "admin@test.com", "Pass123!"
-        )
+        self.admin = User.objects.create_user("admin_user", "admin@test.com", "Pass123!")
         OrganizationMembership.objects.create(
             user=self.admin,
             organization=self.org,
@@ -341,18 +331,14 @@ class TasksRBACTestCase(APITestCase):
             user=self.hr, organization=self.org, role=OrganizationMembership.Role.HR
         )
 
-        self.accountant = User.objects.create_user(
-            "acc_user", "acc@test.com", "Pass123!"
-        )
+        self.accountant = User.objects.create_user("acc_user", "acc@test.com", "Pass123!")
         OrganizationMembership.objects.create(
             user=self.accountant,
             organization=self.org,
             role=OrganizationMembership.Role.ACCOUNTANT,
         )
 
-        self.project = Project.objects.create(
-            name="RBAC Project", organization=self.org
-        )
+        self.project = Project.objects.create(name="RBAC Project", organization=self.org)
         self.board = Board.objects.create(
             title="RBAC Board", project=self.project, created_by=self.admin
         )
@@ -453,12 +439,8 @@ class TasksRBACTestCase(APITestCase):
 
     def test_employee_project_isolation(self):
         """Employee in Project 1 cannot create tasks in Project 2 where they are not a member."""
-        project2 = Project.objects.create(
-            name="Project 2 Isolation", organization=self.org
-        )
-        ProjectMember.objects.create(
-            project=self.project, user=self.employee, is_active=True
-        )
+        project2 = Project.objects.create(name="Project 2 Isolation", organization=self.org)
+        ProjectMember.objects.create(project=self.project, user=self.employee, is_active=True)
 
         self.client.force_authenticate(user=self.employee)
 
@@ -497,9 +479,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             email="taskuser@example.com",
             password="Password123!",
         )
-        OrganizationMembership.objects.create(
-            user=cls.user, organization=cls.org, role="owner"
-        )
+        OrganizationMembership.objects.create(user=cls.user, organization=cls.org, role="owner")
         cls.assignee = User.objects.create_user(
             username="assignee",
             email="assignee@example.com",
@@ -732,12 +712,8 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             reporter=self.user,
             status=self.status_todo,
         )
-        TaskChecklistItem.objects.create(
-            task=parent, description="A", is_completed=True
-        )
-        TaskChecklistItem.objects.create(
-            task=parent, description="B", is_completed=False
-        )
+        TaskChecklistItem.objects.create(task=parent, description="A", is_completed=True)
+        TaskChecklistItem.objects.create(task=parent, description="B", is_completed=False)
         sub = Task.objects.create(
             project=self.project,
             title="Sub",
