@@ -1,24 +1,92 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
-from .models import ProjectMember
+from .models import Project, ProjectMember, Milestone
 from automations.events import EventDispatcher
 
 @receiver(post_save, sender=ProjectMember)
 def notify_project_member_added(sender, instance, created, **kwargs):
     """
-    When a user is added to a project (ProjectMember is created),
-    dispatch a project_created event so they get notified.
+    3. project_created: When a user is added to a project
     """
-    if created:
+    if created and instance.user:
         project = instance.project
-        creator_name = project.owner.get_full_name() or project.owner.username if project.owner else "System"
+        creator_name = project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
         
-        # We dispatch event with target_user_id specifically for this member
         EventDispatcher.dispatch(
             event_type="project_created",
             payload={
                 "target_user_id": str(instance.user.id),
-                "project_title": project.name,
+                "project_name": project.name,
                 "creator_name": creator_name
             }
         )
+
+@receiver(pre_save, sender=Milestone)
+def cache_previous_milestone_state(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            old_instance = Milestone.objects.get(pk=instance.pk)
+            instance.__original_status = old_instance.status
+        except Milestone.DoesNotExist:
+            instance.__original_status = None
+    else:
+        instance.__original_status = None
+
+@receiver(post_save, sender=Milestone)
+def notify_milestone_completed(sender, instance, created, **kwargs):
+    """
+    6. milestone_completed: When milestone status changes to completed
+    """
+    if not created:
+        old_status = getattr(instance, "__original_status", None)
+        if old_status != Milestone.Status.COMPLETED and instance.status == Milestone.Status.COMPLETED:
+            project = instance.project
+            owner_id = project.owner_id
+            target_ids = []
+            if owner_id:
+                target_ids.append(str(owner_id))
+                
+            if target_ids:
+                EventDispatcher.dispatch(
+                    event_type="milestone_completed",
+                    payload={
+                        "target_user_ids": target_ids,
+                        "project_name": project.name,
+                        "milestone_title": instance.title
+                    }
+                )
+
+@receiver(pre_save, sender=Project)
+def cache_previous_project_state(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            old = Project.objects.get(pk=instance.pk)
+            instance.__original_budget = old.budget
+            instance.__original_status = old.status
+        except Project.DoesNotExist:
+            instance.__original_budget = None
+            instance.__original_status = None
+    else:
+        instance.__original_budget = None
+        instance.__original_status = None
+
+@receiver(post_save, sender=Project)
+def notify_project_budget_or_status(sender, instance, created, **kwargs):
+    """
+    4. project_over_budget: Triggered if the budget changes drastically or status changes
+    (Simplified logic for budget warning)
+    """
+    if not created:
+        old_budget = getattr(instance, "__original_budget", None)
+        # If budget was reduced or changed, notify the owner as a warning
+        if old_budget is not None and instance.budget is not None:
+            if instance.budget < old_budget:
+                owner_id = instance.owner_id
+                if owner_id:
+                    EventDispatcher.dispatch(
+                        event_type="project_over_budget",
+                        payload={
+                            "target_user_id": str(owner_id),
+                            "project_name": instance.name
+                        }
+                    )
