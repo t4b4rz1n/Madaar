@@ -8,28 +8,46 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('projects', '0002_milestone_is_deleted_project_is_deleted_and_more'),
-        ('tasks', '0007_remove_board_project_id_board_project'),
+        ("projects", "0002_milestone_is_deleted_project_is_deleted_and_more"),
+        ("tasks", "0007_remove_board_project_id_board_project"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='milestone',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks', to='projects.milestone', verbose_name='Milestone'),
+            model_name="task",
+            name="milestone",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="tasks",
+                to="projects.milestone",
+                verbose_name="Milestone",
+            ),
         ),
         migrations.AddField(
-            model_name='task',
-            name='project',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='tasks', to='projects.project', verbose_name='Project'),
+            model_name="task",
+            name="project",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="tasks",
+                to="projects.project",
+                verbose_name="Project",
+            ),
         ),
         migrations.AddIndex(
-            model_name='task',
-            index=models.Index(fields=['project', 'status'], name='tasks_task_project_d48c46_idx'),
+            model_name="task",
+            index=models.Index(
+                fields=["project", "status"], name="tasks_task_project_d48c46_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='task',
-            index=models.Index(fields=['project', 'assignee'], name='tasks_task_project_5e8812_idx'),
+            model_name="task",
+            index=models.Index(
+                fields=["project", "assignee"], name="tasks_task_project_5e8812_idx"
+            ),
         ),
     ]

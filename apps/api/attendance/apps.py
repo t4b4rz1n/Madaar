@@ -2,10 +2,10 @@ from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
-class TasksConfig(AppConfig):
+class AttendanceConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "tasks"
-    verbose_name = _("Tasks")
+    name = "attendance"
+    verbose_name = _("Attendance")
 
     def ready(self):
-        import tasks.signals  # noqa: F401
+        import attendance.signals  # noqa: F401

@@ -9,53 +9,116 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0002_task_is_deleted_taskactivitylog_is_deleted_and_more'),
+        ("tasks", "0002_task_is_deleted_taskactivitylog_is_deleted_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='task',
-            name='status',
-            field=models.CharField(choices=[('todo', 'TODO'), ('in_progress', 'Doing'), ('review', 'Review'), ('done', 'Done')], db_index=True, default='todo', max_length=20, verbose_name='Status'),
+            model_name="task",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("todo", "TODO"),
+                    ("in_progress", "Doing"),
+                    ("review", "Review"),
+                    ("done", "Done"),
+                ],
+                db_index=True,
+                default="todo",
+                max_length=20,
+                verbose_name="Status",
+            ),
         ),
         migrations.CreateModel(
-            name='Board',
+            name="Board",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('is_deleted', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(max_length=255, verbose_name='Board Title')),
-                ('project_id', models.IntegerField(db_index=True, verbose_name='Project ID')),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='boards', to=settings.AUTH_USER_MODEL, verbose_name='Created By')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("title", models.CharField(max_length=255, verbose_name="Board Title")),
+                (
+                    "project_id",
+                    models.IntegerField(db_index=True, verbose_name="Project ID"),
+                ),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="boards",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Created By",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Board',
-                'verbose_name_plural': 'Boards',
-                'ordering': ['-created_at'],
+                "verbose_name": "Board",
+                "verbose_name_plural": "Boards",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='BoardColumn',
+            name="BoardColumn",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=100, verbose_name='Column Title')),
-                ('order', models.PositiveIntegerField(db_index=True, default=0, verbose_name='Order')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('board', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='columns', to='tasks.board', verbose_name='Board')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(max_length=100, verbose_name="Column Title"),
+                ),
+                (
+                    "order",
+                    models.PositiveIntegerField(
+                        db_index=True, default=0, verbose_name="Order"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "board",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="columns",
+                        to="tasks.board",
+                        verbose_name="Board",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Board Column',
-                'verbose_name_plural': 'Board Columns',
-                'ordering': ['order', 'created_at'],
-                'unique_together': {('board', 'title')},
+                "verbose_name": "Board Column",
+                "verbose_name_plural": "Board Columns",
+                "ordering": ["order", "created_at"],
+                "unique_together": {("board", "title")},
             },
         ),
         migrations.AddField(
-            model_name='task',
-            name='column',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks', to='tasks.boardcolumn', verbose_name='Kanban Column'),
+            model_name="task",
+            name="column",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="tasks",
+                to="tasks.boardcolumn",
+                verbose_name="Kanban Column",
+            ),
         ),
     ]
