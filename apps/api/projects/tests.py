@@ -32,7 +32,6 @@ class ProjectModelTests(TestCase):
             name="Alpha Project",
             organization=self.org,
             owner=self.user,
-            team=self.team,
         )
         self.assertEqual(str(project), "Alpha Project")
         self.assertEqual(project.status, Project.Status.DRAFT)

@@ -82,7 +82,7 @@ class ProjectService:
         ``milestone_count``) are always present and consistent.
         """
         qs = Project.all_objects.all() if include_deleted else Project.objects.all()
-        return qs.select_related("organization", "owner", "team").annotate(
+        return qs.select_related("organization", "owner").annotate(
             member_count=Count("members", filter=Q(members__is_deleted=False)),
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
             milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False)),
@@ -112,8 +112,6 @@ class ProjectService:
         team_filter = Q(
             project_memberships__project=project, project_memberships__is_deleted=False
         )
-        if project.team_id:
-            team_filter |= Q(id=project.team_id)
         return Team.objects.filter(team_filter).distinct()
 
     @classmethod

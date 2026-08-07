@@ -30,7 +30,7 @@ class ProjectFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(choices=Project.Status.choices)
     organization = django_filters.UUIDFilter(field_name="organization__id")
     owner = django_filters.UUIDFilter(field_name="owner__id")
-    team = django_filters.UUIDFilter(field_name="team__id")
+    team = django_filters.UUIDFilter(field_name="members__team__id", distinct=True)
     deadline_before = django_filters.DateFilter(
         field_name="deadline", lookup_expr="lte"
     )

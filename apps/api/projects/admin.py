@@ -9,7 +9,6 @@ class ProjectAdmin(admin.ModelAdmin):
         "name",
         "organization",
         "owner",
-        "team",
         "budget",
         "budget_currency",
         "status",
@@ -18,7 +17,7 @@ class ProjectAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "organization", "budget_currency", "is_deleted")
     search_fields = ("name", "description", "owner__username", "owner__email")
-    raw_id_fields = ("organization", "owner", "team")
+    raw_id_fields = ("organization", "owner")
 
     def get_queryset(self, request):
         qs = (

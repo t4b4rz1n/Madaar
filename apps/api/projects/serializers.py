@@ -66,7 +66,6 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
     owner = UserMinimalSerializer(read_only=True)
     organization = OrganizationMinimalSerializer(read_only=True)
-    team = TeamMinimalSerializer(read_only=True)
 
     # Annotated counts — default=0 prevents crashes on non-annotated objects
     member_count = serializers.IntegerField(read_only=True, default=0)
@@ -82,7 +81,6 @@ class ProjectListSerializer(serializers.ModelSerializer):
             "description",
             "organization",
             "owner",
-            "team",
             "status",
             "status_display",
             "budget",
@@ -155,12 +153,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         queryset=Organization.objects.all(),
         source="organization",
     )
-    team_id = serializers.PrimaryKeyRelatedField(
-        queryset=Team.objects.all(),
-        source="team",
-        required=False,
-        allow_null=True,
-    )
 
     class Meta:
         model = Project
@@ -169,7 +161,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             "description",
             "organization_id",
             "owner_id",
-            "team_id",
             "status",
             "budget",
             "budget_currency",
@@ -237,18 +228,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         # Resolve org and related objects once
         org = attrs.get("organization", getattr(self.instance, "organization", None))
-        team = attrs.get("team", getattr(self.instance, "team", None))
         owner = attrs.get("owner", getattr(self.instance, "owner", None))
-
-        # Ensure team belongs to the selected organisation
-        if team and org and team.organization_id != org.pk:
-            raise serializers.ValidationError(
-                {
-                    "team_id": _(
-                        "The selected team does not belong to this organisation."
-                    )
-                }
-            )
 
         # Ensure owner belongs to the organization
         if owner and org:

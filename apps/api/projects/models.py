@@ -33,15 +33,7 @@ class Project(BaseModel):
         blank=True,
         db_index=True,
     )
-    team = models.ForeignKey(
-        "organizations.Team",
-        on_delete=models.SET_NULL,
-        related_name="projects",
-        verbose_name=_("Team"),
-        null=True,
-        blank=True,
-        db_index=True,
-    )
+
     name = models.CharField(_("Name"), max_length=255)
     description = models.TextField(_("Description"), blank=True)
     budget = models.DecimalField(
