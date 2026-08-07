@@ -58,18 +58,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             qs = qs.all()
         else:
-            orgs_managed = user.org_memberships.filter(
-                role__in=["owner", "admin", "hr"]
+            admin_orgs = user.org_memberships.filter(
+                role__in=["owner", "admin"]
             ).values_list("organization_id", flat=True)
-            teams_lead = user.team_memberships.filter(role="lead").values_list(
-                "team__memberships__user_id", flat=True
-            )
 
-            qs = qs.filter(
-                Q(user=user)
-                | Q(organization_id__in=orgs_managed)
-                | Q(user_id__in=teams_lead)
-            ).distinct()
+            qs = qs.filter(Q(user=user) | Q(organization_id__in=admin_orgs)).distinct()
 
         # Optional filters
         org_id = self.request.query_params.get("organization")
@@ -145,17 +138,12 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             qs = qs.all()
         else:
-            orgs_managed = user.org_memberships.filter(
-                role__in=["owner", "admin", "hr"]
-            ).values_list("organization_id", flat=True)
-            teams_lead = user.team_memberships.filter(role="lead").values_list(
-                "team__memberships__user_id", flat=True
+            org_ids = user.org_memberships.all().values_list(
+                "organization_id", flat=True
             )
 
             qs = qs.filter(
-                Q(user=user)
-                | Q(project__organization_id__in=orgs_managed)
-                | Q(user_id__in=teams_lead)
+                Q(user=user) | Q(project__organization_id__in=org_ids)
             ).distinct()
 
         # Optional filters
@@ -279,18 +267,11 @@ class TimeOffRequestViewSet(viewsets.ModelViewSet):
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             qs = qs.all()
         else:
-            orgs_managed = user.org_memberships.filter(
-                role__in=["owner", "admin", "hr"]
+            admin_orgs = user.org_memberships.filter(
+                role__in=["owner", "admin"]
             ).values_list("organization_id", flat=True)
-            teams_lead = user.team_memberships.filter(role="lead").values_list(
-                "team__memberships__user_id", flat=True
-            )
 
-            qs = qs.filter(
-                Q(user=user)
-                | Q(organization_id__in=orgs_managed)
-                | Q(user_id__in=teams_lead)
-            ).distinct()
+            qs = qs.filter(Q(user=user) | Q(organization_id__in=admin_orgs)).distinct()
 
         # Optional filters
         status_filter = self.request.query_params.get("status")

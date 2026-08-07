@@ -574,6 +574,9 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
         if not user or not user.is_authenticated:
             return AsyncStandup.objects.none()
 
+        if user.is_staff or user.is_superuser:
+            return AsyncStandup.objects.select_related("user").filter(is_deleted=False)
+
         # Org isolation: user can only see standups in their orgs
         org_ids = user.org_memberships.values_list("organization_id", flat=True)
 
@@ -583,41 +586,16 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             .distinct()
         )
 
-        if user.is_staff or user.is_superuser:
-            qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
-
-        user_id = self.request.query_params.get("user")
-        if user_id:
-            role = get_user_org_role(self.request)
-            is_admin = (
-                user.is_staff or user.is_superuser or role in ["owner", "admin", "hr"]
-            )
-            if str(user_id) != str(user.id) and not is_admin:
-                if role == "team_lead":
-                    team_ids = user.team_memberships.values_list("team_id", flat=True)
-                    has_access = AsyncStandup.objects.filter(
-                        user_id=user_id, user__team_memberships__team_id__in=team_ids
-                    ).exists()
-                    if not has_access:
-                        return qs.none()
-                else:
-                    return qs.none()
-            qs = qs.filter(user_id=user_id)
-
-        if user.is_staff or user.is_superuser:
-            return qs
-
         role = get_user_org_role(self.request)
-        if role in ["owner", "admin", "hr"]:
+        if role in ["owner", "admin"]:
             return qs
 
-        if role == "team_lead":
-            team_ids = user.team_memberships.values_list("team_id", flat=True)
-            return qs.filter(
-                Q(user=user) | Q(user__team_memberships__team_id__in=team_ids)
-            ).distinct()
-
-        # Employees only see their own standup reports
+        # Everyone else only sees their own standup reports
+        user_id = self.request.query_params.get("user")
+        if user_id and str(user_id) != str(user.id):
+            return qs.none()
+        if user_id:
+            return qs.filter(user_id=user_id)
         return qs.filter(user=user)
 
     def perform_create(self, serializer):

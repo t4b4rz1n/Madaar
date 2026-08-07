@@ -297,8 +297,14 @@ class PermissionTests(AttendanceBaseTestCase):
         permission = IsTimeOffRequestPermission()
         self.assertTrue(permission.has_object_permission(request, MockView(), req))
 
-        # Lead should have permission to read/update
+        # Lead (team_lead) should NOT see/read others' time-off (private data)
         request.user = self.lead
+        if hasattr(request, "_user_org_roles_cache"):
+            del request._user_org_roles_cache
+        self.assertFalse(permission.has_object_permission(request, MockView(), req))
+
+        # Owner/Admin should have read/update permission
+        request.user = self.admin
         if hasattr(request, "_user_org_roles_cache"):
             del request._user_org_roles_cache
         self.assertTrue(permission.has_object_permission(request, MockView(), req))

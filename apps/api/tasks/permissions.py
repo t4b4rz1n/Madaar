@@ -182,9 +182,13 @@ class BaseMadaarPermission(permissions.BasePermission):
 
 
 class IsBoardPermission(BaseMadaarPermission):
-    """Board access: Read for org members; Modify for Owner, Admin, Team Lead, or Creator."""
+    """Board access: Read for all org members; Modify for Owner, Admin, Team Lead, or Creator."""
 
     def check_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            org_id = extract_organization_id(request)
+            return get_user_org_role(request, org_id) is not None
+
         org_id = extract_organization_id(request)
         role = get_user_org_role(request, org_id)
         if role is None:
@@ -192,6 +196,10 @@ class IsBoardPermission(BaseMadaarPermission):
         return role in ["owner", "admin", "team_lead"]
 
     def check_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            org_id = extract_organization_id(obj)
+            return get_user_org_role(request, org_id) is not None
+
         if hasattr(obj, "created_by") and obj.created_by == request.user:
             return True
         org_id = extract_organization_id(obj)
@@ -202,9 +210,13 @@ class IsBoardPermission(BaseMadaarPermission):
 
 
 class IsTaskStatusPermission(BaseMadaarPermission):
-    """Kanban status access: Modify for Owner, Admin, Board Creator, or Team Lead."""
+    """Kanban status access: Read for all org members; Modify for Owner, Admin, Board Creator, or Team Lead."""
 
     def check_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            org_id = extract_organization_id(request)
+            return get_user_org_role(request, org_id) is not None
+
         org_id = extract_organization_id(request)
         role = get_user_org_role(request, org_id)
         if role is None:
@@ -212,6 +224,10 @@ class IsTaskStatusPermission(BaseMadaarPermission):
         return role in ["owner", "admin", "team_lead"]
 
     def check_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            org_id = extract_organization_id(obj)
+            return get_user_org_role(request, org_id) is not None
+
         if hasattr(obj, "board") and obj.board and obj.board.created_by == request.user:
             return True
         org_id = extract_organization_id(obj)
@@ -365,7 +381,7 @@ class IsTaskCommentPermission(BaseMadaarPermission):
 
 
 class IsAsyncStandupPermission(BaseMadaarPermission):
-    """Async Standup access: Read for org members; Create for org users; Modify for Author, Admin, or Owner."""
+    """Async Standup: Create for org members; View/Modify for Author, Owner, or Admin."""
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -379,7 +395,7 @@ class IsAsyncStandupPermission(BaseMadaarPermission):
         return self.check_object_permission(request, view, obj)
 
     def check_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
+        if request.user.is_staff or request.user.is_superuser:
             return True
 
         if hasattr(obj, "user") and obj.user == request.user:
