@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from accounts.validators import profile_picture_validator
 from common.models import BaseModel
@@ -44,7 +45,14 @@ class User(AbstractUser, BaseModel):
     
     # Telegram Integration
     telegram_chat_id = models.CharField(max_length=50, blank=True, null=True)
-    telegram_connect_token = models.CharField(max_length=64, blank=True, null=True, unique=True)
+    telegram_username = models.CharField(
+        _("Telegram Username"),
+        max_length=50,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text=_("e.g. @username or username without @"),
+    )
     
     # Notification Preferences
     notify_via_email = models.BooleanField(default=True)
@@ -63,18 +71,11 @@ class User(AbstractUser, BaseModel):
     def __str__(self):
         return self.email
 
-    def generate_telegram_connect_token(self):
-        import secrets
-
-        if not self.telegram_connect_token:
-            self.telegram_connect_token = secrets.token_urlsafe(32)[:64]
-            self.save(update_fields=["telegram_connect_token"])
-        return self.telegram_connect_token
-
-    def telegram_connect_link(self):
-        token = self.generate_telegram_connect_token()
-        bot_username = getattr(settings, "TELEGRAM_BOT_USERNAME", "")
-        return f"https://t.me/{bot_username}?start={token}"
+    def save(self, *args, **kwargs):
+        # Normalize telegram_username by removing '@' and lowering case
+        if self.telegram_username:
+            self.telegram_username = self.telegram_username.replace("@", "").strip().lower()
+        super().save(*args, **kwargs)
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
