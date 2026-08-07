@@ -370,6 +370,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             TaskDetailSerializer(annotated_task, context={"request": request}).data
         )
 
+    @extend_schema(request=None)
     @action(detail=True, methods=["post"], url_path="mark-done")
     def mark_done(self, request, pk=None):
         task = self.get_object()

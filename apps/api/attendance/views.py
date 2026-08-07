@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
-from organizations.models import Organization
+from organizations.models import Organization, OrganizationMembership
 from tasks.models import Task
 
 from .models import Attendance, Holiday, TimeLog, TimeOffRequest
@@ -99,6 +99,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         org = get_object_or_404(Organization, id=org_id)
+        if not OrganizationMembership.objects.filter(
+            organization=org, user=request.user
+        ).exists():
+            return Response(
+                {"error": "You are not a member of this organization."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         attendance, created = AttendanceService.check_in(request.user, org)
         resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(AttendanceSerializer(attendance).data, status=resp_status)
@@ -313,6 +320,16 @@ class HolidayViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Holiday.objects.filter(is_deleted=False)
+        user = self.request.user
+
+        if not user.is_staff and not user.is_superuser:
+            user_orgs = OrganizationMembership.objects.filter(user=user).values_list(
+                "organization_id", flat=True
+            )
+            qs = qs.filter(
+                Q(organization_id__in=user_orgs) | Q(organization__isnull=True)
+            )
+
         org_id = self.request.query_params.get("organization")
         if org_id:
             qs = qs.filter(Q(organization_id=org_id) | Q(organization__isnull=True))

@@ -1,11 +1,9 @@
 from django.db import transaction
-from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from .models import (
-    AsyncStandup,
     Board,
     Task,
     TaskActivityLog,
@@ -234,6 +232,18 @@ class TaskService:
             if not is_member:
                 raise PermissionDenied(_("You are not a member of this project."))
 
+        # Validate that assignee is a member of the organization
+        if assignee and project:
+            from organizations.models import OrganizationMembership
+
+            is_assignee_org_member = OrganizationMembership.objects.filter(
+                organization=project.organization, user=assignee
+            ).exists()
+            if not is_assignee_org_member:
+                raise ValidationError(
+                    _("Assignee must be a member of the organization.")
+                )
+
         if not status:
             if project:
                 status = TaskStatus.objects.filter(
@@ -270,25 +280,23 @@ class TaskService:
             action=str(_("Task created: %(title)s") % {"title": task.title}),
         )
 
-        # Create initial timer for the task automatically
-        from attendance.models import TimeLog
-
-        timer_user = assignee if assignee else reporter
-        if timer_user and project:
-            TimeLog.objects.create(
-                user=timer_user,
-                task=task,
-                project=project,
-                date=timezone.now().date(),
-                start_time=timezone.now(),
-                is_active=True,
-            )
-
         return task
 
     @staticmethod
     @transaction.atomic
     def update_task(task, actor, **kwargs):
+        assignee = kwargs.get("assignee")
+        if assignee and task.project:
+            from organizations.models import OrganizationMembership
+
+            is_assignee_org_member = OrganizationMembership.objects.filter(
+                organization=task.project.organization, user=assignee
+            ).exists()
+            if not is_assignee_org_member:
+                raise ValidationError(
+                    _("Assignee must be a member of the organization.")
+                )
+
         changes = []
         for field, value in kwargs.items():
             if field not in TaskService.UPDATABLE_FIELDS:
@@ -321,7 +329,7 @@ class TaskService:
                 .values_list("role", flat=True)
                 .first()
             )
-            if role not in ["owner", "admin", "lead"]:
+            if role not in ["owner", "Admin", "team_lead"]:
                 from rest_framework.exceptions import PermissionDenied
 
                 raise PermissionDenied(
@@ -519,14 +527,16 @@ class StandupService:
 
     @staticmethod
     @transaction.atomic
-    def create_standup(user, yesterday_work, today_work, blockers=None):
+    def create_standup(user, organization, yesterday_work, today_work, blockers=None):
         if not yesterday_work or not today_work:
             raise ValidationError(
                 _("Both yesterday's work and today's work fields are required.")
             )
+        from .models import AsyncStandup
 
         return AsyncStandup.objects.create(
             user=user,
+            organization=organization,
             yesterday_work=yesterday_work,
             today_work=today_work,
             blockers=blockers,

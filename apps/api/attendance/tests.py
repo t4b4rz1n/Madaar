@@ -65,19 +65,29 @@ class AttendanceBaseTestCase(APITestCase):
 
         # Memberships
         OrganizationMembership.objects.create(
-            user=cls.owner, organization=cls.org, role="owner"
+            user=cls.owner,
+            organization=cls.org,
+            role=OrganizationMembership.Role.OWNER,
         )
         OrganizationMembership.objects.create(
-            user=cls.admin, organization=cls.org, role="admin"
+            user=cls.admin,
+            organization=cls.org,
+            role=OrganizationMembership.Role.ADMIN,
         )
         OrganizationMembership.objects.create(
-            user=cls.lead, organization=cls.org, role="lead"
+            user=cls.lead,
+            organization=cls.org,
+            role=OrganizationMembership.Role.TEAM_LEAD,
         )
         OrganizationMembership.objects.create(
-            user=cls.employee, organization=cls.org, role="employee"
+            user=cls.employee,
+            organization=cls.org,
+            role=OrganizationMembership.Role.EMPLOYEE,
         )
         OrganizationMembership.objects.create(
-            user=cls.other_employee, organization=cls.other_org, role="employee"
+            user=cls.other_employee,
+            organization=cls.other_org,
+            role=OrganizationMembership.Role.EMPLOYEE,
         )
 
         # Teams

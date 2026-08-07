@@ -319,7 +319,7 @@ class TimeOffRequestService:
                 .values_list("role", flat=True)
                 .first()
             )
-            if role not in ["owner", "admin", "lead"]:
+            if role not in ["owner", "Admin", "team_lead"]:
                 raise PermissionDenied(
                     _(
                         "You do not have permission to approve requests in this organization."
@@ -345,7 +345,7 @@ class TimeOffRequestService:
                 .values_list("role", flat=True)
                 .first()
             )
-            if role not in ["owner", "admin", "lead"]:
+            if role not in ["owner", "Admin", "team_lead"]:
                 raise PermissionDenied(
                     _(
                         "You do not have permission to reject requests in this organization."

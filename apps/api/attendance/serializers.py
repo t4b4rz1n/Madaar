@@ -315,7 +315,6 @@ class HolidaySerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         organization = attrs.get("organization")
-        date = attrs.get("date")
 
         # Organization permission check for write operations
         request = self.context.get("request")

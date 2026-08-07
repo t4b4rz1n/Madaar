@@ -426,7 +426,7 @@ class TasksRBACTestCase(APITestCase):
 
     def test_employee_standups_filtered_to_own_only(self):
         """Employee role should only see their own standup reports when listing standups."""
-        admin_standup = AsyncStandup.objects.create(
+        AsyncStandup.objects.create(
             user=self.admin,
             yesterday_work="Admin Y",
             today_work="Admin T",
@@ -505,6 +505,9 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             email="assignee@example.com",
             password="Password123!",
         )
+        OrganizationMembership.objects.create(
+            user=cls.assignee, organization=cls.org, role="employee"
+        )
 
         cls.project = Project.objects.create(
             name="Test Project",
@@ -548,39 +551,6 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         activities = TaskActivityLog.objects.filter(task=task)
         self.assertTrue(activities.exists())
         self.assertIn("Task created", activities.first().action)
-
-    def test_create_task_creates_timer(self):
-        """Task creation should automatically create an active timer."""
-        res = self.client.post(
-            reverse("task-list"),
-            {
-                "project": self.project.id,
-                "title": "Timer Task",
-                "assignee": self.assignee.id,
-            },
-        )
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        task = Task.objects.get(id=res.data["id"])
-        time_logs = TimeLog.objects.filter(task=task)
-        self.assertEqual(time_logs.count(), 1)
-        self.assertTrue(time_logs.first().is_active)
-        self.assertEqual(time_logs.first().user, self.assignee)
-
-    def test_create_task_timer_for_reporter_when_no_assignee(self):
-        """When no assignee is set, timer should be created for the reporter."""
-        res = self.client.post(
-            reverse("task-list"),
-            {
-                "project": self.project.id,
-                "title": "No Assignee Task",
-            },
-        )
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        task = Task.objects.get(id=res.data["id"])
-        time_logs = TimeLog.objects.filter(task=task)
-        self.assertEqual(time_logs.count(), 1)
-        self.assertTrue(time_logs.first().is_active)
-        self.assertEqual(time_logs.first().user, self.user)
 
     def test_move_task_requires_timer_for_done(self):
         """A task without a timer cannot be moved to Done."""
