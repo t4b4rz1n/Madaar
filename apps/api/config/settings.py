@@ -362,6 +362,7 @@ LOGGING = {
 # --- Celery Settings ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=DEBUG)
 
 # --- Production Security ---
 SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
