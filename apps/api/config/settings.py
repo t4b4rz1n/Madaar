@@ -61,6 +61,7 @@ LOCAL_APPS = [
     "projects.apps.ProjectsConfig",
     "tasks.apps.TasksConfig",
     "attendance.apps.AttendanceConfig",
+    "automations.apps.AutomationsConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -274,6 +275,15 @@ SPECTACULAR_SETTINGS = {
 }
 
 
+# --- Email Settings ---
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Madaar <noreply@madaar.io>")
+
 # --- Payment Settings ---
 SANDBOX = env("SANDBOX")
 NOWPAYMENTS_API_KEY = env("NOWPAYMENTS_API_KEY", default=None)
@@ -358,3 +368,7 @@ CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE")
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 X_FRAME_OPTIONS = "DENY"
+
+# Telegram Config
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default=None)
+TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")

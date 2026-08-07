@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
 from django.db import models
 
 from accounts.validators import profile_picture_validator
@@ -40,6 +41,14 @@ class User(AbstractUser, BaseModel):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    
+    # Telegram Integration
+    telegram_chat_id = models.CharField(max_length=50, blank=True, null=True)
+    telegram_connect_token = models.CharField(max_length=64, blank=True, null=True, unique=True)
+    
+    # Notification Preferences
+    notify_via_email = models.BooleanField(default=True)
+    notify_via_telegram = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -53,6 +62,19 @@ class User(AbstractUser, BaseModel):
 
     def __str__(self):
         return self.email
+
+    def generate_telegram_connect_token(self):
+        import secrets
+
+        if not self.telegram_connect_token:
+            self.telegram_connect_token = secrets.token_urlsafe(32)[:64]
+            self.save(update_fields=["telegram_connect_token"])
+        return self.telegram_connect_token
+
+    def telegram_connect_link(self):
+        token = self.generate_telegram_connect_token()
+        bot_username = getattr(settings, "TELEGRAM_BOT_USERNAME", "")
+        return f"https://t.me/{bot_username}?start={token}"
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
