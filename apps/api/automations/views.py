@@ -8,25 +8,54 @@ from automations.services import TelegramBotService
 
 logger = logging.getLogger(__name__)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class TelegramWebhookView(View):
+    """
+    Receives all incoming updates from Telegram Bot API.
+    Handles both regular messages and inline keyboard callback queries.
+    """
+
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
+
+            # Handle callback_query (inline button presses)
+            callback_query = data.get('callback_query')
+            if callback_query:
+                chat_id = str(callback_query['message']['chat']['id'])
+                message_id = callback_query['message']['message_id']
+                callback_data = callback_query.get('data', '')
+                callback_query_id = callback_query['id']
+                tg_user = callback_query.get('from', {})
+                tg_username = tg_user.get('username', '').lower()
+
+                TelegramBotService.handle_callback(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    callback_data=callback_data,
+                    callback_query_id=callback_query_id,
+                    tg_username=tg_username,
+                )
+                return JsonResponse({"status": "ok"})
+
+            # Handle regular messages
             message = data.get('message', {})
+            if not message:
+                return JsonResponse({"status": "ignored"})
+
             chat = message.get('chat', {})
             text = message.get('text', '')
-            
             chat_id = str(chat.get('id', ''))
-            
+            tg_user = message.get('from', {})
+            tg_username = tg_user.get('username', '').lower()
+
             if not chat_id:
                 return JsonResponse({"status": "ignored"})
-                
-            # Delegate to the professional bot service layer
-            TelegramBotService.handle_message(chat_id, text)
-            
+
+            TelegramBotService.handle_message(chat_id, text, tg_username)
             return JsonResponse({"status": "ok"})
-            
+
         except Exception as e:
-            logger.error(f"Error processing Telegram webhook: {e}", exc_info=True)
-            return JsonResponse({"status": "error"}, status=400)
+            logger.error(f"Telegram webhook error: {e}", exc_info=True)
+            return JsonResponse({"status": "error"}, status=200)
