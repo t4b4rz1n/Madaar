@@ -29,6 +29,7 @@ class TelegramWebhookView(View):
                 callback_query_id = callback_query['id']
                 tg_user = callback_query.get('from', {})
                 tg_username = tg_user.get('username', '').lower()
+                tg_language_code = tg_user.get('language_code', 'en')
 
                 TelegramBotService.handle_callback(
                     chat_id=chat_id,
@@ -36,6 +37,7 @@ class TelegramWebhookView(View):
                     callback_data=callback_data,
                     callback_query_id=callback_query_id,
                     tg_username=tg_username,
+                    tg_language_code=tg_language_code,
                 )
                 return JsonResponse({"status": "ok"})
 
@@ -49,11 +51,12 @@ class TelegramWebhookView(View):
             chat_id = str(chat.get('id', ''))
             tg_user = message.get('from', {})
             tg_username = tg_user.get('username', '').lower()
+            tg_language_code = tg_user.get('language_code', 'en')
 
             if not chat_id:
                 return JsonResponse({"status": "ignored"})
 
-            TelegramBotService.handle_message(chat_id, text, tg_username)
+            TelegramBotService.handle_message(chat_id, text, tg_username, tg_language_code)
             return JsonResponse({"status": "ok"})
 
         except Exception as e:

@@ -77,6 +77,14 @@ def handle_task_automations(sender, instance, created, **kwargs):
             if instance.assignee_id:
                 target_ids.append(str(instance.assignee_id))
                 
+            if instance.project:
+                from organizations.models import OrganizationMembership
+                team_leads = OrganizationMembership.objects.filter(
+                    organization_id=instance.project.organization_id,
+                    role=OrganizationMembership.Role.TEAM_LEAD
+                ).values_list('user_id', flat=True)
+                target_ids.extend([str(tl) for tl in team_leads])
+                
             if target_ids:
                 EventDispatcher.dispatch(
                     event_type="task_completed",
@@ -144,16 +152,28 @@ def handle_standup_submitted(sender, instance, created, **kwargs):
     """
     if created:
         user_name = instance.user.get_full_name() or instance.user.username if instance.user else "یک همکار"
-        # Notify admins or organization owner (simplified to just get org owner/admins if available)
-        # For now, let's dispatch to a generic channel or org owner. 
-        # If organization has no explicit owner field, we just skip targeting a specific user or use a general rule.
-        # Let's find any user in the same org who is a superuser or manager.
-        managers = User.objects.filter(is_superuser=True).values_list('id', flat=True)
+        
+        # Target Organization Owners and Admins
+        managers = []
+        if instance.project:
+            org_id = instance.project.organization_id
+        elif hasattr(instance, 'organization_id') and instance.organization_id:
+            org_id = instance.organization_id
+        else:
+            org_id = None
+            
+        if org_id:
+            from organizations.models import OrganizationMembership
+            managers = OrganizationMembership.objects.filter(
+                organization_id=org_id,
+                role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN]
+            ).values_list('user_id', flat=True)
+
         if managers:
             EventDispatcher.dispatch(
                 event_type="standup_submitted",
                 payload={
-                    "target_user_ids": [str(m) for m in managers],
+                    "target_user_ids": [str(m) for m in set(managers)],
                     "user_name": user_name
                 }
             )

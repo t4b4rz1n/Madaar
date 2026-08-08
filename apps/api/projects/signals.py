@@ -78,15 +78,25 @@ def notify_project_budget_or_status(sender, instance, created, **kwargs):
     """
     if not created:
         old_budget = getattr(instance, "__original_budget", None)
-        # If budget was reduced or changed, notify the owner as a warning
         if old_budget is not None and instance.budget is not None:
             if instance.budget < old_budget:
-                owner_id = instance.owner_id
-                if owner_id:
+                target_ids = []
+                if instance.owner_id:
+                    target_ids.append(str(instance.owner_id))
+                
+                # Also notify Organization Admins
+                from organizations.models import OrganizationMembership
+                admins = OrganizationMembership.objects.filter(
+                    organization_id=instance.organization_id,
+                    role=OrganizationMembership.Role.ADMIN
+                ).values_list('user_id', flat=True)
+                target_ids.extend([str(admin_id) for admin_id in admins])
+
+                if target_ids:
                     EventDispatcher.dispatch(
                         event_type="project_over_budget",
                         payload={
-                            "target_user_id": str(owner_id),
+                            "target_user_ids": list(set(target_ids)),
                             "project_name": instance.name
                         }
                     )

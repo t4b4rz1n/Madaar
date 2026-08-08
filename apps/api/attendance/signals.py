@@ -55,7 +55,13 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
     
     if created:
         # 14. leave_requested
-        managers = User.objects.filter(is_superuser=True).values_list('id', flat=True)
+        # Target: Organization Owners and Admins
+        from organizations.models import OrganizationMembership
+        managers = OrganizationMembership.objects.filter(
+            organization=instance.organization,
+            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN]
+        ).values_list('user_id', flat=True)
+        
         if managers:
             EventDispatcher.dispatch(
                 event_type="leave_requested",
@@ -86,13 +92,25 @@ def notify_timer_started(sender, instance, created, **kwargs):
     if created and instance.is_active:
         user_name = instance.user.get_full_name() or instance.user.username
         task_title = instance.task.title if instance.task else "کار عمومی"
-        managers = User.objects.filter(is_superuser=True).values_list('id', flat=True)
+        
+        managers = []
+        if instance.task and instance.task.project:
+            org_id = instance.task.project.organization_id
+            from organizations.models import OrganizationMembership
+            managers = OrganizationMembership.objects.filter(
+                organization_id=org_id,
+                role__in=[
+                    OrganizationMembership.Role.OWNER,
+                    OrganizationMembership.Role.ADMIN,
+                    OrganizationMembership.Role.TEAM_LEAD
+                ]
+            ).values_list('user_id', flat=True)
         
         if managers:
             EventDispatcher.dispatch(
                 event_type="timer_started",
                 payload={
-                    "target_user_ids": [str(m) for m in managers],
+                    "target_user_ids": [str(m) for m in set(managers)],
                     "user_name": user_name,
                     "task_title": task_title
                 }

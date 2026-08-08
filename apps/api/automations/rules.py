@@ -50,12 +50,17 @@ def _determine_target_users(event_type: str, payload: dict) -> set:
 
     # Event-specific logic
     if event_type == "project_created" and payload.get('project_id'):
-        from projects.models import ProjectMember
-        member_ids = (
+        from projects.models import ProjectMember, Project
+        member_ids = list(
             ProjectMember.objects
             .filter(project_id=payload['project_id'], is_active=True)
             .values_list('user_id', flat=True)
         )
+        
+        project = Project.objects.filter(id=payload['project_id']).first()
+        if project and project.owner_id:
+            member_ids.append(project.owner_id)
+            
         users.update(str(uid) for uid in member_ids)
 
     return users

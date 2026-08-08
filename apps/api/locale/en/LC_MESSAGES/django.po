@@ -1,0 +1,1830 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-08 06:38-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: .\accounts\managers.py:20
+msgid "The Email field must be set"
+msgstr ""
+
+#: .\accounts\managers.py:22
+msgid "The Username field must be set"
+msgstr ""
+
+#: .\accounts\managers.py:47
+msgid "Superuser must have is_staff=True."
+msgstr ""
+
+#: .\accounts\managers.py:49
+msgid "Superuser must have is_superuser=True."
+msgstr ""
+
+#: .\accounts\models.py:49
+msgid "Telegram Username"
+msgstr ""
+
+#: .\accounts\models.py:54
+msgid "e.g. @username or username without @"
+msgstr ""
+
+#: .\accounts\validators.py:12
+msgid "Password must contain at least one uppercase letter."
+msgstr ""
+
+#: .\accounts\validators.py:17
+msgid "Your password must contain at least one uppercase letter."
+msgstr ""
+
+#: .\accounts\validators.py:26
+msgid ""
+"Invalid character in the username. Only English letters, numbers, hyphens, "
+"and underscores are allowed."
+msgstr ""
+
+#: .\accounts\validators.py:38
+msgid "The type of entered file must be png, jpg or jpeg."
+msgstr ""
+
+#: .\accounts\validators.py:45
+msgid "Profile picture size must not exceed 5MB."
+msgstr ""
+
+#: .\attendance\apps.py:8 .\attendance\models.py:47
+msgid "Attendance"
+msgstr ""
+
+#: .\attendance\models.py:18
+msgid "Expected Daily Working Hours"
+msgstr ""
+
+#: .\attendance\models.py:22
+msgid "Attendance Setting"
+msgstr ""
+
+#: .\attendance\models.py:23
+msgid "Attendance Settings"
+msgstr ""
+
+#: .\attendance\models.py:40 .\attendance\models.py:90
+#: .\attendance\models.py:207
+msgid "Date"
+msgstr ""
+
+#: .\attendance\models.py:41
+msgid "Check-in Time"
+msgstr ""
+
+#: .\attendance\models.py:42
+msgid "Check-out Time"
+msgstr ""
+
+#: .\attendance\models.py:43
+msgid "Is Remote Work"
+msgstr ""
+
+#: .\attendance\models.py:44
+msgid "Overtime Minutes"
+msgstr ""
+
+#: .\attendance\models.py:48
+msgid "Attendances"
+msgstr ""
+
+#: .\attendance\models.py:91
+msgid "Start Time"
+msgstr ""
+
+#: .\attendance\models.py:92
+msgid "End Time"
+msgstr ""
+
+#: .\attendance\models.py:93
+msgid "Duration in Seconds"
+msgstr ""
+
+#: .\attendance\models.py:94
+msgid "Is Active Timer"
+msgstr ""
+
+#: .\attendance\models.py:95 .\attendance\models.py:206 .\billing\models.py:16
+#: .\projects\models.py:38 .\projects\models.py:207 .\tasks\models.py:20
+#: .\tasks\models.py:127 .\tasks\models.py:279
+msgid "Description"
+msgstr ""
+
+#: .\attendance\models.py:98
+msgid "Time Log"
+msgstr ""
+
+#: .\attendance\models.py:99
+msgid "Time Logs"
+msgstr ""
+
+#: .\attendance\models.py:133
+msgid "Vacation"
+msgstr ""
+
+#: .\attendance\models.py:134
+msgid "Sick Leave"
+msgstr ""
+
+#: .\attendance\models.py:135
+msgid "Hourly Leave"
+msgstr ""
+
+#: .\attendance\models.py:136
+msgid "Remote Work Request"
+msgstr ""
+
+#: .\attendance\models.py:137
+msgid "Overtime"
+msgstr ""
+
+#: .\attendance\models.py:140 .\projects\models.py:195
+msgid "Pending"
+msgstr ""
+
+#: .\attendance\models.py:141
+msgid "Approved"
+msgstr ""
+
+#: .\attendance\models.py:142
+msgid "Rejected"
+msgstr ""
+
+#: .\attendance\models.py:155
+msgid "Request Type"
+msgstr ""
+
+#: .\attendance\models.py:157
+msgid "Start Date/Time"
+msgstr ""
+
+#: .\attendance\models.py:158
+msgid "End Date/Time"
+msgstr ""
+
+#: .\attendance\models.py:159
+msgid "Reason"
+msgstr ""
+
+#: .\attendance\models.py:161 .\panel\Ticketing\models.py:56
+#: .\projects\models.py:51 .\projects\models.py:209 .\tasks\models.py:132
+msgid "Status"
+msgstr ""
+
+#: .\attendance\models.py:174
+msgid "Manager Note"
+msgstr ""
+
+#: .\attendance\models.py:177
+msgid "Time Off Request"
+msgstr ""
+
+#: .\attendance\models.py:178
+msgid "Time Off Requests"
+msgstr ""
+
+#: .\attendance\models.py:198
+msgid "Holiday Name"
+msgstr ""
+
+#: .\attendance\models.py:208
+msgid "Is Official Holiday"
+msgstr ""
+
+#: .\attendance\models.py:211
+msgid "Holiday"
+msgstr ""
+
+#: .\attendance\models.py:212
+msgid "Holidays"
+msgstr ""
+
+#: .\attendance\serializers.py:86
+msgid "Date cannot be in the future."
+msgstr ""
+
+#: .\attendance\serializers.py:92
+msgid "Check-out time must be after check-in time."
+msgstr ""
+
+#: .\attendance\serializers.py:101
+msgid "Check-in time must be on the same date as attendance date."
+msgstr ""
+
+#: .\attendance\serializers.py:109
+msgid "Check-out time must be on the same date as attendance date."
+msgstr ""
+
+#: .\attendance\serializers.py:127 .\attendance\serializers.py:208
+#: .\attendance\serializers.py:286 .\attendance\services.py:121
+msgid "You are not a member of this organization."
+msgstr ""
+
+#: .\attendance\serializers.py:169 .\attendance\serializers.py:264
+#: .\attendance\services.py:236
+msgid "End time must be after start time."
+msgstr ""
+
+#: .\attendance\serializers.py:175
+msgid "Start and end time must be on the same date."
+msgstr ""
+
+#: .\attendance\serializers.py:182
+msgid "Project must match the task's project."
+msgstr ""
+
+#: .\attendance\serializers.py:270
+msgid "Start time cannot be in the past."
+msgstr ""
+
+#: .\attendance\serializers.py:296
+msgid "Hourly leave cannot exceed 8 hours."
+msgstr ""
+
+#: .\attendance\serializers.py:333
+msgid "You do not have permission to manage holidays for this organization."
+msgstr ""
+
+#: .\attendance\serializers.py:346
+msgid "Only superusers can create global holidays."
+msgstr ""
+
+#: .\attendance\services.py:38
+msgid "No check-in record found for today."
+msgstr ""
+
+#: .\attendance\services.py:40
+msgid "Already checked out today."
+msgstr ""
+
+#: .\attendance\services.py:110
+msgid "You can only start a timer for tasks assigned to you."
+msgstr ""
+
+#: .\attendance\services.py:185
+msgid "Timer not found or already stopped."
+msgstr ""
+
+#: .\attendance\services.py:280
+msgid "Time log not found."
+msgstr ""
+
+#: .\attendance\services.py:325
+msgid "You do not have permission to approve requests in this organization."
+msgstr ""
+
+#: .\attendance\services.py:330
+msgid "Only pending requests can be approved."
+msgstr ""
+
+#: .\attendance\services.py:351
+msgid "You do not have permission to reject requests in this organization."
+msgstr ""
+
+#: .\attendance\services.py:356
+msgid "Only pending requests can be rejected."
+msgstr ""
+
+#: .\attendance\services.py:367
+msgid "Only pending requests can be cancelled."
+msgstr ""
+
+#: .\automations\services.py:125
+msgid "📂 پروژه‌های من"
+msgstr "📂 My Projects"
+
+#: .\automations\services.py:126
+msgid "📋 تسک‌های من"
+msgstr "📋 My Tasks"
+
+#: .\automations\services.py:129
+msgid "🏢 سازمان من"
+msgstr "🏢 My Organization"
+
+#: .\automations\services.py:130
+msgid "📊 وضعیت اتصال"
+msgstr "📊 Connection Status"
+
+#: .\automations\services.py:133
+msgid "❓ راهنما"
+msgstr "❓ Help"
+
+#: .\automations\services.py:144
+msgid "👑 پنل مدیریت سازمان"
+msgstr "👑 Org Admin Panel"
+
+#: .\automations\services.py:154
+msgid "🏢 داشبورد کلان"
+msgstr "🏢 Dashboard"
+
+#: .\automations\services.py:155
+msgid "📂 پروژه‌های سازمان"
+msgstr "📂 Org Projects"
+
+#: .\automations\services.py:158
+msgid "📋 وضعیت تسک‌ها"
+msgstr "📋 Tasks Status"
+
+#: .\automations\services.py:159
+msgid "👥 اعضای سازمان"
+msgstr "👥 Org Members"
+
+#: .\automations\services.py:162
+msgid "🔙 بازگشت به منوی اصلی"
+msgstr "🔙 Back to Main Menu"
+
+#: .\automations\services.py:172
+msgid "🔙 بازگشت به منو"
+msgstr "🔙 Back to Menu"
+
+#: .\automations\services.py:181
+msgid "🔙 بازگشت به پنل مدیریت"
+msgstr "🔙 Back to Admin Panel"
+
+#: .\automations\services.py:193
+msgid ""
+"❌ <b>خطا:</b> شما در تلگرام آیدی (Username) ندارید!\n"
+"\n"
+"برای اتصال به سیستم مدار:\n"
+"۱. در تنظیمات تلگرام خود یک آیدی بسازید\n"
+"۲. آیدی را در پروفایل خود در سایت مدار وارد کنید\n"
+"۳. دوباره /start را بزنید"
+msgstr ""
+"❌ <b>Error:</b> You don't have a Telegram Username!\n"
+"\n"
+"To connect to Madaar:\n"
+"1. Set up a Username in Telegram settings\n"
+"2. Enter your Username in your Madaar profile\n"
+"3. Send /start again"
+
+#: .\automations\services.py:209
+#, python-brace-format
+msgid ""
+"🎉 <b>سلام {name} عزیز!</b>\n"
+"\n"
+"✅ حساب کاربری شما با موفقیت به ربات <b>مدار</b> متصل شد.\n"
+"از این پس اعلان‌های مهم کاری شما بلافاصله اینجا ارسال خواهد شد.\n"
+"\n"
+"از منوی زیر استفاده کنید:"
+msgstr ""
+"🎉 <b>Hello dear {name}!</b>\n"
+"\n"
+"✅ Your account is successfully linked to <b>Madaar</b>.\n"
+"Important work notifications will be sent here immediately.\n"
+"\n"
+"Use the menu below:"
+
+#: .\automations\services.py:220
+#, python-brace-format
+msgid ""
+"❌ <b>حساب کاربری یافت نشد!</b>\n"
+"\n"
+"آیدی تلگرام شما (<b>@{tg_username}</b>) در سیستم مدار ثبت نشده است.\n"
+"\n"
+"لطفاً در وب‌سایت مدار وارد پروفایل خود شوید، آیدی تلگرام خود را ثبت کنید و "
+"سپس /start را بزنید."
+msgstr ""
+"❌ <b>Account not found!</b>\n"
+"\n"
+"Your Telegram ID (<b>@{tg_username}</b>) is not registered in Madaar.\n"
+"\n"
+"Please login to Madaar website, register your Telegram ID in your profile, and then send /start."
+
+#: .\automations\services.py:228
+msgid ""
+"❌ <b>خطای سیستمی!</b>\n"
+"\n"
+"آیدی تلگرام شما در چند حساب مختلف ثبت شده. لطفاً با پشتیبانی تماس بگیرید."
+msgstr ""
+"❌ <b>System Error!</b>\n"
+"\n"
+"Your Telegram ID is linked to multiple accounts. Please contact support."
+
+#: .\automations\services.py:238
+msgid "کاربر"
+msgstr "User"
+
+#: .\automations\services.py:240
+#, python-brace-format
+msgid ""
+"🏠 <b>منوی اصلی ربات مدار</b>\n"
+"\n"
+"سلام {name}! از دکمه‌های زیر استفاده کنید:"
+msgstr ""
+"🏠 <b>Madaar Main Menu</b>\n"
+"\n"
+"Hello {name}! Use the buttons below:"
+
+#: .\automations\services.py:249
+msgid ""
+"🛠 <b>راهنمای ربات مدار</b>\n"
+"\n"
+"🔹 /start — اتصال حساب کاربری\n"
+"🔹 /status — وضعیت اتصال\n"
+"🔹 /myprojects — لیست پروژه‌های من\n"
+"🔹 /mytasks — لیست تسک‌های من\n"
+"🔹 /myorg — اطلاعات سازمان من\n"
+"🔹 /help — نمایش همین راهنما\n"
+"\n"
+"<i>💡 این ربات به صورت خودکار اعلان‌های کاری شما را ارسال می‌کند.</i>"
+msgstr ""
+"🛠 <b>Madaar Bot Guide</b>\n"
+"\n"
+"🔹 /start — Connect Account\n"
+"🔹 /status — Connection Status\n"
+"🔹 /myprojects — My Projects\n"
+"🔹 /mytasks — My Tasks\n"
+"🔹 /myorg — My Organization\n"
+"🔹 /help — Show this guide\n"
+"\n"
+"<i>💡 This bot automatically sends your work notifications.</i>"
+
+#: .\automations\services.py:267 .\automations\services.py:268
+msgid "✅ فعال"
+msgstr "✅ Active"
+
+#: .\automations\services.py:267 .\automations\services.py:268
+msgid "⏸ غیرفعال"
+msgstr "⏸ Inactive"
+
+#: .\automations\services.py:270
+#, python-brace-format
+msgid ""
+"📊 <b>وضعیت حساب کاربری</b>\n"
+"\n"
+"👤 <b>نام:</b> {name}\n"
+"📧 <b>ایمیل:</b> {email}\n"
+"📱 <b>آیدی تلگرام:</b> @{tg}\n"
+"\n"
+"<b>کانال‌های اعلان:</b>\n"
+"  تلگرام: {tg_status}\n"
+"  ایمیل: {email_status}"
+msgstr ""
+"📊 <b>Account Status</b>\n"
+"\n"
+"👤 <b>Name:</b> {name}\n"
+"📧 <b>Email:</b> {email}\n"
+"📱 <b>Telegram ID:</b> @{tg}\n"
+"\n"
+"<b>Notification Channels:</b>\n"
+"  Telegram: {tg_status}\n"
+"  Email: {email_status}"
+
+#: .\automations\services.py:286
+msgid ""
+"❌ <b>وضعیت اتصال:</b> قطع\n"
+"\n"
+"شما هنوز حساب کاربری خود را متصل نکرده‌اید.\n"
+"برای اتصال، دستور /start را ارسال کنید."
+msgstr ""
+"❌ <b>Connection Status:</b> Disconnected\n"
+"\n"
+"You haven't connected your account yet.\n"
+"Send /start to connect."
+
+#: .\automations\services.py:299 .\automations\services.py:334
+#: .\automations\services.py:376
+msgid "❌ ابتدا حساب خود را با /start متصل کنید."
+msgstr "❌ Connect your account first using /start."
+
+#: .\automations\services.py:312
+msgid ""
+"📂 <b>پروژه‌های من</b>\n"
+"\n"
+"شما در حال حاضر عضو هیچ پروژه فعالی نیستید."
+msgstr ""
+"📂 <b>My Projects</b>\n"
+"\n"
+"You are not currently a member of any active project."
+
+#: .\automations\services.py:316
+msgid "📂 <b>پروژه‌های من</b>\n"
+msgstr "📂 <b>My Projects</b>\n"
+
+#: .\automations\services.py:322
+#, python-brace-format
+msgid ""
+"\n"
+"<i>مجموع: {count} پروژه</i>"
+msgstr ""
+"\n"
+"<i>Total: {count} Projects</i>"
+
+#: .\automations\services.py:347
+msgid ""
+"📋 <b>تسک‌های من</b>\n"
+"\n"
+"🎉 هیچ تسک باز و ناتمامی ندارید! آفرین!"
+msgstr ""
+"📋 <b>My Tasks</b>\n"
+"\n"
+"🎉 You have no open tasks! Great job!"
+
+#: .\automations\services.py:352
+msgid "📋 <b>تسک‌های من (باز)</b>\n"
+msgstr "📋 <b>My Tasks (Open)</b>\n"
+
+#: .\automations\services.py:364
+#, python-brace-format
+msgid ""
+"\n"
+"<i>نمایش {count} از {total} تسک باز</i>"
+msgstr ""
+"\n"
+"<i>Showing {count} of {total} open tasks</i>"
+
+#: .\automations\services.py:396
+#, python-brace-format
+msgid "👑 شما مالک سازمان <b>{org}</b> هستید (👥 {count} عضو)"
+msgstr "👑 You are the owner of <b>{org}</b> (👥 {count} members)"
+
+#: .\automations\services.py:398
+#, python-brace-format
+msgid "💼 شما عضو سازمان <b>{org}</b> هستید (🎖 نقش: {role})"
+msgstr "💼 You are a member of <b>{org}</b> (🎖 Role: {role})"
+
+#: .\automations\services.py:405
+#, python-brace-format
+msgid "👑 شما مالک سازمان <b>{org}</b> هستید (👥 {count} عضو | مدیر کل)"
+msgstr "👑 You are the owner of <b>{org}</b> (👥 {count} members | Super Admin)"
+
+#: .\automations\services.py:409
+msgid ""
+"🏢 <b>سازمان من</b>\n"
+"\n"
+"شما هنوز عضو هیچ سازمانی نیستید."
+msgstr ""
+"🏢 <b>My Organization</b>\n"
+"\n"
+"You are not a member of any organization yet."
+
+#: .\automations\services.py:413
+msgid "🏢 <b>سازمان‌های مرتبط با من</b>\n"
+msgstr "🏢 <b>Organizations related to me</b>\n"
+
+#: .\automations\services.py:440
+#, python-brace-format
+msgid ""
+"👑 <b>پنل مدیریت سازمان ({org})</b>\n"
+"\n"
+"از بخش‌های زیر برای مشاهده وضعیت کلان سازمان استفاده کنید:"
+msgstr ""
+"👑 <b>Organization Admin Panel ({org})</b>\n"
+"\n"
+"Use the sections below to view macro-level organization status:"
+
+#: .\automations\services.py:482
+#, python-brace-format
+msgid ""
+"👑 <b>داشبورد کلان سازمان</b>\n"
+"\n"
+"🏢 <b>نام سازمان:</b> {org}\n"
+"\n"
+"👥 <b>تعداد پرسنل:</b> {members} نفر\n"
+"📂 <b>پروژه‌ها:</b> {projects} (فعال: {active})\n"
+"📋 <b>تسک‌های باز:</b> {tasks} تسک"
+msgstr ""
+"👑 <b>Organization Dashboard</b>\n"
+"\n"
+"🏢 <b>Name:</b> {org}\n"
+"\n"
+"👥 <b>Personnel:</b> {members}\n"
+"📂 <b>Projects:</b> {projects} (Active: {active})\n"
+"📋 <b>Open Tasks:</b> {tasks}"
+
+#: .\automations\services.py:509
+msgid "هیچ پروژه‌ای در سازمان ثبت نشده است."
+msgstr "No projects are registered in this organization."
+
+#: .\automations\services.py:511
+#, python-brace-format
+msgid "📂 <b>پروژه‌های سازمان ({org})</b>\n"
+msgstr "📂 <b>Organization Projects ({org})</b>\n"
+
+#: .\automations\services.py:517
+#, python-brace-format
+msgid ""
+"\n"
+"<i>نمایش {count} از {total} پروژه</i>"
+msgstr ""
+"\n"
+"<i>Showing {count} of {total} projects</i>"
+
+#: .\automations\services.py:542
+#, python-brace-format
+msgid ""
+"📋 <b>وضعیت تسک‌های سازمان</b>\n"
+"\n"
+"📊 <b>مجموع کل تسک‌ها:</b> {total}\n"
+"\n"
+"✅ <b>انجام شده:</b> {done} تسک\n"
+"🚀 <b>در حال انجام:</b> {in_progress} تسک\n"
+"👀 <b>در انتظار بررسی:</b> {review} تسک\n"
+"📝 <b>شروع نشده (Todo):</b> {todo} تسک"
+msgstr ""
+"📋 <b>Organization Tasks Status</b>\n"
+"\n"
+"📊 <b>Total Tasks:</b> {total}\n"
+"\n"
+"✅ <b>Done:</b> {done}\n"
+"🚀 <b>In Progress:</b> {in_progress}\n"
+"👀 <b>Under Review:</b> {review}\n"
+"📝 <b>Todo:</b> {todo}"
+
+#: .\automations\services.py:574
+#, python-brace-format
+msgid "👥 <b>اعضای سازمان ({org})</b>\n"
+msgstr "👥 <b>Organization Members ({org})</b>\n"
+
+#: .\automations\services.py:581
+#, python-brace-format
+msgid ""
+"\n"
+"<i>نمایش {count} از {total} عضو</i>"
+msgstr ""
+"\n"
+"<i>Showing {count} of {total} members</i>"
+
+#: .\automations\services.py:604
+msgid ""
+"🚫 <b>حساب شما موقتاً مسدود شد!</b>\n"
+"\n"
+"به دلیل ارسال پیام‌های نامعتبر و پشت سر هم (اسپم)، دسترسی شما به ربات به مدت "
+"<b>۵ دقیقه</b> مسدود گردید.\n"
+"\n"
+"لطفاً پس از پایان این زمان، فقط از منوها و دکمه‌های ربات استفاده کنید."
+msgstr ""
+"🚫 <b>Your account is temporarily blocked!</b>\n"
+"\n"
+"Due to spamming, your access to the bot has been blocked for <b>5 minutes</b>.\n"
+"\n"
+"Please only use the bot buttons after this period ends."
+
+#: .\automations\services.py:617
+msgid ""
+"❓ <b>دستور نامعتبر!</b>\n"
+"\n"
+"متوجه نشدم. لطفاً از دکمه‌های زیر استفاده کنید:"
+msgstr ""
+"❓ <b>Invalid Command!</b>\n"
+"\n"
+"I didn't understand. Please use the buttons below:"
+
+#: .\automations\services.py:624
+msgid ""
+"❓ <b>دستور نامعتبر!</b>\n"
+"\n"
+"ابتدا با دستور /start حساب خود را متصل کنید."
+msgstr ""
+"❓ <b>Invalid Command!</b>\n"
+"\n"
+"Connect your account first using /start."
+
+#: .\billing\models.py:10 .\tasks\models.py:66
+msgid "Code"
+msgstr ""
+
+#: .\billing\models.py:14
+msgid "Unique discount code like SUMMER2025"
+msgstr ""
+
+#: .\billing\models.py:18
+msgid "Discount Percentage"
+msgstr ""
+
+#: .\billing\models.py:20
+msgid "Percentage between 1 and 100"
+msgstr ""
+
+#: .\billing\models.py:23
+msgid "Max Usage Count"
+msgstr ""
+
+#: .\billing\models.py:23
+msgid "Total number of times this code can be used"
+msgstr ""
+
+#: .\billing\models.py:25
+msgid "Current Usage Count"
+msgstr ""
+
+#: .\billing\models.py:26
+msgid "Expiration Date"
+msgstr ""
+
+#: .\billing\models.py:27
+msgid "Is Active"
+msgstr ""
+
+#: .\billing\models.py:30
+msgid "Discount Code"
+msgstr ""
+
+#: .\billing\models.py:31
+msgid "Discount Codes"
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:8
+msgid "Validation error"
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:9
+msgid "Terminal is not valid, please check merchant_id or ip address."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:10
+msgid "Terminal is not active, please contact our support team."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:11
+msgid "Too many attempts, please try again later."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:12
+msgid "Terminal user is suspended: (please contact our support team)."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:13
+#: .\billing\payment_gateways\zarinpal.py:14
+msgid "Terminal user level is not valid: (please contact our support team)."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:15
+msgid "Success"
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:16
+msgid "Terminal does not allow to accept floating wages."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:17
+msgid ""
+"Terminal does not allow to accept wages, please add default bank account in "
+"panel."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:18
+msgid ""
+"Wages is not valid, Total wages(floating) has been overloaded max amount."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:19
+msgid "Wages floating is not valid."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:20
+msgid "Wages is not valid, Total wages(fixed) has been overloaded max amount."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:21
+msgid ""
+"Wages is not valid, Total wages(floating) has reached the limit in max parts."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:22
+msgid "The minimum amount for wages(floating) should be 10,000 Rials."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:23
+msgid ""
+"One or more iban entered for wages(floating) from the bank side are inactive."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:24
+msgid "Wages need to set Iban in shaparak."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:25
+msgid "Wages have an error!"
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:26
+msgid "Invalid extra params, expire_in is not valid."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:27
+msgid "Session is not valid, amounts values are not the same."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:28
+msgid "Session is not valid, session is not an active paid try."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:29
+msgid "Oops!!, please contact our support team."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:30
+msgid "Session is not this merchant_id session."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:31
+msgid "Invalid authority."
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:32
+msgid "Verified"
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:74
+#: .\billing\payment_gateways\zarinpal.py:102
+msgid "Connection timed out"
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:79
+#: .\billing\payment_gateways\zarinpal.py:107
+msgid "Error in connection with the payment gateway"
+msgstr ""
+
+#: .\billing\payment_gateways\zarinpal.py:82
+#: .\billing\payment_gateways\zarinpal.py:110 .\config\renderers.py:24
+msgid "An unknown error occurred"
+msgstr ""
+
+#: .\config\renderers.py:19
+#, python-brace-format
+msgid "Field {field}: {error}"
+msgstr ""
+
+#: .\config\renderers.py:27
+msgid "The operation was successful"
+msgstr ""
+
+#: .\config\renderers.py:29
+msgid "An error occurred during the operation"
+msgstr ""
+
+#: .\dashboard\Ticketing\serializers.py:197 .\panel\Ticketing\models.py:28
+msgid "Closed"
+msgstr ""
+
+#: .\panel\Feedback\models.py:12 .\panel\Notification\models.py:16
+#: .\projects\models.py:111 .\tasks\models.py:413
+msgid "User"
+msgstr ""
+
+#: .\panel\Feedback\models.py:14
+msgid "Subject"
+msgstr ""
+
+#: .\panel\Feedback\models.py:15 .\panel\Ticketing\models.py:88
+msgid "Message Text"
+msgstr ""
+
+#: .\panel\Feedback\models.py:18
+msgid "Feedback"
+msgstr ""
+
+#: .\panel\Feedback\models.py:19
+msgid "Feedbacks"
+msgstr ""
+
+#: .\panel\Notification\models.py:18
+msgid "Text"
+msgstr ""
+
+#: .\panel\Notification\models.py:19
+msgid "Link"
+msgstr ""
+
+#: .\panel\Notification\models.py:20 .\panel\Ticketing\models.py:89
+msgid "Seen"
+msgstr ""
+
+#: .\panel\Notification\models.py:23
+msgid "Notification"
+msgstr ""
+
+#: .\panel\Notification\models.py:24
+msgid "Notifications"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:13
+msgid "Type Name"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:16 .\panel\Ticketing\models.py:46
+msgid "Ticket Type"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:17
+msgid "Ticket Types"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:26
+msgid "Open"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:27
+msgid "Answered"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:29
+msgid "In Progress"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:32 .\tasks\models.py:105
+msgid "Low"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:33 .\tasks\models.py:106
+msgid "Medium"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:34 .\tasks\models.py:107
+msgid "High"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:35
+msgid "Urgent"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:38
+msgid "User (Requester)"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:40 .\projects\models.py:206
+#: .\tasks\models.py:126
+msgid "Title"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:49 .\tasks\models.py:135
+msgid "Priority"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:58
+msgid "Closed At"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:61 .\panel\Ticketing\models.py:83
+msgid "Ticket"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:62
+msgid "Tickets"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:86
+msgid "Sender"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:92 .\panel\Ticketing\models.py:114
+msgid "Message"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:93
+msgid "Messages"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:117
+msgid "File"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:141
+msgid "Attachment"
+msgstr ""
+
+#: .\panel\Ticketing\models.py:142
+msgid "Attachments"
+msgstr ""
+
+#: .\panel\User\serializers.py:48 .\panel\User\serializers.py:89
+msgid "A user with this email already exists."
+msgstr ""
+
+#: .\projects\models.py:14
+msgid "Draft"
+msgstr ""
+
+#: .\projects\models.py:15
+msgid "Active"
+msgstr ""
+
+#: .\projects\models.py:16
+msgid "On hold"
+msgstr ""
+
+#: .\projects\models.py:17 .\projects\models.py:197 .\tasks\models.py:280
+msgid "Completed"
+msgstr ""
+
+#: .\projects\models.py:18
+msgid "Archived"
+msgstr ""
+
+#: .\projects\models.py:24 .\tasks\models.py:421
+msgid "Organization"
+msgstr ""
+
+#: .\projects\models.py:31
+msgid "Owner"
+msgstr ""
+
+#: .\projects\models.py:37 .\tasks\models.py:71
+msgid "Name"
+msgstr ""
+
+#: .\projects\models.py:40
+msgid "Budget"
+msgstr ""
+
+#: .\projects\models.py:48
+msgid "Budget currency"
+msgstr ""
+
+#: .\projects\models.py:58 .\projects\models.py:216
+msgid "Start date"
+msgstr ""
+
+#: .\projects\models.py:61
+msgid "The date when the project officially begins."
+msgstr ""
+
+#: .\projects\models.py:64
+msgid "Deadline"
+msgstr ""
+
+#: .\projects\models.py:67
+msgid "The absolute final date for project completion."
+msgstr ""
+
+#: .\projects\models.py:69 .\projects\models.py:225
+msgid "Completed at"
+msgstr ""
+
+#: .\projects\models.py:70
+msgid "Archived at"
+msgstr ""
+
+#: .\projects\models.py:73 .\projects\models.py:105 .\projects\models.py:204
+#: .\projects\models.py:278 .\projects\models.py:287 .\tasks\models.py:28
+#: .\tasks\models.py:114
+msgid "Project"
+msgstr ""
+
+#: .\projects\models.py:74
+msgid "Projects"
+msgstr ""
+
+#: .\projects\models.py:120
+msgid "Team"
+msgstr ""
+
+#: .\projects\models.py:126
+msgid "Specialty"
+msgstr ""
+
+#: .\projects\models.py:129
+msgid "Specialty/Skill, e.g., Frontend, UI/UX"
+msgstr ""
+
+#: .\projects\models.py:132
+msgid "Allocation percentage"
+msgstr ""
+
+#: .\projects\models.py:136
+msgid "Percentage of user's work capacity dedicated to this project (1-100%)"
+msgstr ""
+
+#: .\projects\models.py:140
+msgid "Allocation start date"
+msgstr ""
+
+#: .\projects\models.py:144
+msgid ""
+"When this member starts working on the project. May differ from the project "
+"start date."
+msgstr ""
+
+#: .\projects\models.py:148
+msgid "Allocation end date"
+msgstr ""
+
+#: .\projects\models.py:152
+msgid ""
+"When this member stops working on the project. May differ from the project "
+"deadline."
+msgstr ""
+
+#: .\projects\models.py:155
+msgid "Is active"
+msgstr ""
+
+#: .\projects\models.py:158
+msgid "Project Member"
+msgstr ""
+
+#: .\projects\models.py:159
+msgid "Project Members"
+msgstr ""
+
+#: .\projects\models.py:185
+msgid "No project"
+msgstr ""
+
+#: .\projects\models.py:187
+msgid "Unassigned"
+msgstr ""
+
+#: .\projects\models.py:196
+msgid "In progress"
+msgstr ""
+
+#: .\projects\models.py:198
+msgid "Cancelled"
+msgstr ""
+
+#: .\projects\models.py:219
+msgid "When work on this milestone begins."
+msgstr ""
+
+#: .\projects\models.py:222
+msgid "Target date"
+msgstr ""
+
+#: .\projects\models.py:223
+msgid "The expected completion date for this milestone."
+msgstr ""
+
+#: .\projects\models.py:227
+msgid "Sequence"
+msgstr ""
+
+#: .\projects\models.py:227
+msgid "Phase order"
+msgstr ""
+
+#: .\projects\models.py:230
+msgid "Weight"
+msgstr ""
+
+#: .\projects\models.py:233
+msgid ""
+"Weight/Percentage of this milestone in overall project progress (e.g. 1 to "
+"100)"
+msgstr ""
+
+#: .\projects\models.py:238 .\projects\models.py:280 .\tasks\models.py:122
+msgid "Milestone"
+msgstr ""
+
+#: .\projects\models.py:239
+msgid "Milestones"
+msgstr ""
+
+#: .\projects\models.py:263
+msgid "Project created"
+msgstr ""
+
+#: .\projects\models.py:264
+msgid "Project updated"
+msgstr ""
+
+#: .\projects\models.py:265
+msgid "Project deleted"
+msgstr ""
+
+#: .\projects\models.py:266
+msgid "Member added"
+msgstr ""
+
+#: .\projects\models.py:267
+msgid "Member updated"
+msgstr ""
+
+#: .\projects\models.py:268
+msgid "Member removed"
+msgstr ""
+
+#: .\projects\models.py:269
+msgid "Milestone created"
+msgstr ""
+
+#: .\projects\models.py:270
+msgid "Milestone updated"
+msgstr ""
+
+#: .\projects\models.py:271
+msgid "Milestone completed"
+msgstr ""
+
+#: .\projects\models.py:272
+msgid "Milestone deleted"
+msgstr ""
+
+#: .\projects\models.py:273
+msgid "Task created"
+msgstr ""
+
+#: .\projects\models.py:274
+msgid "Task updated"
+msgstr ""
+
+#: .\projects\models.py:275
+msgid "Task completed"
+msgstr ""
+
+#: .\projects\models.py:279
+msgid "Member"
+msgstr ""
+
+#: .\projects\models.py:281 .\tasks\models.py:182 .\tasks\models.py:277
+#: .\tasks\models.py:306 .\tasks\models.py:362
+msgid "Task"
+msgstr ""
+
+#: .\projects\models.py:293 .\tasks\models.py:378
+msgid "Actor"
+msgstr ""
+
+#: .\projects\models.py:299
+msgid "Event type"
+msgstr ""
+
+#: .\projects\models.py:302
+msgid "Entity type"
+msgstr ""
+
+#: .\projects\models.py:305
+msgid "Entity ID"
+msgstr ""
+
+#: .\projects\models.py:307
+msgid "Metadata"
+msgstr ""
+
+#: .\projects\models.py:310
+msgid "Project Activity"
+msgstr ""
+
+#: .\projects\models.py:311
+msgid "Project Activities"
+msgstr ""
+
+#: .\projects\permissions.py:104
+msgid "You do not have permission to modify this project."
+msgstr ""
+
+#: .\projects\permissions.py:127
+msgid "Only organisation admins or staff can create projects."
+msgstr ""
+
+#: .\projects\permissions.py:164
+msgid "You do not have permission to manage project members."
+msgstr ""
+
+#: .\projects\permissions.py:192
+msgid "You must be a project member to manage milestones."
+msgstr ""
+
+#: .\projects\permissions.py:222
+msgid "You do not have permission to view this project's activity."
+msgstr ""
+
+#: .\projects\serializers.py:176
+msgid "Deadline must be on or after the start date."
+msgstr ""
+
+#: .\projects\serializers.py:187
+msgid "Start date cannot be after an existing milestone."
+msgstr ""
+
+#: .\projects\serializers.py:199
+msgid "Start date cannot be after an existing member allocation."
+msgstr ""
+
+#: .\projects\serializers.py:212
+msgid "Deadline cannot be before an existing milestone."
+msgstr ""
+
+#: .\projects\serializers.py:224
+msgid "Deadline cannot be before an existing member allocation."
+msgstr ""
+
+#: .\projects\serializers.py:241
+msgid "The selected owner is not a member of this organisation."
+msgstr ""
+
+#: .\projects\serializers.py:255
+msgid "You cannot change the organisation of an existing project."
+msgstr ""
+
+#: .\projects\serializers.py:328
+msgid "A project member must have either a user or a team assigned."
+msgstr ""
+
+#: .\projects\serializers.py:351
+msgid "This user is already a member of this project."
+msgstr ""
+
+#: .\projects\serializers.py:355
+msgid "This team is already a member of this project."
+msgstr ""
+
+#: .\projects\serializers.py:371
+msgid "Allocation end date must be on or after the allocation start date."
+msgstr ""
+
+#: .\projects\serializers.py:386
+msgid "Allocation start date cannot be before the project's start date."
+msgstr ""
+
+#: .\projects\serializers.py:394
+msgid "Allocation end date cannot be after the project's deadline."
+msgstr ""
+
+#: .\projects\serializers.py:412
+msgid "The selected user is not a member of the project's organisation."
+msgstr ""
+
+#: .\projects\serializers.py:420
+msgid "The selected team does not belong to the project's organisation."
+msgstr ""
+
+#: .\projects\serializers.py:469
+msgid "Target date must be on or after the start date."
+msgstr ""
+
+#: .\projects\serializers.py:484
+msgid "Target date cannot be after the project's deadline."
+msgstr ""
+
+#: .\projects\serializers.py:492
+msgid "Start date cannot be before the project's start date."
+msgstr ""
+
+#: .\projects\views.py:90
+msgid "List projects"
+msgstr ""
+
+#: .\projects\views.py:92
+msgid "Return all non-deleted projects accessible to the authenticated user."
+msgstr ""
+
+#: .\projects\views.py:97
+msgid "Create a project"
+msgstr ""
+
+#: .\projects\views.py:98
+msgid "Create a new project. Requires org-admin or staff role."
+msgstr ""
+
+#: .\projects\views.py:102
+msgid "Retrieve a project"
+msgstr ""
+
+#: .\projects\views.py:103
+msgid "Full project detail including members and milestones."
+msgstr ""
+
+#: .\projects\views.py:106
+msgid "Update a project"
+msgstr ""
+
+#: .\projects\views.py:108
+msgid "Partially update a project"
+msgstr ""
+
+#: .\projects\views.py:110
+msgid "Soft-delete a project"
+msgstr ""
+
+#: .\projects\views.py:198
+msgid "List project teams"
+msgstr ""
+
+#: .\projects\views.py:216
+msgid "Archive a project"
+msgstr ""
+
+#: .\projects\views.py:231
+msgid "Complete a project"
+msgstr ""
+
+#: .\projects\views.py:252
+msgid "List project members"
+msgstr ""
+
+#: .\projects\views.py:253
+msgid "Add a project member"
+msgstr ""
+
+#: .\projects\views.py:254
+msgid "Retrieve a project member"
+msgstr ""
+
+#: .\projects\views.py:255
+msgid "Update a project member"
+msgstr ""
+
+#: .\projects\views.py:257
+msgid "Partially update a project member"
+msgstr ""
+
+#: .\projects\views.py:259
+msgid "Remove a project member"
+msgstr ""
+
+#: .\projects\views.py:335
+msgid "List milestones"
+msgstr ""
+
+#: .\projects\views.py:336
+msgid "Create a milestone"
+msgstr ""
+
+#: .\projects\views.py:337
+msgid "Retrieve a milestone"
+msgstr ""
+
+#: .\projects\views.py:338
+msgid "Update a milestone"
+msgstr ""
+
+#: .\projects\views.py:340
+msgid "Partially update a milestone"
+msgstr ""
+
+#: .\projects\views.py:342
+msgid "Soft-delete a milestone"
+msgstr ""
+
+#: .\projects\views.py:415
+msgid "List project activities"
+msgstr ""
+
+#: .\projects\views.py:416
+msgid "Return the live activity timeline for a project."
+msgstr ""
+
+#: .\projects\views.py:420
+msgid "Retrieve a project activity entry"
+msgstr ""
+
+#: .\tasks\apps.py:8 .\tasks\models.py:183
+msgid "Tasks"
+msgstr ""
+
+#: .\tasks\models.py:13
+msgid "The maximum file size that can be uploaded is 10MB"
+msgstr ""
+
+#: .\tasks\models.py:19
+msgid "Board Title"
+msgstr ""
+
+#: .\tasks\models.py:22
+msgid "Background Color"
+msgstr ""
+
+#: .\tasks\models.py:36
+msgid "Created By"
+msgstr ""
+
+#: .\tasks\models.py:40 .\tasks\models.py:76
+msgid "Order"
+msgstr ""
+
+#: .\tasks\models.py:43 .\tasks\models.py:62 .\tasks\models.py:370
+msgid "Board"
+msgstr ""
+
+#: .\tasks\models.py:44
+msgid "Boards"
+msgstr ""
+
+#: .\tasks\models.py:68
+msgid "Identifier for the status (e.g., 'todo', 'doing', 'review')"
+msgstr ""
+
+#: .\tasks\models.py:73
+msgid "Display name for the status (e.g., 'To Do', 'Doing', 'Review')"
+msgstr ""
+
+#: .\tasks\models.py:78
+msgid "Order in Kanban board columns"
+msgstr ""
+
+#: .\tasks\models.py:82
+msgid "Task Status"
+msgstr ""
+
+#: .\tasks\models.py:83
+msgid "Task Statuses"
+msgstr ""
+
+#: .\tasks\models.py:108
+msgid "Critical"
+msgstr ""
+
+#: .\tasks\models.py:144
+msgid "Assignee"
+msgstr ""
+
+#: .\tasks\models.py:152
+msgid "Reporter"
+msgstr ""
+
+#: .\tasks\models.py:156
+msgid "Due date"
+msgstr ""
+
+#: .\tasks\models.py:158
+msgid "Progress Percent"
+msgstr ""
+
+#: .\tasks\models.py:161
+msgid "Estimated Hours"
+msgstr ""
+
+#: .\tasks\models.py:164
+msgid "Spent Hours"
+msgstr ""
+
+#: .\tasks\models.py:168
+msgid "Hours logged by the assignee"
+msgstr ""
+
+#: .\tasks\models.py:174
+msgid "Parent Task"
+msgstr ""
+
+#: .\tasks\models.py:178
+msgid "Kanban Order"
+msgstr ""
+
+#: .\tasks\models.py:179
+msgid "Is Finished"
+msgstr ""
+
+#: .\tasks\models.py:212 .\tasks\serializers.py:315
+msgid "Status must belong to a board in the same project."
+msgstr ""
+
+#: .\tasks\models.py:283
+msgid "Task Checklist Item"
+msgstr ""
+
+#: .\tasks\models.py:284
+msgid "Task Checklist Items"
+msgstr ""
+
+#: .\tasks\models.py:312
+msgid "Author"
+msgstr ""
+
+#: .\tasks\models.py:316
+msgid "Content"
+msgstr ""
+
+#: .\tasks\models.py:318
+msgid "Attached file"
+msgstr ""
+
+#: .\tasks\models.py:341
+msgid "Task Comment"
+msgstr ""
+
+#: .\tasks\models.py:342
+msgid "Task Comments"
+msgstr ""
+
+#: .\tasks\models.py:382
+msgid "Action"
+msgstr ""
+
+#: .\tasks\models.py:385
+msgid "Task Activity Log"
+msgstr ""
+
+#: .\tasks\models.py:386
+msgid "Task Activity Logs"
+msgstr ""
+
+#: .\tasks\models.py:425
+msgid "Yesterday's Work"
+msgstr ""
+
+#: .\tasks\models.py:426
+msgid "Today's Work"
+msgstr ""
+
+#: .\tasks\models.py:427
+msgid "Blockers"
+msgstr ""
+
+#: .\tasks\models.py:430
+msgid "Async Standup"
+msgstr ""
+
+#: .\tasks\models.py:431
+msgid "Async Standups"
+msgstr ""
+
+#: .\tasks\serializers.py:89
+msgid "Invalid background_color format. Use hex format like #6366f1."
+msgstr ""
+
+#: .\tasks\serializers.py:103
+msgid "Checklist item description cannot be empty."
+msgstr ""
+
+#: .\tasks\serializers.py:140 .\tasks\services.py:506
+msgid "Comment must contain either text content or an attached file."
+msgstr ""
+
+#: .\tasks\serializers.py:268
+msgid "Estimated hours cannot be negative."
+msgstr ""
+
+#: .\tasks\serializers.py:273
+msgid "Due date cannot be in the past."
+msgstr ""
+
+#: .\tasks\serializers.py:286
+msgid "A task cannot be its own parent."
+msgstr ""
+
+#: .\tasks\serializers.py:298
+msgid "Parent task hierarchy is too deep."
+msgstr ""
+
+#: .\tasks\serializers.py:302
+msgid "Circular parent task detected."
+msgstr ""
+
+#: .\tasks\serializers.py:321 .\tasks\services.py:258
+msgid "Parent task must belong to the same project."
+msgstr ""
+
+#: .\tasks\serializers.py:349 .\tasks\services.py:533
+msgid "Both yesterday's work and today's work fields are required."
+msgstr ""
+
+#: .\tasks\serializers.py:355
+msgid "UUID of the object to reorder"
+msgstr ""
+
+#: .\tasks\serializers.py:357
+msgid "New 1-based order position"
+msgstr ""
+
+#: .\tasks\serializers.py:362
+msgid "UUID of the project"
+msgstr ""
+
+#: .\tasks\serializers.py:364
+msgid "List of board ordering objects"
+msgstr ""
+
+#: .\tasks\serializers.py:369
+msgid "UUID of the board"
+msgstr ""
+
+#: .\tasks\serializers.py:371
+msgid "List of status ordering objects"
+msgstr ""
+
+#: .\tasks\services.py:40
+msgid "To Do"
+msgstr ""
+
+#: .\tasks\services.py:41
+msgid "Doing"
+msgstr ""
+
+#: .\tasks\services.py:42
+msgid "Review"
+msgstr ""
+
+#: .\tasks\services.py:43
+msgid "Done"
+msgstr ""
+
+#: .\tasks\services.py:89
+#, python-format
+msgid "Reordered boards in project '%(project)s'"
+msgstr ""
+
+#: .\tasks\services.py:121
+#, python-format
+msgid "Added status '%(name)s' to board"
+msgstr ""
+
+#: .\tasks\services.py:144
+#, python-format
+msgid "Removed status '%(name)s' from board"
+msgstr ""
+
+#: .\tasks\services.py:178
+#, python-format
+msgid "Reordered statuses on board '%(board)s'"
+msgstr ""
+
+#: .\tasks\services.py:233
+msgid "You are not a member of this project."
+msgstr ""
+
+#: .\tasks\services.py:244 .\tasks\services.py:297
+msgid "Assignee must be a member of the organization."
+msgstr ""
+
+#: .\tasks\services.py:255
+msgid "No statuses found for this project."
+msgstr ""
+
+#: .\tasks\services.py:280
+#, python-format
+msgid "Task created: %(title)s"
+msgstr ""
+
+#: .\tasks\services.py:311
+msgid "Updated fields: "
+msgstr ""
+
+#: .\tasks\services.py:336
+msgid "Only the assignee or a project manager can move this task."
+msgstr ""
+
+#: .\tasks\services.py:343 .\tasks\views.py:395
+msgid ""
+"Task is completed (Done) and locked. It cannot be moved to another status."
+msgstr ""
+
+#: .\tasks\services.py:357
+msgid "Target status does not belong to the same project."
+msgstr ""
+
+#: .\tasks\services.py:360
+#, python-format
+msgid "Status changed to %(st)s"
+msgstr ""
+
+#: .\tasks\services.py:392
+msgid "Cannot move to Done: No time has been tracked for this task."
+msgstr ""
+
+#: .\tasks\services.py:402
+msgid "Order changed"
+msgstr ""
+
+#: .\tasks\services.py:434
+#, python-format
+msgid "Deleted task: %(title)s"
+msgstr ""
+
+#: .\tasks\services.py:455
+#, python-format
+msgid "Added checklist item: %(desc)s"
+msgstr ""
+
+#: .\tasks\services.py:466
+msgid "completed"
+msgstr ""
+
+#: .\tasks\services.py:466
+msgid "uncompleted"
+msgstr ""
+
+#: .\tasks\services.py:473
+#, python-format
+msgid "Marked checklist '%(desc)s' as %(status)s"
+msgstr ""
+
+#: .\tasks\services.py:493
+#, python-format
+msgid "Deleted checklist item: %(desc)s"
+msgstr ""
+
+#: .\tasks\services.py:519
+msgid "Added a comment."
+msgstr ""
+
+#: .\tasks\views.py:381
+msgid "Task has no valid status."
+msgstr ""
+
+msgid "?? ???? / Language"
+msgstr "?? Language"
+
+msgid "?? <b>?????? ???? / Language Selection</b>\n\n????? ???? ???? ??? ??? ?? ?????? ????:\nPlease select your preferred language:"
+msgstr "?? <b>Language Selection</b>\n\nPlease select your preferred language:"
+
+msgid "? ???? ??? ?? ?????? ?? ??? ??."
+msgstr "? Your language has been successfully updated."

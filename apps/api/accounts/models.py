@@ -53,6 +53,15 @@ class User(AbstractUser, BaseModel):
         unique=True,
         help_text=_("e.g. @username or username without @"),
     )
+    telegram_language = models.CharField(
+        max_length=10,
+        default='en',
+        help_text="User's preferred language for Telegram bot (e.g. 'fa', 'en')"
+    )
+    has_set_language_manually = models.BooleanField(
+        default=False,
+        help_text="True if user explicitly selected language in bot"
+    )
     
     # Notification Preferences
     notify_via_email = models.BooleanField(default=True)

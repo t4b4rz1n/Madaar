@@ -21,11 +21,22 @@ def check_approaching_milestones():
     
     for milestone in approaching_milestones:
         project = milestone.project
+        target_ids = []
         if project.owner_id:
+            target_ids.append(str(project.owner_id))
+            
+        from organizations.models import OrganizationMembership
+        team_leads = OrganizationMembership.objects.filter(
+            organization_id=project.organization_id,
+            role=OrganizationMembership.Role.TEAM_LEAD
+        ).values_list('user_id', flat=True)
+        target_ids.extend([str(tl) for tl in team_leads])
+        
+        if target_ids:
             EventDispatcher.dispatch(
                 event_type="milestone_approaching",
                 payload={
-                    "target_user_id": str(project.owner_id),
+                    "target_user_ids": list(set(target_ids)),
                     "project_name": project.name,
                     "milestone_title": milestone.title
                 }
