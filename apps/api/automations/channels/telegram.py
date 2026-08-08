@@ -1,6 +1,7 @@
 import logging
 import requests
 from django.conf import settings
+from celery import shared_task
 
 logger = logging.getLogger(__name__)
 
@@ -8,6 +9,7 @@ logger = logging.getLogger(__name__)
 _session = requests.Session()
 
 
+@shared_task
 def send_telegram_notification(chat_id: str, message: str, reply_markup: dict = None):
     """
     Sends a Telegram notification to a specific chat_id.
@@ -44,6 +46,7 @@ def send_telegram_notification(chat_id: str, message: str, reply_markup: dict = 
         return False
 
 
+@shared_task
 def answer_callback_query(callback_query_id: str, text: str = "", show_alert: bool = False):
     """
     Answers an inline keyboard callback query to remove the loading indicator.
@@ -65,6 +68,7 @@ def answer_callback_query(callback_query_id: str, text: str = "", show_alert: bo
         return False
 
 
+@shared_task
 def edit_telegram_message(chat_id: str, message_id: int, text: str, reply_markup: dict = None):
     """
     Edits an existing Telegram message (used for updating inline button responses).

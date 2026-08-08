@@ -1,23 +1,71 @@
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 from .models import Project, ProjectMember, Milestone
 from automations.events import EventDispatcher
 
+@receiver(pre_save, sender=ProjectMember)
+def cache_previous_project_member(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            old = ProjectMember.objects.get(pk=instance.pk)
+            instance.__original_user_id = old.user_id
+        except ProjectMember.DoesNotExist:
+            instance.__original_user_id = None
+    else:
+        instance.__original_user_id = None
+
 @receiver(post_save, sender=ProjectMember)
-def notify_project_member_added(sender, instance, created, **kwargs):
+def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
     """
     3. project_created: When a user is added to a project
+    Also handles when a member user is changed.
     """
+    project = instance.project
+    creator_name = project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
+    
     if created and instance.user:
-        project = instance.project
-        creator_name = project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
-        
         EventDispatcher.dispatch(
             event_type="project_created",
             payload={
                 "target_user_id": str(instance.user.id),
                 "project_name": project.name,
                 "creator_name": creator_name
+            }
+        )
+    elif not created:
+        old_user_id = getattr(instance, "__original_user_id", None)
+        if old_user_id and old_user_id != instance.user_id:
+            # Notify old user they were removed
+            EventDispatcher.dispatch(
+                event_type="project_member_removed",
+                payload={
+                    "target_user_id": str(old_user_id),
+                    "project_name": project.name,
+                    "remover_name": creator_name
+                }
+            )
+            # Notify new user they were added
+            if instance.user:
+                EventDispatcher.dispatch(
+                    event_type="project_created",
+                    payload={
+                        "target_user_id": str(instance.user.id),
+                        "project_name": project.name,
+                        "creator_name": creator_name
+                    }
+                )
+
+@receiver(post_delete, sender=ProjectMember)
+def notify_project_member_deleted(sender, instance, **kwargs):
+    if instance.user:
+        project = instance.project
+        remover_name = project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
+        EventDispatcher.dispatch(
+            event_type="project_member_removed",
+            payload={
+                "target_user_id": str(instance.user.id),
+                "project_name": project.name,
+                "remover_name": remover_name
             }
         )
 

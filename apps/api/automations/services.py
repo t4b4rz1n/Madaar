@@ -88,7 +88,7 @@ class TelegramBotService:
             cls._set_language(chat_id, callback_data.replace("set_lang_", ""), callback_query_id=callback_query_id, edit_message_id=message_id)
             return
 
-        answer_callback_query(callback_query_id)
+        answer_callback_query.delay(callback_query_id)
 
         if callback_data == "cmd_myprojects":
             cls._handle_my_projects(chat_id, lang, edit_message_id=message_id)
@@ -133,9 +133,9 @@ class TelegramBotService:
                       edit_message_id: int = None):
         """Sends a new message or edits an existing one."""
         if edit_message_id:
-            edit_telegram_message(chat_id, edit_message_id, text, reply_markup)
+            edit_telegram_message.delay(chat_id, edit_message_id, text, reply_markup)
         else:
-            send_telegram_notification(chat_id, text, reply_markup)
+            send_telegram_notification.delay(chat_id, text, reply_markup)
 
     @classmethod
     def _main_menu_markup(cls, user=None):
@@ -214,7 +214,7 @@ class TelegramBotService:
     def _handle_start(cls, chat_id: str, tg_username: str, lang: str):
         """Handles /start — validates and links telegram account."""
         if not tg_username:
-            send_telegram_notification(
+            send_telegram_notification.delay(
                 chat_id,
                 _("❌ <b>خطا:</b> شما در تلگرام آیدی (Username) ندارید!\n\n"
                   "برای اتصال به سیستم مدار:\n"
@@ -238,11 +238,11 @@ class TelegramBotService:
                   "از این پس اعلان‌های مهم کاری شما بلافاصله اینجا ارسال خواهد شد.\n\n"
                   "از منوی زیر استفاده کنید:").format(name=user.first_name or user.username)
             )
-            send_telegram_notification(chat_id, welcome_msg, reply_markup=cls._main_menu_markup(user))
+            send_telegram_notification.delay(chat_id, welcome_msg, reply_markup=cls._main_menu_markup(user))
             logger.info(f"User {user.username} connected via @{tg_username}")
 
         except User.DoesNotExist:
-            send_telegram_notification(
+            send_telegram_notification.delay(
                 chat_id,
                 _("❌ <b>حساب کاربری یافت نشد!</b>\n\n"
                   "آیدی تلگرام شما (<b>@{tg_username}</b>) در سیستم مدار ثبت نشده است.\n\n"
@@ -250,7 +250,7 @@ class TelegramBotService:
                   ).format(tg_username=tg_username)
             )
         except User.MultipleObjectsReturned:
-            send_telegram_notification(
+            send_telegram_notification.delay(
                 chat_id,
                 _("❌ <b>خطای سیستمی!</b>\n\n"
                   "آیدی تلگرام شما در چند حساب مختلف ثبت شده. لطفاً با پشتیبانی تماس بگیرید.")
@@ -311,7 +311,7 @@ class TelegramBotService:
         translation.activate(new_lang)
         
         if callback_query_id:
-            answer_callback_query(callback_query_id, _("✅ زبان شما با موفقیت به روز شد."), show_alert=False)
+            answer_callback_query.delay(callback_query_id, _("✅ زبان شما با موفقیت به روز شد."), show_alert=False)
             
         cls._handle_main_menu(chat_id, new_lang, edit_message_id=edit_message_id)
 
@@ -694,7 +694,7 @@ class TelegramBotService:
             # Ban the user for 5 minutes (300 seconds)
             cache.set(ban_key, True, timeout=300)
             cache.delete(spam_key)
-            send_telegram_notification(
+            send_telegram_notification.delay(
                 chat_id,
                 _("🚫 <b>حساب شما موقتاً مسدود شد!</b>\n\n"
                   "به دلیل ارسال پیام‌های نامعتبر و پشت سر هم (اسپم)، دسترسی شما به ربات "
@@ -708,10 +708,10 @@ class TelegramBotService:
         if user:
             cls._update_user_language(user, lang)
             error_msg = _("❓ <b>دستور نامعتبر!</b>\n\nمتوجه نشدم. لطفاً از دکمه‌های زیر استفاده کنید:")
-            send_telegram_notification(chat_id, error_msg, reply_markup=cls._main_menu_markup(user))
+            send_telegram_notification.delay(chat_id, error_msg, reply_markup=cls._main_menu_markup(user))
             return
         else:
-            send_telegram_notification(
+            send_telegram_notification.delay(
                 chat_id,
                 _("❓ <b>دستور نامعتبر!</b>\n\n"
                   "ابتدا با دستور /start حساب خود را متصل کنید.")

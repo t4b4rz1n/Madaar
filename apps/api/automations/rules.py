@@ -43,7 +43,7 @@ def process_rules_for_event(event_type: str, payload: dict):
             send_email_notification(user.email, subject, message)
 
         if user.notify_via_telegram and user.telegram_chat_id:
-            send_telegram_notification(user.telegram_chat_id, message)
+            send_telegram_notification.delay(user.telegram_chat_id, message)
 
 
 def _determine_target_users(event_type: str, payload: dict) -> set:
@@ -95,6 +95,16 @@ def _fmt_project_created(p):
         _("🚀 <b>پروژه جدید ایجاد شد!</b>\n\n"
           "شما توسط {creator} به پروژه <b>{project}</b> اضافه شدید. موفق باشید!").format(
             creator=p.get('creator_name', _('همکار شما')),
+            project=p.get('project_name', '—')
+        )
+    )
+
+def _fmt_project_member_removed(p):
+    return (
+        _("حذف از پروژه"),
+        _("❌ <b>شما از پروژه حذف شدید!</b>\n\n"
+          "توسط {remover} دسترسی شما از پروژه <b>{project}</b> قطع شد.").format(
+            remover=p.get('remover_name', _('مدیر سیستم')),
             project=p.get('project_name', '—')
         )
     )
@@ -226,6 +236,7 @@ def _fmt_timer_started(p):
 # Map event types to their formatter functions
 _MESSAGE_FORMATTERS = {
     "project_created": _fmt_project_created,
+    "project_member_removed": _fmt_project_member_removed,
     "project_over_budget": _fmt_project_over_budget,
     "milestone_approaching": _fmt_milestone_approaching,
     "milestone_completed": _fmt_milestone_completed,
