@@ -1,5 +1,7 @@
 import logging
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext as _
+from django.utils import translation
 from automations.channels.email import send_email_notification
 from automations.channels.telegram import send_telegram_notification
 
@@ -21,16 +23,22 @@ def process_rules_for_event(event_type: str, payload: dict):
         logger.info(f"No target users for event '{event_type}'. Skipping.")
         return
 
-    # 2. Format the message (HTML for Telegram, plain for email)
-    subject, message = _format_message(event_type, payload)
-
-    # 3. Fetch users in a single optimized query
+    # 2. Fetch users in a single optimized query
     users = User.objects.filter(id__in=target_user_ids).only(
-        'id', 'email', 'notify_via_email', 'notify_via_telegram', 'telegram_chat_id'
+        'id', 'email', 'notify_via_email', 'notify_via_telegram', 'telegram_chat_id', 'telegram_language'
     )
 
-    # 4. Route to enabled channels
+    # 3. Route to enabled channels
     for user in users:
+        # Activate user's language for localization
+        lang = getattr(user, 'telegram_language', 'fa')
+        if not lang:
+            lang = 'fa'
+        translation.activate(lang)
+
+        # Format message in user's active language
+        subject, message = _format_message(event_type, payload)
+
         if user.notify_via_email and user.email:
             send_email_notification(user.email, subject, message)
 
@@ -76,119 +84,142 @@ def _format_message(event_type: str, payload: dict) -> tuple:
         return formatter(payload)
 
     # Fallback
-    return "اعلان سیستم مدار", f"📩 یک رویداد جدید در سیستم ثبت شد: <code>{event_type}</code>"
+    return _("اعلان سیستم مدار"), _("📩 یک رویداد جدید در سیستم ثبت شد: <code>{event_type}</code>").format(event_type=event_type)
 
 
 # ─── Message Formatters ──────────────────────────────────────────────────────
 
 def _fmt_project_created(p):
     return (
-        "پروژه جدید",
-        f"🚀 <b>پروژه جدید ایجاد شد!</b>\n\n"
-        f"شما توسط {p.get('creator_name', 'همکار شما')} به پروژه "
-        f"<b>{p.get('project_name', '—')}</b> اضافه شدید. موفق باشید!"
+        _("پروژه جدید"),
+        _("🚀 <b>پروژه جدید ایجاد شد!</b>\n\n"
+          "شما توسط {creator} به پروژه <b>{project}</b> اضافه شدید. موفق باشید!").format(
+            creator=p.get('creator_name', _('همکار شما')),
+            project=p.get('project_name', '—')
+        )
     )
 
 def _fmt_project_over_budget(p):
     return (
-        "هشدار بودجه پروژه",
-        f"⚠️ <b>هشدار بودجه!</b>\n\n"
-        f"بودجه پروژه <b>{p.get('project_name', '—')}</b> رو به اتمام است یا از حد مجاز عبور کرده.\n"
-        f"لطفاً بررسی کنید."
+        _("هشدار بودجه پروژه"),
+        _("⚠️ <b>هشدار بودجه!</b>\n\n"
+          "بودجه پروژه <b>{project}</b> رو به اتمام است یا از حد مجاز عبور کرده.\n"
+          "لطفاً بررسی کنید.").format(project=p.get('project_name', '—'))
     )
 
 def _fmt_milestone_approaching(p):
     return (
-        "نزدیک شدن به پایان فاز",
-        f"⏳ <b>ددلاین نزدیک است!</b>\n\n"
-        f"کمتر از ۴۸ ساعت تا پایان فاز <b>{p.get('milestone_title', '—')}</b> "
-        f"در پروژه <b>{p.get('project_name', '—')}</b> باقی مانده."
+        _("نزدیک شدن به پایان فاز"),
+        _("⏳ <b>ددلاین نزدیک است!</b>\n\n"
+          "کمتر از ۴۸ ساعت تا پایان فاز <b>{milestone}</b> "
+          "در پروژه <b>{project}</b> باقی مانده.").format(
+              milestone=p.get('milestone_title', '—'),
+              project=p.get('project_name', '—')
+          )
     )
 
 def _fmt_milestone_completed(p):
     return (
-        "فاز تکمیل شد",
-        f"✅ <b>فاز تکمیل شد!</b>\n\n"
-        f"فاز <b>{p.get('milestone_title', '—')}</b> در پروژه "
-        f"<b>{p.get('project_name', '—')}</b> با موفقیت به پایان رسید. خسته نباشید!"
+        _("فاز تکمیل شد"),
+        _("✅ <b>فاز تکمیل شد!</b>\n\n"
+          "فاز <b>{milestone}</b> در پروژه <b>{project}</b> با موفقیت به پایان رسید. خسته نباشید!").format(
+              milestone=p.get('milestone_title', '—'),
+              project=p.get('project_name', '—')
+          )
     )
 
 def _fmt_task_assigned(p):
     return (
-        "تسک جدید",
-        f"🎯 <b>تسک جدید به شما محول شد!</b>\n\n"
-        f"📌 تسک: <b>{p.get('task_title', '—')}</b>\n"
-        f"👤 توسط: {p.get('assigner', 'مدیر')}"
+        _("تسک جدید"),
+        _("🎯 <b>تسک جدید به شما محول شد!</b>\n\n"
+          "📌 تسک: <b>{task}</b>\n"
+          "👤 توسط: {assigner}").format(
+              task=p.get('task_title', '—'),
+              assigner=p.get('assigner', _('مدیر'))
+          )
     )
 
 def _fmt_task_needs_review(p):
     return (
-        "نیاز به بررسی",
-        f"👀 <b>تسک آماده بررسی است!</b>\n\n"
-        f"📌 تسک: <b>{p.get('task_title', '—')}</b>\n"
-        f"👤 ارسال‌کننده: {p.get('assignee', 'همکار شما')}"
+        _("نیاز به بررسی"),
+        _("👀 <b>تسک آماده بررسی است!</b>\n\n"
+          "📌 تسک: <b>{task}</b>\n"
+          "👤 ارسال‌کننده: {assignee}").format(
+              task=p.get('task_title', '—'),
+              assignee=p.get('assignee', _('همکار شما'))
+          )
     )
 
 def _fmt_task_completed(p):
     return (
-        "تسک انجام شد",
-        f"🎉 <b>تسک انجام شد!</b>\n\n"
-        f"📌 تسک <b>{p.get('task_title', '—')}</b> با موفقیت تکمیل شد."
+        _("تسک انجام شد"),
+        _("🎉 <b>تسک انجام شد!</b>\n\n"
+          "📌 تسک <b>{task}</b> با موفقیت تکمیل شد.").format(task=p.get('task_title', '—'))
     )
 
 def _fmt_task_deadline_approaching(p):
     return (
-        "هشدار ددلاین",
-        f"⏰ <b>هشدار ددلاین!</b>\n\n"
-        f"کمتر از ۲۴ ساعت به مهلت تسک <b>{p.get('task_title', '—')}</b> باقی مانده."
+        _("هشدار ددلاین"),
+        _("⏰ <b>هشدار ددلاین!</b>\n\n"
+          "کمتر از ۲۴ ساعت به مهلت تسک <b>{task}</b> باقی مانده.").format(task=p.get('task_title', '—'))
     )
 
 def _fmt_user_mentioned(p):
     return (
-        "منشن در کامنت",
-        f"🔔 <b>شما منشن شدید!</b>\n\n"
-        f"{p.get('author', 'کسی')} شما را در کامنت‌های تسک "
-        f"<b>{p.get('task_title', '—')}</b> تگ کرده است."
+        _("منشن در کامنت"),
+        _("🔔 <b>شما منشن شدید!</b>\n\n"
+          "{author} شما را در کامنت‌های تسک <b>{task}</b> تگ کرده است.").format(
+              author=p.get('author', _('کسی')),
+              task=p.get('task_title', '—')
+          )
     )
 
 def _fmt_task_commented(p):
     return (
-        "کامنت جدید",
-        f"💬 <b>کامنت جدید!</b>\n\n"
-        f"{p.get('author', 'کسی')} یک نظر جدید برای تسک "
-        f"<b>{p.get('task_title', '—')}</b> ثبت کرده است."
+        _("کامنت جدید"),
+        _("💬 <b>کامنت جدید!</b>\n\n"
+          "{author} یک نظر جدید برای تسک <b>{task}</b> ثبت کرده است.").format(
+              author=p.get('author', _('کسی')),
+              task=p.get('task_title', '—')
+          )
     )
 
 def _fmt_standup_submitted(p):
     return (
-        "گزارش روزانه",
-        f"📝 <b>گزارش روزانه (Standup)</b>\n\n"
-        f"همکار شما {p.get('user_name', '—')} گزارش استندآپ امروز خود را ثبت کرد."
+        _("گزارش روزانه"),
+        _("📝 <b>گزارش روزانه (Standup)</b>\n\n"
+          "همکار شما {user} گزارش استندآپ امروز خود را ثبت کرد.").format(user=p.get('user_name', '—'))
     )
 
 def _fmt_leave_requested(p):
     return (
-        "درخواست مرخصی",
-        f"🏖️ <b>درخواست مرخصی جدید!</b>\n\n"
-        f"👤 {p.get('user_name', '—')}\n"
-        f"📋 نوع: {p.get('leave_type', 'مرخصی')}\n\n"
-        f"لطفاً بررسی کنید."
+        _("درخواست مرخصی"),
+        _("🏖️ <b>درخواست مرخصی جدید!</b>\n\n"
+          "👤 {user}\n"
+          "📋 نوع: {leave_type}\n\n"
+          "لطفاً بررسی کنید.").format(
+              user=p.get('user_name', '—'),
+              leave_type=p.get('leave_type', _('مرخصی'))
+          )
     )
 
 def _fmt_leave_resolved(p):
     return (
-        "وضعیت مرخصی",
-        f"📋 <b>نتیجه درخواست مرخصی</b>\n\n"
-        f"درخواست مرخصی شما بررسی شد.\n"
-        f"📊 وضعیت: <b>{p.get('status', '—')}</b>"
+        _("وضعیت مرخصی"),
+        _("📋 <b>نتیجه درخواست مرخصی</b>\n\n"
+          "درخواست مرخصی شما بررسی شد.\n"
+          "📊 وضعیت: <b>{status}</b>").format(status=p.get('status', '—'))
     )
 
 def _fmt_timer_started(p):
     return (
-        "شروع تایمر",
-        f"⏱️ <b>تایمر کاری روشن شد!</b>\n\n"
-        f"👤 {p.get('user_name', '—')}\n"
-        f"📌 تسک: <b>{p.get('task_title', '—')}</b>"
+        _("شروع تایمر"),
+        _("⏱️ <b>تایمر کاری روشن شد!</b>\n\n"
+          "👤 {user}\n"
+          "📌 تسک: <b>{task}</b>").format(
+              user=p.get('user_name', '—'),
+              task=p.get('task_title', '—')
+          )
     )
 
 

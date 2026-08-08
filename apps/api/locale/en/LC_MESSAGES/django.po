@@ -3,7 +3,6 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
@@ -1819,3 +1818,157 @@ msgstr ""
 #: .\tasks\views.py:381
 msgid "Task has no valid status."
 msgstr ""
+
+
+
+msgid "پنل ادمین کل سیستم"
+
+msgid "اعلان سیستم مدار"
+msgstr "Madaar System Notification"
+
+msgid "📩 یک رویداد جدید در سیستم ثبت شد: <code>{event_type}</code>"
+msgstr "📩 A new event occurred: <code>{event_type}</code>"
+
+msgid "پروژه جدید"
+msgstr "New Project"
+
+msgid "🚀 <b>پروژه جدید ایجاد شد!</b>\n\nشما توسط {creator} به پروژه <b>{project}</b> اضافه شدید. موفق باشید!"
+msgstr "🚀 <b>New Project Created!</b>\n\nYou were added to the project <b>{project}</b> by {creator}. Good luck!"
+
+msgid "هشدار بودجه پروژه"
+msgstr "Project Budget Warning"
+
+msgid "⚠️ <b>هشدار بودجه!</b>\n\nبودجه پروژه <b>{project}</b> رو به اتمام است یا از حد مجاز عبور کرده.\nلطفاً بررسی کنید."
+msgstr "⚠️ <b>Budget Warning!</b>\n\nThe budget for project <b>{project}</b> is running out or has exceeded the limit.\nPlease check."
+
+msgid "نزدیک شدن به پایان فاز"
+msgstr "Milestone Deadline Approaching"
+
+msgid "⏳ <b>ددلاین نزدیک است!</b>\n\nکمتر از ۴۸ ساعت تا پایان فاز <b>{milestone}</b> در پروژه <b>{project}</b> باقی مانده."
+msgstr "⏳ <b>Deadline Approaching!</b>\n\nLess than 48 hours remaining for milestone <b>{milestone}</b> in project <b>{project}</b>."
+
+msgid "فاز تکمیل شد"
+msgstr "Milestone Completed"
+
+msgid "✅ <b>فاز تکمیل شد!</b>\n\nفاز <b>{milestone}</b> در پروژه <b>{project}</b> با موفقیت به پایان رسید. خسته نباشید!"
+msgstr "✅ <b>Milestone Completed!</b>\n\nMilestone <b>{milestone}</b> in project <b>{project}</b> was successfully completed. Great job!"
+
+msgid "تسک جدید"
+msgstr "New Task"
+
+msgid "🎯 <b>تسک جدید به شما محول شد!</b>\n\n📌 تسک: <b>{task}</b>\n👤 توسط: {assigner}"
+msgstr "🎯 <b>New Task Assigned!</b>\n\n📌 Task: <b>{task}</b>\n👤 By: {assigner}"
+
+msgid "نیاز به بررسی"
+msgstr "Needs Review"
+
+msgid "👀 <b>تسک آماده بررسی است!</b>\n\n📌 تسک: <b>{task}</b>\n👤 ارسال‌کننده: {assignee}"
+msgstr "👀 <b>Task Ready for Review!</b>\n\n📌 Task: <b>{task}</b>\n👤 Submitted by: {assignee}"
+
+msgid "تسک انجام شد"
+msgstr "Task Completed"
+
+msgid "🎉 <b>تسک انجام شد!</b>\n\n📌 تسک <b>{task}</b> با موفقیت تکمیل شد."
+msgstr "🎉 <b>Task Completed!</b>\n\n📌 Task <b>{task}</b> was successfully completed."
+
+msgid "هشدار ددلاین"
+msgstr "Deadline Warning"
+
+msgid "⏰ <b>هشدار ددلاین!</b>\n\nکمتر از ۲۴ ساعت به مهلت تسک <b>{task}</b> باقی مانده."
+msgstr "⏰ <b>Deadline Warning!</b>\n\nLess than 24 hours remaining for task <b>{task}</b>."
+
+msgid "منشن در کامنت"
+msgstr "Mentioned in Comment"
+
+msgid "🔔 <b>شما منشن شدید!</b>\n\n{author} شما را در کامنت‌های تسک <b>{task}</b> تگ کرده است."
+msgstr "🔔 <b>You were mentioned!</b>\n\n{author} tagged you in comments on task <b>{task}</b>."
+
+msgid "کامنت جدید"
+msgstr "New Comment"
+
+msgid "💬 <b>کامنت جدید!</b>\n\n{author} یک نظر جدید برای تسک <b>{task}</b> ثبت کرده است."
+msgstr "💬 <b>New Comment!</b>\n\n{author} added a new comment on task <b>{task}</b>."
+
+msgid "گزارش روزانه"
+msgstr "Daily Report"
+
+msgid "📝 <b>گزارش روزانه (Standup)</b>\n\nهمکار شما {user} گزارش استندآپ امروز خود را ثبت کرد."
+msgstr "📝 <b>Daily Standup</b>\n\nYour colleague {user} submitted their standup report."
+
+msgid "درخواست مرخصی"
+msgstr "Leave Request"
+
+msgid "🏖️ <b>درخواست مرخصی جدید!</b>\n\n👤 {user}\n📋 نوع: {leave_type}\n\nلطفاً بررسی کنید."
+msgstr "🏖️ <b>New Leave Request!</b>\n\n👤 {user}\n📋 Type: {leave_type}\n\nPlease review."
+
+msgid "وضعیت مرخصی"
+msgstr "Leave Status"
+
+msgid "📋 <b>نتیجه درخواست مرخصی</b>\n\nدرخواست مرخصی شما بررسی شد.\n📊 وضعیت: <b>{status}</b>"
+msgstr "📋 <b>Leave Request Result</b>\n\nYour leave request was reviewed.\n📊 Status: <b>{status}</b>"
+
+msgid "شروع تایمر"
+msgstr "Timer Started"
+
+msgid "⏱️ <b>تایمر کاری روشن شد!</b>\n\n👤 {user}\n📌 تسک: <b>{task}</b>"
+msgstr "⏱️ <b>Timer Started!</b>\n\n👤 {user}\n📌 Task: <b>{task}</b>"
+
+msgid "همکار شما"
+msgstr "Your colleague"
+
+msgid "مدیر"
+msgstr "Manager"
+
+msgid "کسی"
+msgstr "Someone"
+
+msgid "مرخصی"
+msgstr "Leave"
+
+msgid "🛠 <b>پنل ادمین کل سیستم (Superadmin)</b>\n\n📊 <b>آمار کل سیستم:</b>\n\n🏢 <b>تعداد سازمان‌ها:</b> {org_count}\n👥 <b>تعداد کاربران:</b> {user_count}\n📂 <b>تعداد پروژه‌ها:</b> {project_count}\n\n<i>(دسترسی ویژه ادمین)</i>"
+msgstr "🛠 <b>Superadmin Panel</b>\n\n📊 <b>System Wide Stats:</b>\n\n🏢 <b>Organizations:</b> {org_count}\n👥 <b>Users:</b> {user_count}\n📂 <b>Projects:</b> {project_count}\n\n<i>(Admin Access Only)</i>"
+
+msgid "📂 پروژه‌های من"
+msgstr "📂 My Projects"
+
+msgid "📋 تسک‌های من"
+msgstr "📋 My Tasks"
+
+msgid "🏢 سازمان من"
+msgstr "🏢 My Organization"
+
+msgid "📊 وضعیت اتصال"
+msgstr "📊 Connection Status"
+
+msgid "❓ راهنما"
+msgstr "❓ Help"
+
+msgid "🌐 زبان / Language"
+msgstr "🌐 Language / زبان"
+
+msgid "👑 پنل مدیریت سازمان"
+msgstr "👑 Organization Panel"
+
+msgid "🛠 پنل ادمین کل سیستم"
+msgstr "🛠 Superadmin Panel"
+
+msgid "🏢 داشبورد کلان"
+msgstr "🏢 Dashboard"
+
+msgid "📂 پروژه‌های سازمان"
+msgstr "📂 Organization Projects"
+
+msgid "📋 وضعیت تسک‌ها"
+msgstr "📋 Tasks Status"
+
+msgid "👥 اعضای سازمان"
+msgstr "👥 Members"
+
+msgid "🔙 بازگشت به منوی اصلی"
+msgstr "🔙 Back to Main Menu"
+
+msgid "🔙 بازگشت به پنل مدیریت"
+msgstr "🔙 Back to Admin Panel"
+
+msgid "🔙 بازگشت به منو"
+msgstr "🔙 Back to Menu"

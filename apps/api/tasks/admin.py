@@ -80,6 +80,7 @@ class TaskStatusAdmin(admin.ModelAdmin):
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     list_display = (
+        "key",
         "title",
         "project",
         "milestone",
@@ -102,6 +103,7 @@ class TaskAdmin(admin.ModelAdmin):
     )
     ordering = ("-created_at",)
     raw_id_fields = ("project", "milestone", "assignee", "reporter", "parent_task")
+    readonly_fields = ("number", "key")
 
     def get_queryset(self, request):
         return self.model.all_objects.all()

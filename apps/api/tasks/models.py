@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from common.models import BaseModel
@@ -177,6 +178,7 @@ class Task(BaseModel):
     )
     order = models.PositiveIntegerField(_("Kanban Order"), default=0)
     is_finished = models.BooleanField(_("Is Finished"), default=False, db_index=True)
+    number = models.PositiveIntegerField(_("Task Number"), null=True, blank=True, db_index=True)
 
     class Meta:
         verbose_name = _("Task")
@@ -186,6 +188,13 @@ class Task(BaseModel):
             models.Index(fields=["project", "status"]),
             models.Index(fields=["project", "assignee"]),
             models.Index(fields=["status", "priority"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "number"],
+                condition=Q(number__isnull=False),
+                name="unique_task_number_per_project",
+            )
         ]
 
     def __str__(self):
@@ -217,7 +226,30 @@ class Task(BaseModel):
                 pass
 
     def save(self, *args, **kwargs):
+        if not self.number and self.project_id:
+            from django.db import transaction
+            from django.db.models import Max
+            from projects.models import Project
+            
+            with transaction.atomic():
+                try:
+                    project = Project.objects.select_for_update().get(id=self.project_id)
+                    max_num = Task.all_objects.filter(project=project).aggregate(Max('number'))['number__max'] or 0
+                    self.number = max_num + 1
+                except Exception:
+                    max_num = Task.all_objects.filter(project_id=self.project_id).aggregate(Max('number'))['number__max'] or 0
+                    self.number = max_num + 1
+                    
         super().save(*args, **kwargs)
+
+    @property
+    def key(self):
+        """Returns the human-readable task key (e.g. MAD-15)."""
+        if not self.number:
+            return str(self.id)[:8]
+        if getattr(self, "project", None) and self.project.prefix:
+            return f"{self.project.prefix}-{self.number}"
+        return f"TSK-{self.number}"
 
     @property
     def is_completed(self):

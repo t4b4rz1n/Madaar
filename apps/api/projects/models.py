@@ -36,6 +36,14 @@ class Project(BaseModel):
 
     name = models.CharField(_("Name"), max_length=255)
     description = models.TextField(_("Description"), blank=True)
+    prefix = models.CharField(
+        _("Key Prefix"), 
+        max_length=10, 
+        blank=True, 
+        null=True, 
+        db_index=True, 
+        help_text=_("Short identifier for tasks (e.g., MAD)")
+    )
     budget = models.DecimalField(
         _("Budget"),
         max_digits=14,
@@ -88,8 +96,29 @@ class Project(BaseModel):
                 | Q(start_date__isnull=True)
                 | Q(deadline__gte=models.F("start_date")),
                 name="project_deadline_after_start_date",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["organization", "prefix"],
+                condition=Q(prefix__isnull=False),
+                name="unique_project_prefix_per_org",
+            ),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.prefix and self.name:
+            import re
+            base_prefix = re.sub(r'[^A-Z0-9]', '', self.name.upper())[:4]
+            if not base_prefix:
+                base_prefix = "PRJ"
+            
+            prefix = base_prefix
+            counter = 1
+            while Project.all_objects.filter(organization_id=self.organization_id, prefix=prefix).exclude(id=self.id).exists():
+                prefix = f"{base_prefix[:3]}{counter}"
+                counter += 1
+            self.prefix = prefix
+            
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

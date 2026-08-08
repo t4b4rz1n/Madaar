@@ -175,6 +175,8 @@ class TaskListSerializer(serializers.ModelSerializer):
     subtasks_count = serializers.SerializerMethodField()
     progress_percent = serializers.FloatField(read_only=True)
     is_finished = serializers.BooleanField(read_only=True)
+    number = serializers.IntegerField(read_only=True)
+    key = serializers.CharField(read_only=True)
     checklist_stats = serializers.SerializerMethodField()
     is_active_timer_running = serializers.SerializerMethodField()
 
@@ -182,6 +184,8 @@ class TaskListSerializer(serializers.ModelSerializer):
         model = Task
         fields = (
             "id",
+            "key",
+            "number",
             "project",
             "milestone",
             "title",
@@ -262,6 +266,22 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             "is_finished",
         )
         read_only_fields = ("id", "is_finished")
+
+    def validate(self, data):
+        project = data.get('project', getattr(self.instance, 'project', None))
+        assignee = data.get('assignee', getattr(self.instance, 'assignee', None))
+
+        if project and assignee:
+            from projects.models import ProjectMember
+            is_member = ProjectMember.objects.filter(
+                project=project, user=assignee, is_active=True
+            ).exists()
+            if not is_member and project.owner != assignee:
+                raise serializers.ValidationError(
+                    {"assignee": _("The assignee must be an active member or owner of the project.")}
+                )
+
+        return super().validate(data)
 
     def validate_estimated_hours(self, value):
         if value is not None and value < 0:

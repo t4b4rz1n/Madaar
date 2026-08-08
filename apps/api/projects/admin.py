@@ -7,6 +7,7 @@ from .models import Milestone, Project, ProjectActivity, ProjectMember
 class ProjectAdmin(admin.ModelAdmin):
     list_display = (
         "name",
+        "prefix",
         "organization",
         "owner",
         "budget",

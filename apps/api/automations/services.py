@@ -1,3 +1,4 @@
+# Trigger reload
 import logging
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
@@ -503,16 +504,13 @@ class TelegramBotService:
         user_count = AccountUser.objects.count()
         project_count = Project.objects.count()
 
-        msg = (
-            _("🛠 <b>پنل ادمین کل سیستم (Superadmin)</b>\n\n"
-              "📊 <b>آمار کل سیستم:</b>\n\n"
-              "🏢 <b>تعداد سازمان‌ها:</b> {org_count}\n"
-              "👥 <b>تعداد کاربران:</b> {user_count}\n"
-              "📂 <b>تعداد پروژه‌ها:</b> {project_count}\n\n"
-              "<i>(دسترسی ویژه ادمین)</i>").format(
-                  org_count=org_count, user_count=user_count, project_count=project_count
-              )
-        )
+        msg = _("🛠 <b>پنل ادمین کل سیستم (Superadmin)</b>\n\n"
+                "📊 <b>آمار کل سیستم:</b>\n\n"
+                "🏢 <b>تعداد سازمان‌ها:</b> {org_count}\n"
+                "👥 <b>تعداد کاربران:</b> {user_count}\n"
+                "📂 <b>تعداد پروژه‌ها:</b> {project_count}\n\n"
+                "<i>(دسترسی ویژه ادمین)</i>"
+        ).format(org_count=org_count, user_count=user_count, project_count=project_count)
         cls._send_or_edit(chat_id, msg, reply_markup=cls._back_to_menu_markup(), edit_message_id=edit_message_id)
 
     # ─── Owner Admin Commands ─────────────────────────────────────────
@@ -538,15 +536,19 @@ class TelegramBotService:
     @classmethod
     def _get_owner_org(cls, user):
         from organizations.models import OrganizationMembership, Organization
+        
+        # 1. Direct ownership
+        org = Organization.objects.filter(owner=user).first()
+        if org:
+            return org
+            
+        # 2. Ownership via membership
         membership = OrganizationMembership.objects.filter(
             user=user, role=OrganizationMembership.Role.OWNER
         ).select_related('organization').first()
         
         if membership:
             return membership.organization
-            
-        if user.is_superuser:
-            return Organization.objects.first()
             
         return None
 
@@ -626,9 +628,9 @@ class TelegramBotService:
         stats = Task.objects.filter(project__organization=org).aggregate(
             total=Count('id'),
             done=Count('id', filter=Q(is_finished=True)),
-            in_progress=Count('id', filter=Q(status__code='in_progress', is_finished=False)),
-            review=Count('id', filter=Q(status__code='review', is_finished=False)),
-            todo=Count('id', filter=Q(status__code='todo', is_finished=False)),
+            in_progress=Count('id', filter=Q(status__code__in=['in_progress', 'doing', 'wip'], is_finished=False)),
+            review=Count('id', filter=Q(status__code__in=['review', 'testing', 'qa'], is_finished=False)),
+            todo=Count('id', filter=Q(status__code__in=['todo', 'backlog', 'open'], is_finished=False)),
         )
 
         msg = (
