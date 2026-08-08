@@ -111,6 +111,8 @@ class TelegramBotService:
             cls._handle_org_tasks_status(chat_id, lang, edit_message_id=message_id)
         elif callback_data == "cmd_org_members":
             cls._handle_org_members(chat_id, lang, edit_message_id=message_id)
+        elif callback_data == "cmd_superadmin_menu":
+            cls._handle_superadmin_menu(chat_id, lang, edit_message_id=message_id)
         elif callback_data == "cmd_language":
             cls._handle_language_menu(chat_id, lang, edit_message_id=message_id)
         elif callback_data == "ignore":
@@ -153,13 +155,18 @@ class TelegramBotService:
         ]
         
         if user:
-            from organizations.models import OrganizationMembership
-            is_owner = user.is_superuser or OrganizationMembership.objects.filter(
-                user=user, role=OrganizationMembership.Role.OWNER
-            ).exists()
+            from organizations.models import OrganizationMembership, Organization
+            
+            is_owner = (
+                Organization.objects.filter(owner=user).exists() or
+                OrganizationMembership.objects.filter(user=user, role=OrganizationMembership.Role.OWNER).exists()
+            )
             
             if is_owner:
                 keyboard.append([{"text": _("👑 پنل مدیریت سازمان"), "callback_data": "cmd_org_admin_menu"}])
+                
+            if user.is_superuser:
+                keyboard.append([{"text": _("🛠 پنل ادمین کل سیستم"), "callback_data": "cmd_superadmin_menu"}])
 
         return {"inline_keyboard": keyboard}
 
@@ -436,23 +443,29 @@ class TelegramBotService:
 
         owner_orgs = []
         member_orgs = []
+        owner_org_ids = set()
 
+        # 1. Direct ownership via Organization.owner
+        owned_orgs_direct = Organization.objects.filter(owner=user)[:10]
+        for org in owned_orgs_direct:
+            member_count = OrganizationMembership.objects.filter(organization=org).count()
+            owner_orgs.append(_("👑 شما مالک سازمان <b>{org}</b> هستید (👥 {count} عضو)").format(org=org.name, count=member_count))
+            owner_org_ids.add(org.id)
+
+        # 2. Ownership or membership via OrganizationMembership
         for m in memberships:
             org = m.organization
+            if org.id in owner_org_ids:
+                continue
+
             role_display = m.get_role_display()
             member_count = OrganizationMembership.objects.filter(organization=org).count()
             
             if m.role == OrganizationMembership.Role.OWNER:
                 owner_orgs.append(_("👑 شما مالک سازمان <b>{org}</b> هستید (👥 {count} عضو)").format(org=org.name, count=member_count))
+                owner_org_ids.add(org.id)
             else:
                 member_orgs.append(_("💼 شما عضو سازمان <b>{org}</b> هستید (🎖 نقش: {role})").format(org=org.name, role=role_display))
-
-        # Handle superuser fallback for testing
-        if not owner_orgs and user.is_superuser:
-            first_org = Organization.objects.first()
-            if first_org:
-                member_count = OrganizationMembership.objects.filter(organization=first_org).count()
-                owner_orgs.append(_("👑 شما مالک سازمان <b>{org}</b> هستید (👥 {count} عضو | مدیر کل)").format(org=first_org.name, count=member_count))
 
         if not owner_orgs and not member_orgs:
             msg = (
@@ -470,6 +483,36 @@ class TelegramBotService:
                 
             msg = "\n".join(lines).strip()
 
+        cls._send_or_edit(chat_id, msg, reply_markup=cls._back_to_menu_markup(), edit_message_id=edit_message_id)
+
+    @classmethod
+    def _handle_superadmin_menu(cls, chat_id: str, lang: str, edit_message_id: int = None):
+        """Shows system-wide stats for superusers."""
+        user = cls._get_user_by_chat_id(chat_id)
+        cls._update_user_language(user, lang)
+
+        if not user or not user.is_superuser:
+            cls._send_or_edit(chat_id, _("❌ دسترسی غیرمجاز."), edit_message_id=edit_message_id)
+            return
+
+        from organizations.models import Organization
+        from accounts.models import User as AccountUser
+        from projects.models import Project
+        
+        org_count = Organization.objects.count()
+        user_count = AccountUser.objects.count()
+        project_count = Project.objects.count()
+
+        msg = (
+            _("🛠 <b>پنل ادمین کل سیستم (Superadmin)</b>\n\n"
+              "📊 <b>آمار کل سیستم:</b>\n\n"
+              "🏢 <b>تعداد سازمان‌ها:</b> {org_count}\n"
+              "👥 <b>تعداد کاربران:</b> {user_count}\n"
+              "📂 <b>تعداد پروژه‌ها:</b> {project_count}\n\n"
+              "<i>(دسترسی ویژه ادمین)</i>").format(
+                  org_count=org_count, user_count=user_count, project_count=project_count
+              )
+        )
         cls._send_or_edit(chat_id, msg, reply_markup=cls._back_to_menu_markup(), edit_message_id=edit_message_id)
 
     # ─── Owner Admin Commands ─────────────────────────────────────────
