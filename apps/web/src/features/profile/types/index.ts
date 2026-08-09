@@ -6,6 +6,7 @@ export interface UserProfile {
   email: string;
   is_staff: boolean;
   profile_image: string | null;
+  telegram_connected?: boolean;
 }
 
 export interface ProfileUpdateData {

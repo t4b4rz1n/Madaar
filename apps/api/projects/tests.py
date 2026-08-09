@@ -196,11 +196,6 @@ class ProjectAPITests(APITestCase):
             name="Madaar Org", slug="madaar-org", owner=cls.admin
         )
         OrganizationMembership.objects.create(
-            user=cls.admin,
-            organization=cls.org,
-            role=OrganizationMembership.Role.OWNER,
-        )
-        OrganizationMembership.objects.create(
             user=cls.member_user,
             organization=cls.org,
             role=OrganizationMembership.Role.EMPLOYEE,

@@ -61,6 +61,7 @@ LOCAL_APPS = [
     "projects.apps.ProjectsConfig",
     "tasks.apps.TasksConfig",
     "attendance.apps.AttendanceConfig",
+    "automations.apps.AutomationsConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -69,6 +70,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -123,6 +125,14 @@ else:
         }
     }
 
+# --- Cache Configuration ---
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}
+
 # --- Password Validation ---
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -133,10 +143,15 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # --- Internationalization ---
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "fa-ir"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
+LOCALE_PATHS = [BASE_DIR / "locale"]
+LANGUAGES = [
+    ('en', 'English'),
+    ('fa', 'Persian'),
+]
 
 # --- CORS (Cross-Origin Resource Sharing) ---
 if DEBUG:
@@ -276,6 +291,15 @@ SPECTACULAR_SETTINGS = {
 }
 
 
+# --- Email Settings ---
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.dummy.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Madaar <noreply@madaar.io>")
+
 # --- Payment Settings ---
 SANDBOX = env("SANDBOX")
 NOWPAYMENTS_API_KEY = env("NOWPAYMENTS_API_KEY", default=None)
@@ -352,6 +376,7 @@ LOGGING = {
 # --- Celery Settings ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=DEBUG)
 
 # --- Production Security ---
 SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
@@ -360,3 +385,10 @@ CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE")
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 X_FRAME_OPTIONS = "DENY"
+
+# Telegram Config
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default=None)
+TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")
+
+# GitHub Config
+GITHUB_WEBHOOK_SECRET = env("GITHUB_WEBHOOK_SECRET", default="")

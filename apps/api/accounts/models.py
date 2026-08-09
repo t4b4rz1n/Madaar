@@ -41,6 +41,8 @@ class User(AbstractUser, BaseModel):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -53,6 +55,8 @@ class User(AbstractUser, BaseModel):
 
     def __str__(self):
         return self.email
+
+
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
@@ -113,6 +117,23 @@ class WorkStyleProfile(BaseModel):
         blank=True,
         help_text="Additional notes about work style preferences",
     )
+
+    # Telegram Integration
+    telegram_chat_id = models.CharField(max_length=50, blank=True, null=True)
+    telegram_connect_token = models.CharField(max_length=64, blank=True, null=True)
+    telegram_language = models.CharField(
+        max_length=10,
+        default='en',
+        help_text="User's preferred language for Telegram bot (e.g. 'fa', 'en')"
+    )
+    has_set_language_manually = models.BooleanField(
+        default=False,
+        help_text="True if user explicitly selected language in bot"
+    )
+
+    # Notification Preferences
+    notify_via_email = models.BooleanField(default=True)
+    notify_via_telegram = models.BooleanField(default=False)
 
     class Meta:
         db_table = "work_style_profiles"

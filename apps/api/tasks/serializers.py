@@ -175,6 +175,8 @@ class TaskListSerializer(serializers.ModelSerializer):
     subtasks_count = serializers.SerializerMethodField()
     progress_percent = serializers.FloatField(read_only=True)
     is_finished = serializers.BooleanField(read_only=True)
+    number = serializers.IntegerField(read_only=True)
+    key = serializers.CharField(read_only=True)
     checklist_stats = serializers.SerializerMethodField()
     is_active_timer_running = serializers.SerializerMethodField()
 
@@ -182,6 +184,8 @@ class TaskListSerializer(serializers.ModelSerializer):
         model = Task
         fields = (
             "id",
+            "key",
+            "number",
             "project",
             "milestone",
             "title",
@@ -263,6 +267,8 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "is_finished")
 
+
+
     def validate_estimated_hours(self, value):
         if value is not None and value < 0:
             raise serializers.ValidationError(_("Estimated hours cannot be negative."))
@@ -279,6 +285,18 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             self.instance.project if self.instance else None
         )
         task_status = attrs.get("status")
+        assignee = attrs.get('assignee', getattr(self.instance, 'assignee', None))
+
+        if project and assignee:
+            from projects.models import ProjectMember
+            is_member = ProjectMember.objects.filter(
+                project=project, user=assignee, is_active=True
+            ).exists()
+            if not is_member and project.owner != assignee:
+                raise serializers.ValidationError(
+                    {"assignee": _("The assignee must be an active member or owner of the project.")}
+                )
+
 
         # Prevent circular parent assignment
         if self.instance and parent_task and parent_task.id == self.instance.id:
