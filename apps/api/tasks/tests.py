@@ -495,6 +495,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             organization=cls.org,
             owner=cls.user,
         )
+        ProjectMember.objects.create(project=cls.project, user=cls.assignee, is_active=True)
         cls.project2 = Project.objects.create(
             name="Other Project",
             description="Desc",
