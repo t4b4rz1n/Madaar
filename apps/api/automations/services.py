@@ -25,8 +25,8 @@ class TelegramBotService:
 
     @classmethod
     def _activate_language(cls, user, tg_language_code: str):
-        if user and getattr(user, 'has_set_language_manually', False):
-            lang = user.telegram_language
+        if user and hasattr(user, 'work_style_profile') and user.work_style_profile.has_set_language_manually:
+            lang = user.work_style_profile.telegram_language
         else:
             lang = 'fa' if tg_language_code.startswith('fa') else 'en'
         translation.activate(lang)
@@ -34,9 +34,11 @@ class TelegramBotService:
 
     @classmethod
     def _update_user_language(cls, user, lang):
-        if user and not getattr(user, 'has_set_language_manually', False) and user.telegram_language != lang:
-            user.telegram_language = lang
-            user.save(update_fields=['telegram_language'])
+        if user and hasattr(user, 'work_style_profile'):
+            wsp = user.work_style_profile
+            if not wsp.has_set_language_manually and wsp.telegram_language != lang:
+                wsp.telegram_language = lang
+                wsp.save(update_fields=['telegram_language'])
 
     @classmethod
     def handle_message(cls, chat_id: str, text: str, tg_username: str = "", tg_language_code: str = "en"):
@@ -44,12 +46,6 @@ class TelegramBotService:
         from django.core.cache import cache
         
         user = cls._get_user_by_chat_id(chat_id)
-        if not user and tg_username:
-            try:
-                user = User.objects.get(telegram_username__iexact=tg_username)
-            except User.DoesNotExist:
-                pass
-                
         lang = cls._activate_language(user, tg_language_code)
 
         ban_key = f"tg_ban_{chat_id}"
@@ -58,10 +54,12 @@ class TelegramBotService:
             return
 
         text = (text or "").strip()
-        command = text.split()[0].lower() if text else ""
+        command_parts = text.split()
+        command = command_parts[0].lower() if command_parts else ""
+        token = command_parts[1] if len(command_parts) > 1 else None
 
         handlers = {
-            "/start": lambda: cls._handle_start(chat_id, tg_username, lang),
+            "/start": lambda: cls._handle_start(chat_id, token, lang),
             "/help": lambda: cls._handle_help(chat_id, lang),
             "/status": lambda: cls._handle_status(chat_id, lang),
             "/myprojects": lambda: cls._handle_my_projects(chat_id, lang),
@@ -126,7 +124,9 @@ class TelegramBotService:
     @classmethod
     def _get_user_by_chat_id(cls, chat_id: str):
         """Finds a user by their linked telegram chat_id."""
-        return User.objects.filter(telegram_chat_id=chat_id).first()
+        from accounts.models import WorkStyleProfile
+        wsp = WorkStyleProfile.objects.filter(telegram_chat_id=chat_id).select_related('user').first()
+        return wsp.user if wsp else None
 
     @classmethod
     def _send_or_edit(cls, chat_id: str, text: str, reply_markup: dict = None,
@@ -211,50 +211,59 @@ class TelegramBotService:
     # ─── Command Handlers ─────────────────────────────────────────────
 
     @classmethod
-    def _handle_start(cls, chat_id: str, tg_username: str, lang: str):
-        """Handles /start — validates and links telegram account."""
-        if not tg_username:
-            send_telegram_notification.delay(
-                chat_id,
-                _("❌ <b>خطا:</b> شما در تلگرام آیدی (Username) ندارید!\n\n"
-                  "برای اتصال به سیستم مدار:\n"
-                  "۱. در تنظیمات تلگرام خود یک آیدی بسازید\n"
-                  "۲. آیدی را در پروفایل خود در سایت مدار وارد کنید\n"
-                  "۳. دوباره /start را بزنید")
-            )
+    def _handle_start(cls, chat_id: str, token: str, lang: str):
+        """Handles /start — validates magic link token and links telegram account."""
+        from accounts.models import WorkStyleProfile
+        
+        user = cls._get_user_by_chat_id(chat_id)
+        if user and not token:
+            cls._handle_main_menu(chat_id, lang)
             return
 
-        try:
-            user = User.objects.get(telegram_username__iexact=tg_username)
-            user.telegram_chat_id = chat_id
-            user.notify_via_telegram = True
-            # Since we don't have lang here easily, we won't update telegram_language here
-            # It's updated in handle_message anyway
-            user.save(update_fields=['telegram_chat_id', 'notify_via_telegram'])
+        if not token:
+            msg = (
+                "❌ <b>خطا:</b> لینک اتصال نامعتبر است.\n\nلطفاً از طریق پنل کاربری سایت روی دکمه «اتصال به تلگرام» کلیک کنید تا وارد بات شوید."
+                if lang == 'fa' else
+                "❌ <b>Error:</b> Invalid connection link.\n\nPlease click the 'Connect to Telegram' button from your website dashboard to enter the bot."
+            )
+            send_telegram_notification.delay(chat_id, msg)
+            return
 
-            welcome_msg = (
-                _("🎉 <b>سلام {name} عزیز!</b>\n\n"
-                  "✅ حساب کاربری شما با موفقیت به ربات <b>مدار</b> متصل شد.\n"
-                  "از این پس اعلان‌های مهم کاری شما بلافاصله اینجا ارسال خواهد شد.\n\n"
-                  "از منوی زیر استفاده کنید:").format(name=user.first_name or user.username)
+        wsp = WorkStyleProfile.objects.filter(telegram_connect_token=token).select_related('user').first()
+        if not wsp:
+            msg = (
+                "❌ <b>لینک منقضی شده یا نامعتبر است!</b>\n\nلطفاً مجدداً از وب‌سایت اقدام به تولید لینک اتصال کنید."
+                if lang == 'fa' else
+                "❌ <b>Link expired or invalid!</b>\n\nPlease generate a new connection link from the website."
             )
-            send_telegram_notification.delay(chat_id, welcome_msg, reply_markup=cls._main_menu_markup(user))
-            logger.info(f"User {user.username} connected via @{tg_username}")
+            send_telegram_notification.delay(chat_id, msg)
+            return
 
-        except User.DoesNotExist:
-            send_telegram_notification.delay(
-                chat_id,
-                _("❌ <b>حساب کاربری یافت نشد!</b>\n\n"
-                  "آیدی تلگرام شما (<b>@{tg_username}</b>) در سیستم مدار ثبت نشده است.\n\n"
-                  "لطفاً در وب‌سایت مدار وارد پروفایل خود شوید، آیدی تلگرام خود را ثبت کنید و سپس /start را بزنید."
-                  ).format(tg_username=tg_username)
+        user = wsp.user
+
+        existing_wsp = WorkStyleProfile.objects.filter(telegram_chat_id=chat_id).first()
+        if existing_wsp and existing_wsp.id != wsp.id:
+            msg = (
+                "❌ <b>خطا در اتصال!</b>\n\nاین اکانت تلگرام شما قبلاً به یک حساب کاربری دیگر در سیستم مدار متصل شده است. هر حساب تلگرام فقط می‌تواند به یک اکانت سایت متصل باشد."
+                if lang == 'fa' else
+                "❌ <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account. Each Telegram account can only be connected to one site account."
             )
-        except User.MultipleObjectsReturned:
-            send_telegram_notification.delay(
-                chat_id,
-                _("❌ <b>خطای سیستمی!</b>\n\n"
-                  "آیدی تلگرام شما در چند حساب مختلف ثبت شده. لطفاً با پشتیبانی تماس بگیرید.")
-            )
+            send_telegram_notification.delay(chat_id, msg)
+            return
+
+        wsp.telegram_chat_id = chat_id
+        wsp.notify_via_telegram = True
+        wsp.telegram_connect_token = None  # Invalidate token after use
+        wsp.save(update_fields=['telegram_chat_id', 'notify_via_telegram', 'telegram_connect_token'])
+
+        welcome_msg = (
+            _("🎉 <b>سلام {name} عزیز!</b>\n\n"
+              "✅ حساب کاربری شما با موفقیت به ربات <b>مدار</b> متصل شد.\n"
+              "از این پس اعلان‌های مهم کاری شما بلافاصله اینجا ارسال خواهد شد.\n\n"
+              "از منوی زیر استفاده کنید:").format(name=user.first_name or user.username)
+        )
+        send_telegram_notification.delay(chat_id, welcome_msg, reply_markup=cls._main_menu_markup(user))
+        logger.info(f"User {user.username} connected via magic link DB token")
 
     @classmethod
     def _handle_main_menu(cls, chat_id: str, lang: str, edit_message_id: int = None):
@@ -301,12 +310,13 @@ class TelegramBotService:
 
     @classmethod
     def _set_language(cls, chat_id: str, new_lang: str, callback_query_id: str = None, edit_message_id: int = None):
-        """Saves user's language manually and re-renders main menu."""
+        """Changes user language preference."""
         user = cls._get_user_by_chat_id(chat_id)
-        if user:
-            user.telegram_language = new_lang
-            user.has_set_language_manually = True
-            user.save(update_fields=['telegram_language', 'has_set_language_manually'])
+        if user and hasattr(user, 'work_style_profile'):
+            wsp = user.work_style_profile
+            wsp.telegram_language = new_lang
+            wsp.has_set_language_manually = True
+            wsp.save(update_fields=['telegram_language', 'has_set_language_manually'])
             
         translation.activate(new_lang)
         
@@ -321,20 +331,19 @@ class TelegramBotService:
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
         
-        if user:
-            tg_status = _("✅ فعال") if user.notify_via_telegram else _("⏸ غیرفعال")
-            email_status = _("✅ فعال") if user.notify_via_email else _("⏸ غیرفعال")
+        if user and hasattr(user, 'work_style_profile'):
+            wsp = user.work_style_profile
+            tg_status = _("✅ فعال") if wsp.notify_via_telegram else _("⏸ غیرفعال")
+            email_status = _("✅ فعال") if wsp.notify_via_email else _("⏸ غیرفعال")
             msg = (
                 _("📊 <b>وضعیت حساب کاربری</b>\n\n"
                   "👤 <b>نام:</b> {name}\n"
-                  "📧 <b>ایمیل:</b> {email}\n"
-                  "📱 <b>آیدی تلگرام:</b> @{tg}\n\n"
+                  "📧 <b>ایمیل:</b> {email}\n\n"
                   "<b>کانال‌های اعلان:</b>\n"
                   "  تلگرام: {tg_status}\n"
                   "  ایمیل: {email_status}").format(
                       name=user.get_full_name() or user.username,
                       email=user.email,
-                      tg=user.telegram_username or '—',
                       tg_status=tg_status,
                       email_status=email_status
                   )

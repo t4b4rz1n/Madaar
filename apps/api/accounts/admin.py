@@ -14,17 +14,6 @@ class CustomUserAdmin(UserAdmin):
                 "fields": ("avatar", "phone_number"),
             },
         ),
-        (
-            "Telegram & Notifications",
-            {
-                "fields": (
-                    "telegram_chat_id",
-                    "telegram_username",
-                    "notify_via_email",
-                    "notify_via_telegram",
-                ),
-            },
-        ),
     )
 
     list_display = ("username", "email", "first_name", "last_name", "phone_number", "is_staff")
