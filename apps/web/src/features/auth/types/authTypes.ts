@@ -14,6 +14,7 @@ export interface User {
   role_id?: number | null;
   role?: UserRole | null;
   profile_image_url?: string | null;
+  telegram_connected?: boolean;
 }
 
 export interface AuthResponse {

@@ -5,12 +5,33 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import InputField from "../../../components/InputField";
 import { useAuthStore } from "../../auth/store/authStore";
-import { useUpdateProfile } from "../hooks/useProfile";
+import { useUpdateProfile, useTelegramMagicLink, useProfileQuery } from "../hooks/useProfile";
 import type { ProfileUpdateData } from "../types";
 
 export const ProfileEditForm = () => {
+  const [isWaitingForTelegram, setIsWaitingForTelegram] = useState(false);
   const user = useAuthStore((state) => state.user);
+  
+  // Timeout for waiting state
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    if (isWaitingForTelegram && !user?.telegram_connected) {
+      timeoutId = setTimeout(() => {
+        setIsWaitingForTelegram(false);
+        toast.info("Telegram connection timed out. Please try again.");
+      }, 60000); // 1 minute
+    }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isWaitingForTelegram, user?.telegram_connected]);
+
+  // Only poll if we are waiting and the user is NOT connected yet
+  const shouldPoll = isWaitingForTelegram && !user?.telegram_connected;
+  useProfileQuery(shouldPoll ? 3000 : false);
+  
   const updateMutation = useUpdateProfile();
+  const telegramMutation = useTelegramMagicLink();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
@@ -390,6 +411,67 @@ export const ProfileEditForm = () => {
                   </div>
                 </motion.div>
               )}
+            </div>
+
+            {/* Integrations Section */}
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-1 h-5 bg-info rounded-full"></div>
+                <h3 className="text-sm font-bold text-base-content/70 uppercase tracking-wider">
+                  Integrations
+                </h3>
+              </div>
+
+              <div className="bg-base-200/30 border border-base-content/10 rounded-xl p-5 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#0088cc]/10 rounded-full flex items-center justify-center text-[#0088cc]">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.18-.08-.05-.19-.02-.27 0-.12.03-1.98 1.25-5.58 3.69-.53.36-1.01.53-1.44.52-.47-.01-1.38-.27-2.05-.49-.83-.27-1.49-.41-1.43-.87.03-.23.36-.47 1-.72 3.93-1.71 6.55-2.84 7.85-3.38 3.74-1.56 4.51-1.83 5.02-1.84.11 0 .36.03.49.14.11.09.14.22.15.34-.01.07-.01.16-.03.26z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-base-content">Telegram Connection</h4>
+                    <p className="text-xs text-base-content/60 mt-0.5">Connect your account to receive notifications and manage tasks via Telegram.</p>
+                  </div>
+                </div>
+                
+                {user.telegram_connected ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="btn btn-outline btn-success rounded-xl cursor-default"
+                  >
+                    <span className="flex items-center gap-2">
+                      <TickCircle className="w-5 h-5" />
+                      Connected
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      telegramMutation.mutate(undefined, {
+                        onSuccess: () => {
+                          setIsWaitingForTelegram(true);
+                        }
+                      });
+                    }}
+                    disabled={telegramMutation.isPending || isWaitingForTelegram}
+                    className="btn btn-outline btn-info rounded-xl w-48"
+                  >
+                    {telegramMutation.isPending ? (
+                      <span className="loading loading-spinner loading-sm"></span>
+                    ) : isWaitingForTelegram ? (
+                      <span className="flex items-center gap-2">
+                        <span className="loading loading-spinner loading-xs"></span>
+                        Waiting...
+                      </span>
+                    ) : (
+                      "Connect to Telegram"
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

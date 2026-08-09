@@ -7,6 +7,7 @@ User = get_user_model()
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
+    telegram_connected = serializers.SerializerMethodField()
     password = serializers.CharField(
         write_only=True, required=False, validators=[validate_password]
     )
@@ -23,8 +24,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "avatar_url",
             "password",
             "password_confirm",
+            "telegram_connected",
         )
-        read_only_fields = ("username", "email")
+        read_only_fields = ("username", "email", "telegram_connected")
 
     def get_avatar_url(self, obj):
         if not obj.avatar:
@@ -33,6 +35,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         image_url = obj.avatar.url
         return request.build_absolute_uri(image_url) if request else image_url
+
+    def get_telegram_connected(self, obj):
+        try:
+            wsp = obj.work_style_profile
+            if wsp and not wsp.is_deleted and wsp.telegram_chat_id:
+                return True
+        except Exception:
+            pass
+        return False
 
     def validate(self, attrs):
         if "password" in attrs:
