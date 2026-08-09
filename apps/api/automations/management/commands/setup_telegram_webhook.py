@@ -1,7 +1,8 @@
 import requests
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand
 from django.urls import reverse
+
 
 class Command(BaseCommand):
     help = 'Sets up the Telegram Webhook for the local development server or production.'
@@ -11,12 +12,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         domain = kwargs['domain']
-        
+
         # Ensure domain starts with https
         if not domain.startswith('https://'):
             self.stdout.write(self.style.ERROR('Domain must start with https://'))
             return
-            
+
         # Strip trailing slash
         if domain.endswith('/'):
             domain = domain[:-1]

@@ -1,8 +1,12 @@
+from datetime import timedelta
+
 from celery import shared_task
 from django.utils import timezone
-from datetime import timedelta
-from .models import Task, TaskStatus
+
 from automations.events import EventDispatcher
+
+from .models import Task
+
 
 @shared_task
 def check_approaching_tasks():
@@ -14,14 +18,14 @@ def check_approaching_tasks():
     now = timezone.now()
     target_start = now + timedelta(days=1)
     target_end = target_start + timedelta(days=1)
-    
+
     # We find tasks that are due tomorrow and not finished yet
     approaching_tasks = Task.objects.filter(
         due_date__gte=target_start,
         due_date__lt=target_end,
         is_finished=False
     ).exclude(status__code='done') # Extra safety to exclude done tasks if is_finished was false
-    
+
     for task in approaching_tasks:
         if task.assignee_id:
             EventDispatcher.dispatch(

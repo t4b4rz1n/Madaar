@@ -37,11 +37,11 @@ class Project(BaseModel):
     name = models.CharField(_("Name"), max_length=255)
     description = models.TextField(_("Description"), blank=True)
     prefix = models.CharField(
-        _("Key Prefix"), 
-        max_length=10, 
-        blank=True, 
-        null=True, 
-        db_index=True, 
+        _("Key Prefix"),
+        max_length=10,
+        blank=True,
+        null=True,
+        db_index=True,
         help_text=_("Short identifier for tasks (e.g., MAD)")
     )
     budget = models.DecimalField(
@@ -110,14 +110,14 @@ class Project(BaseModel):
             base_prefix = re.sub(r'[^A-Z0-9]', '', self.name.upper())[:4]
             if not base_prefix:
                 base_prefix = "PRJ"
-            
+
             prefix = base_prefix
             counter = 1
             while Project.all_objects.filter(organization_id=self.organization_id, prefix=prefix).exclude(id=self.id).exists():
                 prefix = f"{base_prefix[:3]}{counter}"
                 counter += 1
             self.prefix = prefix
-            
+
         super().save(*args, **kwargs)
 
     def __str__(self):

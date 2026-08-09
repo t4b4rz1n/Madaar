@@ -1,7 +1,5 @@
 from django.contrib.auth.models import AbstractUser
-from django.conf import settings
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 from accounts.validators import profile_picture_validator
 from common.models import BaseModel
@@ -42,7 +40,7 @@ class User(AbstractUser, BaseModel):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    
+
 
 
     objects = UserManager()
@@ -132,7 +130,7 @@ class WorkStyleProfile(BaseModel):
         default=False,
         help_text="True if user explicitly selected language in bot"
     )
-    
+
     # Notification Preferences
     notify_via_email = models.BooleanField(default=True)
     notify_via_telegram = models.BooleanField(default=False)

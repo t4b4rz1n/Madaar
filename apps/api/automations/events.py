@@ -1,5 +1,6 @@
-from django.db import transaction
 import logging
+
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 

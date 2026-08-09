@@ -1,14 +1,15 @@
 # Trigger reload
 import logging
+
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
-from django.utils.translation import gettext as _
 from django.utils import translation
+from django.utils.translation import gettext as _
 
 from automations.channels.telegram import (
-    send_telegram_notification,
     answer_callback_query,
     edit_telegram_message,
+    send_telegram_notification,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ class TelegramBotService:
     def handle_message(cls, chat_id: str, text: str, tg_username: str = "", tg_language_code: str = "en"):
         """Routes incoming text messages to the appropriate handler."""
         from django.core.cache import cache
-        
+
         user = cls._get_user_by_chat_id(chat_id)
         lang = cls._activate_language(user, tg_language_code)
 
@@ -81,7 +82,7 @@ class TelegramBotService:
         """Routes inline keyboard button presses."""
         user = cls._get_user_by_chat_id(chat_id)
         lang = cls._activate_language(user, tg_language_code)
-        
+
         if callback_data.startswith("set_lang_"):
             cls._set_language(chat_id, callback_data.replace("set_lang_", ""), callback_query_id=callback_query_id, edit_message_id=message_id)
             return
@@ -154,18 +155,18 @@ class TelegramBotService:
                 {"text": _("🌐 زبان / Language"), "callback_data": "cmd_language"},
             ],
         ]
-        
+
         if user:
-            from organizations.models import OrganizationMembership, Organization
-            
+            from organizations.models import Organization, OrganizationMembership
+
             is_owner = (
                 Organization.objects.filter(owner=user).exists() or
                 OrganizationMembership.objects.filter(user=user, role=OrganizationMembership.Role.OWNER).exists()
             )
-            
+
             if is_owner:
                 keyboard.append([{"text": _("👑 پنل مدیریت سازمان"), "callback_data": "cmd_org_admin_menu"}])
-                
+
             if user.is_superuser:
                 keyboard.append([{"text": _("🛠 پنل ادمین کل سیستم"), "callback_data": "cmd_superadmin_menu"}])
 
@@ -214,7 +215,7 @@ class TelegramBotService:
     def _handle_start(cls, chat_id: str, token: str, lang: str):
         """Handles /start — validates magic link token and links telegram account."""
         from accounts.models import WorkStyleProfile
-        
+
         user = cls._get_user_by_chat_id(chat_id)
         if user and not token:
             cls._handle_main_menu(chat_id, lang)
@@ -270,7 +271,7 @@ class TelegramBotService:
         """Shows the main interactive menu."""
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         name = user.first_name if user else _("کاربر")
         msg = (
             _("🏠 <b>منوی اصلی ربات مدار</b>\n\n"
@@ -317,12 +318,12 @@ class TelegramBotService:
             wsp.telegram_language = new_lang
             wsp.has_set_language_manually = True
             wsp.save(update_fields=['telegram_language', 'has_set_language_manually'])
-            
+
         translation.activate(new_lang)
-        
+
         if callback_query_id:
             answer_callback_query.delay(callback_query_id, _("✅ زبان شما با موفقیت به روز شد."), show_alert=False)
-            
+
         cls._handle_main_menu(chat_id, new_lang, edit_message_id=edit_message_id)
 
     @classmethod
@@ -330,7 +331,7 @@ class TelegramBotService:
         """Handles /status — shows connection status."""
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         if user and hasattr(user, 'work_style_profile'):
             wsp = user.work_style_profile
             tg_status = _("✅ فعال") if wsp.notify_via_telegram else _("⏸ غیرفعال")
@@ -361,7 +362,7 @@ class TelegramBotService:
         """Handles /myprojects — lists user's active projects."""
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         if not user:
             cls._send_or_edit(chat_id, _("❌ ابتدا حساب خود را با /start متصل کنید."), edit_message_id=edit_message_id)
             return
@@ -396,7 +397,7 @@ class TelegramBotService:
         """Handles /mytasks — lists user's open tasks."""
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         if not user:
             cls._send_or_edit(chat_id, _("❌ ابتدا حساب خود را با /start متصل کنید."), edit_message_id=edit_message_id)
             return
@@ -438,12 +439,12 @@ class TelegramBotService:
         """Handles /myorg — shows user's organization info."""
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         if not user:
             cls._send_or_edit(chat_id, _("❌ ابتدا حساب خود را با /start متصل کنید."), edit_message_id=edit_message_id)
             return
 
-        from organizations.models import OrganizationMembership, Organization
+        from organizations.models import Organization, OrganizationMembership
         memberships = (
             OrganizationMembership.objects
             .filter(user=user)
@@ -470,7 +471,7 @@ class TelegramBotService:
 
             role_display = m.get_role_display()
             member_count = OrganizationMembership.objects.filter(organization=org).count()
-            
+
             if m.role == OrganizationMembership.Role.OWNER:
                 owner_orgs.append(_("👑 شما مالک سازمان <b>{org}</b> هستید (👥 {count} عضو)").format(org=org.name, count=member_count))
                 owner_org_ids.add(org.id)
@@ -487,10 +488,10 @@ class TelegramBotService:
             if owner_orgs:
                 lines.extend(owner_orgs)
                 lines.append("")
-                
+
             if member_orgs:
                 lines.extend(member_orgs)
-                
+
             msg = "\n".join(lines).strip()
 
         cls._send_or_edit(chat_id, msg, reply_markup=cls._back_to_menu_markup(), edit_message_id=edit_message_id)
@@ -505,10 +506,10 @@ class TelegramBotService:
             cls._send_or_edit(chat_id, _("❌ دسترسی غیرمجاز."), edit_message_id=edit_message_id)
             return
 
-        from organizations.models import Organization
         from accounts.models import User as AccountUser
+        from organizations.models import Organization
         from projects.models import Project
-        
+
         org_count = Organization.objects.count()
         user_count = AccountUser.objects.count()
         project_count = Project.objects.count()
@@ -528,14 +529,14 @@ class TelegramBotService:
     def _handle_org_admin_menu(cls, chat_id: str, lang: str, edit_message_id: int = None):
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         if not user:
             return cls._handle_unknown(chat_id, lang)
-            
+
         org = cls._get_owner_org(user)
         if not org:
             return cls._handle_unknown(chat_id, lang)
-            
+
         msg = (
             _("👑 <b>پنل مدیریت سازمان ({org})</b>\n\n"
               "از بخش‌های زیر برای مشاهده وضعیت کلان سازمان استفاده کنید:").format(org=org.name)
@@ -544,35 +545,35 @@ class TelegramBotService:
 
     @classmethod
     def _get_owner_org(cls, user):
-        from organizations.models import OrganizationMembership, Organization
-        
+        from organizations.models import Organization, OrganizationMembership
+
         # 1. Direct ownership
         org = Organization.objects.filter(owner=user).first()
         if org:
             return org
-            
+
         # 2. Ownership via membership
         membership = OrganizationMembership.objects.filter(
             user=user, role=OrganizationMembership.Role.OWNER
         ).select_related('organization').first()
-        
+
         if membership:
             return membership.organization
-            
+
         return None
 
     @classmethod
     def _handle_org_dashboard(cls, chat_id: str, lang: str, edit_message_id: int = None):
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         org = cls._get_owner_org(user)
         if not org:
             return cls._handle_unknown(chat_id, lang)
 
+        from organizations.models import OrganizationMembership
         from projects.models import Project
         from tasks.models import Task
-        from organizations.models import OrganizationMembership
 
         # Fast aggregate queries
         member_count = OrganizationMembership.objects.filter(organization=org).count()
@@ -601,7 +602,7 @@ class TelegramBotService:
     def _handle_org_projects_admin(cls, chat_id: str, lang: str, edit_message_id: int = None):
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         org = cls._get_owner_org(user)
         if not org:
             return cls._handle_unknown(chat_id, lang)
@@ -616,7 +617,7 @@ class TelegramBotService:
             for i, p in enumerate(projects, 1):
                 status_emoji = {"active": "🟢", "draft": "📝", "on_hold": "🟡", "completed": "✅"}.get(p.status, "⚪")
                 lines.append(f"{i}. {status_emoji} <b>{p.name}</b> — {p.get_status_display()}")
-            
+
             total_projects = Project.objects.filter(organization=org).count()
             lines.append(_("\n<i>نمایش {count} از {total} پروژه</i>").format(count=len(projects), total=total_projects))
             msg = "\n".join(lines)
@@ -627,7 +628,7 @@ class TelegramBotService:
     def _handle_org_tasks_status(cls, chat_id: str, lang: str, edit_message_id: int = None):
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         org = cls._get_owner_org(user)
         if not org:
             return cls._handle_unknown(chat_id, lang)
@@ -662,7 +663,7 @@ class TelegramBotService:
     def _handle_org_members(cls, chat_id: str, lang: str, edit_message_id: int = None):
         user = cls._get_user_by_chat_id(chat_id)
         cls._update_user_language(user, lang)
-        
+
         org = cls._get_owner_org(user)
         if not org:
             return cls._handle_unknown(chat_id, lang)
@@ -691,14 +692,14 @@ class TelegramBotService:
     def _handle_unknown(cls, chat_id: str, lang: str):
         """Handles unrecognized messages and tracks spam."""
         from django.core.cache import cache
-        
+
         spam_key = f"tg_spam_{chat_id}"
         ban_key = f"tg_ban_{chat_id}"
-        
+
         # Increment spam counter (expires after 2 minutes of inactivity)
         count = cache.get(spam_key, 0) + 1
         cache.set(spam_key, count, timeout=120)
-        
+
         if count >= 10:
             # Ban the user for 5 minutes (300 seconds)
             cache.set(ban_key, True, timeout=300)

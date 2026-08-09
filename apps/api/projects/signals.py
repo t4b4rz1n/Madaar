@@ -1,7 +1,10 @@
-from django.db.models.signals import pre_save, post_save, post_delete
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
-from .models import Project, ProjectMember, Milestone
+
 from automations.events import EventDispatcher
+
+from .models import Milestone, Project, ProjectMember
+
 
 @receiver(pre_save, sender=ProjectMember)
 def cache_previous_project_member(sender, instance, **kwargs):
@@ -22,7 +25,7 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
     """
     project = instance.project
     creator_name = project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
-    
+
     if created and instance.user:
         EventDispatcher.dispatch(
             event_type="project_created",
@@ -93,7 +96,7 @@ def notify_milestone_completed(sender, instance, created, **kwargs):
             target_ids = []
             if owner_id:
                 target_ids.append(str(owner_id))
-                
+
             if target_ids:
                 EventDispatcher.dispatch(
                     event_type="milestone_completed",
@@ -131,7 +134,7 @@ def notify_project_budget_or_status(sender, instance, created, **kwargs):
                 target_ids = []
                 if instance.owner_id:
                     target_ids.append(str(instance.owner_id))
-                
+
                 # Also notify Organization Admins
                 from organizations.models import OrganizationMembership
                 admins = OrganizationMembership.objects.filter(

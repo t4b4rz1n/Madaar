@@ -1,9 +1,10 @@
-from django.db.models.signals import pre_save, post_save
-from django.dispatch import receiver
 from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
 
-from .models import Attendance, TimeOffRequest, TimeLog
 from automations.events import EventDispatcher
+
+from .models import Attendance, TimeLog, TimeOffRequest
 
 User = get_user_model()
 
@@ -48,11 +49,11 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
 
             instance._signal_processed = True
             attendance.save(update_fields=["overtime_minutes"])
-            
+
     # New Event Automations
     user_name = instance.user.get_full_name() or instance.user.username
     leave_type_label = instance.get_request_type_display()
-    
+
     if created:
         # 14. leave_requested
         # Target: Organization Owners and Admins
@@ -61,7 +62,7 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
             organization=instance.organization,
             role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN]
         ).values_list('user_id', flat=True)
-        
+
         if managers:
             EventDispatcher.dispatch(
                 event_type="leave_requested",
@@ -92,7 +93,7 @@ def notify_timer_started(sender, instance, created, **kwargs):
     if created and instance.is_active:
         user_name = instance.user.get_full_name() or instance.user.username
         task_title = instance.task.title if instance.task else "کار عمومی"
-        
+
         managers = []
         if instance.task and instance.task.project:
             org_id = instance.task.project.organization_id
@@ -105,7 +106,7 @@ def notify_timer_started(sender, instance, created, **kwargs):
                     OrganizationMembership.Role.TEAM_LEAD
                 ]
             ).values_list('user_id', flat=True)
-        
+
         if managers:
             EventDispatcher.dispatch(
                 event_type="timer_started",

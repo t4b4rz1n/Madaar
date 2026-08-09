@@ -229,8 +229,9 @@ class Task(BaseModel):
         if not self.number and self.project_id:
             from django.db import transaction
             from django.db.models import Max
+
             from projects.models import Project
-            
+
             with transaction.atomic():
                 try:
                     project = Project.objects.select_for_update().get(id=self.project_id)
@@ -239,7 +240,7 @@ class Task(BaseModel):
                 except Exception:
                     max_num = Task.all_objects.filter(project_id=self.project_id).aggregate(Max('number'))['number__max'] or 0
                     self.number = max_num + 1
-                    
+
         super().save(*args, **kwargs)
 
     @property
