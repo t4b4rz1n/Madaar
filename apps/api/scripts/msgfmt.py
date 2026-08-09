@@ -1,3 +1,4 @@
+# ruff: noqa: E741
 #! /usr/bin/env python3
 # Written by Martin v. Löwis <loewis@informatik.hu-berlin.de>
 

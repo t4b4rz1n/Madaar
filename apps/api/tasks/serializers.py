@@ -267,21 +267,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "is_finished")
 
-    def validate(self, data):
-        project = data.get('project', getattr(self.instance, 'project', None))
-        assignee = data.get('assignee', getattr(self.instance, 'assignee', None))
 
-        if project and assignee:
-            from projects.models import ProjectMember
-            is_member = ProjectMember.objects.filter(
-                project=project, user=assignee, is_active=True
-            ).exists()
-            if not is_member and project.owner != assignee:
-                raise serializers.ValidationError(
-                    {"assignee": _("The assignee must be an active member or owner of the project.")}
-                )
-
-        return super().validate(data)
 
     def validate_estimated_hours(self, value):
         if value is not None and value < 0:
@@ -299,6 +285,18 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             self.instance.project if self.instance else None
         )
         task_status = attrs.get("status")
+        assignee = attrs.get('assignee', getattr(self.instance, 'assignee', None))
+
+        if project and assignee:
+            from projects.models import ProjectMember
+            is_member = ProjectMember.objects.filter(
+                project=project, user=assignee, is_active=True
+            ).exists()
+            if not is_member and project.owner != assignee:
+                raise serializers.ValidationError(
+                    {"assignee": _("The assignee must be an active member or owner of the project.")}
+                )
+
 
         # Prevent circular parent assignment
         if self.instance and parent_task and parent_task.id == self.instance.id:
