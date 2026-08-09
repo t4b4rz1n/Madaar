@@ -1,10 +1,12 @@
+import re
+
+from django.contrib.auth import get_user_model
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
-import re
-from django.contrib.auth import get_user_model
 
-from .models import Task, TaskChecklistItem, TaskComment, AsyncStandup
 from automations.events import EventDispatcher
+
+from .models import AsyncStandup, Task, TaskChecklistItem, TaskComment
 
 User = get_user_model()
 
@@ -41,7 +43,7 @@ def handle_task_automations(sender, instance, created, **kwargs):
     old_assignee = getattr(instance, "__original_assignee_id", None)
     old_status = getattr(instance, "__original_status_code", None)
     old_finished = getattr(instance, "__original_is_finished", None)
-    
+
     # 7. task_assigned
     # Trigger if created with an assignee, OR if assignee was changed
     if instance.assignee_id and (created or old_assignee != instance.assignee_id):
@@ -54,9 +56,9 @@ def handle_task_automations(sender, instance, created, **kwargs):
                 "assigner": assigner
             }
         )
-        
+
     if not created:
-            
+
         # 8. task_needs_review
         if instance.status and instance.status.code == 'review' and old_status != 'review':
             if instance.reporter_id:
@@ -68,7 +70,7 @@ def handle_task_automations(sender, instance, created, **kwargs):
                         "assignee": instance.assignee.get_full_name() if instance.assignee else "کاربر"
                     }
                 )
-                
+
         # 9. task_completed
         if instance.is_finished and not old_finished:
             target_ids = []
@@ -76,7 +78,7 @@ def handle_task_automations(sender, instance, created, **kwargs):
                 target_ids.append(str(instance.reporter_id))
             if instance.assignee_id:
                 target_ids.append(str(instance.assignee_id))
-                
+
             if instance.project:
                 from organizations.models import OrganizationMembership
                 team_leads = OrganizationMembership.objects.filter(
@@ -84,7 +86,7 @@ def handle_task_automations(sender, instance, created, **kwargs):
                     role=OrganizationMembership.Role.TEAM_LEAD
                 ).values_list('user_id', flat=True)
                 target_ids.extend([str(tl) for tl in team_leads])
-                
+
             if target_ids:
                 EventDispatcher.dispatch(
                     event_type="task_completed",
@@ -104,13 +106,13 @@ def handle_task_comments(sender, instance, created, **kwargs):
         task = instance.task
         author_name = instance.author.get_full_name() or instance.author.username if instance.author else "یک کاربر"
         content = instance.content
-        
+
         # Parse mentions (@username)
         mentioned_usernames = re.findall(r'@([\w.-]+)', content)
         mentioned_users = []
         if mentioned_usernames:
             mentioned_users = list(User.objects.filter(username__in=mentioned_usernames).values_list('id', flat=True))
-            
+
             for uid in mentioned_users:
                 # Don't notify the author if they mention themselves
                 if instance.author and str(uid) == str(instance.author.id):
@@ -124,17 +126,17 @@ def handle_task_comments(sender, instance, created, **kwargs):
                         "comment_text": f"{author_name} شما را تگ کرد: {content[:50]}..."
                     }
                 )
-                
+
         # General comment notification (task_commented)
         target_ids = []
         if task.assignee_id:
             target_ids.append(task.assignee_id)
         if task.reporter_id:
             target_ids.append(task.reporter_id)
-            
+
         # Exclude author and mentioned users from generic notification to avoid spam
         final_targets = [str(tid) for tid in set(target_ids) if tid not in mentioned_users and (not instance.author or tid != instance.author.id)]
-        
+
         if final_targets:
             EventDispatcher.dispatch(
                 event_type="task_commented",
@@ -151,17 +153,12 @@ def handle_standup_submitted(sender, instance, created, **kwargs):
     13. standup_submitted
     """
     if created:
-        user_name = instance.user.get_full_name() or instance.user.username if instance.user else "یک همکار"
-        
+        user_name = (instance.user.get_full_name() or instance.user.username) if instance.user else "یک همکار"
+
         # Target Organization Owners and Admins
         managers = []
-        if instance.project:
-            org_id = instance.project.organization_id
-        elif hasattr(instance, 'organization_id') and instance.organization_id:
-            org_id = instance.organization_id
-        else:
-            org_id = None
-            
+        org_id = getattr(instance, 'organization_id', None)
+
         if org_id:
             from organizations.models import OrganizationMembership
             managers = OrganizationMembership.objects.filter(

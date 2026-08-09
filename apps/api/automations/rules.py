@@ -1,7 +1,9 @@
 import logging
+
 from django.contrib.auth import get_user_model
-from django.utils.translation import gettext as _
 from django.utils import translation
+from django.utils.translation import gettext as _
+
 from automations.channels.email import send_email_notification
 from automations.channels.telegram import send_telegram_notification
 
@@ -23,27 +25,32 @@ def process_rules_for_event(event_type: str, payload: dict):
         logger.info(f"No target users for event '{event_type}'. Skipping.")
         return
 
-    # 2. Fetch users in a single optimized query
-    users = User.objects.filter(id__in=target_user_ids).only(
-        'id', 'email', 'notify_via_email', 'notify_via_telegram', 'telegram_chat_id', 'telegram_language'
-    )
+    # 2. Fetch users in a single optimized query, including their WorkStyleProfile
+    users = User.objects.filter(id__in=target_user_ids).select_related('work_style_profile')
 
     # 3. Route to enabled channels
     for user in users:
-        # Activate user's language for localization
-        lang = getattr(user, 'telegram_language', 'fa')
-        if not lang:
-            lang = 'fa'
+        wsp = getattr(user, 'work_style_profile', None)
+
+        # Determine language preferences
+        lang = 'fa'
+        if wsp and getattr(wsp, 'telegram_language', None):
+            lang = wsp.telegram_language
+
         translation.activate(lang)
 
         # Format message in user's active language
         subject, message = _format_message(event_type, payload)
 
-        if user.notify_via_email and user.email:
+        notify_email = wsp.notify_via_email if wsp else False
+        notify_telegram = wsp.notify_via_telegram if wsp else False
+        telegram_chat_id = wsp.telegram_chat_id if wsp else None
+
+        if notify_email and user.email:
             send_email_notification(user.email, subject, message)
 
-        if user.notify_via_telegram and user.telegram_chat_id:
-            send_telegram_notification.delay(user.telegram_chat_id, message)
+        if notify_telegram and telegram_chat_id:
+            send_telegram_notification.delay(telegram_chat_id, message)
 
 
 def _determine_target_users(event_type: str, payload: dict) -> set:
@@ -58,17 +65,17 @@ def _determine_target_users(event_type: str, payload: dict) -> set:
 
     # Event-specific logic
     if event_type == "project_created" and payload.get('project_id'):
-        from projects.models import ProjectMember, Project
+        from projects.models import Project, ProjectMember
         member_ids = list(
             ProjectMember.objects
             .filter(project_id=payload['project_id'], is_active=True)
             .values_list('user_id', flat=True)
         )
-        
+
         project = Project.objects.filter(id=payload['project_id']).first()
         if project and project.owner_id:
             member_ids.append(project.owner_id)
-            
+
         users.update(str(uid) for uid in member_ids)
 
     return users
