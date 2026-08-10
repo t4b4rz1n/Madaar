@@ -1,0 +1,82 @@
+"""The supported workflow notification events and their safe defaults.
+
+This is deliberately code, not database content: event identifiers are part of the
+business-event contract and must not be invented from the admin UI.  A project
+administrator can configure delivery and recipients for any of these events.
+"""
+
+from django.utils.translation import gettext_lazy as _
+
+
+class Recipient:
+    PROJECT_OWNER = "project_owner"
+    PROJECT_MEMBERS = "project_members"
+    ORGANIZATION_ADMINS = "organization_admins"
+    TEAM_LEADS = "team_leads"
+    ASSIGNEE = "assignee"
+    REPORTER = "reporter"
+    TARGET_USERS = "target_users"
+    MENTIONED_USERS = "mentioned_users"
+    REQUESTER = "requester"
+
+
+RECIPIENT_CHOICES = (
+    (Recipient.PROJECT_OWNER, _("Project owner")),
+    (Recipient.PROJECT_MEMBERS, _("Project members")),
+    (Recipient.ORGANIZATION_ADMINS, _("Organization admins")),
+    (Recipient.TEAM_LEADS, _("Team leads")),
+    (Recipient.ASSIGNEE, _("Task assignee")),
+    (Recipient.REPORTER, _("Task reporter")),
+    (Recipient.TARGET_USERS, _("Users directly affected by the event")),
+    (Recipient.MENTIONED_USERS, _("Mentioned users")),
+    (Recipient.REQUESTER, _("Leave requester")),
+)
+
+RECIPIENT_CODES = {code for code, _label in RECIPIENT_CHOICES}
+
+
+def _event(code, label, description, recipients, allowed_recipients=None):
+    return {
+        "code": code,
+        "label": label,
+        "description": description,
+        "default_recipients": recipients,
+        "allowed_recipients": allowed_recipients if allowed_recipients is not None else sorted(RECIPIENT_CODES),
+    }
+
+
+# The 15 events already emitted by the platform.  Keeping the defaults here
+# means every project has a useful, documented configuration even before an
+# administrator creates its first override.
+AUTOMATION_EVENT_CATALOG = (
+    _event("project_created", _("Member added to project"), _("A user is added to a project."), [Recipient.TARGET_USERS],
+           allowed_recipients=[Recipient.TARGET_USERS, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.ORGANIZATION_ADMINS]),
+    _event("project_member_removed", _("Member removed from project"), _("A user loses access to a project."), [Recipient.TARGET_USERS],
+           allowed_recipients=[Recipient.TARGET_USERS, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.ORGANIZATION_ADMINS]),
+    _event("project_over_budget", _("Project budget warning"), _("The project budget requires attention."), [Recipient.PROJECT_OWNER, Recipient.ORGANIZATION_ADMINS],
+           allowed_recipients=[Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS]),
+    _event("milestone_approaching", _("Milestone deadline approaching"), _("A milestone is due within 48 hours."), [Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
+           allowed_recipients=[Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.TEAM_LEADS, Recipient.ORGANIZATION_ADMINS]),
+    _event("milestone_completed", _("Milestone completed"), _("A project milestone is completed."), [Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS],
+           allowed_recipients=[Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.TEAM_LEADS, Recipient.ORGANIZATION_ADMINS]),
+    _event("task_assigned", _("Task assigned"), _("A task is assigned to a user."), [Recipient.ASSIGNEE],
+           allowed_recipients=[Recipient.ASSIGNEE, Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.TEAM_LEADS, Recipient.ORGANIZATION_ADMINS]),
+    _event("task_needs_review", _("Task ready for review"), _("A task enters the review column."), [Recipient.REPORTER, Recipient.PROJECT_OWNER],
+           allowed_recipients=[Recipient.ASSIGNEE, Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.TEAM_LEADS, Recipient.ORGANIZATION_ADMINS]),
+    _event("task_completed", _("Task completed"), _("A task is marked complete."), [Recipient.REPORTER, Recipient.PROJECT_OWNER],
+           allowed_recipients=[Recipient.ASSIGNEE, Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.TEAM_LEADS, Recipient.ORGANIZATION_ADMINS]),
+    _event("task_deadline_approaching", _("Task deadline approaching"), _("An unfinished task is due within 24 hours."), [Recipient.ASSIGNEE, Recipient.PROJECT_OWNER],
+           allowed_recipients=[Recipient.ASSIGNEE, Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.TEAM_LEADS, Recipient.ORGANIZATION_ADMINS]),
+    _event("user_mentioned", _("User mentioned"), _("A user is mentioned in a task comment."), [Recipient.MENTIONED_USERS],
+           allowed_recipients=[Recipient.MENTIONED_USERS, Recipient.ASSIGNEE, Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.TEAM_LEADS, Recipient.ORGANIZATION_ADMINS]),
+    _event("task_commented", _("Task comment added"), _("A new comment is added to a task."), [Recipient.ASSIGNEE, Recipient.REPORTER],
+           allowed_recipients=[Recipient.ASSIGNEE, Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.TEAM_LEADS, Recipient.ORGANIZATION_ADMINS]),
+    _event("standup_submitted", _("Daily stand-up submitted"), _("A team member submits a daily stand-up."), [Recipient.ORGANIZATION_ADMINS],
+           allowed_recipients=[Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS, Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS]),
+    _event("leave_requested", _("Leave requested"), _("A user submits a leave request."), [Recipient.ORGANIZATION_ADMINS], allowed_recipients=[Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS, Recipient.REQUESTER]),
+    _event("leave_resolved", _("Leave request resolved"), _("A leave request is approved or rejected."), [Recipient.REQUESTER], allowed_recipients=[Recipient.REQUESTER, Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS]),
+    _event("timer_started", _("Work timer started"), _("A work timer is started for a task."), [Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS],
+           allowed_recipients=[Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS, Recipient.PROJECT_OWNER, Recipient.ASSIGNEE, Recipient.REPORTER]),
+)
+
+EVENTS_BY_CODE = {event["code"]: event for event in AUTOMATION_EVENT_CATALOG}

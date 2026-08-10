@@ -32,6 +32,8 @@ def check_approaching_tasks():
                 event_type="task_deadline_approaching",
                 payload={
                     "target_user_id": str(task.assignee_id),
+                    "project_id": str(task.project_id),
+                    "assignee_id": str(task.assignee_id),
                     "task_title": task.title
                 }
             )

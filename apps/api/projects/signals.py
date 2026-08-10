@@ -12,10 +12,13 @@ def cache_previous_project_member(sender, instance, **kwargs):
         try:
             old = ProjectMember.objects.get(pk=instance.pk)
             instance.__original_user_id = old.user_id
+            instance.__original_is_deleted = old.is_deleted
         except ProjectMember.DoesNotExist:
             instance.__original_user_id = None
+            instance.__original_is_deleted = False
     else:
         instance.__original_user_id = None
+        instance.__original_is_deleted = False
 
 @receiver(post_save, sender=ProjectMember)
 def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
@@ -31,28 +34,57 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
             event_type="project_created",
             payload={
                 "target_user_id": str(instance.user.id),
+                "project_id": str(project.id),
                 "project_name": project.name,
                 "creator_name": creator_name
             }
         )
     elif not created:
         old_user_id = getattr(instance, "__original_user_id", None)
-        if old_user_id and old_user_id != instance.user_id:
-            # Notify old user they were removed
-            EventDispatcher.dispatch(
-                event_type="project_member_removed",
-                payload={
-                    "target_user_id": str(old_user_id),
-                    "project_name": project.name,
-                    "remover_name": creator_name
-                }
-            )
-            # Notify new user they were added
+        old_is_deleted = getattr(instance, "__original_is_deleted", False)
+
+        # Handle soft deletion and un-deletion
+        if not old_is_deleted and instance.is_deleted:
+            if instance.user:
+                EventDispatcher.dispatch(
+                    event_type="project_member_removed",
+                    payload={
+                        "target_user_id": str(instance.user.id),
+                        "project_id": str(project.id),
+                        "project_name": project.name,
+                        "remover_name": creator_name
+                    }
+                )
+        elif old_is_deleted and not instance.is_deleted:
             if instance.user:
                 EventDispatcher.dispatch(
                     event_type="project_created",
                     payload={
                         "target_user_id": str(instance.user.id),
+                        "project_id": str(project.id),
+                        "project_name": project.name,
+                        "creator_name": creator_name
+                    }
+                )
+        # Handle user change
+        elif old_user_id and old_user_id != instance.user_id:
+            # Notify old user they were removed
+            EventDispatcher.dispatch(
+                event_type="project_member_removed",
+                payload={
+                    "target_user_id": str(old_user_id),
+                    "project_id": str(project.id),
+                    "project_name": project.name,
+                    "remover_name": creator_name
+                }
+            )
+            # Notify new user they were added
+            if instance.user and not instance.is_deleted:
+                EventDispatcher.dispatch(
+                    event_type="project_created",
+                    payload={
+                        "target_user_id": str(instance.user.id),
+                        "project_id": str(project.id),
                         "project_name": project.name,
                         "creator_name": creator_name
                     }
@@ -67,6 +99,7 @@ def notify_project_member_deleted(sender, instance, **kwargs):
             event_type="project_member_removed",
             payload={
                 "target_user_id": str(instance.user.id),
+                "project_id": str(project.id),
                 "project_name": project.name,
                 "remover_name": remover_name
             }
@@ -102,6 +135,7 @@ def notify_milestone_completed(sender, instance, created, **kwargs):
                     event_type="milestone_completed",
                     payload={
                         "target_user_ids": target_ids,
+                        "project_id": str(project.id),
                         "project_name": project.name,
                         "milestone_title": instance.title
                     }
@@ -148,6 +182,7 @@ def notify_project_budget_or_status(sender, instance, created, **kwargs):
                         event_type="project_over_budget",
                         payload={
                             "target_user_ids": list(set(target_ids)),
+                            "project_id": str(instance.id),
                             "project_name": instance.name
                         }
                     )

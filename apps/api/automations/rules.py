@@ -1,11 +1,14 @@
 import logging
+import re
 
 from django.contrib.auth import get_user_model
 from django.utils import translation
 from django.utils.translation import gettext as _
 
+from automations.catalog import EVENTS_BY_CODE, Recipient
 from automations.channels.email import send_email_notification
 from automations.channels.telegram import send_telegram_notification
+from automations.models import AutomationRule
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -18,8 +21,35 @@ def process_rules_for_event(event_type: str, payload: dict):
     """
     logger.info(f"Processing event: {event_type}")
 
-    # 1. Determine Target Users
-    target_user_ids = _determine_target_users(event_type, payload)
+    event = EVENTS_BY_CODE.get(event_type)
+    if not event:
+        logger.warning("Ignoring unsupported automation event '%s'.", event_type)
+        return
+
+    project_id = payload.get("project_id")
+    organization_id = payload.get("organization_id")
+    if project_id and not organization_id:
+        from projects.models import Project
+        project = Project.objects.filter(id=project_id).values('organization_id').first()
+        if project:
+            organization_id = project['organization_id']
+
+    rule = AutomationRule.objects.filter(
+        organization_id=organization_id,
+        event_type=event_type,
+    ).first()
+
+    if rule and not rule.is_active:
+        logger.info("Automation rule for '%s' is disabled for organization '%s'.", event_type, organization_id)
+        return
+
+    # An absent rule means the catalog default is active.  This avoids creating
+    # 15 duplicate database rows for every project while keeping defaults live.
+    recipients = rule.recipients if rule else event["default_recipients"]
+    action_type = rule.action_type if rule else AutomationRule.ActionType.BOTH
+
+    # 1. Resolve configured recipient roles from the event context.
+    target_user_ids = _determine_target_users(recipients, payload)
 
     if not target_user_ids:
         logger.info(f"No target users for event '{event_type}'. Skipping.")
@@ -28,57 +58,110 @@ def process_rules_for_event(event_type: str, payload: dict):
     # 2. Fetch users in a single optimized query, including their WorkStyleProfile
     users = User.objects.filter(id__in=target_user_ids).select_related('work_style_profile')
 
-    # 3. Route to enabled channels
+    from django.conf import settings
+    if rule and rule.telegram_group_id and action_type in (
+        AutomationRule.ActionType.TELEGRAM,
+        AutomationRule.ActionType.BOTH,
+    ):
+        translation.activate(settings.LANGUAGE_CODE)
+        grp_sub, grp_fmt = _format_message(event_type, payload)
+        grp_msg = _render_template(rule.message_template, payload) if rule and rule.message_template else grp_fmt
+        send_telegram_notification.delay(rule.telegram_group_id, grp_msg)
+
+    # 2. Route to enabled channels, respecting each user's delivery preferences.
     for user in users:
         wsp = getattr(user, 'work_style_profile', None)
 
         # Determine language preferences
-        lang = 'fa'
+        lang = settings.LANGUAGE_CODE
         if wsp and getattr(wsp, 'telegram_language', None):
             lang = wsp.telegram_language
 
         translation.activate(lang)
 
-        # Format message in user's active language
-        subject, message = _format_message(event_type, payload)
+        subject, formatted_message = _format_message(event_type, payload)
+        message = _render_template(rule.message_template, payload) if rule and rule.message_template else formatted_message
 
         notify_email = wsp.notify_via_email if wsp else False
         notify_telegram = wsp.notify_via_telegram if wsp else False
         telegram_chat_id = wsp.telegram_chat_id if wsp else None
 
-        if notify_email and user.email:
+        if action_type in (AutomationRule.ActionType.EMAIL, AutomationRule.ActionType.BOTH) and notify_email and user.email:
             send_email_notification(user.email, subject, message)
 
-        if notify_telegram and telegram_chat_id:
+        if action_type in (AutomationRule.ActionType.TELEGRAM, AutomationRule.ActionType.BOTH) and notify_telegram and telegram_chat_id:
             send_telegram_notification.delay(telegram_chat_id, message)
 
 
-def _determine_target_users(event_type: str, payload: dict) -> set:
-    """Extracts or looks up the users who should receive this event."""
+def _determine_target_users(recipients: list[str], payload: dict) -> set[str]:
+    """Resolve the configured recipient selectors against one event payload."""
     users = set()
+    project = None
+    project_id = payload.get("project_id")
+    if project_id:
+        from projects.models import Project
 
-    # Generic target fields (used by all events)
-    if payload.get('target_user_id'):
-        users.add(payload['target_user_id'])
-    if payload.get('target_user_ids'):
-        users.update(payload['target_user_ids'])
+        project = Project.objects.filter(pk=project_id).first()
 
-    # Event-specific logic
-    if event_type == "project_created" and payload.get('project_id'):
-        from projects.models import Project, ProjectMember
-        member_ids = list(
-            ProjectMember.objects
-            .filter(project_id=payload['project_id'], is_active=True)
-            .values_list('user_id', flat=True)
-        )
+    def add(value):
+        if value:
+            users.add(str(value))
 
-        project = Project.objects.filter(id=payload['project_id']).first()
-        if project and project.owner_id:
-            member_ids.append(project.owner_id)
+    def add_many(values):
+        for value in values or []:
+            add(value)
 
-        users.update(str(uid) for uid in member_ids)
+    for recipient in recipients:
+        if recipient == Recipient.TARGET_USERS:
+            add(payload.get("target_user_id"))
+            add_many(payload.get("target_user_ids"))
+        elif recipient == Recipient.MENTIONED_USERS:
+            add_many(payload.get("mentioned_user_ids"))
+            add(payload.get("target_user_id"))
+        elif recipient == Recipient.ASSIGNEE:
+            add(payload.get("assignee_id"))
+        elif recipient == Recipient.REPORTER:
+            add(payload.get("reporter_id"))
+        elif recipient == Recipient.REQUESTER:
+            add(payload.get("requester_id") or payload.get("user_id"))
+        elif recipient == Recipient.PROJECT_OWNER and project:
+            add(project.owner_id)
+        elif recipient == Recipient.PROJECT_MEMBERS and project:
+            add_many(project.members.filter(is_active=True, user__isnull=False).values_list("user_id", flat=True))
+        elif recipient in (Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS):
+            from organizations.models import OrganizationMembership
+            roles = (
+                [OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN]
+                if recipient == Recipient.ORGANIZATION_ADMINS
+                else [OrganizationMembership.Role.TEAM_LEAD]
+            )
+            org_id = project.organization_id if project else payload.get("organization_id")
+            if org_id:
+                add_many(
+                    OrganizationMembership.objects.filter(
+                        organization_id=org_id,
+                        role__in=roles,
+                        is_deleted=False,
+                    ).values_list("user_id", flat=True)
+                )
 
     return users
+
+
+_TEMPLATE_VARIABLE = re.compile(r"{{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*}}")
+
+
+def _render_template(template: str, payload: dict) -> str:
+    """Render simple {{variable}} placeholders without evaluating admin input."""
+    def replace(match):
+        value = payload
+        for part in match.group(1).split("."):
+            if not isinstance(value, dict):
+                return ""
+            value = value.get(part)
+        return str(value) if value is not None else ""
+
+    return _TEMPLATE_VARIABLE.sub(replace, template)
 
 
 def _format_message(event_type: str, payload: dict) -> tuple:
@@ -238,7 +321,6 @@ def _fmt_timer_started(p):
               task=p.get('task_title', '—')
           )
     )
-
 
 # Map event types to their formatter functions
 _MESSAGE_FORMATTERS = {

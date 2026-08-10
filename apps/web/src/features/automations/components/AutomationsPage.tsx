@@ -1,242 +1,237 @@
-import { motion } from "framer-motion";
-import { Add, Flash, More, Refresh2, TaskSquare } from "iconsax-reactjs";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useAutomations, useCreateAutomation, CreateAutomationRulePayload } from "../hooks/useAutomations";
+import { Flash, Message, Refresh2, Setting2 } from "iconsax-reactjs";
+import { motion } from "framer-motion";
 
-const EVENT_CHOICES = [
-  { value: "project_created", label: "Project Created / Member Added" },
-  { value: "project_member_removed", label: "Project Member Removed" },
-  { value: "project_over_budget", label: "Project Over Budget" },
-  { value: "milestone_approaching", label: "Milestone Deadline Approaching" },
-  { value: "milestone_completed", label: "Milestone Completed" },
-  { value: "task_assigned", label: "Task Assigned" },
-  { value: "task_needs_review", label: "Task Needs Review" },
-  { value: "task_completed", label: "Task Completed" },
-  { value: "task_deadline_approaching", label: "Task Deadline Approaching" },
-  { value: "user_mentioned", label: "User Mentioned in Comment" },
-  { value: "task_commented", label: "New Task Comment" },
-  { value: "standup_submitted", label: "Standup Submitted" },
-  { value: "leave_requested", label: "Leave Requested" },
-  { value: "leave_resolved", label: "Leave Resolved" },
-  { value: "timer_started", label: "Timer Started" },
-];
+import {
+  type AutomationEvent,
+  type AutomationRulePayload,
+  useAutomationCatalog,
+  useOrganizationsForAutomation,
+  useResetAutomationRule,
+  useSaveAutomationRule,
+} from "../hooks/useAutomations";
+
+const payloadForEvent = (
+  event: AutomationEvent,
+  organization: string,
+  isActive = event.rule?.is_active ?? true,
+): AutomationRulePayload => ({
+  organization,
+  event_type: event.code,
+  action_type: event.rule?.action_type ?? "both",
+  telegram_group_id: event.rule?.telegram_group_id ?? null,
+  message_template: event.rule?.message_template ?? "",
+  recipients: event.rule?.recipients ?? event.default_recipients,
+  is_active: isActive,
+});
 
 export const AutomationsPage = () => {
-  const { data: rules = [], isLoading } = useAutomations();
-  const { mutate: createRule, isPending } = useCreateAutomation();
-  const { register, handleSubmit, reset } = useForm<CreateAutomationRulePayload>({
-    defaultValues: {
-      action_type: "telegram",
-      message_template: "Task {{task.title}} was updated.",
-      recipients: ["owner"],
-      is_active: true,
-    }
-  });
+  const [organizationId, setOrganizationId] = useState(() => localStorage.getItem("madaar_last_org_id") || "");
+  const [selectedEvent, setSelectedEvent] = useState<AutomationEvent | null>(null);
+  const modalRef = useRef<HTMLDialogElement>(null);
+  const { data: organizations = [], isLoading: organizationsLoading } = useOrganizationsForAutomation();
+  const { data: catalog, isLoading: catalogLoading } = useAutomationCatalog(organizationId);
+  const saveRule = useSaveAutomationRule(organizationId);
+  const resetRule = useResetAutomationRule(organizationId);
+  const { register, handleSubmit, reset, watch, setValue } = useForm<AutomationRulePayload>();
+  const selectedRecipients = watch("recipients") ?? [];
 
-  const openModal = () => {
-    reset();
-    const modal = document.getElementById("create_automation_modal") as HTMLDialogElement;
-    if (modal) modal.showModal();
-  };
-
-  const closeModal = () => {
-    const modal = document.getElementById("create_automation_modal") as HTMLDialogElement;
-    if (modal) modal.close();
-  };
-
-  const onSubmit = (data: CreateAutomationRulePayload) => {
-    const recipientsArray = Array.isArray(data.recipients) ? data.recipients : [data.recipients];
-    
-    createRule(
-      { ...data, recipients: recipientsArray },
-      {
-        onSuccess: () => {
-          closeModal();
-        }
+  useEffect(() => {
+    if (!organizationId && organizations.length === 1) {
+      setOrganizationId(organizations[0].id);
+    } else if (organizationId && organizations.length > 0) {
+      // Ensure the saved org id actually exists in the fetched list
+      if (!organizations.some(org => org.id === organizationId)) {
+        setOrganizationId(organizations.length === 1 ? organizations[0].id : "");
       }
+    }
+  }, [organizationId, organizations]);
+
+  useEffect(() => {
+    if (organizationId) {
+      localStorage.setItem("madaar_last_org_id", organizationId);
+    } else {
+      localStorage.removeItem("madaar_last_org_id");
+    }
+  }, [organizationId]);
+
+  const recipientLabels = useMemo(
+    () => new Map((catalog?.recipient_choices ?? []).map((choice) => [choice.code, choice.label])),
+    [catalog],
+  );
+
+  const openEditor = (event: AutomationEvent) => {
+    setSelectedEvent(event);
+    reset(payloadForEvent(event, organizationId));
+    modalRef.current?.showModal();
+  };
+
+  const closeEditor = () => modalRef.current?.close();
+
+  const isPayloadDefault = (payload: Partial<AutomationRulePayload>, event: AutomationEvent) => {
+    return (
+      (payload.action_type || "both") === "both" &&
+      !payload.telegram_group_id &&
+      !payload.message_template &&
+      payload.is_active === true &&
+      (payload.recipients || []).length === event.default_recipients.length &&
+      (payload.recipients || []).every((r) => event.default_recipients.includes(r))
     );
   };
 
-  const getEventLabel = (value: string) => {
-    return EVENT_CHOICES.find(e => e.value === value)?.label || value;
+  const submit = (payload: AutomationRulePayload) => {
+    if (!selectedEvent || payload.recipients.length === 0) return;
+    
+    const finalPayload = {
+      ...payload,
+      organization: organizationId,
+      event_type: selectedEvent.code,
+      telegram_group_id: payload.telegram_group_id || null,
+    };
+
+    if (isPayloadDefault(finalPayload, selectedEvent) && selectedEvent.rule) {
+      resetRule.mutate(selectedEvent.rule.id, { onSuccess: closeEditor });
+      return;
+    }
+
+    saveRule.mutate(
+      { id: selectedEvent.rule?.id, payload: finalPayload },
+      { onSuccess: closeEditor },
+    );
+  };
+
+  const toggleActive = (event: AutomationEvent, isActive: boolean) => {
+    const payload = payloadForEvent(event, organizationId, isActive);
+    
+    if (isPayloadDefault(payload, event) && event.rule) {
+      resetRule.mutate(event.rule.id);
+      return;
+    }
+
+    saveRule.mutate({ id: event.rule?.id, payload });
+  };
+
+  const toggleRecipient = (code: string) => {
+    setValue(
+      "recipients",
+      selectedRecipients.includes(code)
+        ? selectedRecipients.filter((item) => item !== code)
+        : [...selectedRecipients, code],
+      { shouldValidate: true },
+    );
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-6 md:p-10 max-w-7xl mx-auto space-y-8"
-    >
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-7xl space-y-6 p-6 md:p-10">
+      <header className="flex flex-col justify-between gap-4 border-b border-base-content/10 pb-6 md:flex-row md:items-end">
         <div>
-          <h1 className="text-3xl font-bold text-base-content flex items-center gap-3">
-            <Flash variant="Bold" className="text-primary" size={32} />
-            اتوماسیون‌ها
+          <h1 className="flex items-center gap-3 text-3xl font-bold text-base-content">
+            <Flash size={30} variant="Bold" className="text-primary" />
+            Workflow automation
           </h1>
-          <p className="text-base-content/60 mt-1">
-            کارهای روتین و اطلاع‌رسانی‌های پروژه‌ها را خودکار کنید.
-          </p>
+          <p className="mt-2 max-w-2xl text-sm text-base-content/60">Manage delivery settings for the 15 standard workflow events in the organization.</p>
         </div>
-        <button className="btn btn-primary rounded-xl px-6" onClick={openModal}>
-          <Add size={20} />
-          ساخت قانون جدید
-        </button>
-      </div>
+        <div className="w-full md:w-72">
+          <label htmlFor="automation-organization" className="mb-2 block text-sm font-medium text-base-content/70">Organization</label>
+          <select id="automation-organization" className="select select-bordered w-full" value={organizationId} onChange={(event) => setOrganizationId(event.target.value)} disabled={organizationsLoading} style={{ cursor: organizationsLoading ? "wait" : "default" }}>
+            <option value="" disabled hidden>Select an organization</option>
+            {organizations.map((org) => <option key={org.id} value={org.id}>{org.name}</option>)}
+          </select>
+        </div>
+      </header>
 
-      {/* Dynamic Rules List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-        {isLoading ? (
-          <div className="col-span-full text-center py-10 opacity-50">در حال بارگذاری...</div>
-        ) : rules.length === 0 ? (
-          <div className="col-span-full text-center py-10 opacity-50 border-2 border-dashed border-base-content/10 rounded-2xl">
-            هیچ قانونی یافت نشد. روی دکمه ساخت قانون جدید کلیک کنید.
-          </div>
-        ) : rules.map((rule) => (
-          <div key={rule.id} className="bg-base-100 border border-base-content/10 rounded-2xl p-6 relative group hover:border-primary/50 transition-colors shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <Flash variant="TwoTone" size={24} />
-              </div>
-              <input type="checkbox" className="toggle toggle-primary toggle-sm dir-ltr" defaultChecked={rule.is_active} />
-            </div>
-            
-            <h3 className="font-bold text-lg mb-1 text-base-content" dir="ltr">{getEventLabel(rule.event_type)}</h3>
-            
-            <div className="mt-6 space-y-3">
-              <div className="flex items-center gap-3 text-sm text-base-content/70">
-                <div className="w-6 h-6 rounded-md bg-base-200 flex items-center justify-center">
-                  <TaskSquare size={14} />
-                </div>
-                <span><strong className="text-base-content/90 font-semibold">اگر:</strong> {rule.event_type}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-base-content/70">
-                <div className="w-6 h-6 rounded-md bg-base-200 flex items-center justify-center">
-                  <Refresh2 size={14} />
-                </div>
-                <span><strong className="text-base-content/90 font-semibold">آنگاه:</strong> {rule.action_type}</span>
-              </div>
-            </div>
-
-            <button className="absolute top-6 left-16 text-base-content/40 hover:text-base-content/80 transition-colors">
-              <More size={20} />
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* Create Automation Modal */}
-      <dialog id="create_automation_modal" className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box bg-base-100 border border-base-content/10 shadow-2xl rounded-2xl sm:max-w-xl p-0 overflow-visible">
-          <div className="px-6 py-4 border-b border-base-content/10 flex justify-between items-center bg-base-200/30">
-            <h3 className="font-bold text-lg flex items-center gap-2">
-              <Flash variant="Bold" className="text-primary" />
-              ساخت قانون اتوماسیون
-            </h3>
-          </div>
-          
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="p-6 space-y-8">
-              {/* Trigger Section */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
-                    ۱
+      {!organizationId ? (
+        <div className="rounded-2xl border border-dashed border-base-content/20 p-12 text-center text-base-content/60">Select an organization to configure its workflow events.</div>
+      ) : catalogLoading ? (
+        <div className="flex justify-center py-16"><span className="loading loading-spinner loading-lg text-primary" /></div>
+      ) : (
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {catalog?.events.map((event) => {
+            const rule = event.rule;
+            const recipients = rule?.recipients ?? event.default_recipients;
+            const active = rule?.is_active ?? true;
+            return (
+              <article key={event.code} className="flex min-h-56 flex-col rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm transition hover:border-primary/40">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 gap-3">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Flash size={20} variant="TwoTone" /></div>
+                    <div><h2 className="font-semibold text-base-content">{event.label}</h2><p className="mt-1 text-sm text-base-content/60">{event.description}</p></div>
                   </div>
-                  <label className="text-sm font-bold text-base-content">اگر (شرط)</label>
+                  <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs font-medium text-base-content/65">
+                    <span>{active ? "Active" : "Inactive"}</span>
+                    <input type="checkbox" className="toggle toggle-primary toggle-sm" checked={active} onChange={(change) => toggleActive(event, change.target.checked)} disabled={saveRule.isPending} />
+                  </label>
                 </div>
-                <div className="pr-11">
-                  <select 
-                    {...register("event_type", { required: true })}
-                    className="select select-bordered w-full bg-base-100 focus:outline-primary"
-                    dir="ltr"
-                  >
-                    <option value="">-- Select Event --</option>
-                    {EVENT_CHOICES.map(e => (
-                      <option key={e.value} value={e.value}>{e.label} ({e.value})</option>
-                    ))}
+                <div className="mt-auto pt-5">
+                  <div className="flex min-h-10 items-start gap-2 text-sm text-base-content/70"><Message size={17} className="mt-0.5 shrink-0" />{recipients.map((item) => recipientLabels.get(item) ?? item).join(", ")}</div>
+                  <div className="mt-4 flex gap-2">
+                    <button type="button" className="btn btn-outline btn-sm flex-1" onClick={() => openEditor(event)}><Setting2 size={16} />Configure</button>
+                    {rule && <button type="button" className="btn btn-ghost btn-sm" title="Restore defaults" onClick={() => resetRule.mutate(rule.id)} disabled={resetRule.isPending}><Refresh2 size={16} /></button>}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
+        <div className="modal-box max-h-[90vh] max-w-2xl overflow-y-auto rounded-2xl p-0">
+          <form onSubmit={handleSubmit(submit)}>
+            <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-base-content/10 bg-base-100 px-6 py-5">
+              <div className="rounded-xl bg-primary/10 p-2 text-primary"><Setting2 size={21} /></div>
+              <div><h2 className="font-bold">Configure event</h2><p className="text-sm text-base-content/60">{selectedEvent?.label}</p></div>
+            </header>
+            <div className="space-y-6 p-6">
+              <input type="hidden" {...register("organization")} />
+              <input type="hidden" {...register("event_type")} />
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label htmlFor="delivery-channel" className="mb-2 block text-sm font-medium">Delivery channel</label>
+                  <select id="delivery-channel" className="select select-bordered w-full" {...register("action_type")}>
+                    <option value="both">Email and Telegram</option><option value="email">Email only</option><option value="telegram">Telegram only</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="divider opacity-30 my-2"></div>
-
-              {/* Action Section */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-bold">
-                    ۲
-                  </div>
-                  <label className="text-sm font-bold text-base-content">آنگاه (عملیات)</label>
-                </div>
-                <div className="pr-11 space-y-4">
-                  <select 
-                    {...register("action_type")}
-                    className="select select-bordered w-full bg-base-100 border-primary shadow-[0_0_8px_rgba(var(--p),0.15)] focus:outline-primary"
-                  >
-                    <option value="telegram">ارسال پیام به گروه تلگرام</option>
-                    <option value="email">ارسال ایمیل</option>
-                    <option value="both">ارسال به ایمیل و تلگرام</option>
-                  </select>
-
-                  <div className="space-y-4 bg-base-200/50 p-5 rounded-xl border border-base-content/10 mt-4">
-                    <div>
-                      <label className="label text-sm font-semibold py-1">Chat ID (گروه تلگرام)</label>
-                      <input 
-                        type="text"
-                        {...register("telegram_group_id")}
-                        placeholder="e.g. -100123456789"
-                        className="input input-bordered input-sm w-full bg-base-100 font-mono"
-                        dir="ltr"
-                      />
-                      <span className="text-xs text-base-content/50 mt-1 block">
-                        اگر ربات در گروه است، آیدی عددی گروه را وارد کنید.
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="label text-sm font-semibold py-1">متن پیام (Template)</label>
-                      <textarea 
-                        {...register("message_template", { required: true })}
-                        className="textarea textarea-bordered w-full text-sm font-mono h-24 bg-base-100"
-                        dir="ltr"
-                        placeholder="تسک {{task.title}} تکمیل شد."
-                      ></textarea>
-                      <span className="text-xs text-base-content/50 mt-1 block">از متغیرهایی مثل {'{{task.title}}'} می‌توانید استفاده کنید.</span>
-                    </div>
-
-                    <div>
-                      <label className="label text-sm font-semibold py-1">دریافت‌کنندگان پیام</label>
-                      <select 
-                        {...register("recipients")}
-                        multiple
-                        className="select select-bordered select-sm w-full bg-base-100 h-24"
-                      >
-                        <option value="owner">صاحب پروژه (Owner)</option>
-                        <option value="admins">ادمین‌های سازمان (Admins)</option>
-                        <option value="team_leads">مدیران تیم (Team Leads)</option>
-                        <option value="assignee">شخص انجام‌دهنده تسک (Assignee)</option>
-                        <option value="reporter">گزارش‌دهنده (Reporter)</option>
-                      </select>
-                      <span className="text-xs text-base-content/50 mt-1 block">می‌توانید چند نفر را با نگه داشتن Ctrl انتخاب کنید.</span>
-                    </div>
-                  </div>
+                <div>
+                  <label htmlFor="telegram-group" className="mb-2 block text-sm font-medium">Telegram group ID <span className="font-normal text-base-content/50">(optional)</span></label>
+                  <input id="telegram-group" className="input input-bordered w-full font-mono" placeholder="-100123456789" {...register("telegram_group_id")} />
+                  <p className="mt-2 text-xs text-base-content/55">Also sends the message to this group.</p>
                 </div>
               </div>
 
-            </div>
+              <fieldset>
+                <legend className="mb-3 text-sm font-medium">Recipients</legend>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {selectedEvent?.allowed_recipients.map((code) => (
+                    <label key={code} className="flex cursor-pointer items-center gap-3 rounded-xl border border-base-content/10 px-3 py-2.5 text-sm transition hover:border-primary/40">
+                      <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" checked={selectedRecipients.includes(code)} onChange={() => toggleRecipient(code)} />
+                      {recipientLabels.get(code) ?? code}
+                    </label>
+                  ))}
+                </div>
+                {selectedRecipients.length === 0 && <p className="mt-2 text-xs text-error">Select at least one recipient.</p>}
+              </fieldset>
 
-            <div className="modal-action bg-base-200/30 m-0 px-6 py-4 border-t border-base-content/10 rounded-b-2xl">
-              <button type="button" className="btn btn-ghost" onClick={closeModal} disabled={isPending}>انصراف</button>
-              <button type="submit" className="btn btn-primary px-8" disabled={isPending}>
-                {isPending ? <span className="loading loading-spinner"></span> : "ذخیره قانون"}
-              </button>
+              <div>
+                <label htmlFor="message-template" className="mb-2 block text-sm font-medium">Message template <span className="font-normal text-base-content/50">(optional)</span></label>
+                <textarea id="message-template" className="textarea textarea-bordered h-24 w-full" placeholder="Leave empty to use the standard event message" {...register("message_template")} />
+                <p className="mt-2 text-xs text-base-content/55">Use simple event variables in custom messages, for example <code>{"{{task_title}}"}</code>.</p>
+              </div>
+
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-base-content/10 bg-base-200/35 p-4">
+                <span><span className="block text-sm font-medium">Rule is active</span><span className="mt-1 block text-xs text-base-content/60">Disable this event without deleting its saved configuration.</span></span>
+                <input type="checkbox" className="toggle toggle-primary" {...register("is_active")} />
+              </label>
             </div>
+            <footer className="sticky bottom-0 flex justify-end gap-2 border-t border-base-content/10 bg-base-100 px-6 py-4">
+              <button type="button" className="btn btn-ghost" onClick={closeEditor}>Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={saveRule.isPending || selectedRecipients.length === 0}>{saveRule.isPending && <span className="loading loading-spinner loading-xs" />}Save changes</button>
+            </footer>
           </form>
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
+        <form method="dialog" className="modal-backdrop"><button>Close</button></form>
       </dialog>
     </motion.div>
   );

@@ -52,6 +52,9 @@ def handle_task_automations(sender, instance, created, **kwargs):
             event_type="task_assigned",
             payload={
                 "target_user_id": str(instance.assignee_id),
+                "project_id": str(instance.project_id),
+                "assignee_id": str(instance.assignee_id),
+                "reporter_id": str(instance.reporter_id) if instance.reporter_id else None,
                 "task_title": instance.title,
                 "assigner": assigner
             }
@@ -66,6 +69,9 @@ def handle_task_automations(sender, instance, created, **kwargs):
                     event_type="task_needs_review",
                     payload={
                         "target_user_id": str(instance.reporter_id),
+                        "project_id": str(instance.project_id),
+                        "assignee_id": str(instance.assignee_id) if instance.assignee_id else None,
+                        "reporter_id": str(instance.reporter_id),
                         "task_title": instance.title,
                         "assignee": instance.assignee.get_full_name() if instance.assignee else "کاربر"
                     }
@@ -92,6 +98,9 @@ def handle_task_automations(sender, instance, created, **kwargs):
                     event_type="task_completed",
                     payload={
                         "target_user_ids": list(set(target_ids)),
+                        "project_id": str(instance.project_id),
+                        "assignee_id": str(instance.assignee_id) if instance.assignee_id else None,
+                        "reporter_id": str(instance.reporter_id) if instance.reporter_id else None,
                         "task_title": instance.title
                     }
                 )
@@ -121,6 +130,10 @@ def handle_task_comments(sender, instance, created, **kwargs):
                     event_type="user_mentioned",
                     payload={
                         "target_user_id": str(uid),
+                        "project_id": str(task.project_id),
+                        "mentioned_user_ids": [str(uid)],
+                        "assignee_id": str(task.assignee_id) if task.assignee_id else None,
+                        "reporter_id": str(task.reporter_id) if task.reporter_id else None,
                         "task_title": task.title,
                         "author": author_name,
                         "comment_text": f"{author_name} شما را تگ کرد: {content[:50]}..."
@@ -142,6 +155,9 @@ def handle_task_comments(sender, instance, created, **kwargs):
                 event_type="task_commented",
                 payload={
                     "target_user_ids": final_targets,
+                    "project_id": str(task.project_id),
+                    "assignee_id": str(task.assignee_id) if task.assignee_id else None,
+                    "reporter_id": str(task.reporter_id) if task.reporter_id else None,
                     "task_title": task.title,
                     "author": author_name
                 }
@@ -171,6 +187,7 @@ def handle_standup_submitted(sender, instance, created, **kwargs):
                 event_type="standup_submitted",
                 payload={
                     "target_user_ids": [str(m) for m in set(managers)],
+                    "organization_id": str(org_id),
                     "user_name": user_name
                 }
             )

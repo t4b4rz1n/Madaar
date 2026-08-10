@@ -3,18 +3,22 @@ import logging
 import uuid
 
 from django.conf import settings
+from django.db.models import Q
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import viewsets, permissions
+from rest_framework import status, viewsets
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from automations.catalog import AUTOMATION_EVENT_CATALOG, RECIPIENT_CHOICES
 from automations.models import AutomationRule
 from automations.serializers import AutomationRuleSerializer
 from automations.services import TelegramBotService
+from organizations.models import Organization, OrganizationMembership
 
 logger = logging.getLogger(__name__)
 
@@ -102,4 +106,118 @@ class AutomationRuleViewSet(viewsets.ModelViewSet):
     """
     serializer_class = AutomationRuleSerializer
     permission_classes = [IsAuthenticated]
-    queryset = AutomationRule.objects.all().order_by('-created_at')
+
+    def _can_manage_organization(self, organization):
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return True
+        return OrganizationMembership.objects.filter(
+            user=user,
+            organization=organization,
+            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
+            is_deleted=False,
+        ).exists()
+
+    def _get_organization_from_request(self):
+        org_id = self.request.query_params.get("organization") or self.request.data.get("organization")
+        if not org_id:
+            return None
+        try:
+            organization = Organization.objects.get(pk=org_id)
+        except Organization.DoesNotExist:
+            return None
+        if not self._can_manage_organization(organization):
+            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+        return organization
+
+    def get_queryset(self):
+        organization = self._get_organization_from_request()
+        if organization:
+            return AutomationRule.objects.filter(organization=organization).order_by("event_type")
+        if self.request.user.is_staff or self.request.user.is_superuser:
+            return AutomationRule.objects.all().order_by("event_type")
+        return (
+            AutomationRule.objects.filter(
+                Q(
+                    organization__memberships__user=self.request.user,
+                    organization__memberships__role__in=[
+                        OrganizationMembership.Role.OWNER,
+                        OrganizationMembership.Role.ADMIN,
+                    ],
+                    organization__memberships__is_deleted=False,
+                )
+            )
+            .distinct()
+            .order_by("event_type")
+        )
+
+    def perform_create(self, serializer):
+        organization = serializer.validated_data.get("organization")
+        if organization is None:
+            raise PermissionDenied("Automation rules must belong to an organization.")
+        if not self._can_manage_organization(organization):
+            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        organization = serializer.instance.organization
+        if organization is None or not self._can_manage_organization(organization):
+            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.organization is None or not self._can_manage_organization(instance.organization):
+            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+        instance.delete()
+
+
+class AutomationCatalogView(APIView):
+    """Expose the backend's event contract plus a project's effective settings."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        org_id = request.query_params.get("organization")
+        if not org_id:
+            return Response({"detail": "The organization query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            organization = Organization.objects.get(pk=org_id)
+        except Organization.DoesNotExist:
+            return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        can_manage = (
+            request.user.is_staff
+            or request.user.is_superuser
+            or OrganizationMembership.objects.filter(
+                user=request.user,
+                organization=organization,
+                role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
+                is_deleted=False,
+            ).exists()
+        )
+        if not can_manage:
+            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+
+        rules = {
+            rule.event_type: AutomationRuleSerializer(rule).data
+            for rule in AutomationRule.objects.filter(organization=organization)
+        }
+        events = [
+            {
+                **event,
+                "default_recipients": list(event["default_recipients"]),
+                "allowed_recipients": list(event["allowed_recipients"]),
+                "rule": rules.get(event["code"]),
+            }
+            for event in AUTOMATION_EVENT_CATALOG
+        ]
+        return Response(
+            {
+                "events": events,
+                "recipient_choices": [
+                    {"code": code, "label": str(label)}
+                    for code, label in RECIPIENT_CHOICES
+                ],
+            }
+        )

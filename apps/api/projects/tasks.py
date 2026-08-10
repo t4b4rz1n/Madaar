@@ -41,6 +41,7 @@ def check_approaching_milestones():
                 event_type="milestone_approaching",
                 payload={
                     "target_user_ids": list(set(target_ids)),
+                    "project_id": str(project.id),
                     "project_name": project.name,
                     "milestone_title": milestone.title
                 }

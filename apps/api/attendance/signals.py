@@ -68,6 +68,7 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
                 event_type="leave_requested",
                 payload={
                     "target_user_ids": [str(m) for m in managers],
+                    "organization_id": str(instance.organization_id),
                     "user_name": user_name,
                     "leave_type": leave_type_label
                 }
@@ -81,6 +82,7 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
                 event_type="leave_resolved",
                 payload={
                     "target_user_id": str(instance.user_id),
+                    "requester_id": str(instance.user_id),
                     "status": status_label
                 }
             )
@@ -112,6 +114,7 @@ def notify_timer_started(sender, instance, created, **kwargs):
                 event_type="timer_started",
                 payload={
                     "target_user_ids": [str(m) for m in set(managers)],
+                    "project_id": str(instance.task.project_id) if instance.task and instance.task.project_id else None,
                     "user_name": user_name,
                     "task_title": task_title
                 }
