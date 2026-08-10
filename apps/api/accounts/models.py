@@ -142,3 +142,15 @@ class WorkStyleProfile(BaseModel):
 
     def __str__(self):
         return f"WorkStyle({self.user_id})"
+
+    def clean(self):
+        super().clean()
+        # Ensure we catch duplicates even if they are soft-deleted
+        # to prevent IntegrityError in Django Admin
+        if self.user_id:
+            qs = WorkStyleProfile.all_objects.filter(user=self.user)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                from django.core.exceptions import ValidationError
+                raise ValidationError({"user": "A Work Style Profile already exists for this user   "})
