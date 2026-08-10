@@ -57,7 +57,7 @@ export const AutomationsPage = () => {
             active: false,
           },
         ].map((rule, idx) => (
-          <div key={idx} className="bg-base-200/50 border border-base-content/5 rounded-2xl p-6 relative group hover:border-primary/30 transition-colors">
+          <div key={idx} className="bg-base-100 border border-base-content/10 rounded-2xl p-6 relative group hover:border-primary/50 transition-colors shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <Flash variant="TwoTone" size={24} />
@@ -69,16 +69,16 @@ export const AutomationsPage = () => {
             
             <div className="mt-6 space-y-3">
               <div className="flex items-center gap-3 text-sm text-base-content/70">
-                <div className="w-6 h-6 rounded-md bg-base-300 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-md bg-base-200 flex items-center justify-center">
                   <ArrowRight2 size={14} />
                 </div>
-                <span><strong className="text-base-content/90">WHEN:</strong> {rule.trigger}</span>
+                <span><strong className="text-base-content/90 font-semibold">WHEN:</strong> {rule.trigger}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-base-content/70">
-                <div className="w-6 h-6 rounded-md bg-base-300 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-md bg-base-200 flex items-center justify-center">
                   <Refresh2 size={14} />
                 </div>
-                <span><strong className="text-base-content/90">THEN:</strong> {rule.action}</span>
+                <span><strong className="text-base-content/90 font-semibold">THEN:</strong> {rule.action}</span>
               </div>
             </div>
 
@@ -91,15 +91,15 @@ export const AutomationsPage = () => {
 
       {/* Create Automation Modal */}
       <dialog id="create_automation_modal" className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box bg-base-100 border border-base-content/10 shadow-2xl rounded-2xl sm:max-w-xl p-0 overflow-hidden">
-          <div className="px-6 py-4 border-b border-base-content/10 flex justify-between items-center bg-base-200/50">
+        <div className="modal-box bg-base-100 border border-base-content/10 shadow-2xl rounded-2xl sm:max-w-xl p-0 overflow-visible">
+          <div className="px-6 py-4 border-b border-base-content/10 flex justify-between items-center bg-base-200">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Flash variant="Bold" className="text-primary" />
               New Automation Rule
             </h3>
           </div>
           
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-8">
             {/* Trigger Section */}
             <div className="space-y-4 relative">
               <div className="absolute left-[15px] top-[40px] bottom-[-40px] w-0.5 bg-base-content/10 z-0"></div>
@@ -111,7 +111,7 @@ export const AutomationsPage = () => {
                     1
                   </div>
                   <div className="w-full space-y-3">
-                    <select className="select select-bordered w-full bg-base-200/50 focus:bg-base-100 transition-colors">
+                    <select className="select select-bordered w-full bg-base-100 focus:bg-base-100 transition-colors relative z-20">
                       <option>Task moved to Done</option>
                       <option>Task Created</option>
                       <option>Project Deadline Approaching</option>
@@ -129,32 +129,32 @@ export const AutomationsPage = () => {
                   2
                 </div>
                 <div className="w-full space-y-4">
-                  <select className="select select-bordered w-full bg-base-200/50 focus:bg-base-100 transition-colors border-primary/50 shadow-[0_0_10px_rgba(var(--p),0.2)]">
+                  <select className="select select-bordered w-full bg-base-100 focus:bg-base-100 transition-colors border-primary/50 shadow-[0_0_10px_rgba(var(--p),0.2)] relative z-20">
                     <option>Send Telegram Message to Group</option>
                     <option>Send Email</option>
                     <option>Assign to User</option>
                   </select>
 
-                  <div className="space-y-4 bg-base-200/30 p-4 rounded-xl border border-base-content/5">
+                  <div className="space-y-4 bg-base-200 p-5 rounded-xl border border-base-content/5 mt-4">
                     <div>
-                      <label className="label text-xs py-1">Telegram Group</label>
-                      <select className="select select-bordered select-sm w-full">
+                      <label className="label text-xs py-1 font-bold">Telegram Group</label>
+                      <select className="select select-bordered select-sm w-full bg-base-100">
                         <option>Management Channel</option>
                         <option>DevOps Alerts</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="label text-xs py-1">Message Template</label>
+                      <label className="label text-xs py-1 font-bold">Message Template</label>
                       <textarea 
-                        className="textarea textarea-bordered w-full text-sm font-mono h-20"
+                        className="textarea textarea-bordered w-full text-sm font-mono h-24 bg-base-100"
                         defaultValue="Task {{task.id}}: {{task.title}} moved to Done. Status: Done. (Team notifications)"
                       ></textarea>
                     </div>
 
                     <div>
-                      <label className="label text-xs py-1">Additional Recipients</label>
-                      <select className="select select-bordered select-sm w-full">
+                      <label className="label text-xs py-1 font-bold">Additional Recipients</label>
+                      <select className="select select-bordered select-sm w-full bg-base-100">
                         <option>Notify Specific Admins</option>
                         <option>Notify Reporter Only</option>
                         <option>Notify Project Owner</option>
@@ -167,7 +167,7 @@ export const AutomationsPage = () => {
 
           </div>
 
-          <div className="modal-action bg-base-200/50 m-0 px-6 py-4 border-t border-base-content/10">
+          <div className="modal-action bg-base-200 m-0 px-6 py-4 border-t border-base-content/10">
             <button type="button" className="btn btn-ghost" onClick={closeModal}>Cancel</button>
             <button type="button" className="btn btn-primary" onClick={closeModal}>Create Rule</button>
           </div>
