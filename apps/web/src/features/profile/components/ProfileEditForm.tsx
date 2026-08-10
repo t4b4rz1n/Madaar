@@ -512,7 +512,15 @@ export const ProfileEditForm = () => {
                         type="checkbox" 
                         className="toggle toggle-success" 
                         checked={field.value}
-                        onChange={field.onChange} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          updateMutation.mutate({ notify_via_email: e.target.checked }, {
+                            onSuccess: () => {
+                              reset({ ...watch(), notify_via_email: e.target.checked });
+                              toast.success("Email preference updated");
+                            }
+                          });
+                        }} 
                       />
                     )}
                   />
@@ -538,7 +546,15 @@ export const ProfileEditForm = () => {
                         type="checkbox" 
                         className="toggle toggle-info" 
                         checked={field.value}
-                        onChange={field.onChange} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          updateMutation.mutate({ notify_via_telegram: e.target.checked }, {
+                            onSuccess: () => {
+                              reset({ ...watch(), notify_via_telegram: e.target.checked });
+                              toast.success("Telegram preference updated");
+                            }
+                          });
+                        }} 
                         disabled={!user.telegram_connected}
                         title={!user.telegram_connected ? "Please connect to Telegram first" : ""}
                       />
