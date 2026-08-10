@@ -6,6 +6,7 @@ import {
   User,
   Category,
   ShieldSecurity,
+  Flash,
 } from "iconsax-reactjs";
 
 export type DrawerItem = {
@@ -22,6 +23,12 @@ export const drawerItems: DrawerItem[] = [
     title: "Dashboard",
     link: "dashboard",
     icon: <Category variant="Outline" />,
+  },
+  {
+    title: "Automations",
+    link: "automations",
+    icon: <Flash variant="Outline" />,
+    permission: "automations.manage",
   },
   {
     title: "Roles Management",
