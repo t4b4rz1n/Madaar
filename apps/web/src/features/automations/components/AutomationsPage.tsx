@@ -1,8 +1,40 @@
 import { motion } from "framer-motion";
-import { Add, Flash, More, ArrowRight2, Refresh2, People } from "iconsax-reactjs";
+import { Add, Flash, More, Refresh2, TaskSquare } from "iconsax-reactjs";
+import { useForm } from "react-hook-form";
+import { useAutomations, useCreateAutomation, CreateAutomationRulePayload } from "../hooks/useAutomations";
+
+const EVENT_CHOICES = [
+  { value: "project_created", label: "Project Created / Member Added" },
+  { value: "project_member_removed", label: "Project Member Removed" },
+  { value: "project_over_budget", label: "Project Over Budget" },
+  { value: "milestone_approaching", label: "Milestone Deadline Approaching" },
+  { value: "milestone_completed", label: "Milestone Completed" },
+  { value: "task_assigned", label: "Task Assigned" },
+  { value: "task_needs_review", label: "Task Needs Review" },
+  { value: "task_completed", label: "Task Completed" },
+  { value: "task_deadline_approaching", label: "Task Deadline Approaching" },
+  { value: "user_mentioned", label: "User Mentioned in Comment" },
+  { value: "task_commented", label: "New Task Comment" },
+  { value: "standup_submitted", label: "Standup Submitted" },
+  { value: "leave_requested", label: "Leave Requested" },
+  { value: "leave_resolved", label: "Leave Resolved" },
+  { value: "timer_started", label: "Timer Started" },
+];
 
 export const AutomationsPage = () => {
+  const { data: rules = [], isLoading } = useAutomations();
+  const { mutate: createRule, isPending } = useCreateAutomation();
+  const { register, handleSubmit, reset } = useForm<CreateAutomationRulePayload>({
+    defaultValues: {
+      action_type: "telegram",
+      message_template: "Task {{task.title}} was updated.",
+      recipients: ["owner"],
+      is_active: true,
+    }
+  });
+
   const openModal = () => {
+    reset();
     const modal = document.getElementById("create_automation_modal") as HTMLDialogElement;
     if (modal) modal.showModal();
   };
@@ -10,6 +42,23 @@ export const AutomationsPage = () => {
   const closeModal = () => {
     const modal = document.getElementById("create_automation_modal") as HTMLDialogElement;
     if (modal) modal.close();
+  };
+
+  const onSubmit = (data: CreateAutomationRulePayload) => {
+    const recipientsArray = Array.isArray(data.recipients) ? data.recipients : [data.recipients];
+    
+    createRule(
+      { ...data, recipients: recipientsArray },
+      {
+        onSuccess: () => {
+          closeModal();
+        }
+      }
+    );
+  };
+
+  const getEventLabel = (value: string) => {
+    return EVENT_CHOICES.find(e => e.value === value)?.label || value;
   };
 
   return (
@@ -23,66 +72,53 @@ export const AutomationsPage = () => {
         <div>
           <h1 className="text-3xl font-bold text-base-content flex items-center gap-3">
             <Flash variant="Bold" className="text-primary" size={32} />
-            Workflow Automations
+            اتوماسیون‌ها
           </h1>
           <p className="text-base-content/60 mt-1">
-            Automate routine tasks and notifications for your projects.
+            کارهای روتین و اطلاع‌رسانی‌های پروژه‌ها را خودکار کنید.
           </p>
         </div>
         <button className="btn btn-primary rounded-xl px-6" onClick={openModal}>
           <Add size={20} />
-          Create Automation Rule
+          ساخت قانون جدید
         </button>
       </div>
 
-      {/* Mockup Rules List */}
+      {/* Dynamic Rules List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-        {[
-          {
-            title: "Notify Group on Task Done",
-            trigger: "Task moved to Done",
-            action: "Send Telegram Message",
-            active: true,
-          },
-          {
-            title: "Welcome New Team Members",
-            trigger: "User Added to Project",
-            action: "Send Email Notification",
-            active: true,
-          },
-          {
-            title: "Overdue Task Alert",
-            trigger: "Deadline passed",
-            action: "Notify Assignee & Reporter",
-            active: false,
-          },
-        ].map((rule, idx) => (
-          <div key={idx} className="bg-base-100 border border-base-content/10 rounded-2xl p-6 relative group hover:border-primary/50 transition-colors shadow-sm">
+        {isLoading ? (
+          <div className="col-span-full text-center py-10 opacity-50">در حال بارگذاری...</div>
+        ) : rules.length === 0 ? (
+          <div className="col-span-full text-center py-10 opacity-50 border-2 border-dashed border-base-content/10 rounded-2xl">
+            هیچ قانونی یافت نشد. روی دکمه ساخت قانون جدید کلیک کنید.
+          </div>
+        ) : rules.map((rule) => (
+          <div key={rule.id} className="bg-base-100 border border-base-content/10 rounded-2xl p-6 relative group hover:border-primary/50 transition-colors shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <Flash variant="TwoTone" size={24} />
               </div>
-              <input type="checkbox" className="toggle toggle-primary toggle-sm" defaultChecked={rule.active} />
+              <input type="checkbox" className="toggle toggle-primary toggle-sm dir-ltr" defaultChecked={rule.is_active} />
             </div>
             
-            <h3 className="font-bold text-lg mb-1">{rule.title}</h3>
+            <h3 className="font-bold text-lg mb-1 text-base-content" dir="ltr">{getEventLabel(rule.event_type)}</h3>
             
             <div className="mt-6 space-y-3">
               <div className="flex items-center gap-3 text-sm text-base-content/70">
                 <div className="w-6 h-6 rounded-md bg-base-200 flex items-center justify-center">
-                  <ArrowRight2 size={14} />
+                  <TaskSquare size={14} />
                 </div>
-                <span><strong className="text-base-content/90 font-semibold">WHEN:</strong> {rule.trigger}</span>
+                <span><strong className="text-base-content/90 font-semibold">اگر:</strong> {rule.event_type}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-base-content/70">
                 <div className="w-6 h-6 rounded-md bg-base-200 flex items-center justify-center">
                   <Refresh2 size={14} />
                 </div>
-                <span><strong className="text-base-content/90 font-semibold">THEN:</strong> {rule.action}</span>
+                <span><strong className="text-base-content/90 font-semibold">آنگاه:</strong> {rule.action_type}</span>
               </div>
             </div>
 
-            <button className="absolute top-6 right-16 text-base-content/40 hover:text-base-content/80 transition-colors">
+            <button className="absolute top-6 left-16 text-base-content/40 hover:text-base-content/80 transition-colors">
               <More size={20} />
             </button>
           </div>
@@ -92,91 +128,116 @@ export const AutomationsPage = () => {
       {/* Create Automation Modal */}
       <dialog id="create_automation_modal" className="modal modal-bottom sm:modal-middle">
         <div className="modal-box bg-base-100 border border-base-content/10 shadow-2xl rounded-2xl sm:max-w-xl p-0 overflow-visible">
-          <div className="px-6 py-4 border-b border-base-content/10 flex justify-between items-center bg-base-200">
+          <div className="px-6 py-4 border-b border-base-content/10 flex justify-between items-center bg-base-200/30">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Flash variant="Bold" className="text-primary" />
-              New Automation Rule
+              ساخت قانون اتوماسیون
             </h3>
           </div>
           
-          <div className="p-6 space-y-8">
-            {/* Trigger Section */}
-            <div className="space-y-4 relative">
-              <div className="absolute left-[15px] top-[40px] bottom-[-40px] w-0.5 bg-base-content/10 z-0"></div>
-              
-              <div className="relative z-10">
-                <label className="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 block">WHEN</label>
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-1">
-                    1
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="p-6 space-y-8">
+              {/* Trigger Section */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+                    ۱
                   </div>
-                  <div className="w-full space-y-3">
-                    <select className="select select-bordered w-full bg-base-100 focus:bg-base-100 transition-colors relative z-20">
-                      <option>Task moved to Done</option>
-                      <option>Task Created</option>
-                      <option>Project Deadline Approaching</option>
-                    </select>
-                  </div>
+                  <label className="text-sm font-bold text-base-content">اگر (شرط)</label>
+                </div>
+                <div className="pr-11">
+                  <select 
+                    {...register("event_type", { required: true })}
+                    className="select select-bordered w-full bg-base-100 focus:outline-primary"
+                    dir="ltr"
+                  >
+                    <option value="">-- Select Event --</option>
+                    {EVENT_CHOICES.map(e => (
+                      <option key={e.value} value={e.value}>{e.label} ({e.value})</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            </div>
 
-            {/* Action Section */}
-            <div className="space-y-4 pt-4 relative z-10">
-              <label className="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 block">THEN</label>
-              <div className="flex items-start gap-4">
-                <div className="w-8 h-8 rounded-full bg-secondary/20 text-secondary flex items-center justify-center shrink-0 mt-1">
-                  2
+              <div className="divider opacity-30 my-2"></div>
+
+              {/* Action Section */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-bold">
+                    ۲
+                  </div>
+                  <label className="text-sm font-bold text-base-content">آنگاه (عملیات)</label>
                 </div>
-                <div className="w-full space-y-4">
-                  <select className="select select-bordered w-full bg-base-100 focus:bg-base-100 transition-colors border-primary/50 shadow-[0_0_10px_rgba(var(--p),0.2)] relative z-20">
-                    <option>Send Telegram Message to Group</option>
-                    <option>Send Email</option>
-                    <option>Assign to User</option>
+                <div className="pr-11 space-y-4">
+                  <select 
+                    {...register("action_type")}
+                    className="select select-bordered w-full bg-base-100 border-primary shadow-[0_0_8px_rgba(var(--p),0.15)] focus:outline-primary"
+                  >
+                    <option value="telegram">ارسال پیام به گروه تلگرام</option>
+                    <option value="email">ارسال ایمیل</option>
+                    <option value="both">ارسال به ایمیل و تلگرام</option>
                   </select>
 
-                  <div className="space-y-4 bg-base-200 p-5 rounded-xl border border-base-content/5 mt-4">
+                  <div className="space-y-4 bg-base-200/50 p-5 rounded-xl border border-base-content/10 mt-4">
                     <div>
-                      <label className="label text-xs py-1 font-bold">Telegram Group</label>
-                      <select className="select select-bordered select-sm w-full bg-base-100">
-                        <option>Management Channel</option>
-                        <option>DevOps Alerts</option>
-                      </select>
+                      <label className="label text-sm font-semibold py-1">Chat ID (گروه تلگرام)</label>
+                      <input 
+                        type="text"
+                        {...register("telegram_group_id")}
+                        placeholder="e.g. -100123456789"
+                        className="input input-bordered input-sm w-full bg-base-100 font-mono"
+                        dir="ltr"
+                      />
+                      <span className="text-xs text-base-content/50 mt-1 block">
+                        اگر ربات در گروه است، آیدی عددی گروه را وارد کنید.
+                      </span>
                     </div>
 
                     <div>
-                      <label className="label text-xs py-1 font-bold">Message Template</label>
+                      <label className="label text-sm font-semibold py-1">متن پیام (Template)</label>
                       <textarea 
+                        {...register("message_template", { required: true })}
                         className="textarea textarea-bordered w-full text-sm font-mono h-24 bg-base-100"
-                        defaultValue="Task {{task.id}}: {{task.title}} moved to Done. Status: Done. (Team notifications)"
+                        dir="ltr"
+                        placeholder="تسک {{task.title}} تکمیل شد."
                       ></textarea>
+                      <span className="text-xs text-base-content/50 mt-1 block">از متغیرهایی مثل {'{{task.title}}'} می‌توانید استفاده کنید.</span>
                     </div>
 
                     <div>
-                      <label className="label text-xs py-1 font-bold">Additional Recipients</label>
-                      <select className="select select-bordered select-sm w-full bg-base-100">
-                        <option>Notify Specific Admins</option>
-                        <option>Notify Reporter Only</option>
-                        <option>Notify Project Owner</option>
+                      <label className="label text-sm font-semibold py-1">دریافت‌کنندگان پیام</label>
+                      <select 
+                        {...register("recipients")}
+                        multiple
+                        className="select select-bordered select-sm w-full bg-base-100 h-24"
+                      >
+                        <option value="owner">صاحب پروژه (Owner)</option>
+                        <option value="admins">ادمین‌های سازمان (Admins)</option>
+                        <option value="team_leads">مدیران تیم (Team Leads)</option>
+                        <option value="assignee">شخص انجام‌دهنده تسک (Assignee)</option>
+                        <option value="reporter">گزارش‌دهنده (Reporter)</option>
                       </select>
+                      <span className="text-xs text-base-content/50 mt-1 block">می‌توانید چند نفر را با نگه داشتن Ctrl انتخاب کنید.</span>
                     </div>
                   </div>
                 </div>
               </div>
+
             </div>
 
-          </div>
-
-          <div className="modal-action bg-base-200 m-0 px-6 py-4 border-t border-base-content/10">
-            <button type="button" className="btn btn-ghost" onClick={closeModal}>Cancel</button>
-            <button type="button" className="btn btn-primary" onClick={closeModal}>Create Rule</button>
-          </div>
+            <div className="modal-action bg-base-200/30 m-0 px-6 py-4 border-t border-base-content/10 rounded-b-2xl">
+              <button type="button" className="btn btn-ghost" onClick={closeModal} disabled={isPending}>انصراف</button>
+              <button type="submit" className="btn btn-primary px-8" disabled={isPending}>
+                {isPending ? <span className="loading loading-spinner"></span> : "ذخیره قانون"}
+              </button>
+            </div>
+          </form>
         </div>
         <form method="dialog" className="modal-backdrop">
           <button>close</button>
         </form>
       </dialog>
-
     </motion.div>
   );
 };

@@ -7,10 +7,13 @@ from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from automations.models import AutomationRule
+from automations.serializers import AutomationRuleSerializer
 from automations.services import TelegramBotService
 
 logger = logging.getLogger(__name__)
@@ -92,3 +95,11 @@ class TelegramWebhookView(View):
         except Exception as e:
             logger.error(f"Telegram webhook error: {e}", exc_info=True)
             return JsonResponse({"status": "error"}, status=200)
+
+class AutomationRuleViewSet(viewsets.ModelViewSet):
+    """
+    CRUD API for Automation Rules.
+    """
+    serializer_class = AutomationRuleSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = AutomationRule.objects.all().order_by('-created_at')
