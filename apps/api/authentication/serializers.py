@@ -75,10 +75,16 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
 
         telegram_connected = False
+        notify_via_email = True
+        notify_via_telegram = False
+
         try:
             wsp = self.user.work_style_profile
-            if wsp and not wsp.is_deleted and wsp.telegram_chat_id:
-                telegram_connected = True
+            if wsp and not wsp.is_deleted:
+                if wsp.telegram_chat_id:
+                    telegram_connected = True
+                notify_via_email = wsp.notify_via_email
+                notify_via_telegram = wsp.notify_via_telegram
         except Exception:
             pass
 
@@ -91,6 +97,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             "is_staff": self.user.is_staff,
             "avatar_url": self.user.avatar.url if self.user.avatar else None,
             "telegram_connected": telegram_connected,
+            "notify_via_email": notify_via_email,
+            "notify_via_telegram": notify_via_telegram,
         }
 
         data["user"] = user_data

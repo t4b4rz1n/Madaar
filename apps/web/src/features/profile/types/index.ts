@@ -12,7 +12,10 @@ export interface UserProfile {
 export interface ProfileUpdateData {
   first_name?: string;
   last_name?: string;
-  profile_image?: File;
+  email?: string;
   password?: string;
   password_confirm?: string;
+  avatar?: File;
+  notify_via_email?: boolean;
+  notify_via_telegram?: boolean;
 }

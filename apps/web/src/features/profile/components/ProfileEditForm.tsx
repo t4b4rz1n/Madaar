@@ -48,6 +48,8 @@ export const ProfileEditForm = () => {
       last_name: user?.last_name || "",
       password: "",
       password_confirm: "",
+      notify_via_email: user?.notify_via_email ?? true,
+      notify_via_telegram: user?.notify_via_telegram ?? false,
     },
   });
 
@@ -112,6 +114,12 @@ export const ProfileEditForm = () => {
       updateData.password = data.password;
       updateData.password_confirm = data.password_confirm;
     }
+    if (data.notify_via_email !== user.notify_via_email) {
+      updateData.notify_via_email = data.notify_via_email;
+    }
+    if (data.notify_via_telegram !== user.notify_via_telegram) {
+      updateData.notify_via_telegram = data.notify_via_telegram;
+    }
     if (profileImage) {
       updateData.profile_image = profileImage;
     }
@@ -128,6 +136,8 @@ export const ProfileEditForm = () => {
           last_name: data.last_name,
           password: "",
           password_confirm: "",
+          notify_via_email: data.notify_via_email,
+          notify_via_telegram: data.notify_via_telegram,
         });
         setProfileImage(null);
         setProfileImagePreview(null);
@@ -471,6 +481,70 @@ export const ProfileEditForm = () => {
                     )}
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* Notification Preferences Section */}
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-1 h-5 bg-success rounded-full"></div>
+                <h3 className="text-sm font-bold text-base-content/70 uppercase tracking-wider">
+                  Notification Preferences
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-base-200/30 border border-base-content/10 rounded-xl p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center text-success">
+                      <Sms size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-base-content">Email Notifications</h4>
+                      <p className="text-xs text-base-content/60 mt-0.5">Receive updates via email</p>
+                    </div>
+                  </div>
+                  <Controller
+                    name="notify_via_email"
+                    control={control}
+                    render={({ field }) => (
+                      <input 
+                        type="checkbox" 
+                        className="toggle toggle-success" 
+                        checked={field.value}
+                        onChange={field.onChange} 
+                      />
+                    )}
+                  />
+                </div>
+
+                <div className="bg-base-200/30 border border-base-content/10 rounded-xl p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-info/10 rounded-full flex items-center justify-center text-info">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.18-.08-.05-.19-.02-.27 0-.12.03-1.98 1.25-5.58 3.69-.53.36-1.01.53-1.44.52-.47-.01-1.38-.27-2.05-.49-.83-.27-1.49-.41-1.43-.87.03-.23.36-.47 1-.72 3.93-1.71 6.55-2.84 7.85-3.38 3.74-1.56 4.51-1.83 5.02-1.84.11 0 .36.03.49.14.11.09.14.22.15.34-.01.07-.01.16-.03.26z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-base-content">Telegram Notifications</h4>
+                      <p className="text-xs text-base-content/60 mt-0.5">Receive updates via Telegram</p>
+                    </div>
+                  </div>
+                  <Controller
+                    name="notify_via_telegram"
+                    control={control}
+                    render={({ field }) => (
+                      <input 
+                        type="checkbox" 
+                        className="toggle toggle-info" 
+                        checked={field.value}
+                        onChange={field.onChange} 
+                        disabled={!user.telegram_connected}
+                        title={!user.telegram_connected ? "Please connect to Telegram first" : ""}
+                      />
+                    )}
+                  />
+                </div>
               </div>
             </div>
           </div>
