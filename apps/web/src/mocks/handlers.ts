@@ -6,6 +6,7 @@ import type { NotificationFormData } from "../features/notifications/types";
 // import type { ProfileUpdateData } from "../features/profile/types";
 import type { Ticket, TicketFormData } from "../features/tickets/types";
 import { getApiUrl } from "../core/api/config";
+import type { TeamFormData, SquadFormData } from "../features/teams/types";
 
 const apiUrl = getApiUrl();
 
@@ -1095,5 +1096,257 @@ export const handlers = [
       },
       { status: 200 },
     );
+  }),
+  // --- Teams MSW Handlers ---
+  http.get("*/panel/teams/", ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page")) || 1;
+    const pageSize = Number(url.searchParams.get("page_size")) || 10;
+    const search = url.searchParams.get("search");
+    const ordering = url.searchParams.get("ordering");
+    const isActive = url.searchParams.get("is_active");
+
+    let teams = [...db.teams.getAll()];
+
+    // Filter by team name and description
+    if (search) {
+      const q = search.toLowerCase();
+      teams = teams.filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          (t.description || "").toLowerCase().includes(q),
+      );
+    }
+
+    // Filter by active/inactive status
+    if (isActive !== null && isActive !== undefined && isActive !== "") {
+      const activeBool = isActive === "true";
+      teams = teams.filter((t) => t.is_active === activeBool);
+    }
+
+    // Sorting
+    if (ordering) {
+      const isDesc = ordering.startsWith("-");
+      const field = isDesc ? ordering.slice(1) : ordering;
+
+      teams.sort((a, b) => {
+        let valA = (a as unknown as Record<string, unknown>)[field];
+        let valB = (b as unknown as Record<string, unknown>)[field];
+
+        if (typeof valA === "string") valA = valA.toLowerCase();
+        if (typeof valB === "string") valB = valB.toLowerCase();
+
+        if (valA === undefined || valA === null) return isDesc ? -1 : 1;
+        if (valB === undefined || valB === null) return isDesc ? 1 : -1;
+
+        if (valA < valB) return isDesc ? 1 : -1;
+        if (valA > valB) return isDesc ? -1 : 1;
+        return 0;
+      });
+    }
+
+    // Enrich with lead info, squad count, and member count
+    const detailedTeams = teams.map((team) => {
+      const lead = team.lead_id ? db.users.getById(team.lead_id) : null;
+      const squadsCount = db.squads.getByTeamId(team.id).length;
+      // Team members are simulated based on users in this team's squads or the team lead
+      // For simplicity, we currently simulate member count using other filters or a fixed number
+      const membersCount = lead ? 3 : 0;
+
+      return {
+        ...team,
+        lead,
+        squads_count: squadsCount,
+        members_count: membersCount,
+      };
+    });
+
+    const response = createPaginatedResponse(
+      detailedTeams,
+      page,
+      pageSize,
+      request.url,
+    );
+
+    return HttpResponse.json(response);
+  }),
+
+  http.post("*/panel/teams/", async ({ request }) => {
+    const data = (await request.json()) as TeamFormData;
+
+    // Check for duplicate team name
+    const exists = db.teams
+      .getAll()
+      .some((t) => t.name.toLowerCase() === data.name.trim().toLowerCase());
+
+    if (exists) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "A team with this name already exists",
+          data: {},
+        },
+        { status: 400 },
+      );
+    }
+
+    const newTeam = db.teams.create({
+      name: data.name.trim(),
+      description: data.description || "",
+      lead_id: data.lead_id ?? null,
+      is_active: Boolean(data.is_active),
+    });
+
+    return HttpResponse.json({
+      status: true,
+      message: "Team created successfully",
+      data: newTeam,
+    });
+  }),
+
+  http.patch("*/panel/teams/:id/", async ({ params, request }) => {
+    const id = Number(params.id);
+    const data = (await request.json()) as Partial<TeamFormData>;
+
+    const updated = db.teams.update(id, data);
+
+    if (!updated) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Team not found",
+          data: {},
+        },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json({
+      status: true,
+      message: "Team updated successfully",
+      data: updated,
+    });
+  }),
+
+  http.delete("*/panel/teams/:id/", ({ params }) => {
+    const id = Number(params.id);
+    const success = db.teams.delete(id);
+
+    if (!success) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Team not found",
+          data: {},
+        },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json({
+      status: true,
+      message: "Team and its sub-squads deleted successfully",
+      data: {},
+    });
+  }),
+
+  // --- Squads MSW Handlers ---
+  http.get("*/panel/squads/", ({ request }) => {
+    const url = new URL(request.url);
+    const teamId = url.searchParams.get("team_id");
+
+    let squads = [...db.squads.getAll()];
+
+    if (teamId) {
+      squads = squads.filter((s) => s.team_id === Number(teamId));
+    }
+
+    return HttpResponse.json({
+      status: true,
+      message: "Success",
+      data: squads,
+    });
+  }),
+
+  http.post("*/panel/squads/", async ({ request }) => {
+    const data = (await request.json()) as SquadFormData;
+
+    const exists = db.squads
+      .getAll()
+      .some(
+        (s) =>
+          s.team_id === data.team_id &&
+          s.name.toLowerCase() === data.name.trim().toLowerCase(),
+      );
+
+    if (exists) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "A squad with this name already exists in this team",
+          data: {},
+        },
+        { status: 400 },
+      );
+    }
+
+    const newSquad = db.squads.create({
+      team_id: data.team_id,
+      name: data.name.trim(),
+      description: data.description || "",
+      is_active: Boolean(data.is_active),
+    });
+
+    return HttpResponse.json({
+      status: true,
+      message: "Squad created successfully",
+      data: newSquad,
+    });
+  }),
+
+  http.patch("*/panel/squads/:id/", async ({ params, request }) => {
+    const id = Number(params.id);
+    const data = (await request.json()) as Partial<SquadFormData>;
+
+    const updated = db.squads.update(id, data);
+
+    if (!updated) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Squad not found",
+          data: {},
+        },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json({
+      status: true,
+      message: "Squad updated successfully",
+      data: updated,
+    });
+  }),
+
+  http.delete("*/panel/squads/:id/", ({ params }) => {
+    const id = Number(params.id);
+    const success = db.squads.delete(id);
+
+    if (!success) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Squad not found",
+          data: {},
+        },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json({
+      status: true,
+      message: "Squad deleted successfully",
+      data: {},
+    });
   }),
 ];
