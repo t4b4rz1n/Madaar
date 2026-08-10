@@ -37,6 +37,8 @@ export const useUpdateProfile = () => {
           first_name: response.data.first_name,
           last_name: response.data.last_name,
           profile_image_url: response.data.profile_image,
+          notify_via_email: response.data.notify_via_email,
+          notify_via_telegram: response.data.notify_via_telegram,
         });
       }
     },
