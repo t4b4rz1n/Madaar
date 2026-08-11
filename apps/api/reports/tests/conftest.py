@@ -1,5 +1,5 @@
 import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apps.api.config.test_settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.test_settings')
 import django
 django.setup()
 import datetime
