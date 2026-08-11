@@ -60,7 +60,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         email = attrs.get(self.username_field)
 
         if not email and not username:
-            raise serializers.ValidationError({"detail": "Must include 'email' or 'username' and 'password'."})
+            raise serializers.ValidationError(
+                {"detail": "Must include 'email' or 'username' and 'password'."}
+            )
 
         if not email and username:
             if "@" in username:
@@ -93,10 +95,14 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             can_manage_automations = True
         else:
             from organizations.models import OrganizationMembership
+
             can_manage_automations = OrganizationMembership.objects.filter(
                 user=self.user,
-                role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
-                is_deleted=False
+                role__in=[
+                    OrganizationMembership.Role.OWNER,
+                    OrganizationMembership.Role.ADMIN,
+                ],
+                is_deleted=False,
             ).exists()
 
         user_data = {
