@@ -6,3 +6,6 @@ class ReportsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "reports"
     verbose_name = _("Reports & Analytics")
+
+    def ready(self):
+        import reports.signals  # noqa
