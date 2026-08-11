@@ -24,12 +24,17 @@ import zoneinfo
 
 from django.db.models import (
     Count,
+    DecimalField,
+    F,
     OuterRef,
     Q,
     Subquery,
     Sum,
+    Value,
 )
+from django.db.models.functions import Coalesce
 from django.utils import timezone
+from django.core.cache import cache
 
 from attendance.models import Attendance, TimeLog
 from organizations.models import TeamMembership
@@ -55,7 +60,7 @@ def get_user_today_range(
     """
     try:
         user_tz = zoneinfo.ZoneInfo(tz_name)
-    except (KeyError, Exception):
+    except (zoneinfo.ZoneInfoNotFoundError, TypeError):
         user_tz = zoneinfo.ZoneInfo("UTC")
 
     now_in_user_tz = timezone.now().astimezone(user_tz)
@@ -76,7 +81,7 @@ def get_user_week_range(
     """Return the UTC-aware start (Saturday) and end of current week."""
     try:
         user_tz = zoneinfo.ZoneInfo(tz_name)
-    except (KeyError, Exception):
+    except (zoneinfo.ZoneInfoNotFoundError, TypeError):
         user_tz = zoneinfo.ZoneInfo("UTC")
 
     now_in_user_tz = timezone.now().astimezone(user_tz)
@@ -90,6 +95,25 @@ def get_user_week_range(
     week_start_utc = week_start_local.astimezone(zoneinfo.ZoneInfo("UTC"))
     week_end_utc = week_end_local.astimezone(zoneinfo.ZoneInfo("UTC"))
     return week_start_utc, week_end_utc
+
+
+def get_business_days(start_date: datetime.date, end_date: datetime.date) -> int:
+    """Calculate the number of business days (Mon-Fri) between two dates inclusive."""
+    if start_date > end_date:
+        return 0
+        
+    days = (end_date - start_date).days + 1
+    weeks = days // 7
+    business_days = weeks * 5
+    
+    remainder = days % 7
+    if remainder > 0:
+        start_weekday = start_date.weekday()
+        for i in range(remainder):
+            if (start_weekday + i) % 7 < 5:  # Mon-Fri
+                business_days += 1
+                
+    return business_days
 
 
 # ---------------------------------------------------------------------------
@@ -108,6 +132,7 @@ class EmployeeDashboardService:
             Task.objects.filter(
                 assignee=user,
                 is_deleted=False,
+                project__is_deleted=False,
             )
             .filter(
                 Q(due_date__date=today_date)
@@ -139,6 +164,7 @@ class EmployeeDashboardService:
                 assignee=user,
                 is_deleted=False,
                 due_date__date__lt=today_date,
+                project__is_deleted=False,
             )
             .exclude(status__code__iexact="done")
             .select_related("status", "project")
@@ -162,6 +188,7 @@ class EmployeeDashboardService:
             date__gte=week_start.date(),
             date__lte=week_end.date(),
             is_active=False,
+            project__is_deleted=False,
         ).aggregate(
             total_seconds=Sum("duration_seconds"),
             total_logs=Count("id"),
@@ -225,6 +252,7 @@ class EmployeeDashboardService:
                 user=user,
                 is_active=True,
                 is_deleted=False,
+                project__is_deleted=False,
             )
             .select_related("task", "project")
             .values(
@@ -270,10 +298,15 @@ class EmployeeDashboardService:
     @classmethod
     def get_dashboard(cls, user, tz_name: str = "UTC") -> dict:
         """Compose all employee dashboard sections into a single dict."""
+        cache_key = f"reports:emp:user_{user.id}:tz_{tz_name}"
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return cached_data
+
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
 
-        return {
+        result = {
             "today_tasks": list(cls._get_today_tasks(user, today_start, today_end)),
             "overdue_tasks": list(cls._get_overdue_tasks(user, today_start)),
             "weekly_time": cls._get_weekly_time_summary(user, week_start, week_end),
@@ -286,6 +319,10 @@ class EmployeeDashboardService:
             "badges": None,  # Module 5 — Gamification (Phase 2)
             "goals": None,  # Module 7 — OKR (Phase 3)
         }
+        
+        # Cache for 10 minutes (600 seconds)
+        cache.set(cache_key, result, 600)
+        return result
 
 
 # ---------------------------------------------------------------------------
@@ -324,6 +361,7 @@ class ManagerDashboardService:
             Task.objects.filter(
                 assignee_id__in=member_ids,
                 is_deleted=False,
+                project__is_deleted=False,
             )
             .values("status__code", "status__name")
             .annotate(count=Count("id"))
@@ -338,6 +376,7 @@ class ManagerDashboardService:
             assignee_id__in=member_ids,
             is_deleted=False,
             due_date__date__lt=today_date,
+            project__is_deleted=False,
         ).exclude(status__code__iexact="done")
 
         return {
@@ -359,6 +398,7 @@ class ManagerDashboardService:
                 is_active=False,
                 date__gte=week_start.date(),
                 date__lte=week_end.date(),
+                project__is_deleted=False,
             )
             .values(
                 "user__id",
@@ -449,14 +489,12 @@ class ManagerDashboardService:
         )
 
     @classmethod
-    def get_dashboard(cls, user, team_id=None, tz_name: str = "UTC") -> dict:
-        """Compose all manager dashboard sections."""
+    def _resolve_member_ids(cls, user, team_id=None) -> list:
         if team_id:
-            member_ids = cls._get_team_member_user_ids(team_id)
+            return cls._get_team_member_user_ids(team_id)
         else:
-            # Auto-detect: all members from all teams user leads
             managed_teams = cls.get_managed_team_ids(user)
-            member_ids = list(
+            return list(
                 TeamMembership.objects.filter(
                     team_id__in=managed_teams,
                     is_deleted=False,
@@ -465,10 +503,24 @@ class ManagerDashboardService:
                 .distinct()
             )
 
+    @classmethod
+    def get_dashboard(cls, user, team_id=None, tz_name: str = "UTC") -> dict:
+        """Compose all manager dashboard sections."""
+        if team_id:
+            cache_key = f"reports:mgr:team_{team_id}:tz_{tz_name}"
+        else:
+            cache_key = f"reports:mgr:user_{user.id}:tz_{tz_name}"
+
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return cached_data
+
+        member_ids = cls._resolve_member_ids(user, team_id)
+
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
 
-        return {
+        result = {
             "team_member_count": len(member_ids),
             "task_stats": cls._get_task_stats(member_ids),
             "overdue_summary": cls._get_overdue_tasks(member_ids, today_start),
@@ -476,22 +528,15 @@ class ManagerDashboardService:
             "members_attendance": cls._get_members_attendance(member_ids, today_start),
             "project_summary": cls._get_project_summary(member_ids),
         }
+        
+        # Cache for 15 minutes (900 seconds)
+        cache.set(cache_key, result, 900)
+        return result
 
     @classmethod
     def get_members_detail(cls, user, team_id=None, tz_name: str = "UTC") -> list:
         """Detailed per-member view: tasks, hours, attendance."""
-        if team_id:
-            member_ids = cls._get_team_member_user_ids(team_id)
-        else:
-            managed_teams = cls.get_managed_team_ids(user)
-            member_ids = list(
-                TeamMembership.objects.filter(
-                    team_id__in=managed_teams,
-                    is_deleted=False,
-                )
-                .values_list("user_id", flat=True)
-                .distinct()
-            )
+        member_ids = cls._resolve_member_ids(user, team_id)
 
         today_start, _ = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
@@ -504,13 +549,14 @@ class ManagerDashboardService:
             .annotate(
                 total_tasks=Count(
                     "tasks",
-                    filter=Q(tasks__is_deleted=False),
+                    filter=Q(tasks__is_deleted=False, tasks__project__is_deleted=False),
                     distinct=True,
                 ),
                 done_tasks=Count(
                     "tasks",
                     filter=Q(
                         tasks__is_deleted=False,
+                        tasks__project__is_deleted=False,
                         tasks__status__code__iexact="done",
                     ),
                     distinct=True,
@@ -519,6 +565,7 @@ class ManagerDashboardService:
                     "tasks",
                     filter=Q(
                         tasks__is_deleted=False,
+                        tasks__project__is_deleted=False,
                         tasks__due_date__date__lt=today_date,
                     )
                     & ~Q(tasks__status__code__iexact="done"),
@@ -531,6 +578,7 @@ class ManagerDashboardService:
                         is_active=False,
                         date__gte=week_start.date(),
                         date__lte=week_end.date(),
+                        project__is_deleted=False,
                     )
                     .values("user_id")
                     .annotate(total=Sum("duration_seconds"))
@@ -582,6 +630,7 @@ class ExecutiveDashboardService:
         task_stats = Task.objects.filter(
             project__organization_id=org_id,
             is_deleted=False,
+            project__is_deleted=False,
         ).aggregate(
             total=Count("id"),
             done=Count("id", filter=Q(status__code__iexact="done")),
@@ -603,13 +652,13 @@ class ExecutiveDashboardService:
             organization_id=org_id, is_deleted=False
         ).count()
 
-        # Total logged work hours this week
         work_data = TimeLog.objects.filter(
             project__organization_id=org_id,
             is_deleted=False,
             is_active=False,
             date__gte=week_start.date(),
             date__lte=week_end.date(),
+            project__is_deleted=False,
         ).aggregate(
             total_seconds=Sum("duration_seconds"),
             active_workers=Count("user_id", distinct=True),
@@ -621,11 +670,7 @@ class ExecutiveDashboardService:
         # Calculate business days in the week range
         current = week_start.date()
         end = min(week_end.date(), timezone.now().date())
-        business_days = 0
-        while current <= end:
-            if current.weekday() < 5:  # Mon-Fri
-                business_days += 1
-            current += datetime.timedelta(days=1)
+        business_days = get_business_days(current, end)
 
         expected_seconds = member_count * business_days * 8 * 3600
 
@@ -673,6 +718,7 @@ class ExecutiveDashboardService:
                     "milestones",
                     filter=Q(
                         milestones__is_deleted=False,
+                        milestones__project__is_deleted=False,
                         milestones__target_date__lt=today_date,
                     )
                     & ~Q(milestones__status=Milestone.Status.COMPLETED),
@@ -720,7 +766,7 @@ class ExecutiveDashboardService:
             )
             .exclude(status=Project.Status.ARCHIVED)
             .aggregate(
-                total_budget=Sum("budget"),
+                total_budget=Sum("budget", default=0),
                 project_count=Count("id"),
                 total_time_seconds=Sum(
                     "time_logs__duration_seconds",
@@ -728,17 +774,39 @@ class ExecutiveDashboardService:
                         time_logs__is_deleted=False,
                         time_logs__is_active=False,
                     ),
+                    default=0,
                 ),
             )
         )
 
     @classmethod
-    def get_dashboard(cls, user, org_id, tz_name: str = "UTC") -> dict:
-        """Compose all executive dashboard sections."""
+    def get_dashboard(cls, user, org_id=None, tz_name: str = "UTC") -> dict:
+        """Compose the executive dashboard sections."""
+        if not org_id:
+            from organizations.models import OrganizationMembership
+            membership = OrganizationMembership.objects.filter(
+                user=user,
+                role__in=[
+                    OrganizationMembership.Role.OWNER,
+                    OrganizationMembership.Role.ADMIN,
+                ],
+                is_deleted=False,
+            ).first()
+            if not membership:
+                from rest_framework.exceptions import NotFound
+                from django.utils.translation import gettext_lazy as _
+                raise NotFound(_("No organisation found for this user."))
+            org_id = membership.organization_id
+
+        cache_key = f"reports:exec:org_{org_id}:tz_{tz_name}"
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return cached_data
+
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
 
-        return {
+        result = {
             "company_overview": cls._get_company_overview(org_id),
             "resource_utilization": cls._get_resource_utilization(
                 org_id, week_start, week_end
@@ -746,3 +814,7 @@ class ExecutiveDashboardService:
             "project_health": cls._get_project_health(org_id, today_start),
             "financial_summary": cls._get_financial_summary(org_id),
         }
+        
+        # Cache for 60 minutes (3600 seconds)
+        cache.set(cache_key, result, 3600)
+        return result
