@@ -1,3 +1,7 @@
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apps.api.config.test_settings')
+import django
+django.setup()
 import datetime
 import pytest
 from django.utils import timezone
