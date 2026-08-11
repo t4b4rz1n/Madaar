@@ -17,6 +17,7 @@ export interface User {
   telegram_connected?: boolean;
   notify_via_email?: boolean;
   notify_via_telegram?: boolean;
+  can_manage_automations?: boolean;
 }
 
 export interface AuthResponse {

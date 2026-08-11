@@ -88,6 +88,17 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         except Exception:
             pass
 
+        can_manage_automations = False
+        if self.user.is_staff or self.user.is_superuser:
+            can_manage_automations = True
+        else:
+            from organizations.models import OrganizationMembership
+            can_manage_automations = OrganizationMembership.objects.filter(
+                user=self.user,
+                role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
+                is_deleted=False
+            ).exists()
+
         user_data = {
             "id": self.user.id,
             "username": self.user.username,
@@ -99,6 +110,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             "telegram_connected": telegram_connected,
             "notify_via_email": notify_via_email,
             "notify_via_telegram": notify_via_telegram,
+            "can_manage_automations": can_manage_automations,
         }
 
         data["user"] = user_data

@@ -48,7 +48,10 @@ export const Sidebar = () => {
         // ۱. اگر آیتم فقط برای staff باشد و کاربر staff نباشد، فیلتر می‌شود
         if (item.staffOnly && !isStaff) return false;
 
-        // ۲. اگر آیتم نیاز به پرمیشن خاصی داشته باشد، آن را بررسی می‌کنیم
+        // ۲. اگر آیتم نیاز به مدیریت سازمان داشته باشد
+        if (item.requiresOrgAdmin && !user?.can_manage_automations) return false;
+
+        // ۳. اگر آیتم نیاز به پرمیشن خاصی داشته باشد، آن را بررسی می‌کنیم
         // (هوک usePermissions خودش به کاربرهای is_staff دسترسی کامل می‌دهد)
         if (item.permission && !hasAllPermissions([item.permission])) {
           return false;

@@ -16,6 +16,7 @@ export type DrawerItem = {
   icon: React.ReactNode;
   staffOnly?: boolean;
   permission?: string;
+  requiresOrgAdmin?: boolean;
 };
 
 export const drawerItems: DrawerItem[] = [
@@ -28,6 +29,7 @@ export const drawerItems: DrawerItem[] = [
     title: "Automations",
     link: "automations",
     icon: <Flash variant="Outline" />,
+    requiresOrgAdmin: true,
   },
   {
     title: "Roles Management",
