@@ -87,6 +87,24 @@ def process_rules_for_event(event_type: str, payload: dict):
     for user in users:
         wsp = getattr(user, "work_style_profile", None)
 
+        notify_email = wsp.notify_via_email if wsp else False
+        notify_telegram = wsp.notify_via_telegram if wsp else False
+        telegram_chat_id = wsp.telegram_chat_id if wsp else None
+
+        should_send_email = (
+            action_type in (AutomationRule.ActionType.EMAIL, AutomationRule.ActionType.BOTH)
+            and notify_email
+            and user.email
+        )
+        should_send_telegram = (
+            action_type in (AutomationRule.ActionType.TELEGRAM, AutomationRule.ActionType.BOTH)
+            and notify_telegram
+            and telegram_chat_id
+        )
+
+        if not should_send_email and not should_send_telegram:
+            continue
+
         # Determine language preferences
         lang = settings.LANGUAGE_CODE
         if wsp and getattr(wsp, "telegram_language", None):
@@ -101,22 +119,10 @@ def process_rules_for_event(event_type: str, payload: dict):
             else formatted_message
         )
 
-        notify_email = wsp.notify_via_email if wsp else False
-        notify_telegram = wsp.notify_via_telegram if wsp else False
-        telegram_chat_id = wsp.telegram_chat_id if wsp else None
-
-        if (
-            action_type in (AutomationRule.ActionType.EMAIL, AutomationRule.ActionType.BOTH)
-            and notify_email
-            and user.email
-        ):
+        if should_send_email:
             send_email_notification(user.email, subject, message)
 
-        if (
-            action_type in (AutomationRule.ActionType.TELEGRAM, AutomationRule.ActionType.BOTH)
-            and notify_telegram
-            and telegram_chat_id
-        ):
+        if should_send_telegram:
             send_telegram_notification.delay(telegram_chat_id, message)
 
 
