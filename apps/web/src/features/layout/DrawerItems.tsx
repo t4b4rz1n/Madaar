@@ -7,6 +7,7 @@ import {
   Category,
   ShieldSecurity,
   Flash,
+  People as TeamsIcon,
 } from "iconsax-reactjs";
 
 export type DrawerItem = {
@@ -66,4 +67,10 @@ export const drawerItems: DrawerItem[] = [
     link: "profile",
     icon: <User variant="Outline" />,
   },
+  {
+  title: "Teams Management",
+  link: "teams",
+  icon: <TeamsIcon variant="Outline" />,
+  permission: "teams.view",
+},
 ];

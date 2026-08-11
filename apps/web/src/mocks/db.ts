@@ -1,6 +1,6 @@
 import type { User } from "../features/users/types";
 import type { Discount } from "../features/discounts/types";
-
+import type { Team, Squad } from "../features/teams/types";
 import type { Notification } from "../features/notifications/types";
 import type { UserProfile } from "../features/profile/types";
 import type {
@@ -423,6 +423,51 @@ export const mockTicketMessages: Record<number, TicketMessage[]> = {
   ],
 };
 
+export let mockTeams: Team[] = [
+  {
+    id: 1,
+    name: "Technical & Development",
+    description: "Frontend and backend development team of the Modares system",
+    lead_id: 2, // Sara (currently can have developer or team lead role)
+    is_active: true,
+    created_at: "2026-01-01T12:00:00Z",
+  },
+  {
+    id: 2,
+    name: "Support & Operations",
+    description: "Technical user support and system monitoring",
+    lead_id: 3, // Jim Raynor
+    is_active: true,
+    created_at: "2026-02-15T09:30:00Z",
+  },
+];
+
+export let mockSquads: Squad[] = [
+  {
+    id: 1,
+    team_id: 1,
+    name: "Frontend Development",
+    description: "Implementing user interface with React and Tailwind CSS",
+    is_active: true,
+    created_at: "2026-01-02T10:00:00Z",
+  },
+  {
+    id: 2,
+    team_id: 1,
+    name: "Backend Development",
+    description: "Implementing services with Django and Docker",
+    is_active: true,
+    created_at: "2026-01-03T11:00:00Z",
+  },
+  {
+    id: 3,
+    team_id: 2,
+    name: "Level 1 Support",
+    description: "Initial response to user tickets",
+    is_active: true,
+    created_at: "2026-02-16T08:00:00Z",
+  },
+];
 // Mutators to simulate DB state mutations
 export const db = {
   users: {
@@ -625,6 +670,75 @@ export const db = {
       const initialLength = mockRoles.length;
       mockRoles = mockRoles.filter((role) => role.id !== id);
       return mockRoles.length < initialLength;
+    },
+  },
+  teams: {
+    getAll: () => mockTeams,
+    getById: (id: number) => mockTeams.find((t) => t.id === id),
+    create: (team: Omit<Team, "id">) => {
+      const nextId =
+        mockTeams.length > 0 ? Math.max(...mockTeams.map((t) => t.id)) + 1 : 1;
+      const newTeam = {
+        ...team,
+        id: nextId,
+        created_at: new Date().toISOString(),
+      };
+      mockTeams.unshift(newTeam);
+      return newTeam;
+    },
+    update: (id: number, updates: Partial<Team>) => {
+      const idx = mockTeams.findIndex((t) => t.id === id);
+      if (idx !== -1) {
+        mockTeams[idx] = {
+          ...mockTeams[idx],
+          ...updates,
+          updated_at: new Date().toISOString(),
+        };
+        return mockTeams[idx];
+      }
+      return null;
+    },
+    delete: (id: number) => {
+      const initialLength = mockTeams.length;
+      mockTeams = mockTeams.filter((t) => t.id !== id);
+      mockSquads = mockSquads.filter((s) => s.team_id !== id);
+      return mockTeams.length < initialLength;
+    },
+  },
+  squads: {
+    getAll: () => mockSquads,
+    getByTeamId: (teamId: number) =>
+      mockSquads.filter((s) => s.team_id === teamId),
+    getById: (id: number) => mockSquads.find((s) => s.id === id),
+    create: (squad: Omit<Squad, "id">) => {
+      const nextId =
+        mockSquads.length > 0
+          ? Math.max(...mockSquads.map((s) => s.id)) + 1
+          : 1;
+      const newSquad = {
+        ...squad,
+        id: nextId,
+        created_at: new Date().toISOString(),
+      };
+      mockSquads.unshift(newSquad);
+      return newSquad;
+    },
+    update: (id: number, updates: Partial<Squad>) => {
+      const idx = mockSquads.findIndex((s) => s.id === id);
+      if (idx !== -1) {
+        mockSquads[idx] = {
+          ...mockSquads[idx],
+          ...updates,
+          updated_at: new Date().toISOString(),
+        };
+        return mockSquads[idx];
+      }
+      return null;
+    },
+    delete: (id: number) => {
+      const initialLength = mockSquads.length;
+      mockSquads = mockSquads.filter((s) => s.id !== id);
+      return mockSquads.length < initialLength;
     },
   },
 };

@@ -4,6 +4,7 @@ import PageLoader from "../../components/PageLoader";
 import RoleBasedRedirect from "../../components/RoleBasedRedirect";
 import authRoutes from "../../features/auth/routes";
 import discountsRoutes from "../../features/discounts/routes";
+import { teamsRoutes } from "../../features/teams/routes";
 
 import { MainLayout } from "../../features/layout/MainLayout";
 import notificationsRoutes from "../../features/notifications/routes";
@@ -35,7 +36,7 @@ export const routes: RouteObject[] = [
       ...rolesRoutes,
       ...discountsRoutes,
       ...automationsRoutes,
-
+      ...teamsRoutes,
       ...notificationsRoutes,
       ...profileRoutes,
       ...ticketsRoutes,
