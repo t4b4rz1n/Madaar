@@ -194,6 +194,8 @@ def test_manager_cache_invalidation_on_team_membership_change(clear_cache, users
 def test_cache_invalidation_on_timelog_update(users, org_data, project_data):
     import datetime
 
+    from django.utils import timezone
+
     from attendance.models import TimeLog
     from reports.services import EmployeeDashboardService
 
@@ -209,7 +211,7 @@ def test_cache_invalidation_on_timelog_update(users, org_data, project_data):
         task=task,
         project=task.project,
         date=datetime.date.today(),
-        start_time=datetime.datetime.now(datetime.timezone.utc),
+        start_time=timezone.now(),
         duration_seconds=1800,  # add 30 mins
         is_active=False,
     )
