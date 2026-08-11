@@ -28,7 +28,6 @@ export const drawerItems: DrawerItem[] = [
     title: "Automations",
     link: "automations",
     icon: <Flash variant="Outline" />,
-    permission: "automations.manage",
   },
   {
     title: "Roles Management",
