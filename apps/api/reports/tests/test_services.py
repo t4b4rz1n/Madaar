@@ -7,7 +7,6 @@ from .factories import OrganizationFactory, OrganizationMembershipFactory
 
 # Additional imports for cache invalidation tests
 from django.core.cache import cache
-from django.test import override_settings
 from .factories import ProjectFactory, TeamFactory, TeamMembershipFactory, TeamMembership
 
 @pytest.mark.django_db
@@ -132,28 +131,31 @@ def test_get_business_days():
 def clear_cache():
     cache.clear()
 
-@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "exec-test"}})
 @pytest.mark.django_db
 def test_executive_cache_invalidation_on_project_soft_delete(clear_cache, users, org_data):
     user = users["org_owner"]
     org = org_data["org"]
     project = ProjectFactory(organization=org, is_deleted=False)
     tz = "UTC"
-    # First call caches result
+    version_key = f"dashboard_version:exec:org_{org.id}"
+    # Read current version (may have been bumped by fixture setup signals)
+    current_version = cache.get(version_key, 1)
+    # First call caches result at current version
     dashboard = ExecutiveDashboardService.get_dashboard(user=user, org_id=org.id, tz_name=tz)
-    cache_key = f"reports:exec:org_{org.id}:tz_{tz}"
-    assert cache.get(cache_key) is not None
-    # Soft delete the project – triggers signal
+    old_cache_key = f"reports:exec:org_{org.id}:v{current_version}:tz_{tz}"
+    assert cache.get(old_cache_key) is not None
+    # Soft delete the project – triggers signal → bumps version
     project.is_deleted = True
     project.save()
-    # Verify cache cleared
-    assert cache.get(cache_key) is None
-    # Second call – cache must be refreshed
+    # Version should have incremented
+    new_version = cache.get(version_key, 1)
+    assert new_version == current_version + 1
+    # Second call – builds new versioned key, recomputes, caches fresh data
     dashboard2 = ExecutiveDashboardService.get_dashboard(user=user, org_id=org.id, tz_name=tz)
-    assert cache.get(cache_key) is not None
+    new_cache_key = f"reports:exec:org_{org.id}:v{new_version}:tz_{tz}"
+    assert cache.get(new_cache_key) is not None
     assert dashboard2["company_overview"]["projects"]["total"] == 0
 
-@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "mgr-test"}})
 @pytest.mark.django_db
 def test_manager_cache_invalidation_on_team_membership_change(clear_cache, users, org_data):
     lead = users["team_lead"]
@@ -162,16 +164,21 @@ def test_manager_cache_invalidation_on_team_membership_change(clear_cache, users
     # initial membership – lead only
     TeamMembershipFactory(user=lead, team=team, role=TeamMembership.Role.LEAD)
     tz = "UTC"
+    version_key = f"dashboard_version:mgr:team_{team.id}"
+    # Read current version (may have been bumped by TeamMembershipFactory signal)
+    current_version = cache.get(version_key, 1)
     dashboard = ManagerDashboardService.get_dashboard(user=lead, team_id=team.id, tz_name=tz)
-    cache_key = f"reports:mgr:team_{team.id}:tz_{tz}"
-    assert cache.get(cache_key) is not None
-    # add a regular member – triggers signal
+    old_cache_key = f"reports:mgr:team_{team.id}:v{current_version}:tz_{tz}"
+    assert cache.get(old_cache_key) is not None
+    # add a regular member – triggers signal → bumps version
     TeamMembershipFactory(user=member, team=team, role=TeamMembership.Role.MEMBER)
-    # Verify cache cleared
-    assert cache.get(cache_key) is None
+    # Version should have incremented
+    new_version = cache.get(version_key, 1)
+    assert new_version > current_version
+    # Fetch again – uses new versioned key, recomputes
     dashboard2 = ManagerDashboardService.get_dashboard(user=lead, team_id=team.id, tz_name=tz)
-    # cache should be refreshed
-    assert cache.get(cache_key) is not None
+    new_cache_key = f"reports:mgr:team_{team.id}:v{new_version}:tz_{tz}"
+    assert cache.get(new_cache_key) is not None
     assert dashboard2["team_member_count"] == 2
 
 
@@ -210,4 +217,47 @@ def test_cache_invalidation_on_timelog_update(users, org_data, project_data):
     # The updated dashboard should reflect the new timelog (+1800 seconds)
     # If caching invalidation didn't work, updated_seconds would equal initial_seconds
     assert updated_seconds == initial_seconds + 1800
+
+
+@pytest.mark.django_db
+def test_version_bump_uses_no_expiry(users, org_data):
+    """Regression: version-key writes must always pass timeout=None.
+    
+    If timeout=None is accidentally removed from _bump_version(),
+    the version key inherits Django's default cache timeout (e.g. 300s).
+    When the version key expires, cache.get() falls back to 1, and if
+    a stale v1-keyed dashboard entry is still alive, the system silently
+    serves outdated data with no error, no log, and no visible symptom.
+    
+    This test catches that by mocking cache and asserting that
+    cache.add() is called with an explicit timeout=None argument.
+    """
+    from unittest.mock import patch
+    from reports.signals import _invalidate_executive
+    
+    with patch("reports.signals.cache") as mock_cache:
+        mock_cache.add.return_value = True  # simulate first invalidation
+        _invalidate_executive(org_data["org"].id)
+
+        mock_cache.add.assert_called_once()
+        _args, kwargs = mock_cache.add.call_args
+        
+        # Must distinguish between these two cases:
+        #   cache.add(key, 2, timeout=None)  → correct (explicit no-expiry)
+        #   cache.add(key, 2)                → BUG (inherits default timeout)
+        # kwargs.get("timeout") is None would pass for BOTH — so we check
+        # that "timeout" is actually present as a keyword or positional arg.
+        if "timeout" in kwargs:
+            assert kwargs["timeout"] is None, (
+                "timeout must be exactly None to prevent silent staleness"
+            )
+        elif len(_args) >= 3:
+            assert _args[2] is None, (
+                "timeout must be exactly None to prevent silent staleness"
+            )
+        else:
+            pytest.fail(
+                "cache.add() was called without an explicit timeout argument — "
+                "this will cause silent staleness when the version key expires"
+            )
 
