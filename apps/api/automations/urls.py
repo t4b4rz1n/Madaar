@@ -9,11 +9,13 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'rules', AutomationRuleViewSet, basename='automation-rule')
+router.register(r"rules", AutomationRuleViewSet, basename="automation-rule")
 
 urlpatterns = [
-    path('catalog/', AutomationCatalogView.as_view(), name='automation_catalog'),
-    path('telegram/webhook/', TelegramWebhookView.as_view(), name='telegram_webhook'),
-    path('telegram/magic-link/', GenerateTelegramMagicLinkView.as_view(), name='telegram_magic_link'),
-    path('', include(router.urls)),
+    path("catalog/", AutomationCatalogView.as_view(), name="automation_catalog"),
+    path("telegram/webhook/", TelegramWebhookView.as_view(), name="telegram_webhook"),
+    path(
+        "telegram/magic-link/", GenerateTelegramMagicLinkView.as_view(), name="telegram_magic_link"
+    ),
+    path("", include(router.urls)),
 ]

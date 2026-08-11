@@ -15,43 +15,46 @@ class AutomationRule(BaseModel):
         on_delete=models.CASCADE,
         related_name="automation_rules",
         null=True,
-        help_text=_("Organization this rule applies to.")
+        help_text=_("Organization this rule applies to."),
     )
 
     event_type = models.CharField(
         max_length=100,
         db_index=True,
-        help_text=_("String identifier for the event trigger (e.g. 'task_completed'). Sent by frontend.")
+        help_text=_(
+            "String identifier for the event trigger (e.g. 'task_completed'). Sent by frontend."
+        ),
     )
 
     action_type = models.CharField(
-        max_length=20,
-        choices=ActionType.choices,
-        default=ActionType.TELEGRAM
+        max_length=20, choices=ActionType.choices, default=ActionType.TELEGRAM
     )
 
     telegram_group_id = models.CharField(
         max_length=255,
         blank=True,
         null=True,
-        help_text=_("Telegram Chat ID to send messages to, if action_type is telegram or both.")
+        help_text=_("Telegram Chat ID to send messages to, if action_type is telegram or both."),
     )
 
     message_template = models.TextField(
         blank=True,
         default="",
-        help_text=_("Optional dynamic message template with {{variables}}. Leave blank to use the standard event message.")
+        help_text=_(
+            "Optional dynamic message template with {{variables}}. Leave blank to use the standard event message."
+        ),
     )
 
     is_active = models.BooleanField(
-        default=True,
-        help_text=_("Whether this rule is active and should trigger notifications.")
+        default=True, help_text=_("Whether this rule is active and should trigger notifications.")
     )
 
     recipients = models.JSONField(
         default=list,
         blank=True,
-        help_text=_("List of recipient roles, e.g. ['owner', 'admins', 'team_leads', 'assignee', 'reporter']")
+        help_text=_(
+            "List of recipient roles, e.g. ['owner', 'admins', 'team_leads', 'assignee', 'reporter']"
+        ),
     )
 
     class Meta:

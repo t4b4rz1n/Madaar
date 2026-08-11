@@ -82,7 +82,7 @@ export const AutomationsPage = () => {
 
   const submit = (payload: AutomationRulePayload) => {
     if (!selectedEvent || payload.recipients.length === 0) return;
-    
+
     const finalPayload = {
       ...payload,
       organization: organizationId,
@@ -103,7 +103,7 @@ export const AutomationsPage = () => {
 
   const toggleActive = (event: AutomationEvent, isActive: boolean) => {
     const payload = payloadForEvent(event, organizationId, isActive);
-    
+
     if (isPayloadDefault(payload, event) && event.rule) {
       resetRule.mutate(event.rule.id);
       return;

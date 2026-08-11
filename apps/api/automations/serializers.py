@@ -10,11 +10,18 @@ class AutomationRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationRule
         fields = [
-            'id', 'organization', 'event_type', 'action_type',
-            'telegram_group_id', 'message_template', 'recipients',
-            'is_active', 'created_at', 'updated_at'
+            "id",
+            "organization",
+            "event_type",
+            "action_type",
+            "telegram_group_id",
+            "message_template",
+            "recipients",
+            "is_active",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ["id", "created_at", "updated_at"]
 
     def validate_event_type(self, value):
         if value not in EVENTS_BY_CODE:
@@ -35,7 +42,9 @@ class AutomationRuleSerializer(serializers.ModelSerializer):
         organization = attrs.get("organization", getattr(self.instance, "organization", None))
         event_type = attrs.get("event_type", getattr(self.instance, "event_type", None))
         if self.instance and "organization" in attrs and organization != self.instance.organization:
-            raise serializers.ValidationError({"organization": "A rule cannot be moved to another organization."})
+            raise serializers.ValidationError(
+                {"organization": "A rule cannot be moved to another organization."}
+            )
         if organization and event_type:
             duplicate = AutomationRule.objects.filter(
                 organization=organization, event_type=event_type
@@ -50,12 +59,16 @@ class AutomationRuleSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Restore a soft-deleted rule instead of violating the legacy DB key."""
-        archived_rule = AutomationRule.all_objects.filter(
-            organization=validated_data["organization"],
-            event_type=validated_data["event_type"],
-            action_type=validated_data.get("action_type", AutomationRule.ActionType.TELEGRAM),
-            is_deleted=True,
-        ).order_by("-updated_at").first()
+        archived_rule = (
+            AutomationRule.all_objects.filter(
+                organization=validated_data["organization"],
+                event_type=validated_data["event_type"],
+                action_type=validated_data.get("action_type", AutomationRule.ActionType.TELEGRAM),
+                is_deleted=True,
+            )
+            .order_by("-updated_at")
+            .first()
+        )
         if not archived_rule:
             return super().create(validated_data)
 

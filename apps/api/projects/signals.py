@@ -20,6 +20,7 @@ def cache_previous_project_member(sender, instance, **kwargs):
         instance.__original_user_id = None
         instance.__original_is_deleted = False
 
+
 @receiver(post_save, sender=ProjectMember)
 def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
     """
@@ -27,7 +28,9 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
     Also handles when a member user is changed.
     """
     project = instance.project
-    creator_name = project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
+    creator_name = (
+        project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
+    )
 
     if created and instance.user:
         EventDispatcher.dispatch(
@@ -36,8 +39,8 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
                 "target_user_id": str(instance.user.id),
                 "project_id": str(project.id),
                 "project_name": project.name,
-                "creator_name": creator_name
-            }
+                "creator_name": creator_name,
+            },
         )
     elif not created:
         old_user_id = getattr(instance, "__original_user_id", None)
@@ -52,8 +55,8 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
                         "target_user_id": str(instance.user.id),
                         "project_id": str(project.id),
                         "project_name": project.name,
-                        "remover_name": creator_name
-                    }
+                        "remover_name": creator_name,
+                    },
                 )
         elif old_is_deleted and not instance.is_deleted:
             if instance.user:
@@ -63,8 +66,8 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
                         "target_user_id": str(instance.user.id),
                         "project_id": str(project.id),
                         "project_name": project.name,
-                        "creator_name": creator_name
-                    }
+                        "creator_name": creator_name,
+                    },
                 )
         # Handle user change
         elif old_user_id and old_user_id != instance.user_id:
@@ -75,8 +78,8 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
                     "target_user_id": str(old_user_id),
                     "project_id": str(project.id),
                     "project_name": project.name,
-                    "remover_name": creator_name
-                }
+                    "remover_name": creator_name,
+                },
             )
             # Notify new user they were added
             if instance.user and not instance.is_deleted:
@@ -86,24 +89,28 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
                         "target_user_id": str(instance.user.id),
                         "project_id": str(project.id),
                         "project_name": project.name,
-                        "creator_name": creator_name
-                    }
+                        "creator_name": creator_name,
+                    },
                 )
+
 
 @receiver(post_delete, sender=ProjectMember)
 def notify_project_member_deleted(sender, instance, **kwargs):
     if instance.user:
         project = instance.project
-        remover_name = project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
+        remover_name = (
+            project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
+        )
         EventDispatcher.dispatch(
             event_type="project_member_removed",
             payload={
                 "target_user_id": str(instance.user.id),
                 "project_id": str(project.id),
                 "project_name": project.name,
-                "remover_name": remover_name
-            }
+                "remover_name": remover_name,
+            },
         )
+
 
 @receiver(pre_save, sender=Milestone)
 def cache_previous_milestone_state(sender, instance, **kwargs):
@@ -116,6 +123,7 @@ def cache_previous_milestone_state(sender, instance, **kwargs):
     else:
         instance.__original_status = None
 
+
 @receiver(post_save, sender=Milestone)
 def notify_milestone_completed(sender, instance, created, **kwargs):
     """
@@ -123,7 +131,10 @@ def notify_milestone_completed(sender, instance, created, **kwargs):
     """
     if not created:
         old_status = getattr(instance, "__original_status", None)
-        if old_status != Milestone.Status.COMPLETED and instance.status == Milestone.Status.COMPLETED:
+        if (
+            old_status != Milestone.Status.COMPLETED
+            and instance.status == Milestone.Status.COMPLETED
+        ):
             project = instance.project
             owner_id = project.owner_id
             target_ids = []
@@ -137,9 +148,10 @@ def notify_milestone_completed(sender, instance, created, **kwargs):
                         "target_user_ids": target_ids,
                         "project_id": str(project.id),
                         "project_name": project.name,
-                        "milestone_title": instance.title
-                    }
+                        "milestone_title": instance.title,
+                    },
                 )
+
 
 @receiver(pre_save, sender=Project)
 def cache_previous_project_state(sender, instance, **kwargs):
@@ -154,6 +166,7 @@ def cache_previous_project_state(sender, instance, **kwargs):
     else:
         instance.__original_budget = None
         instance.__original_status = None
+
 
 @receiver(post_save, sender=Project)
 def notify_project_budget_or_status(sender, instance, created, **kwargs):
@@ -171,10 +184,10 @@ def notify_project_budget_or_status(sender, instance, created, **kwargs):
 
                 # Also notify Organization Admins
                 from organizations.models import OrganizationMembership
+
                 admins = OrganizationMembership.objects.filter(
-                    organization_id=instance.organization_id,
-                    role=OrganizationMembership.Role.ADMIN
-                ).values_list('user_id', flat=True)
+                    organization_id=instance.organization_id, role=OrganizationMembership.Role.ADMIN
+                ).values_list("user_id", flat=True)
                 target_ids.extend([str(admin_id) for admin_id in admins])
 
                 if target_ids:
@@ -183,6 +196,6 @@ def notify_project_budget_or_status(sender, instance, created, **kwargs):
                         payload={
                             "target_user_ids": list(set(target_ids)),
                             "project_id": str(instance.id),
-                            "project_name": instance.name
-                        }
+                            "project_name": instance.name,
+                        },
                     )

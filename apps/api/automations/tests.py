@@ -33,7 +33,9 @@ class AutomationCatalogApiTests(APITestCase):
         self.client.force_authenticate(self.owner)
 
     def test_catalog_exposes_all_supported_events_with_defaults(self):
-        response = self.client.get(f"/api/v1/automations/catalog/?organization={self.organization.id}")
+        response = self.client.get(
+            f"/api/v1/automations/catalog/?organization={self.organization.id}"
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         payload = response.data.get("data", response.data)
@@ -67,7 +69,10 @@ class AutomationRuleProcessingTests(TestCase):
             email="owner2@example.com", username="owner2", first_name="Owner", last_name="Two"
         )
         self.assignee = User.objects.create_user(
-            email="assignee@example.com", username="assignee", first_name="Assigned", last_name="User"
+            email="assignee@example.com",
+            username="assignee",
+            first_name="Assigned",
+            last_name="User",
         )
         self.organization = Organization.objects.create(
             name="Rules Org", slug="rules-org", owner=self.owner

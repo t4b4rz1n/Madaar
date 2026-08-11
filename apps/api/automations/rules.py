@@ -30,9 +30,10 @@ def process_rules_for_event(event_type: str, payload: dict):
     organization_id = payload.get("organization_id")
     if project_id and not organization_id:
         from projects.models import Project
-        project = Project.objects.filter(id=project_id).values('organization_id').first()
+
+        project = Project.objects.filter(id=project_id).values("organization_id").first()
         if project:
-            organization_id = project['organization_id']
+            organization_id = project["organization_id"]
 
     rule = AutomationRule.objects.filter(
         organization_id=organization_id,
@@ -40,7 +41,11 @@ def process_rules_for_event(event_type: str, payload: dict):
     ).first()
 
     if rule and not rule.is_active:
-        logger.info("Automation rule for '%s' is disabled for organization '%s'.", event_type, organization_id)
+        logger.info(
+            "Automation rule for '%s' is disabled for organization '%s'.",
+            event_type,
+            organization_id,
+        )
         return
 
     # An absent rule means the catalog default is active.  This avoids creating
@@ -56,40 +61,62 @@ def process_rules_for_event(event_type: str, payload: dict):
         return
 
     # 2. Fetch users in a single optimized query, including their WorkStyleProfile
-    users = User.objects.filter(id__in=target_user_ids).select_related('work_style_profile')
+    users = User.objects.filter(id__in=target_user_ids).select_related("work_style_profile")
 
     from django.conf import settings
-    if rule and rule.telegram_group_id and action_type in (
-        AutomationRule.ActionType.TELEGRAM,
-        AutomationRule.ActionType.BOTH,
+
+    if (
+        rule
+        and rule.telegram_group_id
+        and action_type
+        in (
+            AutomationRule.ActionType.TELEGRAM,
+            AutomationRule.ActionType.BOTH,
+        )
     ):
         translation.activate(settings.LANGUAGE_CODE)
         grp_sub, grp_fmt = _format_message(event_type, payload)
-        grp_msg = _render_template(rule.message_template, payload) if rule and rule.message_template else grp_fmt
+        grp_msg = (
+            _render_template(rule.message_template, payload)
+            if rule and rule.message_template
+            else grp_fmt
+        )
         send_telegram_notification.delay(rule.telegram_group_id, grp_msg)
 
     # 2. Route to enabled channels, respecting each user's delivery preferences.
     for user in users:
-        wsp = getattr(user, 'work_style_profile', None)
+        wsp = getattr(user, "work_style_profile", None)
 
         # Determine language preferences
         lang = settings.LANGUAGE_CODE
-        if wsp and getattr(wsp, 'telegram_language', None):
+        if wsp and getattr(wsp, "telegram_language", None):
             lang = wsp.telegram_language
 
         translation.activate(lang)
 
         subject, formatted_message = _format_message(event_type, payload)
-        message = _render_template(rule.message_template, payload) if rule and rule.message_template else formatted_message
+        message = (
+            _render_template(rule.message_template, payload)
+            if rule and rule.message_template
+            else formatted_message
+        )
 
         notify_email = wsp.notify_via_email if wsp else False
         notify_telegram = wsp.notify_via_telegram if wsp else False
         telegram_chat_id = wsp.telegram_chat_id if wsp else None
 
-        if action_type in (AutomationRule.ActionType.EMAIL, AutomationRule.ActionType.BOTH) and notify_email and user.email:
+        if (
+            action_type in (AutomationRule.ActionType.EMAIL, AutomationRule.ActionType.BOTH)
+            and notify_email
+            and user.email
+        ):
             send_email_notification(user.email, subject, message)
 
-        if action_type in (AutomationRule.ActionType.TELEGRAM, AutomationRule.ActionType.BOTH) and notify_telegram and telegram_chat_id:
+        if (
+            action_type in (AutomationRule.ActionType.TELEGRAM, AutomationRule.ActionType.BOTH)
+            and notify_telegram
+            and telegram_chat_id
+        ):
             send_telegram_notification.delay(telegram_chat_id, message)
 
 
@@ -127,9 +154,14 @@ def _determine_target_users(recipients: list[str], payload: dict) -> set[str]:
         elif recipient == Recipient.PROJECT_OWNER and project:
             add(project.owner_id)
         elif recipient == Recipient.PROJECT_MEMBERS and project:
-            add_many(project.members.filter(is_active=True, user__isnull=False).values_list("user_id", flat=True))
+            add_many(
+                project.members.filter(is_active=True, user__isnull=False).values_list(
+                    "user_id", flat=True
+                )
+            )
         elif recipient in (Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS):
             from organizations.models import OrganizationMembership
+
             roles = (
                 [OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN]
                 if recipient == Recipient.ORGANIZATION_ADMINS
@@ -153,6 +185,7 @@ _TEMPLATE_VARIABLE = re.compile(r"{{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*}}")
 
 def _render_template(template: str, payload: dict) -> str:
     """Render simple {{variable}} placeholders without evaluating admin input."""
+
     def replace(match):
         value = payload
         for part in match.group(1).split("."):
@@ -174,153 +207,166 @@ def _format_message(event_type: str, payload: dict) -> tuple:
         return formatter(payload)
 
     # Fallback
-    return _("اعلان سیستم مدار"), _("📩 یک رویداد جدید در سیستم ثبت شد: <code>{event_type}</code>").format(event_type=event_type)
+    return _("اعلان سیستم مدار"), _(
+        "📩 یک رویداد جدید در سیستم ثبت شد: <code>{event_type}</code>"
+    ).format(event_type=event_type)
 
 
 # ─── Message Formatters ──────────────────────────────────────────────────────
 
+
 def _fmt_project_created(p):
     return (
         _("پروژه جدید"),
-        _("🚀 <b>پروژه جدید ایجاد شد!</b>\n\n"
-          "شما توسط {creator} به پروژه <b>{project}</b> اضافه شدید. موفق باشید!").format(
-            creator=p.get('creator_name', _('همکار شما')),
-            project=p.get('project_name', '—')
-        )
+        _(
+            "🚀 <b>پروژه جدید ایجاد شد!</b>\n\n"
+            "شما توسط {creator} به پروژه <b>{project}</b> اضافه شدید. موفق باشید!"
+        ).format(creator=p.get("creator_name", _("همکار شما")), project=p.get("project_name", "—")),
     )
+
 
 def _fmt_project_member_removed(p):
     return (
         _("حذف از پروژه"),
-        _("❌ <b>شما از پروژه حذف شدید!</b>\n\n"
-          "توسط {remover} دسترسی شما از پروژه <b>{project}</b> قطع شد.").format(
-            remover=p.get('remover_name', _('مدیر سیستم')),
-            project=p.get('project_name', '—')
-        )
+        _(
+            "❌ <b>شما از پروژه حذف شدید!</b>\n\n"
+            "توسط {remover} دسترسی شما از پروژه <b>{project}</b> قطع شد."
+        ).format(
+            remover=p.get("remover_name", _("مدیر سیستم")), project=p.get("project_name", "—")
+        ),
     )
+
 
 def _fmt_project_over_budget(p):
     return (
         _("هشدار بودجه پروژه"),
-        _("⚠️ <b>هشدار بودجه!</b>\n\n"
-          "بودجه پروژه <b>{project}</b> رو به اتمام است یا از حد مجاز عبور کرده.\n"
-          "لطفاً بررسی کنید.").format(project=p.get('project_name', '—'))
+        _(
+            "⚠️ <b>هشدار بودجه!</b>\n\n"
+            "بودجه پروژه <b>{project}</b> رو به اتمام است یا از حد مجاز عبور کرده.\n"
+            "لطفاً بررسی کنید."
+        ).format(project=p.get("project_name", "—")),
     )
+
 
 def _fmt_milestone_approaching(p):
     return (
         _("نزدیک شدن به پایان فاز"),
-        _("⏳ <b>ددلاین نزدیک است!</b>\n\n"
-          "کمتر از ۴۸ ساعت تا پایان فاز <b>{milestone}</b> "
-          "در پروژه <b>{project}</b> باقی مانده.").format(
-              milestone=p.get('milestone_title', '—'),
-              project=p.get('project_name', '—')
-          )
+        _(
+            "⏳ <b>ددلاین نزدیک است!</b>\n\n"
+            "کمتر از ۴۸ ساعت تا پایان فاز <b>{milestone}</b> "
+            "در پروژه <b>{project}</b> باقی مانده."
+        ).format(milestone=p.get("milestone_title", "—"), project=p.get("project_name", "—")),
     )
+
 
 def _fmt_milestone_completed(p):
     return (
         _("فاز تکمیل شد"),
-        _("✅ <b>فاز تکمیل شد!</b>\n\n"
-          "فاز <b>{milestone}</b> در پروژه <b>{project}</b> با موفقیت به پایان رسید. خسته نباشید!").format(
-              milestone=p.get('milestone_title', '—'),
-              project=p.get('project_name', '—')
-          )
+        _(
+            "✅ <b>فاز تکمیل شد!</b>\n\n"
+            "فاز <b>{milestone}</b> در پروژه <b>{project}</b> با موفقیت به پایان رسید. خسته نباشید!"
+        ).format(milestone=p.get("milestone_title", "—"), project=p.get("project_name", "—")),
     )
+
 
 def _fmt_task_assigned(p):
     return (
         _("تسک جدید"),
-        _("🎯 <b>تسک جدید به شما محول شد!</b>\n\n"
-          "📌 تسک: <b>{task}</b>\n"
-          "👤 توسط: {assigner}").format(
-              task=p.get('task_title', '—'),
-              assigner=p.get('assigner', _('مدیر'))
-          )
+        _(
+            "🎯 <b>تسک جدید به شما محول شد!</b>\n\n" "📌 تسک: <b>{task}</b>\n" "👤 توسط: {assigner}"
+        ).format(task=p.get("task_title", "—"), assigner=p.get("assigner", _("مدیر"))),
     )
+
 
 def _fmt_task_needs_review(p):
     return (
         _("نیاز به بررسی"),
-        _("👀 <b>تسک آماده بررسی است!</b>\n\n"
-          "📌 تسک: <b>{task}</b>\n"
-          "👤 ارسال‌کننده: {assignee}").format(
-              task=p.get('task_title', '—'),
-              assignee=p.get('assignee', _('همکار شما'))
-          )
+        _(
+            "👀 <b>تسک آماده بررسی است!</b>\n\n"
+            "📌 تسک: <b>{task}</b>\n"
+            "👤 ارسال‌کننده: {assignee}"
+        ).format(task=p.get("task_title", "—"), assignee=p.get("assignee", _("همکار شما"))),
     )
+
 
 def _fmt_task_completed(p):
     return (
         _("تسک انجام شد"),
-        _("🎉 <b>تسک انجام شد!</b>\n\n"
-          "📌 تسک <b>{task}</b> با موفقیت تکمیل شد.").format(task=p.get('task_title', '—'))
+        _("🎉 <b>تسک انجام شد!</b>\n\n" "📌 تسک <b>{task}</b> با موفقیت تکمیل شد.").format(
+            task=p.get("task_title", "—")
+        ),
     )
+
 
 def _fmt_task_deadline_approaching(p):
     return (
         _("هشدار ددلاین"),
-        _("⏰ <b>هشدار ددلاین!</b>\n\n"
-          "کمتر از ۲۴ ساعت به مهلت تسک <b>{task}</b> باقی مانده.").format(task=p.get('task_title', '—'))
+        _(
+            "⏰ <b>هشدار ددلاین!</b>\n\n" "کمتر از ۲۴ ساعت به مهلت تسک <b>{task}</b> باقی مانده."
+        ).format(task=p.get("task_title", "—")),
     )
+
 
 def _fmt_user_mentioned(p):
     return (
         _("منشن در کامنت"),
-        _("🔔 <b>شما منشن شدید!</b>\n\n"
-          "{author} شما را در کامنت‌های تسک <b>{task}</b> تگ کرده است.").format(
-              author=p.get('author', _('کسی')),
-              task=p.get('task_title', '—')
-          )
+        _(
+            "🔔 <b>شما منشن شدید!</b>\n\n"
+            "{author} شما را در کامنت‌های تسک <b>{task}</b> تگ کرده است."
+        ).format(author=p.get("author", _("کسی")), task=p.get("task_title", "—")),
     )
+
 
 def _fmt_task_commented(p):
     return (
         _("کامنت جدید"),
-        _("💬 <b>کامنت جدید!</b>\n\n"
-          "{author} یک نظر جدید برای تسک <b>{task}</b> ثبت کرده است.").format(
-              author=p.get('author', _('کسی')),
-              task=p.get('task_title', '—')
-          )
+        _(
+            "💬 <b>کامنت جدید!</b>\n\n" "{author} یک نظر جدید برای تسک <b>{task}</b> ثبت کرده است."
+        ).format(author=p.get("author", _("کسی")), task=p.get("task_title", "—")),
     )
+
 
 def _fmt_standup_submitted(p):
     return (
         _("گزارش روزانه"),
-        _("📝 <b>گزارش روزانه (Standup)</b>\n\n"
-          "همکار شما {user} گزارش استندآپ امروز خود را ثبت کرد.").format(user=p.get('user_name', '—'))
+        _(
+            "📝 <b>گزارش روزانه (Standup)</b>\n\n"
+            "همکار شما {user} گزارش استندآپ امروز خود را ثبت کرد."
+        ).format(user=p.get("user_name", "—")),
     )
+
 
 def _fmt_leave_requested(p):
     return (
         _("درخواست مرخصی"),
-        _("🏖️ <b>درخواست مرخصی جدید!</b>\n\n"
-          "👤 {user}\n"
-          "📋 نوع: {leave_type}\n\n"
-          "لطفاً بررسی کنید.").format(
-              user=p.get('user_name', '—'),
-              leave_type=p.get('leave_type', _('مرخصی'))
-          )
+        _(
+            "🏖️ <b>درخواست مرخصی جدید!</b>\n\n"
+            "👤 {user}\n"
+            "📋 نوع: {leave_type}\n\n"
+            "لطفاً بررسی کنید."
+        ).format(user=p.get("user_name", "—"), leave_type=p.get("leave_type", _("مرخصی"))),
     )
+
 
 def _fmt_leave_resolved(p):
     return (
         _("وضعیت مرخصی"),
-        _("📋 <b>نتیجه درخواست مرخصی</b>\n\n"
-          "درخواست مرخصی شما بررسی شد.\n"
-          "📊 وضعیت: <b>{status}</b>").format(status=p.get('status', '—'))
+        _(
+            "📋 <b>نتیجه درخواست مرخصی</b>\n\n"
+            "درخواست مرخصی شما بررسی شد.\n"
+            "📊 وضعیت: <b>{status}</b>"
+        ).format(status=p.get("status", "—")),
     )
+
 
 def _fmt_timer_started(p):
     return (
         _("شروع تایمر"),
-        _("⏱️ <b>تایمر کاری روشن شد!</b>\n\n"
-          "👤 {user}\n"
-          "📌 تسک: <b>{task}</b>").format(
-              user=p.get('user_name', '—'),
-              task=p.get('task_title', '—')
-          )
+        _("⏱️ <b>تایمر کاری روشن شد!</b>\n\n" "👤 {user}\n" "📌 تسک: <b>{task}</b>").format(
+            user=p.get("user_name", "—"), task=p.get("task_title", "—")
+        ),
     )
+
 
 # Map event types to their formatter functions
 _MESSAGE_FORMATTERS = {

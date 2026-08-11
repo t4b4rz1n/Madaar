@@ -8,6 +8,7 @@ from .models import Attendance, TimeLog, TimeOffRequest
 
 User = get_user_model()
 
+
 @receiver(pre_save, sender=TimeOffRequest)
 def cache_previous_timeoff_state(sender, instance, **kwargs):
     if instance.pk:
@@ -19,15 +20,14 @@ def cache_previous_timeoff_state(sender, instance, **kwargs):
     else:
         instance.__original_status = None
 
+
 @receiver(post_save, sender=TimeOffRequest)
 def handle_approved_timeoff(sender, instance, created, **kwargs):
     # Original logic for updating Attendance on Approved
     if not hasattr(instance, "_signal_processed"):
         if instance.status == TimeOffRequest.Status.APPROVED:
             date = instance.start_datetime.date()
-            duration = (
-                instance.end_datetime - instance.start_datetime
-            ).total_seconds() / 60
+            duration = (instance.end_datetime - instance.start_datetime).total_seconds() / 60
 
             attendance, _ = Attendance.objects.get_or_create(
                 user=instance.user,
@@ -36,9 +36,7 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
             )
 
             if instance.request_type == TimeOffRequest.Type.OVERTIME:
-                attendance.overtime_minutes = int(attendance.overtime_minutes) + int(
-                    duration
-                )
+                attendance.overtime_minutes = int(attendance.overtime_minutes) + int(duration)
             elif instance.request_type in [
                 TimeOffRequest.Type.VACATION,
                 TimeOffRequest.Type.SICK,
@@ -58,10 +56,11 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
         # 14. leave_requested
         # Target: Organization Owners and Admins
         from organizations.models import OrganizationMembership
+
         managers = OrganizationMembership.objects.filter(
             organization=instance.organization,
-            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN]
-        ).values_list('user_id', flat=True)
+            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
+        ).values_list("user_id", flat=True)
 
         if managers:
             EventDispatcher.dispatch(
@@ -70,22 +69,26 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
                     "target_user_ids": [str(m) for m in managers],
                     "organization_id": str(instance.organization_id),
                     "user_name": user_name,
-                    "leave_type": leave_type_label
-                }
+                    "leave_type": leave_type_label,
+                },
             )
     else:
         # 15. leave_resolved
         old_status = getattr(instance, "__original_status", None)
-        if old_status == TimeOffRequest.Status.PENDING and instance.status in [TimeOffRequest.Status.APPROVED, TimeOffRequest.Status.REJECTED]:
+        if old_status == TimeOffRequest.Status.PENDING and instance.status in [
+            TimeOffRequest.Status.APPROVED,
+            TimeOffRequest.Status.REJECTED,
+        ]:
             status_label = instance.get_status_display()
             EventDispatcher.dispatch(
                 event_type="leave_resolved",
                 payload={
                     "target_user_id": str(instance.user_id),
                     "requester_id": str(instance.user_id),
-                    "status": status_label
-                }
+                    "status": status_label,
+                },
             )
+
 
 @receiver(post_save, sender=TimeLog)
 def notify_timer_started(sender, instance, created, **kwargs):
@@ -100,22 +103,25 @@ def notify_timer_started(sender, instance, created, **kwargs):
         if instance.task and instance.task.project:
             org_id = instance.task.project.organization_id
             from organizations.models import OrganizationMembership
+
             managers = OrganizationMembership.objects.filter(
                 organization_id=org_id,
                 role__in=[
                     OrganizationMembership.Role.OWNER,
                     OrganizationMembership.Role.ADMIN,
-                    OrganizationMembership.Role.TEAM_LEAD
-                ]
-            ).values_list('user_id', flat=True)
+                    OrganizationMembership.Role.TEAM_LEAD,
+                ],
+            ).values_list("user_id", flat=True)
 
         if managers:
             EventDispatcher.dispatch(
                 event_type="timer_started",
                 payload={
                     "target_user_ids": [str(m) for m in set(managers)],
-                    "project_id": str(instance.task.project_id) if instance.task and instance.task.project_id else None,
+                    "project_id": str(instance.task.project_id)
+                    if instance.task and instance.task.project_id
+                    else None,
                     "user_name": user_name,
-                    "task_title": task_title
-                }
+                    "task_title": task_title,
+                },
             )

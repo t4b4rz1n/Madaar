@@ -19,8 +19,7 @@ def check_approaching_milestones():
     target = now + timedelta(days=2)
 
     approaching_milestones = Milestone.objects.filter(
-        target_date=target,
-        status__in=[Milestone.Status.PENDING, Milestone.Status.IN_PROGRESS]
+        target_date=target, status__in=[Milestone.Status.PENDING, Milestone.Status.IN_PROGRESS]
     )
 
     for milestone in approaching_milestones:
@@ -30,10 +29,10 @@ def check_approaching_milestones():
             target_ids.append(str(project.owner_id))
 
         from organizations.models import OrganizationMembership
+
         team_leads = OrganizationMembership.objects.filter(
-            organization_id=project.organization_id,
-            role=OrganizationMembership.Role.TEAM_LEAD
-        ).values_list('user_id', flat=True)
+            organization_id=project.organization_id, role=OrganizationMembership.Role.TEAM_LEAD
+        ).values_list("user_id", flat=True)
         target_ids.extend([str(tl) for tl in team_leads])
 
         if target_ids:
@@ -43,6 +42,6 @@ def check_approaching_milestones():
                     "target_user_ids": list(set(target_ids)),
                     "project_id": str(project.id),
                     "project_name": project.name,
-                    "milestone_title": milestone.title
-                }
+                    "milestone_title": milestone.title,
+                },
             )

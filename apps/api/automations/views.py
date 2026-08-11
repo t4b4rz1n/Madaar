@@ -22,6 +22,7 @@ from organizations.models import Organization, OrganizationMembership
 
 logger = logging.getLogger(__name__)
 
+
 class GenerateTelegramMagicLinkView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -30,9 +31,10 @@ class GenerateTelegramMagicLinkView(APIView):
 
         # Save token in database instead of cache, handling soft deletes
         from accounts.models import WorkStyleProfile
+
         wsp = WorkStyleProfile.all_objects.filter(user=request.user).first()
 
-        if wsp and not wsp.is_deleted and getattr(wsp, 'telegram_chat_id', None):
+        if wsp and not wsp.is_deleted and getattr(wsp, "telegram_chat_id", None):
             return Response({"error": "This account is already connected to Telegram."}, status=400)
 
         if not wsp:
@@ -45,11 +47,12 @@ class GenerateTelegramMagicLinkView(APIView):
         wsp.telegram_connect_token = token
         wsp.save()
 
-        bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'MadaarBot')
+        bot_username = getattr(settings, "TELEGRAM_BOT_USERNAME", "MadaarBot")
         link = f"https://t.me/{bot_username}?start={token}"
         return Response({"url": link})
 
-@method_decorator(csrf_exempt, name='dispatch')
+
+@method_decorator(csrf_exempt, name="dispatch")
 class TelegramWebhookView(View):
     """
     Receives all incoming updates from Telegram Bot API.
@@ -61,14 +64,14 @@ class TelegramWebhookView(View):
             data = json.loads(request.body)
 
             # Handle callback_query (inline button presses)
-            callback_query = data.get('callback_query')
+            callback_query = data.get("callback_query")
             if callback_query:
-                chat_id = str(callback_query['message']['chat']['id'])
-                message_id = callback_query['message']['message_id']
-                callback_data = callback_query.get('data', '')
-                callback_query_id = callback_query['id']
-                tg_user = callback_query.get('from', {})
-                tg_language_code = tg_user.get('language_code', 'en')
+                chat_id = str(callback_query["message"]["chat"]["id"])
+                message_id = callback_query["message"]["message_id"]
+                callback_data = callback_query.get("data", "")
+                callback_query_id = callback_query["id"]
+                tg_user = callback_query.get("from", {})
+                tg_language_code = tg_user.get("language_code", "en")
 
                 TelegramBotService.handle_callback(
                     chat_id=chat_id,
@@ -80,15 +83,15 @@ class TelegramWebhookView(View):
                 return JsonResponse({"status": "ok"})
 
             # Handle regular messages
-            message = data.get('message', {})
+            message = data.get("message", {})
             if not message:
                 return JsonResponse({"status": "ignored"})
 
-            chat = message.get('chat', {})
-            text = message.get('text', '')
-            chat_id = str(chat.get('id', ''))
-            tg_user = message.get('from', {})
-            tg_language_code = tg_user.get('language_code', 'en')
+            chat = message.get("chat", {})
+            text = message.get("text", "")
+            chat_id = str(chat.get("id", ""))
+            tg_user = message.get("from", {})
+            tg_language_code = tg_user.get("language_code", "en")
 
             if not chat_id:
                 return JsonResponse({"status": "ignored"})
@@ -100,10 +103,12 @@ class TelegramWebhookView(View):
             logger.error(f"Telegram webhook error: {e}", exc_info=True)
             return JsonResponse({"status": "error"}, status=200)
 
+
 class AutomationRuleViewSet(viewsets.ModelViewSet):
     """
     CRUD API for Automation Rules.
     """
+
     serializer_class = AutomationRuleSerializer
     permission_classes = [IsAuthenticated]
 
@@ -119,7 +124,9 @@ class AutomationRuleViewSet(viewsets.ModelViewSet):
         ).exists()
 
     def _get_organization_from_request(self):
-        org_id = self.request.query_params.get("organization") or self.request.data.get("organization")
+        org_id = self.request.query_params.get("organization") or self.request.data.get(
+            "organization"
+        )
         if not org_id:
             return None
         try:
@@ -127,7 +134,9 @@ class AutomationRuleViewSet(viewsets.ModelViewSet):
         except Organization.DoesNotExist:
             return None
         if not self._can_manage_organization(organization):
-            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+            raise PermissionDenied(
+                "You do not have permission to manage this organization's automations."
+            )
         return organization
 
     def get_queryset(self):
@@ -156,18 +165,26 @@ class AutomationRuleViewSet(viewsets.ModelViewSet):
         if organization is None:
             raise PermissionDenied("Automation rules must belong to an organization.")
         if not self._can_manage_organization(organization):
-            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+            raise PermissionDenied(
+                "You do not have permission to manage this organization's automations."
+            )
         serializer.save()
 
     def perform_update(self, serializer):
         organization = serializer.instance.organization
         if organization is None or not self._can_manage_organization(organization):
-            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+            raise PermissionDenied(
+                "You do not have permission to manage this organization's automations."
+            )
         serializer.save()
 
     def perform_destroy(self, instance):
-        if instance.organization is None or not self._can_manage_organization(instance.organization):
-            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+        if instance.organization is None or not self._can_manage_organization(
+            instance.organization
+        ):
+            raise PermissionDenied(
+                "You do not have permission to manage this organization's automations."
+            )
         instance.delete()
 
 
@@ -179,7 +196,10 @@ class AutomationCatalogView(APIView):
     def get(self, request):
         org_id = request.query_params.get("organization")
         if not org_id:
-            return Response({"detail": "The organization query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "The organization query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             organization = Organization.objects.get(pk=org_id)
@@ -197,7 +217,9 @@ class AutomationCatalogView(APIView):
             ).exists()
         )
         if not can_manage:
-            raise PermissionDenied("You do not have permission to manage this organization's automations.")
+            raise PermissionDenied(
+                "You do not have permission to manage this organization's automations."
+            )
 
         rules = {
             rule.event_type: AutomationRuleSerializer(rule).data
@@ -216,8 +238,7 @@ class AutomationCatalogView(APIView):
             {
                 "events": events,
                 "recipient_choices": [
-                    {"code": code, "label": str(label)}
-                    for code, label in RECIPIENT_CHOICES
+                    {"code": code, "label": str(label)} for code, label in RECIPIENT_CHOICES
                 ],
             }
         )

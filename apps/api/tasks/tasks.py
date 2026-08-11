@@ -21,10 +21,8 @@ def check_approaching_tasks():
 
     # We find tasks that are due tomorrow and not finished yet
     approaching_tasks = Task.objects.filter(
-        due_date__gte=target_start,
-        due_date__lt=target_end,
-        is_finished=False
-    ).exclude(status__code='done') # Extra safety to exclude done tasks if is_finished was false
+        due_date__gte=target_start, due_date__lt=target_end, is_finished=False
+    ).exclude(status__code="done")  # Extra safety to exclude done tasks if is_finished was false
 
     for task in approaching_tasks:
         if task.assignee_id:
@@ -34,6 +32,6 @@ def check_approaching_tasks():
                     "target_user_id": str(task.assignee_id),
                     "project_id": str(task.project_id),
                     "assignee_id": str(task.assignee_id),
-                    "task_title": task.title
-                }
+                    "task_title": task.title,
+                },
             )

@@ -11,6 +11,7 @@ class OrganizationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     Provides a read-only list of organizations that the user belongs to.
     Used by front-end components like the Automations page.
     """
+
     serializer_class = OrganizationMinimalSerializer
     permission_classes = [IsAuthenticated]
 
@@ -20,11 +21,12 @@ class OrganizationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             return Organization.objects.all().distinct()
 
         from .models import OrganizationMembership
+
         return Organization.objects.filter(
             memberships__user=user,
             memberships__role__in=[
                 OrganizationMembership.Role.OWNER,
-                OrganizationMembership.Role.ADMIN
+                OrganizationMembership.Role.ADMIN,
             ],
-            memberships__is_deleted=False
+            memberships__is_deleted=False,
         ).distinct()
