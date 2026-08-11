@@ -1,0 +1,160 @@
+import pytest
+from rest_framework.exceptions import NotFound
+from django.utils.translation import gettext as _
+from reports.services import ExecutiveDashboardService
+from organizations.models import OrganizationMembership
+from .factories import OrganizationFactory, OrganizationMembershipFactory
+
+@pytest.mark.django_db
+class TestExecutiveDashboardService:
+    def test_get_dashboard_no_org_membership_raises_not_found(self, users):
+        """
+        User with no organization membership should get a NotFound error
+        when org_id is not provided.
+        """
+        loner = users["loner"]
+        
+        with pytest.raises(NotFound) as exc_info:
+            ExecutiveDashboardService.get_dashboard(user=loner, org_id=None)
+            
+        assert str(exc_info.value.detail) == _("No organisation found for this user.")
+        
+    def test_get_dashboard_auto_resolves_correct_org_id(self, users):
+        """
+        User belongs to two orgs:
+        - Org 1: as EMPLOYEE
+        - Org 2: as OWNER
+        When get_dashboard is called with org_id=None, it should resolve to Org 2.
+        """
+        employee2 = users["employee2"]  # We will use this user
+        
+        # Org 1: Employee role
+        org1 = OrganizationFactory(name="Employee Org")
+        OrganizationMembershipFactory(
+            user=employee2, 
+            organization=org1, 
+            role=OrganizationMembership.Role.EMPLOYEE
+        )
+        
+        # Org 2: Owner role
+        org2 = OrganizationFactory(name="Owner Org")
+        OrganizationMembershipFactory(
+            user=employee2, 
+            organization=org2, 
+            role=OrganizationMembership.Role.OWNER
+        )
+        
+        # We don't need to assert the entire dashboard output, just that the
+        # resolved dashboard belongs to org2. 
+        # ExecutiveDashboardService returns 'resource_utilization' which has 'total_members'.
+        # Org2 has 1 member (employee2 + the owner created by default in factory, wait, 
+        # OrganizationFactory subfactory creates an owner. Let's just check company_overview total_members).
+        
+        dashboard = ExecutiveDashboardService.get_dashboard(user=employee2, org_id=None)
+        
+        # Since we use org2, let's verify what data is returned.
+        # Actually, let's just mock or check the returned data's projects/tasks because it's distinct.
+        # total_members for org2 should be 2 (the factory owner + employee2). 
+        # org1 has 2 members too.
+        # Let's add a project to org2 to distinguish it clearly.
+        from .factories import ProjectFactory
+        ProjectFactory(organization=org2)
+        
+        dashboard_again = ExecutiveDashboardService.get_dashboard(user=employee2, org_id=None)
+        
+        assert dashboard_again["company_overview"]["projects"]["total"] == 1
+        
+        # If we explicitly pass org1, project total is 0
+        dashboard_org1 = ExecutiveDashboardService.get_dashboard(user=employee2, org_id=org1.id)
+        assert dashboard_org1["company_overview"]["projects"]["total"] == 0
+
+    def test_get_dashboard_invalid_timezone_falls_back_to_utc(self, users):
+        """
+        If an invalid tz_name is provided, it should gracefully fall back to UTC
+        instead of throwing a 500 error, ensuring the application remains robust.
+        """
+        loner = users["loner"]
+        org = OrganizationFactory(name="Valid Org")
+        OrganizationMembershipFactory(
+            user=loner, 
+            organization=org, 
+            role=OrganizationMembership.Role.OWNER
+        )
+
+        # Calling with invalid tz_name should not raise any ZoneInfoNotFoundError
+        # It should fallback to UTC and return successfully.
+        dashboard = ExecutiveDashboardService.get_dashboard(
+            user=loner, org_id=org.id, tz_name="Invalid/Timezone"
+        )
+        assert dashboard["company_overview"]["total_members"] == 1
+
+
+def test_get_business_days():
+    from reports.services import get_business_days
+    import datetime
+    
+    # Test 1: Start in middle of week (Wednesday) to next week's Tuesday (7 days total)
+    # 2026-08-05 is Wednesday, 2026-08-11 is Tuesday.
+    # Wed, Thu, Fri (3 days) + Sat, Sun (weekend) + Mon, Tue (2 days) = 5 days
+    start = datetime.date(2026, 8, 5)
+    end = datetime.date(2026, 8, 11)
+    assert get_business_days(start, end) == 5
+    
+    # Test 2: Exactly 3 full weeks
+    # 2026-08-03 is Monday, 2026-08-23 is Sunday (21 days)
+    # 3 weeks * 5 days = 15 days
+    start = datetime.date(2026, 8, 3)
+    end = datetime.date(2026, 8, 23)
+    assert get_business_days(start, end) == 15
+    
+    # Test 3: Entirely within a weekend
+    # 2026-08-08 (Sat) to 2026-08-09 (Sun) -> 0 days
+    start = datetime.date(2026, 8, 8)
+    end = datetime.date(2026, 8, 9)
+    assert get_business_days(start, end) == 0
+    
+    # Test 4: Single day (Friday)
+    # 2026-08-07 is Friday -> 1 day
+    start = datetime.date(2026, 8, 7)
+    end = datetime.date(2026, 8, 7)
+    assert get_business_days(start, end) == 1
+    
+    # Test 5: End date before start date -> 0 days
+    assert get_business_days(end, start - datetime.timedelta(days=1)) == 0
+
+@pytest.mark.django_db
+def test_cache_invalidation_on_timelog_update(users, org_data, project_data):
+    from reports.services import EmployeeDashboardService
+    from attendance.models import TimeLog
+    import datetime
+    
+    employee = users["employee1"]
+    
+    # 1. Fetch dashboard data (this will cache it)
+    dashboard_initial = EmployeeDashboardService.get_dashboard(user=employee)
+    initial_seconds = dashboard_initial["weekly_time"]["total_seconds"]
+    
+    # Check that it's cached. 
+    # To be absolutely sure, we'll manually fetch from cache, but it's enough to 
+    # update the DB and verify the next get_dashboard call returns new data.
+    
+    # 2. Update a TimeLog (this should trigger post_save signal and invalidate cache)
+    task = project_data["tasks"][0]
+    new_timelog = TimeLog.objects.create(
+        user=employee,
+        task=task,
+        project=task.project,
+        date=datetime.date.today(),
+        start_time=datetime.datetime.now(),
+        duration_seconds=1800,  # add 30 mins
+        is_active=False,
+    )
+    
+    # 3. Fetch dashboard data again
+    dashboard_updated = EmployeeDashboardService.get_dashboard(user=employee)
+    updated_seconds = dashboard_updated["weekly_time"]["total_seconds"]
+    
+    # The updated dashboard should reflect the new timelog (+1800 seconds)
+    # If caching invalidation didn't work, updated_seconds would equal initial_seconds
+    assert updated_seconds == initial_seconds + 1800
+
