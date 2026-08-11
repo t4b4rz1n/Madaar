@@ -7,65 +7,70 @@ from attendance.models import TimeLog, Attendance
 from projects.models import Project, ProjectMember
 from organizations.models import TeamMembership
 
+
+def _bump_version(version_key):
+    """Atomically increment a version counter in cache.
+
+    Uses add() + incr() instead of set() to be safe under concurrent
+    invalidations: whichever caller wins the add() initialises the
+    counter, every other concurrent caller increments it via incr().
+
+    timeout=None is mandatory — the version key must never expire.
+    If it did, cache.get() would fall back to the default (1), and
+    stale v1-keyed dashboard data could be served silently.
+    """
+    if not cache.add(version_key, 2, timeout=None):
+        try:
+            cache.incr(version_key)
+        except ValueError:
+            # Key expired between add() and incr() — re-seed it
+            cache.set(version_key, 2, timeout=None)
+
+
 def _invalidate_employee(user_id):
-    """Invalidate all timezone variations of employee dashboard for user."""
+    """Bump the version for all employee dashboard cache keys of this user."""
     if user_id:
-        if hasattr(cache, "delete_pattern"):
-            cache.delete_pattern(f"*reports:emp:user_{user_id}:tz_*")
-        else:
-            # Fallback if delete_pattern not available (e.g. LocMemCache)
-            cache.delete(f"reports:emp:user_{user_id}:tz_UTC")
+        _bump_version(f"dashboard_version:emp:user_{user_id}")
+
 
 def _invalidate_manager(user_id=None, team_id=None):
+    """Bump version keys for manager dashboards.
+
+    If team_id is given, bump that specific team and all managers leading it.
+    If user_id is given, find all their teams and bump those versions too.
     """
-    Invalidate manager dashboard.
-    If team_id is given, invalidate that specific team and all managers leading it.
-    If user_id is given, find all their teams and invalidate.
-    """
-    if hasattr(cache, "delete_pattern"):
-        if team_id:
-            cache.delete_pattern(f"*reports:mgr:team_{team_id}:tz_*")
-            # Invalidate the aggregate cache for all managers of this team
+    if team_id:
+        _bump_version(f"dashboard_version:mgr:team_{team_id}")
+        # Bump the aggregate cache for all managers of this team
+        managers = TeamMembership.objects.filter(
+            team_id=team_id, role=TeamMembership.Role.LEAD, is_deleted=False
+        ).values_list("user_id", flat=True)
+        for mgr_id in managers:
+            _bump_version(f"dashboard_version:mgr:user_{mgr_id}")
+
+    if user_id:
+        # User might be an employee in several teams. Bump those teams' versions.
+        teams = TeamMembership.objects.filter(
+            user_id=user_id, is_deleted=False
+        ).values_list("team_id", flat=True)
+        for t_id in teams:
+            _bump_version(f"dashboard_version:mgr:team_{t_id}")
+            # Bump aggregate managers for these teams
             managers = TeamMembership.objects.filter(
-                team_id=team_id, role=TeamMembership.Role.LEAD, is_deleted=False
+                team_id=t_id, role=TeamMembership.Role.LEAD, is_deleted=False
             ).values_list("user_id", flat=True)
             for mgr_id in managers:
-                cache.delete_pattern(f"*reports:mgr:user_{mgr_id}:tz_*")
+                _bump_version(f"dashboard_version:mgr:user_{mgr_id}")
 
-        if user_id:
-            # User might be an employee in several teams. Invalidate those teams' dashboards.
-            teams = TeamMembership.objects.filter(
-                user_id=user_id, is_deleted=False
-            ).values_list("team_id", flat=True)
-            for t_id in teams:
-                cache.delete_pattern(f"*reports:mgr:team_{t_id}:tz_*")
-                # Invalidate aggregate managers for these teams
-                managers = TeamMembership.objects.filter(
-                    team_id=t_id, role=TeamMembership.Role.LEAD, is_deleted=False
-                ).values_list("user_id", flat=True)
-                for mgr_id in managers:
-                    cache.delete_pattern(f"*reports:mgr:user_{mgr_id}:tz_*")
-                    
-            # Also, if the user themselves is a manager, invalidate their aggregate view
-            cache.delete_pattern(f"*reports:mgr:user_{user_id}:tz_*")
-    else:
-        # Fallback for LocMemCache – delete the default UTC keys used in tests
-        if team_id:
-            cache.delete(f"reports:mgr:team_{team_id}:tz_UTC")
-        if user_id:
-            cache.delete(f"reports:mgr:user_{user_id}:tz_UTC")
+        # Also bump the user's own aggregate view if they are a manager
+        _bump_version(f"dashboard_version:mgr:user_{user_id}")
+
 
 def _invalidate_executive(org_id):
-    """Invalidate executive dashboard for an organization.
-    Supports both pattern‑based backends (django‑redis) and LocMemCache fallback.
-    """
-    if not org_id:
-        return
-    if hasattr(cache, "delete_pattern"):
-        cache.delete_pattern(f"*reports:exec:org_{org_id}:tz_*")
-    else:
-        # Fallback – delete the default UTC key used in tests
-        cache.delete(f"reports:exec:org_{org_id}:tz_UTC")
+    """Bump the version for executive dashboard cache keys of this org."""
+    if org_id:
+        _bump_version(f"dashboard_version:exec:org_{org_id}")
+
 
 @receiver([post_save, post_delete], sender=Task)
 def invalidate_on_task_change(sender, instance, **kwargs):

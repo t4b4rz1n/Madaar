@@ -298,7 +298,8 @@ class EmployeeDashboardService:
     @classmethod
     def get_dashboard(cls, user, tz_name: str = "UTC") -> dict:
         """Compose all employee dashboard sections into a single dict."""
-        cache_key = f"reports:emp:user_{user.id}:tz_{tz_name}"
+        version = cache.get(f"dashboard_version:emp:user_{user.id}", 1)
+        cache_key = f"reports:emp:user_{user.id}:v{version}:tz_{tz_name}"
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return cached_data
@@ -506,10 +507,9 @@ class ManagerDashboardService:
     @classmethod
     def get_dashboard(cls, user, team_id=None, tz_name: str = "UTC") -> dict:
         """Compose all manager dashboard sections."""
-        if team_id:
-            cache_key = f"reports:mgr:team_{team_id}:tz_{tz_name}"
-        else:
-            cache_key = f"reports:mgr:user_{user.id}:tz_{tz_name}"
+        key_prefix = f"team_{team_id}" if team_id else f"user_{user.id}"
+        version = cache.get(f"dashboard_version:mgr:{key_prefix}", 1)
+        cache_key = f"reports:mgr:{key_prefix}:v{version}:tz_{tz_name}"
 
         cached_data = cache.get(cache_key)
         if cached_data is not None:
@@ -798,7 +798,8 @@ class ExecutiveDashboardService:
                 raise NotFound(_("No organisation found for this user."))
             org_id = membership.organization_id
 
-        cache_key = f"reports:exec:org_{org_id}:tz_{tz_name}"
+        version = cache.get(f"dashboard_version:exec:org_{org_id}", 1)
+        cache_key = f"reports:exec:org_{org_id}:v{version}:tz_{tz_name}"
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return cached_data
