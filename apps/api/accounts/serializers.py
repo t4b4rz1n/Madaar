@@ -73,7 +73,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         validated_data.pop("password_confirm", None)
         if "password" in validated_data:
             instance.set_password(validated_data.pop("password"))
-        
+
         user = super().update(instance, validated_data)
 
         if notify_via_email is not None or notify_via_telegram is not None:
