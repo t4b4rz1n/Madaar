@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
           footerLinkText="Create account"
           isLoading={isLoading}
           register={register as any}
-          handleSubmit={handleSubmit}
+          handleSubmit={(fn) => handleSubmit(fn as any) as any}
           errors={errors}
         />
       </div>

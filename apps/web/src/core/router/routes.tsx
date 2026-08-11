@@ -5,7 +5,7 @@ import RoleBasedRedirect from "../../components/RoleBasedRedirect";
 import authRoutes from "../../features/auth/routes";
 import discountsRoutes from "../../features/discounts/routes";
 import { teamsRoutes } from "../../features/teams/routes";
-
+import { projectsRoutes } from "../../features/projects/routes";
 import { MainLayout } from "../../features/layout/MainLayout";
 import notificationsRoutes from "../../features/notifications/routes";
 import profileRoutes from "../../features/profile/routes";
@@ -31,12 +31,17 @@ export const routes: RouteObject[] = [
         index: true,
         element: <RoleBasedRedirect />,
       },
-      ...dashboardRoutes,
+...dashboardRoutes,
       ...usersRoutes,
       ...rolesRoutes,
+<<<<<<< Updated upstream
       ...discountsRoutes,
       ...automationsRoutes,
+=======
+>>>>>>> Stashed changes
       ...teamsRoutes,
+      ...projectsRoutes, 
+      ...discountsRoutes,
       ...notificationsRoutes,
       ...profileRoutes,
       ...ticketsRoutes,

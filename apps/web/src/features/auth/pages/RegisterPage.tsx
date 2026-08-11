@@ -42,7 +42,7 @@ const RegisterPage: React.FC = () => {
           footerLinkText="Sign in"
           isLoading={isPending}
           register={register as any}
-          handleSubmit={handleSubmit}
+          handleSubmit={(fn) => handleSubmit(fn as any) as any}
           errors={errors}
         />
       </div>

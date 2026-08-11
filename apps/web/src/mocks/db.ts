@@ -9,7 +9,12 @@ import type {
   TicketMessage,
   TicketFormData,
 } from "../features/tickets/types";
-
+import type {
+  Project,
+  ProjectMember,
+  Milestone,
+  ProjectActivity,
+} from "../features/projects/types";
 // Stateful mock database held in memory
 export const mockProfile: UserProfile = {
   id: 1,
@@ -251,6 +256,8 @@ export let mockRoles: MockRole[] = [
       "teams.manage",
       "tickets.view",
       "tickets.manage",
+      "projects.view", 
+      "projects.manage",
     ],
   },
   {
@@ -466,6 +473,70 @@ export let mockSquads: Squad[] = [
     description: "Initial response to user tickets",
     is_active: true,
     created_at: "2026-02-16T08:00:00Z",
+  },
+];
+
+export let mockProjects: Project[] = [
+  {
+    id: "1",
+    title: "Modares (Internal Management System)",
+    description:
+      "Development of an integrated team OS with gamification and task management",
+    status: "in_progress",
+    budget: 500000000,
+    start_date: "2026-01-01T00:00:00Z",
+    end_date: "2026-12-30T00:00:00Z",
+    members_count: 2,
+    progress_percentage: 35,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-06-20T10:00:00Z",
+  },
+];
+
+// Note: Added project_id field to these so it can be used for filtering and avoid ESLint errors
+export const mockProjectMembers: (ProjectMember & { project_id: string })[] = [
+  {
+    id: "1",
+    project_id: "1",
+    user_id: "1",
+    user_name: "John Doe",
+    role: "Project Manager",
+    capacity_percentage: 100,
+  },
+  {
+    id: "2",
+    project_id: "1",
+    user_id: "2",
+    user_name: "Sarah Kerrigan",
+    role: "Frontend Lead",
+    capacity_percentage: 80,
+  },
+];
+
+export const mockMilestones: Milestone[] = [
+  {
+    id: "1",
+    project_id: "1",
+    title: "Database Architecture Design",
+    due_date: "2026-02-15T00:00:00Z",
+    is_completed: true,
+  },
+  {
+    id: "2",
+    project_id: "1",
+    title: "Phase 1 Completion (MVP)",
+    due_date: "2026-07-30T00:00:00Z",
+    is_completed: false,
+  },
+];
+
+export const mockActivities: ProjectActivity[] = [
+  {
+    id: "1",
+    project_id: "1",
+    user_name: "John Doe",
+    action: "Created the project",
+    timestamp: "2026-01-01T10:00:00Z",
   },
 ];
 // Mutators to simulate DB state mutations
@@ -740,5 +811,76 @@ export const db = {
       mockSquads = mockSquads.filter((s) => s.id !== id);
       return mockSquads.length < initialLength;
     },
+  },
+  // اضافه کردن این بخش به داخل شیء db
+ projects: {
+    getAll: () => mockProjects,
+    getById: (id: string) => mockProjects.find(p => p.id === id),
+    create: (data: any) => {
+      const nextId = String(mockProjects.length + 1);
+      const newProject: Project = {
+        ...data,
+        id: nextId,
+        status: "planning",
+        members_count: 1,
+        progress_percentage: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      mockProjects.unshift(newProject);
+      return newProject;
+    },
+    update: (id: string, updates: any) => {
+      const idx = mockProjects.findIndex(p => p.id === id);
+      if (idx !== -1) {
+        mockProjects[idx] = { ...mockProjects[idx], ...updates, updated_at: new Date().toISOString() };
+        return mockProjects[idx];
+      }
+      return null;
+    },
+    delete: (id: string) => {
+      const initialLength = mockProjects.length;
+      mockProjects = mockProjects.filter(p => p.id !== id); // باعث میشه ارور prefer-const نگیریم
+      return mockProjects.length < initialLength;
+    },
+    archive: (id: string) => {
+      const idx = mockProjects.findIndex(p => p.id === id);
+      if (idx !== -1) {
+        mockProjects[idx].status = "archived";
+        mockProjects[idx].updated_at = new Date().toISOString();
+        return mockProjects[idx];
+      }
+      return null;
+    },
+    complete: (id: string) => {
+      const idx = mockProjects.findIndex(p => p.id === id);
+      if (idx !== -1) {
+        mockProjects[idx].status = "completed";
+        mockProjects[idx].progress_percentage = 100;
+        mockProjects[idx].updated_at = new Date().toISOString();
+        return mockProjects[idx];
+      }
+      return null;
+    },
+
+    members: {
+      getAll: (projectId: string) => mockProjectMembers.filter(m => m.project_id === projectId),
+      add: (projectId: string, data: any) => {
+        const newMember = { ...data, id: String(Date.now()), project_id: projectId, user_name: "New User" };
+        mockProjectMembers.unshift(newMember);
+        return newMember;
+      }
+    },
+    milestones: {
+      getAll: (projectId: string) => mockMilestones.filter(m => m.project_id === projectId),
+      create: (projectId: string, data: any) => {
+        const newMilestone = { ...data, id: String(Date.now()), project_id: projectId, is_completed: false };
+        mockMilestones.unshift(newMilestone);
+        return newMilestone;
+      }
+    },
+    activities: {
+      getAll: (projectId: string) => mockActivities.filter(a => a.project_id === projectId)
+    }
   },
 };

@@ -7,7 +7,8 @@ import {
   Category,
   ShieldSecurity,
   Flash,
-  People as TeamsIcon,
+  Briefcase, // اضافه شدن آیکون پروژه‌ها 
+  Profile2User,
 } from "iconsax-reactjs";
 
 export type DrawerItem = {
@@ -36,41 +37,47 @@ export const drawerItems: DrawerItem[] = [
     title: "Roles Management",
     link: "roles",
     icon: <ShieldSecurity size="20" />,
-    permission: "roles.manage", // تغییر از staffOnly به کنترل مبتنی بر پرمیشن
+    permission: "roles.manage",
   },
   {
     title: "Users Management",
     link: "users",
     icon: <People variant="Outline" />,
-    permission: "users.view", // تغییر به کنترل مبتنی بر پرمیشن
+    permission: "users.view",
+  },
+  {
+    title: "Teams Management",
+    link: "teams",
+    icon: <Profile2User variant="Outline" />,
+    permission: "teams.view",
+  },
+  {
+    title: "Projects", // بخش جدید پروژه‌ها
+    link: "projects",
+    icon: <Briefcase variant="Outline" />,
+    permission: "projects.view",
   },
   {
     title: "Discounts",
     link: "discounts",
     icon: <DiscountShape variant="Outline" />,
-    permission: "discounts.manage", // تغییر به کنترل مبتنی بر پرمیشن
+    permission: "discounts.manage",
   },
   {
     title: "Notifications",
     link: "notifications",
     icon: <Notification variant="Outline" />,
-    permission: "notifications.view", // اضافه کردن این خط برای کنترل در سایدبار
+    permission: "notifications.view",
   },
   {
     title: "Tickets",
     link: "tickets",
     icon: <Ticket variant="Outline" />,
-    permission: "tickets.view", // اینم اضافه کن که اصولی بشه (چون سارا تیکت رو داشت)
+    permission: "tickets.view",
   },
   {
     title: "Profile",
     link: "profile",
     icon: <User variant="Outline" />,
   },
-  {
-  title: "Teams Management",
-  link: "teams",
-  icon: <TeamsIcon variant="Outline" />,
-  permission: "teams.view",
-},
 ];

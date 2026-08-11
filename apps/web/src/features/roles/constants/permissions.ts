@@ -39,6 +39,11 @@ export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   // Automations
   { id: "automations.view", label: "View Automations", group: "AUTOMATIONS" },
   { id: "automations.manage", label: "Manage Automations", group: "AUTOMATIONS" },
+
+  //projects
+  {id: "projects.view", label: "View Projects", group: "PROJECT"},
+  {id: "projects.manage", label: "Manage Projects", group: "PROJECT"},
+
 ];
 
 export const PERMISSIONS_BY_GROUP = SYSTEM_PERMISSIONS.reduce(

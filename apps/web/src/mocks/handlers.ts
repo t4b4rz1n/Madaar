@@ -1349,4 +1349,96 @@ export const handlers = [
       data: {},
     });
   }),
+  // ==========================================
+  // --- Projects MSW Handlers ---
+  // ==========================================
+  
+  http.get("*/api/v1/projects/", ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page")) || 1;
+    const pageSize = Number(url.searchParams.get("page_size")) || 10;
+    
+    // فعلاً سورت و سرچ ساده گذاشتم، دقیقاً مثل سایر هندلرهات
+    const projects = [...db.projects.getAll()];
+    
+    const response = createPaginatedResponse(projects, page, pageSize, request.url);
+    return HttpResponse.json(response);
+  }),
+
+  http.get("*/api/v1/projects/:id/", ({ params }) => {
+    const project = db.projects.getById(params.id as string);
+    if (!project) {
+      return HttpResponse.json({ status: false, message: "Project not found", data: {} }, { status: 404 });
+    }
+    return HttpResponse.json({ status: true, message: "Success", data: project });
+  }),
+
+  http.post("*/api/v1/projects/", async ({ request }) => {
+    const body = await request.json();
+    const newProject = db.projects.create(body);
+    return HttpResponse.json({ status: true, message: "Project created successfully", data: newProject }, { status: 201 });
+  }),
+
+  http.patch("*/api/v1/projects/:id/", async ({ request, params }) => {
+    const body = await request.json();
+    const updated = db.projects.update(params.id as string, body);
+    if (!updated) {
+      return HttpResponse.json({ status: false, message: "Project not found", data: {} }, { status: 404 });
+    }
+    return HttpResponse.json({ status: true, message: "Project updated successfully", data: updated });
+  }),
+
+  http.delete("*/api/v1/projects/:id/", ({ params }) => {
+    const success = db.projects.delete(params.id as string);
+    if (!success) {
+      return HttpResponse.json({ status: false, message: "Project not found", data: {} }, { status: 404 });
+    }
+    return HttpResponse.json({ status: true, message: "Project deleted successfully", data: {} });
+  }),
+
+  http.post("*/api/v1/projects/:id/archive/", ({ params }) => {
+    const archived = db.projects.archive(params.id as string);
+    if (!archived) {
+      return HttpResponse.json({ status: false, message: "Project not found", data: {} }, { status: 404 });
+    }
+    return HttpResponse.json({ status: true, message: "Project archived", data: archived });
+  }),
+
+  http.post("*/api/v1/projects/:id/complete/", ({ params }) => {
+    const completed = db.projects.complete(params.id as string);
+    if (!completed) {
+      return HttpResponse.json({ status: false, message: "Project not found", data: {} }, { status: 404 });
+    }
+    return HttpResponse.json({ status: true, message: "Project completed", data: completed });
+  }),
+
+  // --- Project Members ---
+  http.get("*/api/v1/projects/:project_pk/members/", ({ params }) => {
+    const members = db.projects.members.getAll(params.project_pk as string);
+    return HttpResponse.json({ status: true, message: "Success", data: members });
+  }),
+
+  http.post("*/api/v1/projects/:project_pk/members/", async ({ request, params }) => {
+    const body = await request.json();
+    const newMember = db.projects.members.add(params.project_pk as string, body);
+    return HttpResponse.json({ status: true, message: "Member added", data: newMember }, { status: 201 });
+  }),
+
+  // --- Project Milestones ---
+  http.get("*/api/v1/projects/:project_pk/milestones/", ({ params }) => {
+    const milestones = db.projects.milestones.getAll(params.project_pk as string);
+    return HttpResponse.json({ status: true, message: "Success", data: milestones });
+  }),
+
+  http.post("*/api/v1/projects/:project_pk/milestones/", async ({ request, params }) => {
+    const body = await request.json();
+    const newMilestone = db.projects.milestones.create(params.project_pk as string, body);
+    return HttpResponse.json({ status: true, message: "Milestone created", data: newMilestone }, { status: 201 });
+  }),
+
+  // --- Project Activities ---
+  http.get("*/api/v1/projects/:project_pk/activities/", ({ params }) => {
+    const activities = db.projects.activities.getAll(params.project_pk as string);
+    return HttpResponse.json({ status: true, message: "Success", data: activities });
+  }),
 ];
