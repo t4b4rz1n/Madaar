@@ -179,6 +179,7 @@ class Task(BaseModel):
     order = models.PositiveIntegerField(_("Kanban Order"), default=0)
     is_finished = models.BooleanField(_("Is Finished"), default=False, db_index=True)
     number = models.PositiveIntegerField(_("Task Number"), null=True, blank=True, db_index=True)
+    is_blocked = models.BooleanField(_("Is Blocked"), default=False, db_index=True)
 
     class Meta:
         verbose_name = _("Task")

@@ -6,7 +6,7 @@ from django.dispatch import receiver
 
 from automations.events import EventDispatcher
 
-from .models import AsyncStandup, Task, TaskChecklistItem, TaskComment
+from .models import AsyncStandup, Board, Task, TaskChecklistItem, TaskComment, TaskStatus
 
 User = get_user_model()
 
@@ -229,3 +229,20 @@ def _update_task_progress_cache(task, depth=0):
         if task.parent_task_id:
             parent = Task.all_objects.filter(id=task.parent_task_id).first()
             _update_task_progress_cache(parent, depth + 1)
+
+
+@receiver(post_save, sender=Board)
+def create_default_board_statuses(sender, instance, created, **kwargs):
+    if created:
+        statuses = [
+            {"code": "todo", "name": "To Do", "order": 0},
+            {"code": "doing", "name": "Doing", "order": 1},
+            {"code": "review", "name": "Review", "order": 2},
+            {"code": "done", "name": "Done", "order": 3},
+        ]
+        for status in statuses:
+            TaskStatus.objects.get_or_create(
+                board=instance,
+                code=status["code"],
+                defaults={"name": status["name"], "order": status["order"]}
+            )

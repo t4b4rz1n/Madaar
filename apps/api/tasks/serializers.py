@@ -203,6 +203,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             "parent_task",
             "order",
             "is_finished",
+            "is_blocked",
             "progress_percent",
             "subtasks_count",
             "checklist_stats",
@@ -235,12 +236,19 @@ class TaskListSerializer(serializers.ModelSerializer):
 class TaskDetailSerializer(TaskListSerializer):
     checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
     comments = TaskCommentSerializer(many=True, read_only=True)
+    subtasks = serializers.SerializerMethodField()
 
     class Meta(TaskListSerializer.Meta):
         fields = TaskListSerializer.Meta.fields + (
             "checklist_items",
             "comments",
+            "subtasks",
         )
+
+    def get_subtasks(self, obj):
+        # Prevent infinite recursion by using a simplified serializer or just TaskListSerializer
+        serializer = TaskListSerializer(obj.subtasks.all(), many=True, context=self.context)
+        return serializer.data
 
 
 class TaskCreateUpdateSerializer(serializers.ModelSerializer):
@@ -264,6 +272,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             "parent_task",
             "order",
             "is_finished",
+            "is_blocked",
         )
         read_only_fields = ("id", "is_finished")
 

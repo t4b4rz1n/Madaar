@@ -196,6 +196,7 @@ class TaskService:
         "due_date",
         "estimated_hours",
         "parent_task",
+        "is_blocked",
     }
 
     @staticmethod
