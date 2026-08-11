@@ -196,25 +196,6 @@ class ExecutiveDashboardView(APIView):
         org_id = request.query_params.get("org_id")
         tz_name = request.query_params.get("tz", "UTC")
 
-        # If no org_id, use the first org the user is admin/owner of
-        if not org_id:
-            from organizations.models import OrganizationMembership
-
-            membership = OrganizationMembership.objects.filter(
-                user=request.user,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                ],
-                is_deleted=False,
-            ).first()
-            if not membership:
-                return Response(
-                    {"detail": "No organisation found for this user."},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-            org_id = membership.organization_id
-
         data = ExecutiveDashboardService.get_dashboard(
             request.user, org_id=org_id, tz_name=tz_name
         )
