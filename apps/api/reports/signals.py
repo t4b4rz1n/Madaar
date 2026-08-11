@@ -1,11 +1,11 @@
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
 from django.core.cache import cache
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 
-from tasks.models import Task
-from attendance.models import TimeLog, Attendance
-from projects.models import Project, ProjectMember
+from attendance.models import Attendance, TimeLog
 from organizations.models import TeamMembership
+from projects.models import Project, ProjectMember
+from tasks.models import Task
 
 
 def _bump_version(version_key):
@@ -50,9 +50,9 @@ def _invalidate_manager(user_id=None, team_id=None):
 
     if user_id:
         # User might be an employee in several teams. Bump those teams' versions.
-        teams = TeamMembership.objects.filter(
-            user_id=user_id, is_deleted=False
-        ).values_list("team_id", flat=True)
+        teams = TeamMembership.objects.filter(user_id=user_id, is_deleted=False).values_list(
+            "team_id", flat=True
+        )
         for t_id in teams:
             _bump_version(f"dashboard_version:mgr:team_{t_id}")
             # Bump aggregate managers for these teams
@@ -76,22 +76,23 @@ def _invalidate_executive(org_id):
 def invalidate_on_task_change(sender, instance, **kwargs):
     _invalidate_employee(instance.assignee_id)
     _invalidate_manager(user_id=instance.assignee_id)
-    
+
     if instance.project_id:
-        # We need the org_id from the project
         project = Project.objects.filter(id=instance.project_id).first()
         if project:
             _invalidate_executive(project.organization_id)
+
 
 @receiver([post_save, post_delete], sender=TimeLog)
 def invalidate_on_timelog_change(sender, instance, **kwargs):
     _invalidate_employee(instance.user_id)
     _invalidate_manager(user_id=instance.user_id)
-    
+
     if instance.project_id:
         project = Project.objects.filter(id=instance.project_id).first()
         if project:
             _invalidate_executive(project.organization_id)
+
 
 @receiver([post_save, post_delete], sender=Attendance)
 def invalidate_on_attendance_change(sender, instance, **kwargs):
@@ -99,11 +100,12 @@ def invalidate_on_attendance_change(sender, instance, **kwargs):
     _invalidate_manager(user_id=instance.user_id)
     _invalidate_executive(instance.organization_id)
 
+
 @receiver([post_save, post_delete], sender=Project)
 def invalidate_on_project_change(sender, instance, **kwargs):
     # This covers Soft Delete of a Project as requested
     _invalidate_executive(instance.organization_id)
-    
+
     # We should also invalidate employees and managers related to this project.
     # To be precise, any user allocated to this project:
     members = ProjectMember.objects.filter(project_id=instance.id).values_list("user_id", flat=True)
@@ -111,9 +113,9 @@ def invalidate_on_project_change(sender, instance, **kwargs):
         _invalidate_employee(u_id)
         _invalidate_manager(user_id=u_id)
 
+
 @receiver([post_save, post_delete], sender=TeamMembership)
 def invalidate_on_team_membership_change(sender, instance, **kwargs):
-    # If a user joins/leaves a team or becomes a lead, invalidate
     _invalidate_employee(instance.user_id)
     _invalidate_manager(user_id=instance.user_id)
     _invalidate_manager(team_id=instance.team_id)

@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+
 import factory
 from django.contrib.auth import get_user_model
 from django.utils import timezone

@@ -22,19 +22,15 @@ import datetime
 import logging
 import zoneinfo
 
+from django.core.cache import cache
 from django.db.models import (
     Count,
-    DecimalField,
-    F,
     OuterRef,
     Q,
     Subquery,
     Sum,
-    Value,
 )
-from django.db.models.functions import Coalesce
 from django.utils import timezone
-from django.core.cache import cache
 
 from attendance.models import Attendance, TimeLog
 from organizations.models import TeamMembership
@@ -42,11 +38,6 @@ from projects.models import Milestone, Project, ProjectMember
 from tasks.models import Task
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Timezone helper
-# ---------------------------------------------------------------------------
 
 
 def get_user_today_range(
@@ -64,9 +55,7 @@ def get_user_today_range(
         user_tz = zoneinfo.ZoneInfo("UTC")
 
     now_in_user_tz = timezone.now().astimezone(user_tz)
-    today_start_local = now_in_user_tz.replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    today_start_local = now_in_user_tz.replace(hour=0, minute=0, second=0, microsecond=0)
     today_end_local = today_start_local + datetime.timedelta(days=1)
 
     # Convert back to UTC for DB queries
@@ -101,24 +90,19 @@ def get_business_days(start_date: datetime.date, end_date: datetime.date) -> int
     """Calculate the number of business days (Mon-Fri) between two dates inclusive."""
     if start_date > end_date:
         return 0
-        
+
     days = (end_date - start_date).days + 1
     weeks = days // 7
     business_days = weeks * 5
-    
+
     remainder = days % 7
     if remainder > 0:
         start_weekday = start_date.weekday()
         for i in range(remainder):
             if (start_weekday + i) % 7 < 5:  # Mon-Fri
                 business_days += 1
-                
+
     return business_days
-
-
-# ---------------------------------------------------------------------------
-# EmployeeDashboardService
-# ---------------------------------------------------------------------------
 
 
 class EmployeeDashboardService:
@@ -126,7 +110,6 @@ class EmployeeDashboardService:
 
     @staticmethod
     def _get_today_tasks(user, today_start, today_end):
-        """Tasks assigned to user that are due today or currently active."""
         today_date = today_start.date()
         return (
             Task.objects.filter(
@@ -157,7 +140,6 @@ class EmployeeDashboardService:
 
     @staticmethod
     def _get_overdue_tasks(user, today_start):
-        """Tasks assigned to user where due_date < today and not done."""
         today_date = today_start.date()
         return (
             Task.objects.filter(
@@ -181,7 +163,6 @@ class EmployeeDashboardService:
 
     @staticmethod
     def _get_weekly_time_summary(user, week_start, week_end):
-        """Total seconds worked this week from TimeLog."""
         result = TimeLog.objects.filter(
             user=user,
             is_deleted=False,
@@ -200,7 +181,6 @@ class EmployeeDashboardService:
 
     @staticmethod
     def _get_active_projects(user):
-        """Projects where user is an active member with allocation info."""
         return (
             ProjectMember.objects.filter(
                 user=user,
@@ -224,7 +204,6 @@ class EmployeeDashboardService:
 
     @staticmethod
     def _get_attendance_status(user, today_start):
-        """Today's attendance record for the user."""
         today_date = today_start.date()
         attendance = (
             Attendance.objects.filter(
@@ -246,7 +225,6 @@ class EmployeeDashboardService:
 
     @staticmethod
     def _get_active_timer(user):
-        """Currently running timer, if any."""
         timer = (
             TimeLog.objects.filter(
                 user=user,
@@ -268,7 +246,6 @@ class EmployeeDashboardService:
 
     @staticmethod
     def _get_upcoming_milestones(user):
-        """Next 5 milestones from user's active projects."""
         user_project_ids = ProjectMember.objects.filter(
             user=user,
             is_deleted=False,
@@ -320,15 +297,10 @@ class EmployeeDashboardService:
             "badges": None,  # Module 5 — Gamification (Phase 2)
             "goals": None,  # Module 7 — OKR (Phase 3)
         }
-        
+
         # Cache for 10 minutes (600 seconds)
         cache.set(cache_key, result, 600)
         return result
-
-
-# ---------------------------------------------------------------------------
-# ManagerDashboardService
-# ---------------------------------------------------------------------------
 
 
 class ManagerDashboardService:
@@ -336,7 +308,6 @@ class ManagerDashboardService:
 
     @staticmethod
     def get_managed_team_ids(user) -> list:
-        """Return IDs of all teams where *user* is a lead."""
         return list(
             TeamMembership.objects.filter(
                 user=user,
@@ -347,7 +318,6 @@ class ManagerDashboardService:
 
     @staticmethod
     def _get_team_member_user_ids(team_id) -> list:
-        """Return user IDs of all active members in the given team."""
         return list(
             TeamMembership.objects.filter(
                 team_id=team_id,
@@ -357,7 +327,6 @@ class ManagerDashboardService:
 
     @staticmethod
     def _get_task_stats(member_ids):
-        """Task counts grouped by status code for the given members."""
         return list(
             Task.objects.filter(
                 assignee_id__in=member_ids,
@@ -371,7 +340,6 @@ class ManagerDashboardService:
 
     @staticmethod
     def _get_overdue_tasks(member_ids, today_start):
-        """Count and list of overdue tasks for team members."""
         today_date = today_start.date()
         qs = Task.objects.filter(
             assignee_id__in=member_ids,
@@ -391,7 +359,6 @@ class ManagerDashboardService:
 
     @staticmethod
     def _get_work_hours(member_ids, week_start, week_end):
-        """Work hours per member for the current week."""
         return list(
             TimeLog.objects.filter(
                 user_id__in=member_ids,
@@ -416,7 +383,6 @@ class ManagerDashboardService:
 
     @staticmethod
     def _get_members_attendance(member_ids, today_start):
-        """Today's attendance status for each team member."""
         today_date = today_start.date()
         return list(
             Attendance.objects.filter(
@@ -435,7 +401,6 @@ class ManagerDashboardService:
 
     @staticmethod
     def _get_project_summary(member_ids):
-        """Projects where team members are allocated, with budget info."""
         project_ids = (
             ProjectMember.objects.filter(
                 user_id__in=member_ids,
@@ -528,7 +493,7 @@ class ManagerDashboardService:
             "members_attendance": cls._get_members_attendance(member_ids, today_start),
             "project_summary": cls._get_project_summary(member_ids),
         }
-        
+
         # Cache for 15 minutes (900 seconds)
         cache.set(cache_key, result, 900)
         return result
@@ -601,26 +566,18 @@ class ManagerDashboardService:
         return list(members)
 
 
-# ---------------------------------------------------------------------------
-# ExecutiveDashboardService
-# ---------------------------------------------------------------------------
-
-
 class ExecutiveDashboardService:
     """Organisation-wide dashboard data for owners and admins."""
 
     @staticmethod
     def _get_company_overview(org_id):
-        """High-level counts: projects, tasks, members."""
         from organizations.models import OrganizationMembership
 
         member_count = OrganizationMembership.objects.filter(
             organization_id=org_id, is_deleted=False
         ).count()
 
-        project_stats = Project.objects.filter(
-            organization_id=org_id, is_deleted=False
-        ).aggregate(
+        project_stats = Project.objects.filter(organization_id=org_id, is_deleted=False).aggregate(
             total=Count("id"),
             active=Count("id", filter=Q(status=Project.Status.ACTIVE)),
             completed=Count("id", filter=Q(status=Project.Status.COMPLETED)),
@@ -645,7 +602,6 @@ class ExecutiveDashboardService:
 
     @staticmethod
     def _get_resource_utilization(org_id, week_start, week_end):
-        """Work hours vs expected hours for the organisation."""
         from organizations.models import OrganizationMembership
 
         member_count = OrganizationMembership.objects.filter(
@@ -678,9 +634,7 @@ class ExecutiveDashboardService:
             "total_work_seconds": total_seconds,
             "expected_seconds": expected_seconds,
             "utilization_rate": (
-                round(total_seconds / expected_seconds * 100, 1)
-                if expected_seconds > 0
-                else 0.0
+                round(total_seconds / expected_seconds * 100, 1) if expected_seconds > 0 else 0.0
             ),
             "active_workers": active_workers,
             "total_members": member_count,
@@ -688,7 +642,6 @@ class ExecutiveDashboardService:
 
     @staticmethod
     def _get_project_health(org_id, today_start):
-        """Categorise projects as on_track / at_risk / delayed."""
         today_date = today_start.date()
 
         projects = (
@@ -758,7 +711,6 @@ class ExecutiveDashboardService:
 
     @staticmethod
     def _get_financial_summary(org_id):
-        """Budget totals and time-cost comparison."""
         return (
             Project.objects.filter(
                 organization_id=org_id,
@@ -784,6 +736,7 @@ class ExecutiveDashboardService:
         """Compose the executive dashboard sections."""
         if not org_id:
             from organizations.models import OrganizationMembership
+
             membership = OrganizationMembership.objects.filter(
                 user=user,
                 role__in=[
@@ -793,8 +746,9 @@ class ExecutiveDashboardService:
                 is_deleted=False,
             ).first()
             if not membership:
-                from rest_framework.exceptions import NotFound
                 from django.utils.translation import gettext_lazy as _
+                from rest_framework.exceptions import NotFound
+
                 raise NotFound(_("No organisation found for this user."))
             org_id = membership.organization_id
 
@@ -809,13 +763,11 @@ class ExecutiveDashboardService:
 
         result = {
             "company_overview": cls._get_company_overview(org_id),
-            "resource_utilization": cls._get_resource_utilization(
-                org_id, week_start, week_end
-            ),
+            "resource_utilization": cls._get_resource_utilization(org_id, week_start, week_end),
             "project_health": cls._get_project_health(org_id, today_start),
             "financial_summary": cls._get_financial_summary(org_id),
         }
-        
+
         # Cache for 60 minutes (3600 seconds)
         cache.set(cache_key, result, 3600)
         return result

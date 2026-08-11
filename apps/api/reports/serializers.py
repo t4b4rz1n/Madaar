@@ -10,10 +10,6 @@ other apps and returns structured JSON responses.
 
 from rest_framework import serializers
 
-# ---------------------------------------------------------------------------
-# Shared / nested serializers
-# ---------------------------------------------------------------------------
-
 
 class TaskSummarySerializer(serializers.Serializer):
     id = serializers.UUIDField()
@@ -65,11 +61,6 @@ class MilestoneSummarySerializer(serializers.Serializer):
     project__id = serializers.UUIDField()
 
 
-# ---------------------------------------------------------------------------
-# Employee Dashboard
-# ---------------------------------------------------------------------------
-
-
 class EmployeeDashboardSerializer(serializers.Serializer):
     today_tasks = TaskSummarySerializer(many=True)
     overdue_tasks = TaskSummarySerializer(many=True)
@@ -82,11 +73,6 @@ class EmployeeDashboardSerializer(serializers.Serializer):
     points = serializers.IntegerField(allow_null=True)
     badges = serializers.ListField(allow_null=True)
     goals = serializers.ListField(allow_null=True)
-
-
-# ---------------------------------------------------------------------------
-# Manager Dashboard — nested serializers
-# ---------------------------------------------------------------------------
 
 
 class TaskStatSerializer(serializers.Serializer):
@@ -146,11 +132,6 @@ class ManagerDashboardSerializer(serializers.Serializer):
     project_summary = ProjectSummarySerializer(many=True)
 
 
-# ---------------------------------------------------------------------------
-# Manager Members Detail
-# ---------------------------------------------------------------------------
-
-
 class MemberDetailSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     username = serializers.CharField()
@@ -161,11 +142,6 @@ class MemberDetailSerializer(serializers.Serializer):
     done_tasks = serializers.IntegerField()
     overdue_tasks = serializers.IntegerField()
     week_seconds = serializers.IntegerField(allow_null=True)
-
-
-# ---------------------------------------------------------------------------
-# Executive Dashboard — nested serializers
-# ---------------------------------------------------------------------------
 
 
 class ProjectStatsSerializer(serializers.Serializer):
@@ -210,9 +186,7 @@ class ProjectHealthSerializer(serializers.Serializer):
 
 
 class FinancialSummarySerializer(serializers.Serializer):
-    total_budget = serializers.DecimalField(
-        max_digits=14, decimal_places=2, allow_null=True
-    )
+    total_budget = serializers.DecimalField(max_digits=14, decimal_places=2, allow_null=True)
     project_count = serializers.IntegerField()
     total_time_seconds = serializers.IntegerField(allow_null=True)
 
