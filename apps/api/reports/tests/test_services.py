@@ -1,9 +1,14 @@
 import pytest
 from rest_framework.exceptions import NotFound
 from django.utils.translation import gettext as _
-from reports.services import ExecutiveDashboardService
+from reports.services import ExecutiveDashboardService, ManagerDashboardService
 from organizations.models import OrganizationMembership
 from .factories import OrganizationFactory, OrganizationMembershipFactory
+
+# Additional imports for cache invalidation tests
+from django.core.cache import cache
+from django.test import override_settings
+from .factories import ProjectFactory, TeamFactory, TeamMembershipFactory, TeamMembership
 
 @pytest.mark.django_db
 class TestExecutiveDashboardService:
@@ -121,6 +126,54 @@ def test_get_business_days():
     
     # Test 5: End date before start date -> 0 days
     assert get_business_days(end, start - datetime.timedelta(days=1)) == 0
+
+# Fixture to clear cache before each test
+@pytest.fixture(autouse=True)
+def clear_cache():
+    cache.clear()
+
+@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "exec-test"}})
+@pytest.mark.django_db
+def test_executive_cache_invalidation_on_project_soft_delete(clear_cache, users, org_data):
+    user = users["org_owner"]
+    org = org_data["org"]
+    project = ProjectFactory(organization=org, is_deleted=False)
+    tz = "UTC"
+    # First call caches result
+    dashboard = ExecutiveDashboardService.get_dashboard(user=user, org_id=org.id, tz_name=tz)
+    cache_key = f"reports:exec:org_{org.id}:tz_{tz}"
+    assert cache.get(cache_key) is not None
+    # Soft delete the project – triggers signal
+    project.is_deleted = True
+    project.save()
+    # Verify cache cleared
+    assert cache.get(cache_key) is None
+    # Second call – cache must be refreshed
+    dashboard2 = ExecutiveDashboardService.get_dashboard(user=user, org_id=org.id, tz_name=tz)
+    assert cache.get(cache_key) is not None
+    assert dashboard2["company_overview"]["projects"]["total"] == 0
+
+@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "mgr-test"}})
+@pytest.mark.django_db
+def test_manager_cache_invalidation_on_team_membership_change(clear_cache, users, org_data):
+    lead = users["team_lead"]
+    member = users["employee1"]
+    team = TeamFactory()
+    # initial membership – lead only
+    TeamMembershipFactory(user=lead, team=team, role=TeamMembership.Role.LEAD)
+    tz = "UTC"
+    dashboard = ManagerDashboardService.get_dashboard(user=lead, team_id=team.id, tz_name=tz)
+    cache_key = f"reports:mgr:team_{team.id}:tz_{tz}"
+    assert cache.get(cache_key) is not None
+    # add a regular member – triggers signal
+    TeamMembershipFactory(user=member, team=team, role=TeamMembership.Role.MEMBER)
+    # Verify cache cleared
+    assert cache.get(cache_key) is None
+    dashboard2 = ManagerDashboardService.get_dashboard(user=lead, team_id=team.id, tz_name=tz)
+    # cache should be refreshed
+    assert cache.get(cache_key) is not None
+    assert dashboard2["team_member_count"] == 2
+
 
 @pytest.mark.django_db
 def test_cache_invalidation_on_timelog_update(users, org_data, project_data):
