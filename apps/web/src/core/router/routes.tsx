@@ -31,16 +31,13 @@ export const routes: RouteObject[] = [
         index: true,
         element: <RoleBasedRedirect />,
       },
-...dashboardRoutes,
+      ...dashboardRoutes,
       ...usersRoutes,
       ...rolesRoutes,
-<<<<<<< Updated upstream
       ...discountsRoutes,
       ...automationsRoutes,
-=======
->>>>>>> Stashed changes
       ...teamsRoutes,
-      ...projectsRoutes, 
+      ...projectsRoutes,
       ...discountsRoutes,
       ...notificationsRoutes,
       ...profileRoutes,
