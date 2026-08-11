@@ -14,6 +14,7 @@ urlpatterns = [
     path("tickets/", include("panel.Ticketing.urls")),
     path("notifications/", include("panel.Notification.urls")),
     path("users/", include("panel.User.urls")),
+    path("roles/", include("panel.Role.urls")),
     path("feedbacks/", include("panel.Feedback.urls")),
     path("discounts/", include("panel.Discount.urls")),
     path("discounts", discount_code_list, name="staff-discount-list-no-slash"),

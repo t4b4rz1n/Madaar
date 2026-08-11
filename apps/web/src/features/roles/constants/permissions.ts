@@ -35,6 +35,10 @@ export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   // Tickets
   { id: "tickets.view", label: "View Tickets", group: "TICKETS" },
   { id: "tickets.manage", label: "Manage Tickets", group: "TICKETS" },
+
+  // Automations
+  { id: "automations.view", label: "View Automations", group: "AUTOMATIONS" },
+  { id: "automations.manage", label: "Manage Automations", group: "AUTOMATIONS" },
 ];
 
 export const PERMISSIONS_BY_GROUP = SYSTEM_PERMISSIONS.reduce(

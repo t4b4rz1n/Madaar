@@ -5,7 +5,7 @@ import type { ApiResponseList } from "../../../core/api/apiService";
 import type { Role, RoleFormData, RoleUpdateData } from "../types";
 
 // افزودن اسلش پایانی برای سازگاری کامل با Django REST Framework
-const ROLES_ENDPOINT = "/roles/";
+const ROLES_ENDPOINT = "/panel/roles/";
 
 export type GetRolesParams = {
   page?: number;
