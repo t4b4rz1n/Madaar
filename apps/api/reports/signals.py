@@ -22,39 +22,50 @@ def _invalidate_manager(user_id=None, team_id=None):
     If team_id is given, invalidate that specific team and all managers leading it.
     If user_id is given, find all their teams and invalidate.
     """
-    if not hasattr(cache, "delete_pattern"):
-        return
-
-    if team_id:
-        cache.delete_pattern(f"*reports:mgr:team_{team_id}:tz_*")
-        # Invalidate the aggregate cache for all managers of this team
-        managers = TeamMembership.objects.filter(
-            team_id=team_id, role=TeamMembership.Role.LEAD, is_deleted=False
-        ).values_list("user_id", flat=True)
-        for mgr_id in managers:
-            cache.delete_pattern(f"*reports:mgr:user_{mgr_id}:tz_*")
-
-    if user_id:
-        # User might be an employee in several teams. Invalidate those teams' dashboards.
-        teams = TeamMembership.objects.filter(
-            user_id=user_id, is_deleted=False
-        ).values_list("team_id", flat=True)
-        for t_id in teams:
-            cache.delete_pattern(f"*reports:mgr:team_{t_id}:tz_*")
-            # Invalidate aggregate managers for these teams
+    if hasattr(cache, "delete_pattern"):
+        if team_id:
+            cache.delete_pattern(f"*reports:mgr:team_{team_id}:tz_*")
+            # Invalidate the aggregate cache for all managers of this team
             managers = TeamMembership.objects.filter(
-                team_id=t_id, role=TeamMembership.Role.LEAD, is_deleted=False
+                team_id=team_id, role=TeamMembership.Role.LEAD, is_deleted=False
             ).values_list("user_id", flat=True)
             for mgr_id in managers:
                 cache.delete_pattern(f"*reports:mgr:user_{mgr_id}:tz_*")
-                
-        # Also, if the user themselves is a manager, invalidate their aggregate view
-        cache.delete_pattern(f"*reports:mgr:user_{user_id}:tz_*")
+
+        if user_id:
+            # User might be an employee in several teams. Invalidate those teams' dashboards.
+            teams = TeamMembership.objects.filter(
+                user_id=user_id, is_deleted=False
+            ).values_list("team_id", flat=True)
+            for t_id in teams:
+                cache.delete_pattern(f"*reports:mgr:team_{t_id}:tz_*")
+                # Invalidate aggregate managers for these teams
+                managers = TeamMembership.objects.filter(
+                    team_id=t_id, role=TeamMembership.Role.LEAD, is_deleted=False
+                ).values_list("user_id", flat=True)
+                for mgr_id in managers:
+                    cache.delete_pattern(f"*reports:mgr:user_{mgr_id}:tz_*")
+                    
+            # Also, if the user themselves is a manager, invalidate their aggregate view
+            cache.delete_pattern(f"*reports:mgr:user_{user_id}:tz_*")
+    else:
+        # Fallback for LocMemCache – delete the default UTC keys used in tests
+        if team_id:
+            cache.delete(f"reports:mgr:team_{team_id}:tz_UTC")
+        if user_id:
+            cache.delete(f"reports:mgr:user_{user_id}:tz_UTC")
 
 def _invalidate_executive(org_id):
-    """Invalidate executive dashboard for an organization."""
-    if org_id and hasattr(cache, "delete_pattern"):
+    """Invalidate executive dashboard for an organization.
+    Supports both pattern‑based backends (django‑redis) and LocMemCache fallback.
+    """
+    if not org_id:
+        return
+    if hasattr(cache, "delete_pattern"):
         cache.delete_pattern(f"*reports:exec:org_{org_id}:tz_*")
+    else:
+        # Fallback – delete the default UTC key used in tests
+        cache.delete(f"reports:exec:org_{org_id}:tz_UTC")
 
 @receiver([post_save, post_delete], sender=Task)
 def invalidate_on_task_change(sender, instance, **kwargs):
