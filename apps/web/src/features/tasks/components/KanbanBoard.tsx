@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getBoards, getTasks, moveTask, createTask } from '../api/tasksApi';
+import { getBoards, getTasks, moveTask, createTask, reorderTasks } from '../api/tasksApi';
 import { useTaskStore } from '../store/useTaskStore';
 import { TaskCard } from './TaskCard';
 import { TaskDetailModal } from './TaskDetailModal';
-import type { Board, Task } from '../types';
+import type { Task } from '../types';
 
-import { 
-  DndContext, 
-  DragOverlay, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors, 
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from '@dnd-kit/core';
 import type {
-  DragStartEvent, 
+  DragStartEvent,
   DragEndEvent,
   DragOverEvent,
 } from '@dnd-kit/core';
@@ -29,7 +29,7 @@ export const KanbanBoard: React.FC = () => {
   const queryClient = useQueryClient();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null);
-  
+
   // Add task state
   const [addingTaskToStatusId, setAddingTaskToStatusId] = useState<number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -57,11 +57,26 @@ export const KanbanBoard: React.FC = () => {
 
   const moveTaskMutation = useMutation({
     mutationFn: ({ taskId, statusId, order }: { taskId: number, statusId: number, order: number }) => moveTask(taskId, statusId, order),
-    onMutate: async ({ taskId, statusId, order }) => {
+    onMutate: async () => {
       // Local state is already updated optimistically in onDragEnd/onDragOver
-      return {};
+      return { previousTasks: serverTasks };
     },
-    onError: (err, newMove, context) => {
+    onError: (_err, _newMove, context: any) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+    },
+  });
+
+  const reorderTasksMutation = useMutation({
+    mutationFn: (orders: { id: number; order: number }[]) => reorderTasks(orders),
+    onMutate: async () => {
+      return { previousTasks: serverTasks };
+    },
+    onError: (_err, _vars, context: any) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
       }
@@ -120,7 +135,7 @@ export const KanbanBoard: React.FC = () => {
     if (isActiveTask && isOverTask) {
       const activeTask = localTasks.find(t => t.id.toString() === activeId);
       const overTask = localTasks.find(t => t.id.toString() === overId);
-      
+
       if (!activeTask || !overTask) return;
 
       if (activeTask.status_detail?.id !== overTask.status_detail?.id) {
@@ -131,8 +146,7 @@ export const KanbanBoard: React.FC = () => {
           const newTasks = [...tasks];
           newTasks[activeIndex] = {
             ...newTasks[activeIndex],
-            status_detail: overTask.status_detail,
-            status: overTask.status_detail?.id as number
+            status_detail: overTask.status_detail
           };
           return arrayMove(newTasks, activeIndex, overIndex);
         });
@@ -151,8 +165,7 @@ export const KanbanBoard: React.FC = () => {
           const newTasks = [...tasks];
           newTasks[activeIndex] = {
             ...newTasks[activeIndex],
-            status_detail: statusDetail as any,
-            status: overStatusId
+            status_detail: statusDetail as any
           };
           return arrayMove(newTasks, activeIndex, newTasks.length - 1);
         }
@@ -183,26 +196,47 @@ export const KanbanBoard: React.FC = () => {
     if (overId.startsWith('col-')) {
       overStatusId = parseInt(overId.replace('col-', ''));
       const overColumnTasks = localTasks.filter(t => t.status_detail?.id === overStatusId) || [];
-      newOrder = overColumnTasks.length;
+      if (overColumnTasks.length > 0) {
+        newOrder = overColumnTasks[overColumnTasks.length - 1].order + 1;
+      } else {
+        newOrder = 0;
+      }
     } else {
       const overTask = localTasks.find(t => t.id.toString() === overId);
       if (overTask && overTask.status_detail) {
         overStatusId = overTask.status_detail.id;
-        
+
         const overColumnTasks = localTasks.filter(t => t.status_detail?.id === overStatusId);
-        const overIndex = overColumnTasks.findIndex(t => t.id.toString() === overId);
         const activeIndex = overColumnTasks.findIndex(t => t.id.toString() === activeId);
-        
+
         if (activeIndex !== -1) {
           // Both in same column (dnd-kit visually sorted them, now commit to state)
+          let newColumnOrders: { id: number; order: number }[] = [];
+
           setLocalTasks((tasks) => {
              const allActiveIdx = tasks.findIndex(t => t.id.toString() === activeId);
              const allOverIdx = tasks.findIndex(t => t.id.toString() === overId);
-             return arrayMove(tasks, allActiveIdx, allOverIdx);
+             const newTasks = arrayMove(tasks, allActiveIdx, allOverIdx);
+
+             // Recalculate orders sequentially for the column to fix any data corruption
+             const updatedColumnTasks = newTasks.filter(t => t.status_detail?.id === overStatusId);
+             newColumnOrders = updatedColumnTasks.map((t, idx) => ({ id: t.id, order: idx }));
+
+             // Apply orders locally right away
+             return newTasks.map(t => {
+               if (t.status_detail?.id === overStatusId) {
+                 const newOrderIndex = updatedColumnTasks.findIndex(ct => ct.id === t.id);
+                 return { ...t, order: newOrderIndex };
+               }
+               return t;
+             });
           });
-          newOrder = overIndex;
+
+          // Bulk update to backend
+          reorderTasksMutation.mutate(newColumnOrders);
+          return; // Skip the single moveTaskMutation
         } else {
-          newOrder = overIndex;
+          newOrder = overTask.order;
         }
       }
     }
@@ -259,10 +293,10 @@ export const KanbanBoard: React.FC = () => {
                       <SortableTask key={task.id} task={task} onClick={() => setSelectedTaskForModal(task)} />
                     ))}
                   </SortableContext>
-                  
+
                   {addingTaskToStatusId === status.id && (
                     <div className="mt-2 bg-black/40 rounded-xl p-2.5 border border-white/10">
-                      <input 
+                      <input
                         autoFocus
                         value={newTaskTitle}
                         onChange={e => setNewTaskTitle(e.target.value)}
@@ -277,15 +311,15 @@ export const KanbanBoard: React.FC = () => {
                         className="w-full bg-transparent text-sm text-white/90 outline-none placeholder:text-white/30"
                       />
                       <div className="flex justify-end mt-2.5 gap-2">
-                        <button 
-                          onClick={() => handleCreateTask(status.id)} 
+                        <button
+                          onClick={() => handleCreateTask(status.id)}
                           disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
                           className="px-3 py-1 bg-white/20 hover:bg-white/30 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
                         >
                           {createTaskMutation.isPending ? '...' : 'Add'}
                         </button>
-                        <button 
-                          onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); }} 
+                        <button
+                          onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); }}
                           className="px-3 py-1 text-white/50 hover:text-white/80 text-xs transition-colors"
                         >
                           Cancel
@@ -294,9 +328,9 @@ export const KanbanBoard: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {index === 0 && addingTaskToStatusId !== status.id && (
-                  <button 
+                  <button
                     onClick={() => setAddingTaskToStatusId(status.id)}
                     className="mt-1 flex items-center gap-2 text-white/50 hover:text-white/90 text-[13px] py-1 px-1 transition-colors w-full"
                   >

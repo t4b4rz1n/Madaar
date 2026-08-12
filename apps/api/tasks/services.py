@@ -276,15 +276,43 @@ class TaskService:
     @staticmethod
     @transaction.atomic
     def update_task(task, actor, **kwargs):
-        assignee = kwargs.get("assignee")
-        if assignee and task.project:
-            from organizations.models import OrganizationMembership
+        # We rely on the serializer to validate that the assignee is a valid ProjectMember.
+        # Human-readable field labels
+        field_labels = {
+            "assignee": _("Assignee"),
+            "status": _("Status"),
+            "priority": _("Priority"),
+            "title": _("Title"),
+            "description": _("Description"),
+            "due_date": _("Due date"),
+            "estimated_hours": _("Estimated hours"),
+            "order": _("Order"),
+            "parent_task": _("Parent task"),
+            "is_finished": _("Finished"),
+            "is_blocked": _("Blocked"),
+            "milestone": _("Milestone"),
+        }
 
-            is_assignee_org_member = OrganizationMembership.objects.filter(
-                organization=task.project.organization, user=assignee
-            ).exists()
-            if not is_assignee_org_member:
-                raise ValidationError(_("Assignee must be a member of the organization."))
+        def _display(val, field_name):
+            if val is None:
+                return str(_("Unassigned")) if field_name == "assignee" else str(_("empty"))
+            if isinstance(val, bool):
+                return "✓" if val else "✗"
+            if hasattr(val, "get_full_name"):
+                return val.get_full_name() or getattr(val, "email", str(val))
+            if hasattr(val, "name"):
+                return val.name
+            # Format dates nicely
+            if hasattr(val, "strftime"):
+                return val.strftime("%b %d, %Y")
+            # Truncate long text (e.g. description)
+            s = str(val)
+            if len(s) > 50:
+                return s[:47] + "..."
+            return s
+
+        # Fields to skip in activity log (noisy/internal)
+        skip_log_fields = {"order"}
 
         changes = []
         for field, value in kwargs.items():
@@ -293,11 +321,24 @@ class TaskService:
             old_val = getattr(task, field)
             if old_val != value:
                 setattr(task, field, value)
-                changes.append(f"{field}: {old_val} -> {value}")
+                if field not in skip_log_fields:
+                    if field == "assignee":
+                        if value:
+                            changes.append(
+                                str(_("Task assigned to %(user)s"))
+                                % {"user": _display(value, field)}
+                            )
+                        else:
+                            changes.append(str(_("Task unassigned")))
+                    else:
+                        label = field_labels.get(field, field)
+                        changes.append(
+                            f"{label}: {_display(old_val, field)} → {_display(value, field)}"
+                        )
 
         if changes:
             task.save()
-            action_desc = str(_("Updated fields: ")) + ", ".join(changes)
+            action_desc = ", ".join(changes)
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
@@ -391,6 +432,7 @@ class TaskService:
             else:
                 # Append to the end of the new column
                 from django.db.models import Max
+
                 max_order = Task.objects.filter(status=new_status).aggregate(Max("order"))[
                     "order__max"
                 ]

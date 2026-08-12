@@ -6,9 +6,12 @@ import { KanbanBoard } from '../components/KanbanBoard';
 import { DependencyGraph } from '../components/DependencyGraph';
 import { useTaskStore } from '../store/useTaskStore';
 import { getBoards } from '../api/tasksApi';
+import { StandupModal } from '../components/StandupModal';
+import { Edit2 } from 'iconsax-reactjs';
 
 export const TaskManagementPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'kanban' | 'graph'>('kanban');
+  const [isStandupModalOpen, setIsStandupModalOpen] = useState(false);
   const { activeProjectId, activeBoardId, setActiveBoard } = useTaskStore();
 
   const { data: boards } = useQuery({
@@ -53,10 +56,18 @@ export const TaskManagementPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right side: View mode toggle */}
+        {/* Right side: View mode toggle & Actions */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsStandupModalOpen(true)}
+            className="btn btn-sm btn-outline gap-2 border-base-300 text-base-content/80 hover:bg-base-200 hover:border-base-300 hover:text-base-content"
+          >
+            <Edit2 size="16" />
+            Daily Standup
+          </button>
+
           {activeBoardId && (
-            <div className="flex bg-base-200 p-0.5 rounded-lg">
+            <div className="flex bg-base-200 p-0.5 rounded-lg ml-2">
               <button
                 onClick={() => setViewMode('kanban')}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
@@ -99,6 +110,8 @@ export const TaskManagementPage: React.FC = () => {
           )
         )}
       </div>
+
+      <StandupModal isOpen={isStandupModalOpen} onClose={() => setIsStandupModalOpen(false)} />
     </div>
   );
 };

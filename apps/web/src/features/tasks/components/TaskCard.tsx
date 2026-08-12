@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Task } from '../types';
-import { Timer1, Message, Paperclip2, TickCircle, More } from 'iconsax-reactjs';
+import { Timer1, Message, Paperclip2, TickCircle, More, TaskSquare, Tag, Profile2User, Gallery, Calendar, ArrowRight, TickSquare, Copy, Link, Archive, Mirror, Trash } from 'iconsax-reactjs';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteTask } from '../api/tasksApi';
+import { deleteTask, updateTask, getProjectMembers } from '../api/tasksApi';
+import { useQuery } from '@tanstack/react-query';
+import { useTaskStore } from '../store/useTaskStore';
 
 interface TaskCardProps {
   task: Task;
@@ -13,17 +15,36 @@ interface TaskCardProps {
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const [isDone, setIsDone] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showMembersMenu, setShowMembersMenu] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const { activeProjectId } = useTaskStore();
 
   const isDanger = task.is_blocked || (task.due_date && new Date(task.due_date) < new Date());
-  const hasMetadata = task.due_date || (task.comments && task.comments.length > 0) || task.subtasks_count > 0 || task.assignee_detail;
+  const hasMetadata = task.due_date || (task.comments_count && task.comments_count > 0) || task.subtasks_count > 0 || task.assignee_detail;
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteTask(task.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: Partial<Task>) => updateTask(task.id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['projectMembers', task.project],
+    queryFn: async () => {
+      if (!task.project) return [];
+      const members = await getProjectMembers(task.project.toString());
+      return members.map((m: any) => m.user).filter(Boolean);
+    },
+    enabled: !!task.project && (isMenuOpen || showMembersMenu),
+    staleTime: 30_000,
   });
 
   const handleDoneClick = (e: React.MouseEvent) => {
@@ -40,6 +61,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
     }
   };
 
+  const isMutating = updateMutation.isPending || deleteMutation.isPending;
+
   return (
     <div
       onClick={onClick}
@@ -48,6 +71,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         ${isDanger ? 'border-red-500/50' : 'border-[#2D364D] hover:border-[#4B5E87]'}
       `}
     >
+      {/* Loading overlay */}
+      {isMutating && (
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] z-30 rounded-xl flex items-center justify-center pointer-events-none">
+          <div className="w-5 h-5 border-2 border-white/20 border-t-blue-400 rounded-full animate-spin" />
+        </div>
+      )}
+
       {task.is_blocked && (
         <div className="absolute top-0 left-0 w-1 h-full bg-red-500 rounded-l-xl pointer-events-none"></div>
       )}
@@ -64,7 +94,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
                 }
               `}
             </style>
-            <button 
+            <button
               onClick={handleDoneClick}
               className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isDone ? 'bg-[#10B981] text-white scale-110 border-none' : 'border border-white/20 hover:border-[#10B981]/50 hover:bg-[#10B981]/10'}`}
               title="Mark as done"
@@ -72,11 +102,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
               {isDone ? (
                 <TickCircle size={14} variant="Bulk" />
               ) : null}
-              
+
               {isDone && (
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                   {['#F43F5E', '#3B82F6', '#F59E0B', '#10B981', '#A855F7', '#EC4899'].map((color, i) => (
-                    <div 
+                    <div
                       key={i}
                       className="absolute w-0.5 h-1.5 rounded-full"
                       style={{
@@ -95,7 +125,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           </h4>
         </div>
 
-        <button 
+        <button
           ref={menuTriggerRef}
           onClick={(e) => { e.stopPropagation(); setIsMenuOpen(true); }}
           className="shrink-0 opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded text-white/40 hover:bg-white/5 hover:text-white/80 transition-colors"
@@ -105,23 +135,114 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
 
         {isMenuOpen && menuTriggerRef.current && createPortal(
           <>
-            <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); }} />
-            <div 
-              className="fixed z-50 bg-[#1C253B] border border-[#2D364D] rounded-xl shadow-2xl py-1 w-48 text-[13px] text-white/80 flex flex-col overflow-hidden"
-              style={{
-                top: menuTriggerRef.current.getBoundingClientRect().bottom + 4,
-                left: menuTriggerRef.current.getBoundingClientRect().right - 192,
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button className="text-left px-4 py-2 hover:bg-white/5 transition-colors" onClick={(e) => { setIsMenuOpen(false); onClick(); }}>Open card</button>
-              <button className="text-left px-4 py-2 hover:bg-white/5 transition-colors" onClick={() => setIsMenuOpen(false)}>Change members</button>
-              <button className="text-left px-4 py-2 hover:bg-white/5 transition-colors" onClick={() => setIsMenuOpen(false)}>Change cover</button>
-              <button className="text-left px-4 py-2 hover:bg-white/5 transition-colors" onClick={() => setIsMenuOpen(false)}>Edit dates</button>
-              <button className="text-left px-4 py-2 hover:bg-white/5 transition-colors" onClick={() => setIsMenuOpen(false)}>Move</button>
-              <div className="h-px bg-white/10 my-1 mx-2" />
-              <button className="text-left px-4 py-2 hover:bg-red-500/10 text-red-400 transition-colors" onClick={handleDelete}>Delete</button>
-            </div>
+            <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); setShowMembersMenu(false); }} />
+              <div
+                className="fixed z-50 bg-[#282E33] border border-white/10 rounded-lg shadow-2xl py-1.5 px-1.5 w-56 text-[13px] text-white/90 flex flex-col gap-0.5 font-medium"
+                style={{
+                  top: menuTriggerRef.current.getBoundingClientRect().bottom + 4,
+                  left: menuTriggerRef.current.getBoundingClientRect().right - 224,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {showMembersMenu ? (
+                  <>
+                    <div className="px-3 py-1.5 text-xs text-white/50 font-semibold mb-1 flex items-center justify-between">
+                      <button onClick={(e) => { e.stopPropagation(); setShowMembersMenu(false); }} className="hover:text-white p-1 -ml-1 rounded"><ArrowRight className="rotate-180" size={14} /></button>
+                      Select Member
+                    </div>
+                    <button
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-md transition-colors w-full text-left"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateMutation.mutate({ assignee: null });
+                        setIsMenuOpen(false);
+                        setShowMembersMenu(false);
+                      }}
+                    >
+                      <div className="w-5 h-5 rounded-full border border-dashed border-white/40 flex items-center justify-center text-white/50">
+                        <span className="text-[10px]">-</span>
+                      </div>
+                      Unassigned
+                    </button>
+                    {users.map((u: any) => (
+                      <button
+                        key={u.id}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-md transition-colors w-full text-left"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateMutation.mutate({ assignee: u.id });
+                          setIsMenuOpen(false);
+                          setShowMembersMenu(false);
+                        }}
+                      >
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                          {u.full_name?.[0] || u.username?.[0] || '?'}
+                        </div>
+                        <span className="truncate">{u.full_name || u.username || u.email}</span>
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <button className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/10 rounded-md transition-colors w-full text-left" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); onClick(); }}>
+                      <TaskSquare size={16} className="text-white/60" /> Open card
+                    </button>
+                    <button className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/10 rounded-md transition-colors w-full text-left" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); }}>
+                      <Tag size={16} className="text-white/60" /> Edit labels
+                    </button>
+                    <button className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/10 rounded-md transition-colors w-full text-left" onClick={(e) => { e.stopPropagation(); setShowMembersMenu(true); }}>
+                      <Profile2User size={16} className="text-white/60" /> Change members
+                    </button>
+
+                    <div>
+                      <button
+                        className="flex items-center justify-between gap-2.5 px-3 py-1.5 hover:bg-white/10 rounded-md transition-colors w-full text-left cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dateInputRef.current?.showPicker?.();
+                        }}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Calendar size={16} className="text-white/60" />
+                          <span>{task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Edit dates'}</span>
+                        </div>
+                        {task.due_date && (
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateMutation.mutate({ due_date: null });
+                              setIsMenuOpen(false);
+                            }}
+                            className="text-white/40 hover:text-red-400 p-0.5 rounded hover:bg-red-500/10 transition-colors"
+                            title="Clear date"
+                          >
+                            ✕
+                          </span>
+                        )}
+                      </button>
+                      <input
+                        ref={dateInputRef}
+                        type="date"
+                        value={task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : ''}
+                        className="sr-only"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            updateMutation.mutate({ due_date: new Date(e.target.value).toISOString() });
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div className="h-px bg-white/10 my-1 mx-2" />
+
+                    <button className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-red-500/10 text-red-400 rounded-md transition-colors w-full text-left" onClick={handleDelete}>
+                      <Trash size={16} className="text-red-400/80" /> Delete
+                    </button>
+                  </>
+                )}
+              </div>
           </>,
           document.body
         )}
@@ -136,21 +257,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
               <span>{new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
           )}
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {task.comments && task.comments.length > 0 && (
-            <div className="flex items-center gap-1">
+          {task.comments_count && task.comments_count > 0 ? (
+            <div className="flex items-center gap-1 hover:text-white/80 transition-colors" title={`${task.comments_count} comment${task.comments_count > 1 ? 's' : ''}`}>
               <Message size={13} />
-              <span>{task.comments.length}</span>
+              <span>{task.comments_count}</span>
             </div>
-          )}
+          ) : null}
           {task.subtasks_count > 0 && (
             <div className="flex items-center gap-1">
               <Paperclip2 size={13} />
               <span>{task.subtasks_count}</span>
             </div>
           )}
+        </div>
+
+        <div className="flex items-center space-x-2">
           {task.assignee_detail && (
             <img
               src={task.assignee_detail.avatar_url || 'https://ui-avatars.com/api/?name=' + task.assignee_detail.first_name + '&background=10B981&color=fff'}

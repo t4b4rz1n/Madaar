@@ -169,6 +169,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     assignee_detail = UserMinimalSerializer(source="assignee", read_only=True)
     reporter_detail = UserMinimalSerializer(source="reporter", read_only=True)
     subtasks_count = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
     progress_percent = serializers.FloatField(read_only=True)
     is_finished = serializers.BooleanField(read_only=True)
     number = serializers.IntegerField(read_only=True)
@@ -202,6 +203,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             "is_blocked",
             "progress_percent",
             "subtasks_count",
+            "comments_count",
             "checklist_stats",
             "is_active_timer_running",
             "created_at",
@@ -216,6 +218,11 @@ class TaskListSerializer(serializers.ModelSerializer):
         if hasattr(obj, "annotated_subtasks_count"):
             return obj.annotated_subtasks_count
         return obj.subtasks.count()
+
+    def get_comments_count(self, obj):
+        if hasattr(obj, "annotated_comments_count"):
+            return obj.annotated_comments_count
+        return obj.comments.count()
 
     def get_checklist_stats(self, obj):
         if hasattr(obj, "annotated_checklist_total"):
