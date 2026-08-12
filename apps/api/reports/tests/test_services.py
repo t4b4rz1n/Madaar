@@ -530,16 +530,12 @@ class TestResourceUtilization:
     @pytest.fixture
     def util_setup(self):
         """Create a minimal org with 1 member for utilization tests."""
-        import datetime
 
-        from django.utils import timezone
 
         from .factories import (
-            AttendanceSettingFactory,
             OrganizationFactory,
             OrganizationMembershipFactory,
             ProjectFactory,
-            TimeLogFactory,
             UserFactory,
         )
 
@@ -601,7 +597,7 @@ class TestResourceUtilization:
 
         from django.utils import timezone
 
-        from attendance.models import AttendanceSetting, TimeOffRequest
+        from attendance.models import TimeOffRequest
         from reports.services import ExecutiveDashboardService
 
         from .factories import AttendanceSettingFactory, TimeOffRequestFactory
@@ -641,11 +637,6 @@ class TestResourceUtilization:
 
         # Clear any cached data
         cache.clear()
-
-        dashboard = ExecutiveDashboardService.get_dashboard(
-            user=util_setup["owner"], org_id=org.id
-        )
-        utilization = dashboard["resource_utilization"]
 
         # The current implementation counts each leave request separately.
         # Total leave deducted = 4h + 4h = 8h (28800 seconds), NOT 6h.
@@ -756,4 +747,137 @@ class TestResourceUtilization:
         assert with_non_approved_expected == baseline_expected, (
             f"Pending/rejected leaves should not affect expected_seconds. "
             f"Baseline={baseline_expected}, WithNonApproved={with_non_approved_expected}"
+        )
+
+
+@pytest.mark.django_db
+class TestProjectSummaryInflation:
+    """Regression test: project_summary must not inflate total_time_seconds.
+
+    Before fix: Sum("time_logs__duration_seconds") inside the same annotate() as
+    Count("members") and Count("tasks") caused cross-product row multiplication.
+    A project with M members and N tasks would inflate Sum by factor of M*N.
+    After fix: Sum is computed in an independent Subquery correlated on project_id.
+    """
+
+    def test_total_time_seconds_not_inflated(self):
+        """2 tasks + 3 time_logs → sum must be exactly 3600+1800+900 = 6300, not inflated."""
+        from reports.services import ManagerDashboardService
+        from .factories import (
+            ProjectMemberFactory,
+            TaskFactory,
+            TaskStatusFactory,
+            TeamFactory,
+            TeamMembershipFactory,
+            TimeLogFactory,
+            UserFactory,
+        )
+
+        # Setup: manager leads a team with one member
+        manager = UserFactory()
+        member = UserFactory()
+        team = TeamFactory()
+        TeamMembershipFactory(user=manager, team=team, role=TeamMembership.Role.LEAD)
+        TeamMembershipFactory(user=member, team=team, role=TeamMembership.Role.MEMBER)
+
+        project = ProjectFactory()
+        board = BoardFactory(project=project)
+        status = TaskStatusFactory(board=board, code="todo", name="To Do")
+
+        # Allocate both manager and member to the project (creates 2 ProjectMember rows)
+        ProjectMemberFactory(project=project, user=manager)
+        ProjectMemberFactory(project=project, user=member)
+
+        # 2 tasks assigned to the member
+        task1 = TaskFactory(project=project, assignee=member, status=status)
+        task2 = TaskFactory(project=project, assignee=member, status=status)
+
+        # 3 time_logs with known durations: 3600 + 1800 + 900 = 6300 seconds
+        expected_total_seconds = 3600 + 1800 + 900
+        TimeLogFactory(task=task1, project=project, user=member, duration_seconds=3600)
+        TimeLogFactory(task=task1, project=project, user=member, duration_seconds=1800)
+        TimeLogFactory(task=task2, project=project, user=member, duration_seconds=900)
+
+        member_ids = [manager.id, member.id]
+        result = ManagerDashboardService._get_project_summary(member_ids)
+
+        # Find our project in the results
+        our_project = next((p for p in result if p["id"] == project.id), None)
+        assert our_project is not None, "Project not found in project_summary results"
+
+        actual_seconds = our_project["total_time_seconds"]
+        assert actual_seconds == expected_total_seconds, (
+            f"total_time_seconds inflated. "
+            f"Expected={expected_total_seconds}, Got={actual_seconds}. "
+            f"If this is a multiple of the expected value, the Subquery fix is broken."
+        )
+
+        # Also verify Count fields are not inflated
+        assert our_project["total_tasks"] == 2, (
+            f"total_tasks inflated: expected=2, got={our_project['total_tasks']}"
+        )
+        assert our_project["active_member_count"] == 2, (
+            f"active_member_count inflated: expected=2, got={our_project['active_member_count']}"
+        )
+
+
+@pytest.mark.django_db
+class TestInProgressMetric:
+    """Regression tests: in_progress count on executive dashboard must exclude 'todo'
+    and include only actively in-flight statuses (doing, review).
+    """
+
+    def setup_org(self):
+        """Helper: create org with owner and one active project."""
+        from .factories import OrganizationMembershipFactory
+        owner = UserFactory()
+        org = OrganizationFactory()
+        OrganizationMembershipFactory(
+            user=owner, organization=org, role=OrganizationMembership.Role.OWNER
+        )
+        project = ProjectFactory(organization=org)
+        board = BoardFactory(project=project)
+        return owner, org, project, board
+
+    def test_todo_tasks_not_counted_as_in_progress(self):
+        """todo tasks must NOT appear in in_progress metric."""
+        owner, org, project, board = self.setup_org()
+        status_todo = TaskStatusFactory(board=board, code="todo", name="To Do")
+        member = UserFactory()
+
+        # 3 todo tasks
+        for _ in range(3):
+            TaskFactory(project=project, assignee=member, status=status_todo)
+
+        cache.clear()
+        dashboard = ExecutiveDashboardService.get_dashboard(user=owner, org_id=org.id)
+        tasks = dashboard["company_overview"]["tasks"]
+
+        assert tasks["total"] == 3
+        assert tasks["in_progress"] == 0, (
+            f"todo tasks incorrectly counted as in_progress: {tasks['in_progress']}"
+        )
+
+    def test_doing_and_review_counted_as_in_progress(self):
+        """doing and review tasks MUST appear in in_progress metric."""
+        owner, org, project, board = self.setup_org()
+        status_todo = TaskStatusFactory(board=board, code="todo", name="To Do")
+        status_doing = TaskStatusFactory(board=board, code="doing", name="Doing")
+        status_review = TaskStatusFactory(board=board, code="review", name="Review")
+        status_done = TaskStatusFactory(board=board, code="done", name="Done")
+        member = UserFactory()
+
+        TaskFactory(project=project, assignee=member, status=status_todo)    # not in_progress
+        TaskFactory(project=project, assignee=member, status=status_doing)   # in_progress
+        TaskFactory(project=project, assignee=member, status=status_review)  # in_progress
+        TaskFactory(project=project, assignee=member, status=status_done)    # done
+
+        cache.clear()
+        dashboard = ExecutiveDashboardService.get_dashboard(user=owner, org_id=org.id)
+        tasks = dashboard["company_overview"]["tasks"]
+
+        assert tasks["total"] == 4
+        assert tasks["done"] == 1
+        assert tasks["in_progress"] == 2, (
+            f"Expected 2 in_progress (doing+review), got {tasks['in_progress']}"
         )

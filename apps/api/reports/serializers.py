@@ -16,10 +16,10 @@ class TaskSummarySerializer(serializers.Serializer):
     title = serializers.CharField()
     priority = serializers.CharField(allow_null=True)
     due_date = serializers.DateTimeField(allow_null=True)
-    status__name = serializers.CharField(allow_null=True)
-    status__code = serializers.CharField(allow_null=True, required=False)
-    project__name = serializers.CharField(allow_null=True)
-    project__id = serializers.UUIDField(allow_null=True)
+    status_name = serializers.CharField(allow_null=True)
+    status_code = serializers.CharField(allow_null=True, required=False)
+    project_name = serializers.CharField(allow_null=True)
+    project_id = serializers.UUIDField(allow_null=True)
 
 
 class TimeSummarySerializer(serializers.Serializer):
@@ -28,10 +28,10 @@ class TimeSummarySerializer(serializers.Serializer):
 
 
 class ActiveProjectSerializer(serializers.Serializer):
-    project__id = serializers.UUIDField()
-    project__name = serializers.CharField()
-    project__status = serializers.CharField()
-    project__deadline = serializers.DateField(allow_null=True)
+    project_id = serializers.UUIDField()
+    project_name = serializers.CharField()
+    project_status = serializers.CharField()
+    project_deadline = serializers.DateField(allow_null=True)
     allocation_percentage = serializers.IntegerField()
 
 
@@ -41,15 +41,15 @@ class AttendanceStatusSerializer(serializers.Serializer):
     check_out = serializers.DateTimeField(allow_null=True)
     is_remote = serializers.BooleanField()
     overtime_minutes = serializers.IntegerField()
-    organization__name = serializers.CharField(allow_null=True)
+    organization_name = serializers.CharField(allow_null=True)
 
 
 class ActiveTimerSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     start_time = serializers.DateTimeField()
-    task__id = serializers.UUIDField(allow_null=True)
-    task__title = serializers.CharField(allow_null=True)
-    project__name = serializers.CharField(allow_null=True)
+    task_id = serializers.UUIDField(allow_null=True)
+    task_title = serializers.CharField(allow_null=True)
+    project_name = serializers.CharField(allow_null=True)
 
 
 class MilestoneSummarySerializer(serializers.Serializer):
@@ -57,8 +57,8 @@ class MilestoneSummarySerializer(serializers.Serializer):
     title = serializers.CharField()
     status = serializers.CharField()
     target_date = serializers.DateField()
-    project__name = serializers.CharField()
-    project__id = serializers.UUIDField()
+    project_name = serializers.CharField()
+    project_id = serializers.UUIDField()
 
 
 class EmployeeDashboardSerializer(serializers.Serializer):
@@ -76,14 +76,14 @@ class EmployeeDashboardSerializer(serializers.Serializer):
 
 
 class TaskStatSerializer(serializers.Serializer):
-    status__code = serializers.CharField(allow_null=True)
-    status__name = serializers.CharField(allow_null=True)
+    status_code = serializers.CharField(allow_null=True)
+    status_name = serializers.CharField(allow_null=True)
     count = serializers.IntegerField()
 
 
 class OverdueMemberSerializer(serializers.Serializer):
-    assignee__username = serializers.CharField()
-    assignee__first_name = serializers.CharField()
+    username = serializers.CharField()
+    first_name = serializers.CharField()
     count = serializers.IntegerField()
 
 
@@ -93,18 +93,18 @@ class OverdueSummarySerializer(serializers.Serializer):
 
 
 class MemberWorkHoursSerializer(serializers.Serializer):
-    user__id = serializers.UUIDField()
-    user__username = serializers.CharField()
-    user__first_name = serializers.CharField()
-    user__last_name = serializers.CharField()
+    user_id = serializers.UUIDField()
+    username = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
     total_seconds = serializers.IntegerField()
     total_logs = serializers.IntegerField()
 
 
 class MemberAttendanceSerializer(serializers.Serializer):
-    user__id = serializers.UUIDField()
-    user__username = serializers.CharField()
-    user__first_name = serializers.CharField()
+    user_id = serializers.UUIDField()
+    username = serializers.CharField()
+    first_name = serializers.CharField()
     check_in = serializers.DateTimeField(allow_null=True)
     check_out = serializers.DateTimeField(allow_null=True)
     is_remote = serializers.BooleanField()

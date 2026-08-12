@@ -45,11 +45,11 @@ class TestEmployeeDashboardAPI:
         assert data["weekly_time"]["total_seconds"] == 3600
 
         assert len(data["active_projects"]) == 1
-        assert data["active_projects"][0]["project__name"] == project_data["project"].name
+        assert data["active_projects"][0]["project_name"] == project_data["project"].name
 
         assert data["attendance_today"] is not None
         assert (
-            data["attendance_today"]["organization__name"]
+            data["attendance_today"]["organization_name"]
             == project_data["project"].organization.name
         )
 
@@ -102,7 +102,7 @@ class TestManagerDashboardAPI:
         data = response.json()["data"]
         assert data["team_member_count"] == 2
 
-        stats = {item["status__code"]: item["count"] for item in data["task_stats"]}
+        stats = {item["status_code"]: item["count"] for item in data["task_stats"]}
         assert stats.get("todo", 0) == 1
         assert stats.get("in_progress", 0) == 1
         assert stats.get("done", 0) == 1

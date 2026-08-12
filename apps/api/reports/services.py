@@ -123,16 +123,21 @@ class EmployeeDashboardService:
             .filter(Q(due_date__date__gte=today_date) | Q(due_date__isnull=True))
             .exclude(status__code__iexact="done")
             .select_related("status", "project")
+            .annotate(
+                status_name=F("status__name"),
+                status_code=F("status__code"),
+                project_name=F("project__name"),
+            )
             .order_by(F("due_date").asc(nulls_last=True), "created_at")
             .values(
                 "id",
                 "title",
                 "priority",
                 "due_date",
-                "status__name",
-                "status__code",
-                "project__name",
-                "project__id",
+                "status_name",
+                "status_code",
+                "project_name",
+                "project_id",
             )[:UPCOMING_TASKS_LIMIT]
         )
 
@@ -148,14 +153,20 @@ class EmployeeDashboardService:
             )
             .exclude(status__code__iexact="done")
             .select_related("status", "project")
+            .annotate(
+                status_name=F("status__name"),
+                status_code=F("status__code"),
+                project_name=F("project__name"),
+            )
             .values(
                 "id",
                 "title",
                 "priority",
                 "due_date",
-                "status__name",
-                "project__name",
-                "project__id",
+                "status_name",
+                "status_code",
+                "project_name",
+                "project_id",
             )
         )
 
@@ -191,11 +202,16 @@ class EmployeeDashboardService:
                 ],
             )
             .select_related("project")
+            .annotate(
+                project_name=F("project__name"),
+                project_status=F("project__status"),
+                project_deadline=F("project__deadline"),
+            )
             .values(
-                "project__id",
-                "project__name",
-                "project__status",
-                "project__deadline",
+                "project_id",
+                "project_name",
+                "project_status",
+                "project_deadline",
                 "allocation_percentage",
             )
         )
@@ -209,13 +225,14 @@ class EmployeeDashboardService:
                 date=today_date,
                 is_deleted=False,
             )
+            .annotate(organization_name=F("organization__name"))
             .values(
                 "id",
                 "check_in",
                 "check_out",
                 "is_remote",
                 "overtime_minutes",
-                "organization__name",
+                "organization_name",
             )
             .first()
         )
@@ -231,12 +248,16 @@ class EmployeeDashboardService:
                 project__is_deleted=False,
             )
             .select_related("task", "project")
+            .annotate(
+                task_title=F("task__title"),
+                project_name=F("project__name"),
+            )
             .values(
                 "id",
                 "start_time",
-                "task__id",
-                "task__title",
-                "project__name",
+                "task_id",
+                "task_title",
+                "project_name",
             )
             .first()
         )
@@ -259,14 +280,18 @@ class EmployeeDashboardService:
                     Milestone.Status.IN_PROGRESS,
                 ],
             )
+            .select_related("project")
+            .annotate(
+                project_name=F("project__name"),
+            )
             .order_by("target_date")
             .values(
                 "id",
                 "title",
                 "status",
                 "target_date",
-                "project__name",
-                "project__id",
+                "project_name",
+                "project_id",
             )[:5]
         )
 
@@ -331,9 +356,13 @@ class ManagerDashboardService:
                 is_deleted=False,
                 project__is_deleted=False,
             )
-            .values("status__code", "status__name")
+            .annotate(
+                status_code=F("status__code"),
+                status_name=F("status__name"),
+            )
+            .values("status_code", "status_name")
             .annotate(count=Count("id"))
-            .order_by("status__code")
+            .order_by("status_code")
         )
 
     @staticmethod
@@ -349,7 +378,11 @@ class ManagerDashboardService:
         return {
             "total_overdue": qs.count(),
             "by_member": list(
-                qs.values("assignee__username", "assignee__first_name")
+                qs.annotate(
+                    username=F("assignee__username"),
+                    first_name=F("assignee__first_name"),
+                )
+                .values("username", "first_name")
                 .annotate(count=Count("id"))
                 .order_by("-count")
             ),
@@ -366,11 +399,16 @@ class ManagerDashboardService:
                 date__lte=week_end.date(),
                 project__is_deleted=False,
             )
+            .annotate(
+                username=F("user__username"),
+                first_name=F("user__first_name"),
+                last_name=F("user__last_name"),
+            )
             .values(
-                "user__id",
-                "user__username",
-                "user__first_name",
-                "user__last_name",
+                "user_id",
+                "username",
+                "first_name",
+                "last_name",
             )
             .annotate(
                 total_seconds=Sum("duration_seconds"),
@@ -387,10 +425,15 @@ class ManagerDashboardService:
                 user_id__in=member_ids,
                 date=today_date,
                 is_deleted=False,
-            ).values(
-                "user__id",
-                "user__username",
-                "user__first_name",
+            )
+            .annotate(
+                username=F("user__username"),
+                first_name=F("user__first_name"),
+            )
+            .values(
+                "user_id",
+                "username",
+                "first_name",
                 "check_in",
                 "check_out",
                 "is_remote",
@@ -409,19 +452,39 @@ class ManagerDashboardService:
             .distinct()
         )
 
+        # Subquery for total logged seconds per project — kept separate from the
+        # Count annotations to prevent cross-product row multiplication that occurs
+        # when Django JOINs multiple reverse relations (members + tasks + time_logs)
+        # in a single annotate call. A Subquery correlated on OuterRef('id') avoids
+        # this by running an independent aggregation per project.
+        time_subquery = Subquery(
+            TimeLog.objects.filter(
+                project_id=OuterRef("id"),
+                is_deleted=False,
+                is_active=False,
+            )
+            .values("project_id")
+            .annotate(total=Sum("duration_seconds"))
+            .values("total")[:1]
+        )
+
         return list(
             Project.objects.filter(
                 id__in=project_ids,
                 is_deleted=False,
             )
             .annotate(
+                # distinct=True prevents row multiplication when aggregating over
+                # multiple FK paths (members + tasks) in one queryset.
                 active_member_count=Count(
                     "members",
                     filter=Q(members__is_deleted=False, members__is_active=True),
+                    distinct=True,
                 ),
                 total_tasks=Count(
                     "tasks",
                     filter=Q(tasks__is_deleted=False),
+                    distinct=True,
                 ),
                 done_tasks=Count(
                     "tasks",
@@ -429,14 +492,9 @@ class ManagerDashboardService:
                         tasks__is_deleted=False,
                         tasks__status__code__iexact="done",
                     ),
+                    distinct=True,
                 ),
-                total_time_seconds=Sum(
-                    "time_logs__duration_seconds",
-                    filter=Q(
-                        time_logs__is_deleted=False,
-                        time_logs__is_active=False,
-                    ),
-                ),
+                total_time_seconds=time_subquery,
             )
             .values(
                 "id",
@@ -589,7 +647,18 @@ class ExecutiveDashboardService:
         ).aggregate(
             total=Count("id"),
             done=Count("id", filter=Q(status__code__iexact="done")),
-            in_progress=Count("id", filter=Q(status__code__in=["doing", "in_progress"])),
+            # "In-progress" means actively being worked on or under review.
+            # TaskStatus has no semantic category field (is_terminal, category, …),
+            # so we must enumerate the known in-flight codes explicitly.
+            # Default board codes are: todo | doing | review | done.
+            # "todo" is NOT in-progress (work hasn't started); only doing + review are.
+            # If a project adds a custom in-flight status, it must be added here too.
+            # This is a known model-level gap; the long-term fix is adding a
+            # TaskStatus.category field (todo / in_progress / done).
+            in_progress=Count(
+                "id",
+                filter=Q(status__code__in=["doing", "review", "in_progress", "in_review"]),
+            ),
         )
 
         return {
@@ -761,14 +830,20 @@ class ExecutiveDashboardService:
         if not org_id:
             from organizations.models import OrganizationMembership
 
-            membership = OrganizationMembership.objects.filter(
-                user=user,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                ],
-                is_deleted=False,
-            ).first()
+            # order_by('created_at') ensures deterministic selection for multi-org users:
+            # the earliest (primary) membership is always chosen, not an arbitrary row.
+            membership = (
+                OrganizationMembership.objects.filter(
+                    user=user,
+                    role__in=[
+                        OrganizationMembership.Role.OWNER,
+                        OrganizationMembership.Role.ADMIN,
+                    ],
+                    is_deleted=False,
+                )
+                .order_by("created_at")
+                .first()
+            )
             if not membership:
                 from django.utils.translation import gettext_lazy as _
                 from rest_framework.exceptions import NotFound
