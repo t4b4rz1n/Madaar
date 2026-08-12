@@ -297,8 +297,8 @@ class TestUpcomingTasks:
             "status_done": status_done,
         }
 
-    def test_window_filters_and_ordering(self, setup):
-        """Tasks at day 0, day 3, and day 10: only 0 and 3 appear, in that order."""
+    def test_no_window_and_ordering(self, setup):
+        """Tasks at day 0, day 3, and day 10: all appear, ordered by nearest deadline."""
         import datetime
 
         from django.utils import timezone
@@ -324,24 +324,22 @@ class TestUpcomingTasks:
             due_date=now + datetime.timedelta(days=3),
             title="Due in 3 days",
         )
-        TaskFactory(
+        task_10d = TaskFactory(
             project=project,
             assignee=user,
             status=status,
             due_date=now + datetime.timedelta(days=10),
-            title="Due in 10 days — must NOT appear",
+            title="Due in 10 days — now included (no window)",
         )
 
         dashboard = EmployeeDashboardService.get_dashboard(user=user)
         upcoming = dashboard["upcoming_tasks"]
 
         returned_ids = [t["id"] for t in upcoming]
-        assert task_today.id in returned_ids
-        assert task_3d.id in returned_ids
-        assert len(upcoming) == 2
-        # Nearest deadline first
+        assert len(upcoming) == 3
         assert returned_ids[0] == task_today.id
         assert returned_ids[1] == task_3d.id
+        assert returned_ids[2] == task_10d.id
 
     def test_limit_caps_results(self, setup):
         """More than UPCOMING_TASKS_LIMIT tasks in window → only closest N returned."""
@@ -368,38 +366,43 @@ class TestUpcomingTasks:
         dashboard = EmployeeDashboardService.get_dashboard(user=user)
         assert len(dashboard["upcoming_tasks"]) == UPCOMING_TASKS_LIMIT
 
-    def test_boundary_day_inclusion(self, setup):
-        """Task on exactly day WINDOW (inclusive) is in; day WINDOW+1 is out."""
+    def test_limit_without_window(self, setup):
+        """6 tasks at days 0, 2, 5, 10, 20, 30: only closest 5 returned, day-30 excluded."""
         import datetime
 
         from django.utils import timezone
 
-        from reports.services import UPCOMING_TASKS_WINDOW_DAYS, EmployeeDashboardService
+        from reports.services import UPCOMING_TASKS_LIMIT, EmployeeDashboardService
 
         user = setup["user"]
         project = setup["project"]
         status = setup["status_todo"]
         now = timezone.now()
 
-        task_boundary = TaskFactory(
-            project=project,
-            assignee=user,
-            status=status,
-            due_date=now + datetime.timedelta(days=UPCOMING_TASKS_WINDOW_DAYS),
-            title="Exactly on boundary",
-        )
-        task_outside = TaskFactory(
-            project=project,
-            assignee=user,
-            status=status,
-            due_date=now + datetime.timedelta(days=UPCOMING_TASKS_WINDOW_DAYS + 1),
-            title="One day past boundary",
-        )
+        offsets = [0, 2, 5, 10, 20, 30]
+        tasks = []
+        for d in offsets:
+            t = TaskFactory(
+                project=project,
+                assignee=user,
+                status=status,
+                due_date=now + datetime.timedelta(days=d),
+                title=f"Task day {d}",
+            )
+            tasks.append(t)
 
         dashboard = EmployeeDashboardService.get_dashboard(user=user)
-        returned_ids = [t["id"] for t in dashboard["upcoming_tasks"]]
-        assert task_boundary.id in returned_ids
-        assert task_outside.id not in returned_ids
+        upcoming = dashboard["upcoming_tasks"]
+
+        assert len(upcoming) == UPCOMING_TASKS_LIMIT
+        returned_ids = [t["id"] for t in upcoming]
+        # The 5 closest (days 0,2,5,10,20) should be in; day 30 should not
+        for t in tasks[:5]:
+            assert t.id in returned_ids
+        assert tasks[5].id not in returned_ids
+        # Ordering: nearest first
+        for i in range(len(returned_ids) - 1):
+            assert upcoming[i]["due_date"] <= upcoming[i + 1]["due_date"]
 
     def test_tiebreak_by_created_at(self, setup):
         """Two tasks with identical due_date are ordered by created_at (older first)."""
@@ -471,4 +474,52 @@ class TestUpcomingTasks:
         returned_ids = [t["id"] for t in dashboard["upcoming_tasks"]]
         assert task_done.id not in returned_ids
         assert task_active.id in returned_ids
+
+    def test_null_due_date_comes_after_dated_tasks(self, setup):
+        """Tasks with due_date appear before tasks without; null-due_date included if room."""
+        import datetime
+
+        from django.utils import timezone
+
+        from reports.services import EmployeeDashboardService
+
+        user = setup["user"]
+        project = setup["project"]
+        status = setup["status_todo"]
+        now = timezone.now()
+
+        task_dated_1 = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=now + datetime.timedelta(days=1),
+            title="Has deadline",
+        )
+        task_dated_2 = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=now + datetime.timedelta(days=5),
+            title="Also has deadline",
+        )
+        task_no_date = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=None,
+            title="No deadline",
+        )
+
+        dashboard = EmployeeDashboardService.get_dashboard(user=user)
+        upcoming = dashboard["upcoming_tasks"]
+        returned_ids = [t["id"] for t in upcoming]
+
+        assert len(upcoming) == 3
+        # Dated tasks come first, null last
+        assert returned_ids[0] == task_dated_1.id
+        assert returned_ids[1] == task_dated_2.id
+        assert returned_ids[2] == task_no_date.id
+        # The null-due_date task has due_date=None in the response
+        assert upcoming[2]["due_date"] is None
+
 

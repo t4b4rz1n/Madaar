@@ -25,6 +25,7 @@ import zoneinfo
 from django.core.cache import cache
 from django.db.models import (
     Count,
+    F,
     OuterRef,
     Q,
     Subquery,
@@ -40,7 +41,6 @@ from tasks.models import Task
 logger = logging.getLogger(__name__)
 
 UPCOMING_TASKS_LIMIT = 5
-UPCOMING_TASKS_WINDOW_DAYS = 7
 
 
 def get_user_today_range(
@@ -114,18 +114,16 @@ class EmployeeDashboardService:
     @staticmethod
     def _get_upcoming_tasks(user, today_start):
         today_date = today_start.date()
-        window_end = today_date + datetime.timedelta(days=UPCOMING_TASKS_WINDOW_DAYS)
         return (
             Task.objects.filter(
                 assignee=user,
                 is_deleted=False,
                 project__is_deleted=False,
-                due_date__date__gte=today_date,
-                due_date__date__lte=window_end,
             )
+            .filter(Q(due_date__date__gte=today_date) | Q(due_date__isnull=True))
             .exclude(status__code__iexact="done")
             .select_related("status", "project")
-            .order_by("due_date", "created_at")
+            .order_by(F("due_date").asc(nulls_last=True), "created_at")
             .values(
                 "id",
                 "title",
