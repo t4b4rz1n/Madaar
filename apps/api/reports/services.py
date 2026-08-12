@@ -552,18 +552,60 @@ class ManagerDashboardService:
 
     @classmethod
     def _resolve_member_ids(cls, user, team_id=None) -> list:
+        """Return the list of user-IDs whose data should appear in the dashboard.
+
+        Resolution rules
+        ~~~~~~~~~~~~~~~~
+        1. **team_id provided** → members of that specific team only.
+        2. **No team_id, user is org admin/owner** → *all* members of every
+           organisation the user administers.  This prevents admins/owners from
+           seeing an empty dashboard when they are not explicitly set as a LEAD
+           on any team.
+        3. **No team_id, user is a team-lead** → members of all teams the user
+           leads (legacy behaviour, unchanged).
+
+        Note: rule 2 takes precedence over rule 3, so an admin who also happens
+        to be a team lead still sees the entire org.
+        """
+        from organizations.models import OrganizationMembership
+
         if team_id:
             return cls._get_team_member_user_ids(team_id)
-        else:
-            managed_teams = cls.get_managed_team_ids(user)
+
+        # Check whether the user has an admin/owner role in any org
+        admin_org_ids = list(
+            OrganizationMembership.objects.filter(
+                user=user,
+                role__in=[
+                    OrganizationMembership.Role.OWNER,
+                    OrganizationMembership.Role.ADMIN,
+                ],
+                is_deleted=False,
+            ).values_list("organization_id", flat=True)
+        )
+
+        if admin_org_ids:
+            # Admin/Owner without explicit team_id → show all org members
             return list(
-                TeamMembership.objects.filter(
-                    team_id__in=managed_teams,
+                OrganizationMembership.objects.filter(
+                    organization_id__in=admin_org_ids,
                     is_deleted=False,
                 )
                 .values_list("user_id", flat=True)
                 .distinct()
             )
+
+        # Regular team-lead (not org admin): show only members of their teams
+        managed_teams = cls.get_managed_team_ids(user)
+        return list(
+            TeamMembership.objects.filter(
+                team_id__in=managed_teams,
+                is_deleted=False,
+            )
+            .values_list("user_id", flat=True)
+            .distinct()
+        )
+
 
     @classmethod
     def get_dashboard(cls, user, team_id=None, tz_name: str = "UTC") -> dict:

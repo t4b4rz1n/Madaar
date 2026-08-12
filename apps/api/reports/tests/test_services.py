@@ -987,3 +987,80 @@ class TestProjectHealthInflation:
             f"(If 6, Cartesian join is still present; add distinct=True to Count.)"
         )
         assert ph["overdue_milestones"] == 0  # milestones have future target_date
+
+
+@pytest.mark.django_db
+class TestManagerDashboardAdminAccess:
+    """Fix #3: admin/owner with no team_id must see all org members, not an empty set.
+
+    Before fix: _resolve_member_ids only looked at teams where the user has
+    LEAD role.  An org admin who is not a team lead would get an empty list,
+    producing a dashboard full of zeros.
+
+    After fix: if the caller has owner/admin role in any org, all members of
+    that org are returned when no team_id is given.
+    """
+
+    def test_admin_without_team_lead_sees_all_org_members(self):
+        """Admin user who leads NO teams should still see all org members."""
+        admin = UserFactory(username="admin_no_lead")
+        emp1 = UserFactory(username="emp_fix3_a")
+        emp2 = UserFactory(username="emp_fix3_b")
+
+        org = OrganizationFactory()
+        # admin is OWNER
+        OrganizationMembershipFactory(
+            user=admin, organization=org, role=OrganizationMembership.Role.OWNER
+        )
+        # two employees
+        OrganizationMembershipFactory(
+            user=emp1, organization=org, role=OrganizationMembership.Role.EMPLOYEE
+        )
+        OrganizationMembershipFactory(
+            user=emp2, organization=org, role=OrganizationMembership.Role.EMPLOYEE
+        )
+
+        # admin leads NO teams
+        assert ManagerDashboardService.get_managed_team_ids(admin) == []
+
+        member_ids = ManagerDashboardService._resolve_member_ids(admin, team_id=None)
+
+        # Should contain all 3 org members (admin + emp1 + emp2)
+        assert len(member_ids) == 3, (
+            f"Expected 3 member IDs (all org members) for admin without team_id, "
+            f"got {len(member_ids)}. (If 0, the admin-fallback fix is missing.)"
+        )
+        assert admin.id in member_ids
+        assert emp1.id in member_ids
+        assert emp2.id in member_ids
+
+    def test_team_lead_without_admin_role_sees_only_their_teams(self):
+        """Non-admin team lead should still only see members of teams they lead (old behavior)."""
+        lead = UserFactory(username="lead_no_admin")
+        emp_in = UserFactory(username="emp_in_team")
+        emp_out = UserFactory(username="emp_out_team")
+
+        org = OrganizationFactory()
+        OrganizationMembershipFactory(
+            user=lead, organization=org, role=OrganizationMembership.Role.TEAM_LEAD
+        )
+        OrganizationMembershipFactory(
+            user=emp_in, organization=org, role=OrganizationMembership.Role.EMPLOYEE
+        )
+        OrganizationMembershipFactory(
+            user=emp_out, organization=org, role=OrganizationMembership.Role.EMPLOYEE
+        )
+
+        # lead leads one team containing emp_in only
+        team = TeamFactory(organization=org)
+        TeamMembershipFactory(user=lead, team=team, role=TeamMembership.Role.LEAD)
+        TeamMembershipFactory(user=emp_in, team=team, role=TeamMembership.Role.MEMBER)
+        # emp_out is NOT in this team
+
+        member_ids = ManagerDashboardService._resolve_member_ids(lead, team_id=None)
+
+        # Should only include the team's members (lead + emp_in), not emp_out
+        assert emp_out.id not in member_ids, (
+            "Non-admin team lead must NOT see org-wide members without team_id."
+        )
+        assert emp_in.id in member_ids

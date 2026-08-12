@@ -77,8 +77,13 @@ class ManagerDashboardView(APIView):
     @extend_schema(
         summary="Manager Team Dashboard",
         description=(
-            "Returns team-level analytics. If team_id is omitted, "
-            "data from all teams the user leads is aggregated."
+            "Returns team-level analytics for the specified team.\n\n"
+            "**Scope rules (no team_id provided):**\n"
+            "- **Owner / Admin**: sees aggregated data for *all* members of every "
+            "organisation they administer. Pass team_id to narrow to a specific team.\n"
+            "- **Team Lead (non-admin)**: sees only the members of teams they explicitly "
+            "lead. Data is empty if they lead no teams.\n\n"
+            "Always pass team_id explicitly when querying a specific team."
         ),
         parameters=[
             OpenApiParameter(
@@ -156,8 +161,17 @@ class ExecutiveDashboardView(APIView):
     @extend_schema(
         summary="Executive Organisation Dashboard",
         description=(
-            "Returns organisation-wide analytics. If org_id is omitted, "
-            "the first organisation the user administers is used."
+            "Returns organisation-wide analytics for owners and admins.\n\n"
+            "**org_id parameter:**\n"
+            "- If provided, returns data for that specific organisation "
+            "(user must be owner or admin of it).\n"
+            "- If omitted, the oldest membership where the user is owner/admin is used "
+            "(deterministic: order by created_at). **For users in multiple organisations, "
+            "always pass org_id explicitly to avoid ambiguity.**\n\n"
+            "**Week definition:** the reporting week starts on **Saturday** "
+            "(Iranian calendar) and ends on Friday.\n\n"
+            "**Stub fields:** `points`, `badges`, and `goals` are reserved for future "
+            "modules (Gamification Phase 2 and OKR Phase 3) and currently return `null`."
         ),
         parameters=[
             OpenApiParameter(
