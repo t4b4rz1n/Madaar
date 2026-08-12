@@ -33,7 +33,7 @@ from django.db.models import (
 )
 from django.utils import timezone
 
-from attendance.models import Attendance, TimeLog
+from attendance.models import Attendance, AttendanceSetting, TimeLog, TimeOffRequest
 from organizations.models import TeamMembership
 from projects.models import Milestone, Project, ProjectMember
 from tasks.models import Task
@@ -626,7 +626,33 @@ class ExecutiveDashboardService:
         end = min(week_end.date(), timezone.now().date())
         business_days = get_business_days(current, end)
 
-        expected_seconds = member_count * business_days * 8 * 3600
+        # Get expected daily hours for the organization
+        setting = AttendanceSetting.objects.filter(organization_id=org_id).first()
+        expected_daily_hours = float(setting.expected_daily_hours) if setting else 8.0
+
+        # Calculate approved leave time in the week range (in seconds)
+        leave_requests = TimeOffRequest.objects.filter(
+            organization_id=org_id,
+            status=TimeOffRequest.Status.APPROVED,
+            request_type__in=[
+                TimeOffRequest.Type.VACATION,
+                TimeOffRequest.Type.SICK,
+                TimeOffRequest.Type.HOURLY,
+            ],
+            is_deleted=False,
+            start_datetime__lt=week_end,
+            end_datetime__gt=week_start,
+        ).values("start_datetime", "end_datetime")
+
+        leave_seconds = 0
+        for req in leave_requests:
+            req_start = max(req["start_datetime"], week_start)
+            req_end = min(req["end_datetime"], week_end)
+            if req_end > req_start:
+                leave_seconds += (req_end - req_start).total_seconds()
+
+        expected_seconds = int((member_count * business_days * expected_daily_hours * 3600) - leave_seconds)
+        expected_seconds = max(expected_seconds, 0)
 
         return {
             "total_work_seconds": total_seconds,
