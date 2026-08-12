@@ -6,7 +6,12 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from attendance.models import Attendance, TimeLog
-from organizations.models import Organization, OrganizationMembership, Team, TeamMembership
+from organizations.models import (
+    Organization,
+    OrganizationMembership,
+    Team,
+    TeamMembership,
+)
 from projects.models import Milestone, Project, ProjectMember
 from tasks.models import Board, Task, TaskStatus
 
@@ -101,12 +106,20 @@ class TaskStatusFactory(factory.django.DjangoModelFactory):
 class TaskFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Task
+        skip_postgeneration_save = True
 
     title = factory.Sequence(lambda n: f"Task {n}")
     project = factory.SubFactory(ProjectFactory)
     assignee = factory.SubFactory(UserFactory)
     status = factory.SubFactory(TaskStatusFactory)
     due_date = factory.LazyFunction(timezone.now)
+
+    @factory.post_generation
+    def set_is_finished(obj, create, extracted, **kwargs):
+        if obj.status and obj.status.code == "done":
+            obj.is_finished = True
+            if create:
+                obj.save(update_fields=["is_finished"])
 
 
 class TimeLogFactory(factory.django.DjangoModelFactory):
@@ -138,7 +151,9 @@ class MilestoneFactory(factory.django.DjangoModelFactory):
 
     title = factory.Sequence(lambda n: f"Milestone {n}")
     project = factory.SubFactory(ProjectFactory)
-    target_date = factory.LazyFunction(lambda: timezone.now().date() + datetime.timedelta(days=7))
+    target_date = factory.LazyFunction(
+        lambda: timezone.now().date() + datetime.timedelta(days=7)
+    )
     status = Milestone.Status.PENDING
 
 
@@ -158,5 +173,7 @@ class TimeOffRequestFactory(factory.django.DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
     request_type = "vacation"
     start_datetime = factory.LazyFunction(timezone.now)
-    end_datetime = factory.LazyFunction(lambda: timezone.now() + datetime.timedelta(hours=8))
+    end_datetime = factory.LazyFunction(
+        lambda: timezone.now() + datetime.timedelta(hours=8)
+    )
     status = "pending"

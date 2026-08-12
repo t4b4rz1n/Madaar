@@ -186,7 +186,9 @@ class ProjectHealthSerializer(serializers.Serializer):
 
 
 class FinancialSummarySerializer(serializers.Serializer):
-    total_budget = serializers.DecimalField(max_digits=14, decimal_places=2, allow_null=True)
+    total_budget = serializers.DecimalField(
+        max_digits=14, decimal_places=2, allow_null=True
+    )
     project_count = serializers.IntegerField()
     total_time_seconds = serializers.IntegerField(allow_null=True)
 

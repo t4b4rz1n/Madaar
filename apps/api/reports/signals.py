@@ -49,9 +49,9 @@ def _invalidate_manager(user_id=None, team_id=None):
 
     if user_id:
         # User might be an employee in several teams. Bump those teams' versions.
-        teams = TeamMembership.objects.filter(user_id=user_id, is_deleted=False).values_list(
-            "team_id", flat=True
-        )
+        teams = TeamMembership.objects.filter(
+            user_id=user_id, is_deleted=False
+        ).values_list("team_id", flat=True)
         for t_id in teams:
             _bump_version(f"dashboard_version:mgr:team_{t_id}")
             # Bump aggregate managers for these teams
@@ -121,7 +121,9 @@ def invalidate_on_project_change(sender, instance, **kwargs):
 
     # We should also invalidate employees and managers related to this project.
     # To be precise, any user allocated to this project:
-    members = ProjectMember.objects.filter(project_id=instance.id).values_list("user_id", flat=True)
+    members = ProjectMember.objects.filter(project_id=instance.id).values_list(
+        "user_id", flat=True
+    )
     for u_id in members:
         _invalidate_employee(u_id)
         _invalidate_manager(user_id=u_id)

@@ -50,21 +50,35 @@ def org_data(users):
     team_b = TeamFactory(organization=org)
 
     OrganizationMembershipFactory(
-        user=users["org_owner"], organization=org, role=OrganizationMembership.Role.OWNER
+        user=users["org_owner"],
+        organization=org,
+        role=OrganizationMembership.Role.OWNER,
     )
     OrganizationMembershipFactory(
-        user=users["team_lead"], organization=org, role=OrganizationMembership.Role.TEAM_LEAD
+        user=users["team_lead"],
+        organization=org,
+        role=OrganizationMembership.Role.TEAM_LEAD,
     )
     OrganizationMembershipFactory(
-        user=users["employee1"], organization=org, role=OrganizationMembership.Role.EMPLOYEE
+        user=users["employee1"],
+        organization=org,
+        role=OrganizationMembership.Role.EMPLOYEE,
     )
     OrganizationMembershipFactory(
-        user=users["employee2"], organization=org, role=OrganizationMembership.Role.EMPLOYEE
+        user=users["employee2"],
+        organization=org,
+        role=OrganizationMembership.Role.EMPLOYEE,
     )
 
-    TeamMembershipFactory(user=users["team_lead"], team=team_a, role=TeamMembership.Role.LEAD)
-    TeamMembershipFactory(user=users["employee1"], team=team_a, role=TeamMembership.Role.MEMBER)
-    TeamMembershipFactory(user=users["employee2"], team=team_b, role=TeamMembership.Role.MEMBER)
+    TeamMembershipFactory(
+        user=users["team_lead"], team=team_a, role=TeamMembership.Role.LEAD
+    )
+    TeamMembershipFactory(
+        user=users["employee1"], team=team_a, role=TeamMembership.Role.MEMBER
+    )
+    TeamMembershipFactory(
+        user=users["employee2"], team=team_b, role=TeamMembership.Role.MEMBER
+    )
 
     return {
         "org": org,
@@ -80,20 +94,32 @@ def project_data(users, org_data):
 
     board = BoardFactory(project=project, created_by=users["org_owner"])
     status_todo = TaskStatusFactory(board=board, name="To Do", code="todo", order=1)
-    status_doing = TaskStatusFactory(board=board, name="In Progress", code="doing", order=2)
+    status_doing = TaskStatusFactory(
+        board=board, name="In Progress", code="doing", order=2
+    )
     status_done = TaskStatusFactory(board=board, name="Done", code="done", order=3)
 
     today = timezone.now()
     yesterday = today - datetime.timedelta(days=1)
+    tomorrow = today + datetime.timedelta(days=1)
 
     task1 = TaskFactory(
-        project=project, assignee=users["employee1"], status=status_doing, due_date=today
+        project=project,
+        assignee=users["employee1"],
+        status=status_doing,
+        due_date=tomorrow,
     )
     task2 = TaskFactory(
-        project=project, assignee=users["employee1"], status=status_todo, due_date=yesterday
+        project=project,
+        assignee=users["employee1"],
+        status=status_todo,
+        due_date=yesterday,
     )
     task3 = TaskFactory(
-        project=project, assignee=users["employee1"], status=status_done, due_date=yesterday
+        project=project,
+        assignee=users["employee1"],
+        status=status_done,
+        due_date=yesterday,
     )
 
     TimeLogFactory(
@@ -105,7 +131,10 @@ def project_data(users, org_data):
         duration_seconds=3600,
     )
     AttendanceFactory(
-        user=users["employee1"], organization=org_data["org"], date=today.date(), check_in=today
+        user=users["employee1"],
+        organization=org_data["org"],
+        date=today.date(),
+        check_in=today,
     )
 
     return {

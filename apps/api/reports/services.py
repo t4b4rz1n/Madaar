@@ -57,10 +57,15 @@ def get_user_today_range(
         user_tz = zoneinfo.ZoneInfo(tz_name)
     except (zoneinfo.ZoneInfoNotFoundError, TypeError):
         from rest_framework.exceptions import ParseError
-        raise ParseError(detail=f"Invalid timezone: '{tz_name}'. Use IANA timezone names, e.g. 'Asia/Tehran'.")
+
+        raise ParseError(
+            detail=f"Invalid timezone: '{tz_name}'. Use IANA timezone names, e.g. 'Asia/Tehran'."
+        ) from None
 
     now_in_user_tz = timezone.now().astimezone(user_tz)
-    today_start_local = now_in_user_tz.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start_local = now_in_user_tz.replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     today_end_local = today_start_local + datetime.timedelta(days=1)
 
     # Convert back to UTC for DB queries
@@ -77,7 +82,10 @@ def get_user_week_range(
         user_tz = zoneinfo.ZoneInfo(tz_name)
     except (zoneinfo.ZoneInfoNotFoundError, TypeError):
         from rest_framework.exceptions import ParseError
-        raise ParseError(detail=f"Invalid timezone: '{tz_name}'. Use IANA timezone names, e.g. 'Asia/Tehran'.")
+
+        raise ParseError(
+            detail=f"Invalid timezone: '{tz_name}'. Use IANA timezone names, e.g. 'Asia/Tehran'."
+        ) from None
 
     now_in_user_tz = timezone.now().astimezone(user_tz)
     today_local = now_in_user_tz.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -155,16 +163,20 @@ class EmployeeDashboardService:
     """Personal dashboard data for the authenticated employee."""
 
     @staticmethod
-    def _get_upcoming_tasks(user, today_start):
-        today_date = today_start.date()
+    def _get_upcoming_tasks(user, now):
+        """Tasks not yet past their due_date, or with no due_date.
+
+        Boundary: due_date >= now (exact UTC datetime), so a task due
+        10 minutes ago is NOT shown here — it moves to overdue instead.
+        """
         return (
             Task.objects.filter(
                 assignee=user,
                 is_deleted=False,
                 project__is_deleted=False,
+                is_finished=False,
             )
-            .filter(Q(due_date__date__gte=today_date) | Q(due_date__isnull=True))
-            .exclude(status__code__iexact="done")
+            .filter(Q(due_date__gte=now) | Q(due_date__isnull=True))
             .select_related("status", "project")
             .annotate(
                 status_name=F("status__name"),
@@ -185,16 +197,20 @@ class EmployeeDashboardService:
         )
 
     @staticmethod
-    def _get_overdue_tasks(user, today_start):
-        today_date = today_start.date()
+    def _get_overdue_tasks(user, now):
+        """Tasks whose due_date is strictly in the past (due_date < now).
+
+        Even one minute past the deadline counts as overdue.
+        Completed tasks (status code 'done') are excluded regardless.
+        """
         return (
             Task.objects.filter(
                 assignee=user,
                 is_deleted=False,
-                due_date__date__lt=today_date,
+                due_date__lt=now,
                 project__is_deleted=False,
+                is_finished=False,
             )
-            .exclude(status__code__iexact="done")
             .select_related("status", "project")
             .annotate(
                 status_name=F("status__name"),
@@ -347,12 +363,13 @@ class EmployeeDashboardService:
         if cached_data is not None:
             return cached_data
 
+        now = timezone.now()  # exact UTC moment — used as overdue boundary
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
 
         result = {
-            "upcoming_tasks": list(cls._get_upcoming_tasks(user, today_start)),
-            "overdue_tasks": list(cls._get_overdue_tasks(user, today_start)),
+            "upcoming_tasks": list(cls._get_upcoming_tasks(user, now)),
+            "overdue_tasks": list(cls._get_overdue_tasks(user, now)),
             "weekly_time": cls._get_weekly_time_summary(user, week_start, week_end),
             "active_projects": list(cls._get_active_projects(user)),
             "attendance_today": cls._get_attendance_status(user, today_start),
@@ -454,14 +471,14 @@ class ManagerDashboardService:
         )
 
     @staticmethod
-    def _get_overdue_tasks(member_ids, today_start):
-        today_date = today_start.date()
+    def _get_overdue_tasks(member_ids, now):
         qs = Task.objects.filter(
             assignee_id__in=member_ids,
             is_deleted=False,
-            due_date__date__lt=today_date,
+            due_date__lt=now,
             project__is_deleted=False,
-        ).exclude(status__code__iexact="done")
+            is_finished=False,
+        )
 
         return {
             "total_overdue": qs.count(),
@@ -654,7 +671,6 @@ class ManagerDashboardService:
             .distinct()
         )
 
-
     @classmethod
     def get_dashboard(cls, user, team_id=None, tz_name: str = "UTC") -> dict:
         """Compose all manager dashboard sections."""
@@ -666,13 +682,14 @@ class ManagerDashboardService:
 
         member_ids = cls._resolve_member_ids(user, team_id)
 
+        now = timezone.now()
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
 
         result = {
             "team_member_count": len(member_ids),
             "task_stats": cls._get_task_stats(member_ids),
-            "overdue_summary": cls._get_overdue_tasks(member_ids, today_start),
+            "overdue_summary": cls._get_overdue_tasks(member_ids, now),
             "work_hours": cls._get_work_hours(member_ids, week_start, week_end),
             "members_attendance": cls._get_members_attendance(member_ids, today_start),
             "project_summary": cls._get_project_summary(member_ids),
@@ -687,9 +704,9 @@ class ManagerDashboardService:
         """Detailed per-member view: tasks, hours, attendance."""
         member_ids = cls._resolve_member_ids(user, team_id)
 
+        now = timezone.now()
         today_start, _ = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
-        today_date = today_start.date()
 
         from accounts.models import User
 
@@ -706,7 +723,7 @@ class ManagerDashboardService:
                     filter=Q(
                         tasks__is_deleted=False,
                         tasks__project__is_deleted=False,
-                        tasks__status__code__iexact="done",
+                        tasks__is_finished=True,
                     ),
                     distinct=True,
                 ),
@@ -715,9 +732,9 @@ class ManagerDashboardService:
                     filter=Q(
                         tasks__is_deleted=False,
                         tasks__project__is_deleted=False,
-                        tasks__due_date__date__lt=today_date,
-                    )
-                    & ~Q(tasks__status__code__iexact="done"),
+                        tasks__due_date__lt=now,
+                        tasks__is_finished=False,
+                    ),
                     distinct=True,
                 ),
                 week_seconds=Subquery(
@@ -761,7 +778,9 @@ class ExecutiveDashboardService:
             organization_id=org_id, is_deleted=False
         ).count()
 
-        project_stats = Project.objects.filter(organization_id=org_id, is_deleted=False).aggregate(
+        project_stats = Project.objects.filter(
+            organization_id=org_id, is_deleted=False
+        ).aggregate(
             total=Count("id"),
             active=Count("id", filter=Q(status=Project.Status.ACTIVE)),
             completed=Count("id", filter=Q(status=Project.Status.COMPLETED)),
@@ -785,7 +804,9 @@ class ExecutiveDashboardService:
             # TaskStatus.category field (todo / in_progress / done).
             in_progress=Count(
                 "id",
-                filter=Q(status__code__in=["doing", "review", "in_progress", "in_review"]),
+                filter=Q(
+                    status__code__in=["doing", "review", "in_progress", "in_review"]
+                ),
             ),
         )
 
@@ -845,9 +866,9 @@ class ExecutiveDashboardService:
         # overlapping intervals per user before summing.  Merging must happen
         # per-user: two different employees on leave at the same time each
         # deduct their own capacity — a global merge would under-count leave.
-        clipped_by_user: dict[int, list[tuple[datetime.datetime, datetime.datetime]]] = (
-            defaultdict(list)
-        )
+        clipped_by_user: dict[
+            int, list[tuple[datetime.datetime, datetime.datetime]]
+        ] = defaultdict(list)
         for req in leave_requests:
             req_start = max(req["start_datetime"], week_start)
             req_end = min(req["end_datetime"], week_end)
@@ -861,14 +882,18 @@ class ExecutiveDashboardService:
                 (end - start).total_seconds() for start, end in merged_leaves
             )
 
-        expected_seconds = int((member_count * business_days * expected_daily_hours * 3600) - leave_seconds)
+        expected_seconds = int(
+            (member_count * business_days * expected_daily_hours * 3600) - leave_seconds
+        )
         expected_seconds = max(expected_seconds, 0)
 
         return {
             "total_work_seconds": total_seconds,
             "expected_seconds": expected_seconds,
             "utilization_rate": (
-                round(total_seconds / expected_seconds * 100, 1) if expected_seconds > 0 else 0.0
+                round(total_seconds / expected_seconds * 100, 1)
+                if expected_seconds > 0
+                else 0.0
             ),
             "active_workers": active_workers,
             "total_members": member_count,
@@ -1015,7 +1040,9 @@ class ExecutiveDashboardService:
 
         result = {
             "company_overview": cls._get_company_overview(org_id),
-            "resource_utilization": cls._get_resource_utilization(org_id, week_start, week_end),
+            "resource_utilization": cls._get_resource_utilization(
+                org_id, week_start, week_end
+            ),
             "project_health": cls._get_project_health(org_id, today_start),
             "financial_summary": cls._get_financial_summary(org_id),
         }

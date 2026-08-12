@@ -23,17 +23,16 @@ Design notes
 * Staff / superuser always has full access.
 """
 
-from django.utils.translation import gettext_lazy as _
-from rest_framework import permissions
-
-from organizations.models import OrganizationMembership, TeamMembership
-
 # ---------------------------------------------------------------------------
 # Helpers (private)
 # ---------------------------------------------------------------------------
-
 import uuid
+
+from django.utils.translation import gettext_lazy as _
+from rest_framework import permissions
 from rest_framework.exceptions import ParseError
+
+from organizations.models import OrganizationMembership, TeamMembership
 
 
 def _validate_uuid_param(param_value, param_name):
@@ -42,8 +41,7 @@ def _validate_uuid_param(param_value, param_name):
         try:
             uuid.UUID(str(param_value))
         except ValueError:
-            raise ParseError(detail=f"{param_name} must be a valid UUID")
-
+            raise ParseError(detail=f"{param_name} must be a valid UUID") from None
 
 
 def _get_user_org_roles(user):
@@ -147,7 +145,9 @@ class IsManagerOrAbove(permissions.BasePermission):
     leads at least one team (the view will auto-select their teams).
     """
 
-    message = _("You must be a team lead or organisation admin to access this dashboard.")
+    message = _(
+        "You must be a team lead or organisation admin to access this dashboard."
+    )
 
     def has_permission(self, request, view):
         if request.method not in permissions.SAFE_METHODS:
@@ -213,7 +213,9 @@ class IsExecutive(permissions.BasePermission):
     Access is validated against the ``org_id`` query-parameter.
     """
 
-    message = _("Only organisation owners and admins can access the executive dashboard.")
+    message = _(
+        "Only organisation owners and admins can access the executive dashboard."
+    )
 
     def has_permission(self, request, view):
         if request.method not in permissions.SAFE_METHODS:
