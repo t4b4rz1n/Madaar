@@ -21,6 +21,7 @@ from __future__ import annotations
 import datetime
 import logging
 import zoneinfo
+from collections import defaultdict
 
 from django.core.cache import cache
 from django.db.models import (
@@ -795,22 +796,27 @@ class ExecutiveDashboardService:
             is_deleted=False,
             start_datetime__lt=week_end,
             end_datetime__gt=week_start,
-        ).values("start_datetime", "end_datetime")
+        ).values("user_id", "start_datetime", "end_datetime")
 
-        # Clip each leave to the week window, then merge overlapping intervals
-        # before summing so that two leaves covering the same hours are only
-        # deducted once (merge-intervals pattern: O(n log n)).
-        clipped: list[tuple[datetime.datetime, datetime.datetime]] = []
+        # Clip each leave to the week window, group by user, then merge
+        # overlapping intervals per user before summing.  Merging must happen
+        # per-user: two different employees on leave at the same time each
+        # deduct their own capacity — a global merge would under-count leave.
+        clipped_by_user: dict[int, list[tuple[datetime.datetime, datetime.datetime]]] = (
+            defaultdict(list)
+        )
         for req in leave_requests:
             req_start = max(req["start_datetime"], week_start)
             req_end = min(req["end_datetime"], week_end)
             if req_end > req_start:
-                clipped.append((req_start, req_end))
+                clipped_by_user[req["user_id"]].append((req_start, req_end))
 
-        merged_leaves = _merge_intervals(clipped)
-        leave_seconds = sum(
-            (end - start).total_seconds() for start, end in merged_leaves
-        )
+        leave_seconds = 0.0
+        for user_intervals in clipped_by_user.values():
+            merged_leaves = _merge_intervals(user_intervals)
+            leave_seconds += sum(
+                (end - start).total_seconds() for start, end in merged_leaves
+            )
 
         expected_seconds = int((member_count * business_days * expected_daily_hours * 3600) - leave_seconds)
         expected_seconds = max(expected_seconds, 0)

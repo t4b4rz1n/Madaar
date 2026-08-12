@@ -739,6 +739,157 @@ class TestResourceUtilization:
             f"WithLeaves={with_leaves_expected}."
         )
 
+    def test_utilization_overlapping_leaves_different_users_each_fully_deducted(
+        self, util_setup
+    ):
+        """
+        Two different employees on leave at the same time must each deduct their
+        own hours — a global merge would incorrectly treat them as one interval.
+
+        Scenario:
+          emp A: 08:00 – 12:00 (4 h)
+          emp B: 08:00 – 12:00 (4 h)  — same window, different user
+          expected deduction: 8 h (not 4 h)
+        """
+        import datetime
+
+        from django.utils import timezone
+
+        from attendance.models import TimeOffRequest
+        from reports.services import ExecutiveDashboardService
+
+        from .factories import (
+            AttendanceSettingFactory,
+            OrganizationMembershipFactory,
+            TimeOffRequestFactory,
+            UserFactory,
+        )
+
+        org = util_setup["org"]
+        emp_a = util_setup["emp"]
+        emp_b = UserFactory(username="util_emp_b")
+        OrganizationMembershipFactory(
+            user=emp_b,
+            organization=org,
+            role=OrganizationMembership.Role.EMPLOYEE,
+        )
+
+        AttendanceSettingFactory(organization=org, expected_daily_hours=8)
+
+        now = timezone.now()
+        leave_start = now.replace(hour=8, minute=0, second=0, microsecond=0)
+        leave_end = leave_start + datetime.timedelta(hours=4)  # 08:00 – 12:00
+
+        cache.clear()
+        TimeOffRequest.objects.filter(organization=org).delete()
+        baseline = ExecutiveDashboardService.get_dashboard(
+            user=util_setup["owner"], org_id=org.id
+        )
+        baseline_expected = baseline["resource_utilization"]["expected_seconds"]
+
+        TimeOffRequestFactory(
+            user=emp_a,
+            organization=org,
+            request_type=TimeOffRequest.Type.VACATION,
+            start_datetime=leave_start,
+            end_datetime=leave_end,
+            status=TimeOffRequest.Status.APPROVED,
+        )
+        TimeOffRequestFactory(
+            user=emp_b,
+            organization=org,
+            request_type=TimeOffRequest.Type.VACATION,
+            start_datetime=leave_start,
+            end_datetime=leave_end,
+            status=TimeOffRequest.Status.APPROVED,
+        )
+        cache.clear()
+
+        with_leaves = ExecutiveDashboardService.get_dashboard(
+            user=util_setup["owner"], org_id=org.id
+        )
+        with_leaves_expected = with_leaves["resource_utilization"]["expected_seconds"]
+
+        deducted = baseline_expected - with_leaves_expected
+        expected_deduction = 8 * 3600  # 4 h per user, not merged across users
+        assert deducted == expected_deduction, (
+            f"Expected {expected_deduction}s deducted for two users on parallel leave, "
+            f"but got {deducted}s. Baseline={baseline_expected}, "
+            f"WithLeaves={with_leaves_expected}. "
+            f"(If this is 14400, leave intervals were merged across users.)"
+        )
+
+    def test_utilization_same_user_overlap_still_merges_with_per_user_grouping(
+        self, util_setup
+    ):
+        """
+        Regression guard: per-user grouping must not break same-user interval merge.
+
+        Scenario:
+          leave A: 09:00 – 11:00 (2 h)
+          leave B: 10:00 – 13:00 (3 h)
+          overlap: 10:00 – 11:00 (1 h)
+          expected deduction: 4 h union (09:00 – 13:00), not 5 h sum
+        """
+        import datetime
+
+        from django.utils import timezone
+
+        from attendance.models import TimeOffRequest
+        from reports.services import ExecutiveDashboardService
+
+        from .factories import AttendanceSettingFactory, TimeOffRequestFactory
+
+        org = util_setup["org"]
+        emp = util_setup["emp"]
+
+        AttendanceSettingFactory(organization=org, expected_daily_hours=8)
+
+        now = timezone.now()
+        leave_start_a = now.replace(hour=9, minute=0, second=0, microsecond=0)
+        leave_end_a = leave_start_a + datetime.timedelta(hours=2)   # 09:00 – 11:00
+        leave_start_b = leave_start_a + datetime.timedelta(hours=1)  # 10:00
+        leave_end_b = leave_start_b + datetime.timedelta(hours=3)    # 10:00 – 13:00
+
+        cache.clear()
+        TimeOffRequest.objects.filter(organization=org).delete()
+        baseline = ExecutiveDashboardService.get_dashboard(
+            user=util_setup["owner"], org_id=org.id
+        )
+        baseline_expected = baseline["resource_utilization"]["expected_seconds"]
+
+        TimeOffRequestFactory(
+            user=emp,
+            organization=org,
+            request_type=TimeOffRequest.Type.VACATION,
+            start_datetime=leave_start_a,
+            end_datetime=leave_end_a,
+            status=TimeOffRequest.Status.APPROVED,
+        )
+        TimeOffRequestFactory(
+            user=emp,
+            organization=org,
+            request_type=TimeOffRequest.Type.SICK,
+            start_datetime=leave_start_b,
+            end_datetime=leave_end_b,
+            status=TimeOffRequest.Status.APPROVED,
+        )
+        cache.clear()
+
+        with_leaves = ExecutiveDashboardService.get_dashboard(
+            user=util_setup["owner"], org_id=org.id
+        )
+        with_leaves_expected = with_leaves["resource_utilization"]["expected_seconds"]
+
+        deducted = baseline_expected - with_leaves_expected
+        expected_deduction = 4 * 3600  # union 09:00-13:00 = 4 h, not 5 h
+        assert deducted == expected_deduction, (
+            f"Expected {expected_deduction}s deducted (merged same-user intervals), "
+            f"but got {deducted}s. Baseline={baseline_expected}, "
+            f"WithLeaves={with_leaves_expected}. "
+            f"(If this is 18000, per-user merge is broken.)"
+        )
+
     def test_utilization_ignores_pending_and_rejected_leaves(self, util_setup):
         """
         Only 'approved' leaves should reduce expected_seconds.
