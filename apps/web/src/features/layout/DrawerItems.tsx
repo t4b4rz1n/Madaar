@@ -8,6 +8,7 @@ import {
   ShieldSecurity,
   Flash,
   People as TeamsIcon,
+  TaskSquare,
 } from "iconsax-reactjs";
 
 export type DrawerItem = {
@@ -25,6 +26,11 @@ export const drawerItems: DrawerItem[] = [
     title: "Dashboard",
     link: "dashboard",
     icon: <Category variant="Outline" />,
+  },
+  {
+    title: "Tasks",
+    link: "tasks",
+    icon: <TaskSquare variant="Outline" />,
   },
   {
     title: "Automations",

@@ -83,10 +83,10 @@ class BoardSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_by", "order", "created_at")
 
     def validate_background_color(self, value):
-        """Validate hex color format (e.g. #6366f1 or #fff)."""
-        if value and not re.match(r"^#(?:[0-9a-fA-F]{3}){1,2}$", value):
+        """Validate hex color format or linear-gradient string."""
+        if value and not re.match(r"^(#(?:[0-9a-fA-F]{3}){1,2}|linear-gradient\(.+\))$", value):
             raise serializers.ValidationError(
-                _("Invalid background_color format. Use hex format like #6366f1.")
+                _("Invalid background_color format. Use hex format or linear-gradient.")
             )
         return value
 
@@ -99,9 +99,7 @@ class TaskChecklistItemSerializer(serializers.ModelSerializer):
 
     def validate_description(self, value):
         if not value or not value.strip():
-            raise serializers.ValidationError(
-                _("Checklist item description cannot be empty.")
-            )
+            raise serializers.ValidationError(_("Checklist item description cannot be empty."))
         return value.strip()
 
 
@@ -167,9 +165,7 @@ class TaskActivityLogSerializer(serializers.ModelSerializer):
 
 
 class TaskListSerializer(serializers.ModelSerializer):
-    status_detail = TaskStatusSerializer(
-        source="status", read_only=True, allow_null=True
-    )
+    status_detail = TaskStatusSerializer(source="status", read_only=True, allow_null=True)
     assignee_detail = UserMinimalSerializer(source="assignee", read_only=True)
     reporter_detail = UserMinimalSerializer(source="reporter", read_only=True)
     subtasks_count = serializers.SerializerMethodField()
@@ -276,8 +272,6 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "is_finished")
 
-
-
     def validate_estimated_hours(self, value):
         if value is not None and value < 0:
             raise serializers.ValidationError(_("Estimated hours cannot be negative."))
@@ -290,22 +284,24 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         parent_task = attrs.get("parent_task")
-        project = attrs.get("project") or (
-            self.instance.project if self.instance else None
-        )
+        project = attrs.get("project") or (self.instance.project if self.instance else None)
         task_status = attrs.get("status")
-        assignee = attrs.get('assignee', getattr(self.instance, 'assignee', None))
+        assignee = attrs.get("assignee", getattr(self.instance, "assignee", None))
 
         if project and assignee:
             from projects.models import ProjectMember
+
             is_member = ProjectMember.objects.filter(
                 project=project, user=assignee, is_active=True
             ).exists()
             if not is_member and project.owner != assignee:
                 raise serializers.ValidationError(
-                    {"assignee": _("The assignee must be an active member or owner of the project.")}
+                    {
+                        "assignee": _(
+                            "The assignee must be an active member or owner of the project."
+                        )
+                    }
                 )
-
 
         # Prevent circular parent assignment
         if self.instance and parent_task and parent_task.id == self.instance.id:
@@ -380,9 +376,7 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.Serializer):
     id = serializers.UUIDField(help_text=_("UUID of the object to reorder"))
-    order = serializers.IntegerField(
-        min_value=1, help_text=_("New 1-based order position")
-    )
+    order = serializers.IntegerField(min_value=1, help_text=_("New 1-based order position"))
 
 
 class BoardReorderSerializer(serializers.Serializer):
