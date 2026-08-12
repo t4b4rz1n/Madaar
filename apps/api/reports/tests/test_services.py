@@ -931,3 +931,59 @@ class TestInProgressMetric:
         assert tasks["in_progress"] == 2, (
             f"Expected 2 in_progress (doing+review), got {tasks['in_progress']}"
         )
+
+
+@pytest.mark.django_db
+class TestProjectHealthInflation:
+    """Regression test: _get_project_health must not inflate task/milestone counts.
+
+    Before fix: Count("tasks") and Count("milestones") in a single annotate()
+    without distinct=True causes a Cartesian join.  A project with T tasks and
+    M milestones produces T*M rows, making each count equal T*M instead of T or M.
+
+    After fix: distinct=True on every Count prevents this.
+    """
+
+    def test_task_and_milestone_counts_not_inflated(self):
+        """3 tasks + 2 milestones → counts must be exactly 3 and 2, never 6."""
+        from reports.services import ExecutiveDashboardService
+        from .factories import (
+            MilestoneFactory,
+            OrganizationMembershipFactory,
+            OrganizationFactory,
+            ProjectFactory,
+            BoardFactory,
+            TaskStatusFactory,
+            TaskFactory,
+            UserFactory,
+        )
+
+        owner = UserFactory()
+        org = OrganizationFactory()
+        OrganizationMembershipFactory(
+            user=owner, organization=org, role=OrganizationMembership.Role.OWNER
+        )
+        project = ProjectFactory(organization=org, status="active")
+        board = BoardFactory(project=project)
+        status_todo = TaskStatusFactory(board=board, code="todo", name="To Do")
+
+        # Create 3 tasks
+        for _ in range(3):
+            TaskFactory(project=project, status=status_todo)
+
+        # Create 2 milestones
+        for _ in range(2):
+            MilestoneFactory(project=project)
+
+        cache.clear()
+        dashboard = ExecutiveDashboardService.get_dashboard(user=owner, org_id=org.id)
+        health_list = dashboard["project_health"]
+
+        assert len(health_list) == 1, "Expected exactly one active project in health list"
+        ph = health_list[0]
+
+        assert ph["total_tasks"] == 3, (
+            f"total_tasks inflated: expected 3, got {ph['total_tasks']}. "
+            f"(If 6, Cartesian join is still present; add distinct=True to Count.)"
+        )
+        assert ph["overdue_milestones"] == 0  # milestones have future target_date

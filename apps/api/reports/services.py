@@ -792,13 +792,23 @@ class ExecutiveDashboardService:
                 status=Project.Status.ACTIVE,
             )
             .annotate(
-                total_tasks=Count("tasks", filter=Q(tasks__is_deleted=False)),
+                # distinct=True prevents row multiplication when Django JOINs both
+                # the tasks reverse-relation and the milestones reverse-relation in
+                # a single queryset.  Without distinct, each task row is repeated
+                # once per milestone (and vice-versa), inflating all counts by the
+                # cross-product factor (tasks × milestones).
+                total_tasks=Count(
+                    "tasks",
+                    filter=Q(tasks__is_deleted=False),
+                    distinct=True,
+                ),
                 done_tasks=Count(
                     "tasks",
                     filter=Q(
                         tasks__is_deleted=False,
                         tasks__status__code__iexact="done",
                     ),
+                    distinct=True,
                 ),
                 overdue_tasks=Count(
                     "tasks",
@@ -807,6 +817,7 @@ class ExecutiveDashboardService:
                         tasks__due_date__date__lt=today_date,
                     )
                     & ~Q(tasks__status__code__iexact="done"),
+                    distinct=True,
                 ),
                 overdue_milestones=Count(
                     "milestones",
@@ -816,6 +827,7 @@ class ExecutiveDashboardService:
                         milestones__target_date__lt=today_date,
                     )
                     & ~Q(milestones__status=Milestone.Status.COMPLETED),
+                    distinct=True,
                 ),
             )
             .values(
