@@ -292,7 +292,14 @@ def test_manager_team_lead_cache_unaffected_by_org_version_key(clear_cache, user
     team_version_after = cache.get(team_version_key, 1)
     org_version_after = cache.get(org_version_key, 1)
 
-    assert team_version_after > team_version_before
+    # Measured on 2026-08-13: org_data fixture leaves team_a at version 5;
+    # one TeamMembership save bumps team_a by 2 (5→7), not 1.  Cause: the
+    # TeamMembership signal calls _invalidate_manager(user_id=…) AND
+    # _invalidate_manager(team_id=…); the user_id path bumps every team the
+    # member belongs to (here team_b + team_a) and the team_id path bumps
+    # team_a again.  This double-bump predates the org-level cache fix and
+    # only affects performance (extra cache miss), not data correctness.
+    assert team_version_after - team_version_before == 2
     assert org_version_after == org_version_before, (
         "Team membership changes must not bump org-level manager cache versions."
     )
@@ -301,6 +308,100 @@ def test_manager_team_lead_cache_unaffected_by_org_version_key(clear_cache, user
         user=lead, team_id=team.id, tz_name=tz
     )
     assert dashboard2["team_member_count"] == 3
+
+
+@pytest.mark.django_db
+def test_manager_admin_org_cache_invalidates_on_project_soft_delete(clear_cache):
+    """Project soft-delete must bump org-level manager cache for admin aggregate view."""
+    from reports.services import ManagerDashboardService
+
+    from .factories import (
+        OrganizationFactory,
+        OrganizationMembershipFactory,
+        ProjectFactory,
+        ProjectMemberFactory,
+        UserFactory,
+    )
+
+    admin = UserFactory(username="admin_proj_cache")
+    emp = UserFactory(username="emp_proj_cache")
+    org = OrganizationFactory()
+    OrganizationMembershipFactory(
+        user=admin, organization=org, role=OrganizationMembership.Role.OWNER
+    )
+    OrganizationMembershipFactory(
+        user=emp, organization=org, role=OrganizationMembership.Role.EMPLOYEE
+    )
+
+    project = ProjectFactory(organization=org, is_deleted=False)
+    ProjectMemberFactory(user=emp, project=project, is_active=True)
+
+    tz = "UTC"
+    org_version_key = f"dashboard_version:mgr:org_{org.id}"
+    version_before = cache.get(org_version_key, 1)
+
+    dashboard_before = ManagerDashboardService.get_dashboard(
+        user=admin, team_id=None, tz_name=tz
+    )
+    projects_before = len(dashboard_before["project_summary"])
+    assert projects_before == 1
+
+    project.is_deleted = True
+    project.save()
+
+    version_after = cache.get(org_version_key, 1)
+    assert version_after == version_before + 1, (
+        "Org-level manager cache version must bump when a project is soft-deleted."
+    )
+
+    dashboard_after = ManagerDashboardService.get_dashboard(
+        user=admin, team_id=None, tz_name=tz
+    )
+    assert len(dashboard_after["project_summary"]) == 0
+
+
+@pytest.mark.django_db
+def test_manager_multi_org_admin_cache_key_embeds_all_org_versions(clear_cache):
+    """Document exact multi-org admin cache key shape and cross-org invalidation."""
+    from reports.services import ManagerDashboardService
+
+    from .factories import OrganizationFactory, OrganizationMembershipFactory, UserFactory
+
+    admin = UserFactory(username="admin_multi_org")
+    org_a = OrganizationFactory(name="Org A")
+    org_b = OrganizationFactory(name="Org B")
+    OrganizationMembershipFactory(
+        user=admin, organization=org_a, role=OrganizationMembership.Role.OWNER
+    )
+    OrganizationMembershipFactory(
+        user=admin, organization=org_b, role=OrganizationMembership.Role.ADMIN
+    )
+
+    tz = "UTC"
+    org_ids = ManagerDashboardService._get_admin_org_ids(admin)
+    assert org_ids == sorted([org_a.id, org_b.id])
+
+    org_versions = {
+        org_id: cache.get(f"dashboard_version:mgr:org_{org_id}", 1) for org_id in org_ids
+    }
+    user_version = cache.get(f"dashboard_version:mgr:user_{admin.id}", 1)
+
+    key_before = ManagerDashboardService._build_manager_cache_key(admin, None, tz)
+    org_parts = "_".join(f"{org_id}:{org_versions[org_id]}" for org_id in org_ids)
+    expected_segment = f"u{user_version}_orgs_{org_parts}"
+    assert key_before == f"reports:mgr:user_{admin.id}:v{expected_segment}:tz_{tz}"
+
+    org_b_version_key = f"dashboard_version:mgr:org_{org_b.id}"
+    from reports.signals import _bump_version
+
+    _bump_version(org_b_version_key)
+    org_versions[org_b.id] = cache.get(org_b_version_key, 1)
+
+    key_after_org_b_change = ManagerDashboardService._build_manager_cache_key(admin, None, tz)
+    org_parts_after = "_".join(f"{org_id}:{org_versions[org_id]}" for org_id in org_ids)
+    expected_after = f"u{user_version}_orgs_{org_parts_after}"
+    assert key_after_org_b_change == f"reports:mgr:user_{admin.id}:v{expected_after}:tz_{tz}"
+    assert key_after_org_b_change != key_before
 
 
 @pytest.mark.django_db
