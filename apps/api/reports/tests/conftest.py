@@ -80,7 +80,7 @@ def project_data(users, org_data):
 
     board = BoardFactory(project=project, created_by=users["org_owner"])
     status_todo = TaskStatusFactory(board=board, name="To Do", code="todo", order=1)
-    status_doing = TaskStatusFactory(board=board, name="In Progress", code="in_progress", order=2)
+    status_doing = TaskStatusFactory(board=board, name="In Progress", code="doing", order=2)
     status_done = TaskStatusFactory(board=board, name="Done", code="done", order=3)
 
     today = timezone.now()

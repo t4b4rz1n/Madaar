@@ -104,7 +104,7 @@ class TestManagerDashboardAPI:
 
         stats = {item["status_code"]: item["count"] for item in data["task_stats"]}
         assert stats.get("todo", 0) == 1
-        assert stats.get("in_progress", 0) == 1
+        assert stats.get("doing", 0) == 1  # conftest uses code="doing" (production default)
         assert stats.get("done", 0) == 1
 
         assert data["overdue_summary"]["total_overdue"] == 1
@@ -135,7 +135,7 @@ class TestManagerDashboardAPI:
         response = api_client.get(url, {"team_id": str(org_data["team_a"].id)})
         data = response.json()["data"]
 
-        stats = {item["status__code"]: item["count"] for item in data["task_stats"]}
+        stats = {item["status_code"]: item["count"] for item in data["task_stats"]}
         assert stats.get("todo", 0) == 0
         assert stats.get("in_progress", 0) == 0
         assert stats.get("done", 0) == 0
