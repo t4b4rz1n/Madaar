@@ -206,6 +206,104 @@ def test_manager_cache_invalidation_on_team_membership_change(clear_cache, users
 
 
 @pytest.mark.django_db
+def test_manager_admin_org_cache_invalidates_on_subordinate_task_change(clear_cache):
+    """Admin/owner without team-lead role must see fresh data when a subordinate's task changes."""
+    from reports.services import ManagerDashboardService
+
+    from .factories import (
+        BoardFactory,
+        OrganizationFactory,
+        OrganizationMembershipFactory,
+        ProjectFactory,
+        TaskFactory,
+        TaskStatusFactory,
+        UserFactory,
+    )
+
+    admin = UserFactory(username="admin_org_cache")
+    emp = UserFactory(username="emp_org_cache")
+    org = OrganizationFactory()
+    OrganizationMembershipFactory(
+        user=admin, organization=org, role=OrganizationMembership.Role.OWNER
+    )
+    OrganizationMembershipFactory(
+        user=emp, organization=org, role=OrganizationMembership.Role.EMPLOYEE
+    )
+
+    project = ProjectFactory(organization=org)
+    board = BoardFactory(project=project)
+    status_todo = TaskStatusFactory(board=board, code="todo", name="To Do")
+
+    assert ManagerDashboardService.get_managed_team_ids(admin) == []
+
+    tz = "UTC"
+    org_version_key = f"dashboard_version:mgr:org_{org.id}"
+    version_before = cache.get(org_version_key, 1)
+
+    dashboard_before = ManagerDashboardService.get_dashboard(
+        user=admin, team_id=None, tz_name=tz
+    )
+    stats_before = sum(item["count"] for item in dashboard_before["task_stats"])
+
+    TaskFactory(project=project, assignee=emp, status=status_todo)
+
+    version_after = cache.get(org_version_key, 1)
+    assert version_after == version_before + 1, (
+        "Org-level manager cache version must bump when a subordinate task is created."
+    )
+
+    dashboard_after = ManagerDashboardService.get_dashboard(
+        user=admin, team_id=None, tz_name=tz
+    )
+    stats_after = sum(item["count"] for item in dashboard_after["task_stats"])
+    assert stats_after == stats_before + 1, (
+        f"Expected task count to increase by 1 after subordinate task creation, "
+        f"got before={stats_before}, after={stats_after}."
+    )
+
+
+@pytest.mark.django_db
+def test_manager_team_lead_cache_unaffected_by_org_version_key(clear_cache, users, org_data):
+    """Team-scoped manager dashboards must keep using team_{id} version keys only."""
+    from reports.services import ManagerDashboardService
+
+    lead = users["team_lead"]
+    team = org_data["team_a"]
+    org = org_data["org"]
+    tz = "UTC"
+
+    org_version_key = f"dashboard_version:mgr:org_{org.id}"
+    team_version_key = f"dashboard_version:mgr:team_{team.id}"
+
+    org_version_before = cache.get(org_version_key, 1)
+
+    ManagerDashboardService.get_dashboard(user=lead, team_id=team.id, tz_name=tz)
+    cache_key = ManagerDashboardService._build_manager_cache_key(lead, team.id, tz)
+    assert "orgs_" not in cache_key, (
+        "Team-scoped cache keys must not embed org-level version segments."
+    )
+    assert cache_key.startswith(f"reports:mgr:team_{team.id}:v")
+
+    team_version_before = cache.get(team_version_key, 1)
+
+    member = users["employee2"]
+    TeamMembershipFactory(user=member, team=team, role=TeamMembership.Role.MEMBER)
+
+    team_version_after = cache.get(team_version_key, 1)
+    org_version_after = cache.get(org_version_key, 1)
+
+    assert team_version_after > team_version_before
+    assert org_version_after == org_version_before, (
+        "Team membership changes must not bump org-level manager cache versions."
+    )
+
+    dashboard2 = ManagerDashboardService.get_dashboard(
+        user=lead, team_id=team.id, tz_name=tz
+    )
+    assert dashboard2["team_member_count"] == 3
+
+
+@pytest.mark.django_db
 def test_cache_invalidation_on_timelog_update(users, org_data, project_data):
     import datetime
 

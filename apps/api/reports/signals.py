@@ -71,6 +71,16 @@ def _invalidate_executive(org_id):
         _bump_version(f"dashboard_version:exec:org_{org_id}")
 
 
+def _invalidate_manager_org(org_id):
+    """Bump org-scoped manager dashboard cache keys.
+
+    Used when org-level data changes (tasks, timelogs, membership, etc.)
+    so admin/owner aggregate views without ``team_id`` are invalidated.
+    """
+    if org_id:
+        _bump_version(f"dashboard_version:mgr:org_{org_id}")
+
+
 @receiver([post_save, post_delete], sender=Task)
 def invalidate_on_task_change(sender, instance, **kwargs):
     _invalidate_employee(instance.assignee_id)
@@ -80,6 +90,7 @@ def invalidate_on_task_change(sender, instance, **kwargs):
         project = Project.objects.filter(id=instance.project_id).first()
         if project:
             _invalidate_executive(project.organization_id)
+            _invalidate_manager_org(project.organization_id)
 
 
 @receiver([post_save, post_delete], sender=TimeLog)
@@ -91,6 +102,7 @@ def invalidate_on_timelog_change(sender, instance, **kwargs):
         project = Project.objects.filter(id=instance.project_id).first()
         if project:
             _invalidate_executive(project.organization_id)
+            _invalidate_manager_org(project.organization_id)
 
 
 @receiver([post_save, post_delete], sender=Attendance)
@@ -98,12 +110,14 @@ def invalidate_on_attendance_change(sender, instance, **kwargs):
     _invalidate_employee(instance.user_id)
     _invalidate_manager(user_id=instance.user_id)
     _invalidate_executive(instance.organization_id)
+    _invalidate_manager_org(instance.organization_id)
 
 
 @receiver([post_save, post_delete], sender=Project)
 def invalidate_on_project_change(sender, instance, **kwargs):
     # This covers Soft Delete of a Project as requested
     _invalidate_executive(instance.organization_id)
+    _invalidate_manager_org(instance.organization_id)
 
     # We should also invalidate employees and managers related to this project.
     # To be precise, any user allocated to this project:
@@ -146,12 +160,14 @@ def invalidate_on_project_member_change(sender, instance, **kwargs):
         project = Project.objects.filter(id=instance.project_id).first()
         if project:
             _invalidate_executive(project.organization_id)
+            _invalidate_manager_org(project.organization_id)
 
 
 @receiver([post_save, post_delete], sender=OrganizationMembership)
 def invalidate_on_org_membership_change(sender, instance, **kwargs):
     """OrganizationMembership changes affect total_members and utilization."""
     _invalidate_executive(instance.organization_id)
+    _invalidate_manager_org(instance.organization_id)
     # The member themselves may also have their own dashboard invalidated
     _invalidate_employee(instance.user_id)
 

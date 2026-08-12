@@ -383,6 +383,51 @@ class ManagerDashboardService:
         )
 
     @staticmethod
+    def _get_admin_org_ids(user) -> list:
+        from organizations.models import OrganizationMembership
+
+        return sorted(
+            OrganizationMembership.objects.filter(
+                user=user,
+                role__in=[
+                    OrganizationMembership.Role.OWNER,
+                    OrganizationMembership.Role.ADMIN,
+                ],
+                is_deleted=False,
+            ).values_list("organization_id", flat=True)
+        )
+
+    @classmethod
+    def _build_manager_cache_key(cls, user, team_id, tz_name: str) -> str:
+        """Build a versioned cache key for the manager dashboard.
+
+        Team-scoped dashboards use ``team_{team_id}`` version keys (unchanged).
+
+        Org-admin aggregate dashboards (no ``team_id``) additionally embed
+        ``dashboard_version:mgr:org_{org_id}`` counters so subordinate data
+        changes invalidate the admin view without relying on team-lead paths.
+        """
+        if team_id:
+            key_prefix = f"team_{team_id}"
+            version = cache.get(f"dashboard_version:mgr:{key_prefix}", 1)
+            return f"reports:mgr:{key_prefix}:v{version}:tz_{tz_name}"
+
+        admin_org_ids = cls._get_admin_org_ids(user)
+        user_version = cache.get(f"dashboard_version:mgr:user_{user.id}", 1)
+        key_prefix = f"user_{user.id}"
+
+        if admin_org_ids:
+            org_parts = []
+            for org_id in admin_org_ids:
+                org_version = cache.get(f"dashboard_version:mgr:org_{org_id}", 1)
+                org_parts.append(f"{org_id}:{org_version}")
+            version_segment = f"u{user_version}_orgs_{'_'.join(org_parts)}"
+        else:
+            version_segment = str(user_version)
+
+        return f"reports:mgr:{key_prefix}:v{version_segment}:tz_{tz_name}"
+
+    @staticmethod
     def _get_team_member_user_ids(team_id) -> list:
         return list(
             TeamMembership.objects.filter(
@@ -613,9 +658,7 @@ class ManagerDashboardService:
     @classmethod
     def get_dashboard(cls, user, team_id=None, tz_name: str = "UTC") -> dict:
         """Compose all manager dashboard sections."""
-        key_prefix = f"team_{team_id}" if team_id else f"user_{user.id}"
-        version = cache.get(f"dashboard_version:mgr:{key_prefix}", 1)
-        cache_key = f"reports:mgr:{key_prefix}:v{version}:tz_{tz_name}"
+        cache_key = cls._build_manager_cache_key(user, team_id, tz_name)
 
         cached_data = cache.get(cache_key)
         if cached_data is not None:
