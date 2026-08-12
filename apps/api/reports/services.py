@@ -55,7 +55,8 @@ def get_user_today_range(
     try:
         user_tz = zoneinfo.ZoneInfo(tz_name)
     except (zoneinfo.ZoneInfoNotFoundError, TypeError):
-        user_tz = zoneinfo.ZoneInfo("UTC")
+        from rest_framework.exceptions import ParseError
+        raise ParseError(detail=f"Invalid timezone: '{tz_name}'. Use IANA timezone names, e.g. 'Asia/Tehran'.")
 
     now_in_user_tz = timezone.now().astimezone(user_tz)
     today_start_local = now_in_user_tz.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -74,7 +75,8 @@ def get_user_week_range(
     try:
         user_tz = zoneinfo.ZoneInfo(tz_name)
     except (zoneinfo.ZoneInfoNotFoundError, TypeError):
-        user_tz = zoneinfo.ZoneInfo("UTC")
+        from rest_framework.exceptions import ParseError
+        raise ParseError(detail=f"Invalid timezone: '{tz_name}'. Use IANA timezone names, e.g. 'Asia/Tehran'.")
 
     now_in_user_tz = timezone.now().astimezone(user_tz)
     today_local = now_in_user_tz.replace(hour=0, minute=0, second=0, microsecond=0)

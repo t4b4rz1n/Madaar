@@ -83,23 +83,24 @@ class TestExecutiveDashboardService:
         dashboard_org1 = ExecutiveDashboardService.get_dashboard(user=employee2, org_id=org1.id)
         assert dashboard_org1["company_overview"]["projects"]["total"] == 0
 
-    def test_get_dashboard_invalid_timezone_falls_back_to_utc(self, users):
+    def test_get_dashboard_invalid_timezone_raises_error(self, users):
         """
-        If an invalid tz_name is provided, it should gracefully fall back to UTC
-        instead of throwing a 500 error, ensuring the application remains robust.
+        If an invalid tz_name is provided, it should raise a ParseError (400 Bad Request)
+        to prevent silent fallback to UTC.
         """
         loner = users["loner"]
         org = OrganizationFactory(name="Valid Org")
         OrganizationMembershipFactory(
             user=loner, organization=org, role=OrganizationMembership.Role.OWNER
         )
-
-        # Calling with invalid tz_name should not raise any ZoneInfoNotFoundError
-        # It should fallback to UTC and return successfully.
-        dashboard = ExecutiveDashboardService.get_dashboard(
-            user=loner, org_id=org.id, tz_name="Invalid/Timezone"
-        )
-        assert dashboard["company_overview"]["total_members"] == 1
+    
+        from rest_framework.exceptions import ParseError
+        
+        with pytest.raises(ParseError) as exc_info:
+            ExecutiveDashboardService.get_dashboard(
+                user=loner, org_id=org.id, tz_name="Invalid/Timezone"
+            )
+        assert "Invalid timezone: 'Invalid/Timezone'" in str(exc_info.value)
 
 
 def test_get_business_days():

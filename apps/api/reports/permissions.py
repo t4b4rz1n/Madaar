@@ -32,6 +32,19 @@ from organizations.models import OrganizationMembership, TeamMembership
 # Helpers (private)
 # ---------------------------------------------------------------------------
 
+import uuid
+from rest_framework.exceptions import ParseError
+
+
+def _validate_uuid_param(param_value, param_name):
+    """Validate that param_value is a valid UUID, otherwise raise 400 Bad Request."""
+    if param_value:
+        try:
+            uuid.UUID(str(param_value))
+        except ValueError:
+            raise ParseError(detail=f"{param_name} must be a valid UUID")
+
+
 
 def _get_user_org_roles(user):
     """Return a queryset of the user's non-deleted organisation memberships."""
@@ -147,6 +160,7 @@ class IsManagerOrAbove(permissions.BasePermission):
             return True
 
         team_id = request.query_params.get("team_id")
+        _validate_uuid_param(team_id, "team_id")
 
         if team_id:
             # Resolve the team's organisation to check org-level role
@@ -212,6 +226,7 @@ class IsExecutive(permissions.BasePermission):
             return True
 
         org_id = request.query_params.get("org_id")
+        _validate_uuid_param(org_id, "org_id")
 
         if org_id:
             return _is_org_admin_or_owner(user, org_id)

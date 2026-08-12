@@ -203,3 +203,59 @@ class TestExecutiveDashboardAPI:
 
         financial = data["financial_summary"]
         assert float(financial["total_budget"]) == 0.0
+
+@pytest.mark.django_db
+class TestReportsValidation:
+    def test_invalid_uuid_returns_400(self, api_client, users):
+        url = reverse('reports:manager-dashboard')
+        api_client.force_authenticate(user=users['org_owner'])
+        
+        # 1. Invalid UUID
+        response = api_client.get(url, {'team_id': 'invalid-uuid'})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'must be a valid UUID' in str(response.data)
+        
+        url_exec = reverse('reports:executive-dashboard')
+        response_exec = api_client.get(url_exec, {'org_id': 'not-a-uuid'})
+        assert response_exec.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_valid_uuid_nonexistent_id_unchanged(self, api_client, users):
+        url = reverse('reports:manager-dashboard')
+        api_client.force_authenticate(user=users['org_owner'])
+        
+        import uuid
+        random_uuid = str(uuid.uuid4())
+        response = api_client.get(url, {'team_id': random_uuid})
+        
+        # IsManagerOrAbove does Team.objects.get(pk=team_id). If not found, it catches DoesNotExist and returns False -> 403.
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_missing_org_team_id_param_unchanged(self, api_client, users, org_data):
+        url = reverse('reports:executive-dashboard')
+        api_client.force_authenticate(user=users['org_owner'])
+        
+        # If org_id is not passed, it auto-selects the oldest org the user owns and returns 200.
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_invalid_timezone_returns_400(self, api_client, users, org_data):
+        url = reverse('reports:employee-dashboard')
+        api_client.force_authenticate(user=users['employee1'])
+        
+        response = api_client.get(url, {'tz': 'Invalid/Timezone'})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'Invalid timezone' in str(response.data)
+        
+    def test_valid_timezone_returns_200(self, api_client, users, org_data):
+        url = reverse('reports:employee-dashboard')
+        api_client.force_authenticate(user=users['employee1'])
+        
+        response = api_client.get(url, {'tz': 'Asia/Tehran'})
+        assert response.status_code == status.HTTP_200_OK
+        
+    def test_missing_timezone_defaults_to_utc_returns_200(self, api_client, users, org_data):
+        url = reverse('reports:employee-dashboard')
+        api_client.force_authenticate(user=users['employee1'])
+        
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
