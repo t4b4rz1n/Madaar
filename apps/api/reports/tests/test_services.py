@@ -103,38 +103,47 @@ class TestExecutiveDashboardService:
 
 
 def test_get_business_days():
+    """Iranian work-week is Saturday through Wednesday (5 days).
+    Thursday (weekday=3) and Friday (weekday=4) are weekend days.
+
+    Update note: previously tested Mon-Fri; updated to Sat-Wed after
+    get_business_days was corrected to reflect the Iranian calendar.
+    """
     import datetime
 
     from reports.services import get_business_days
 
-    # Test 1: Start in middle of week (Wednesday) to next week's Tuesday (7 days total)
-    # 2026-08-05 is Wednesday, 2026-08-11 is Tuesday.
-    # Wed, Thu, Fri (3 days) + Sat, Sun (weekend) + Mon, Tue (2 days) = 5 days
+    # Test 1: Wed 2026-08-05 → Tue 2026-08-11 (7 calendar days)
+    # Iranian business: Wed(✓) Thu(✗) Fri(✗) Sat(✓) Sun(✓) Mon(✓) Tue(✓) = 5
     start = datetime.date(2026, 8, 5)
     end = datetime.date(2026, 8, 11)
     assert get_business_days(start, end) == 5
 
-    # Test 2: Exactly 3 full weeks
-    # 2026-08-03 is Monday, 2026-08-23 is Sunday (21 days)
-    # 3 weeks * 5 days = 15 days
+    # Test 2: Mon 2026-08-03 → Sun 2026-08-23 (21 days = 3 full weeks)
+    # 3 weeks × 5 Iranian business days = 15
     start = datetime.date(2026, 8, 3)
     end = datetime.date(2026, 8, 23)
     assert get_business_days(start, end) == 15
 
-    # Test 3: Entirely within a weekend
-    # 2026-08-08 (Sat) to 2026-08-09 (Sun) -> 0 days
-    start = datetime.date(2026, 8, 8)
-    end = datetime.date(2026, 8, 9)
+    # Test 3: Sat 2026-08-08 → Sun 2026-08-09 — both are Iranian business days
+    # Old test expected 0 (Mon-Fri assumption); correct under Iranian calendar: 2
+    start = datetime.date(2026, 8, 8)  # Saturday — business day in Iran
+    end = datetime.date(2026, 8, 9)    # Sunday   — business day in Iran
+    assert get_business_days(start, end) == 2
+
+    # Test 4: Thu 2026-08-06 → Fri 2026-08-07 — both are Iranian weekend days
+    # Old test used Friday as a business day; corrected: Thu+Fri = 0 business days
+    start = datetime.date(2026, 8, 6)  # Thursday — weekend in Iran
+    end = datetime.date(2026, 8, 7)    # Friday   — weekend in Iran
     assert get_business_days(start, end) == 0
 
-    # Test 4: Single day (Friday)
-    # 2026-08-07 is Friday -> 1 day
-    start = datetime.date(2026, 8, 7)
-    end = datetime.date(2026, 8, 7)
-    assert get_business_days(start, end) == 1
+    # Test 5: A full Iranian work-week (Sat 2026-08-08 → Wed 2026-08-12) = 5 days
+    start = datetime.date(2026, 8, 8)   # Saturday
+    end = datetime.date(2026, 8, 12)    # Wednesday
+    assert get_business_days(start, end) == 5
 
-    # Test 5: End date before start date -> 0 days
-    assert get_business_days(end, start - datetime.timedelta(days=1)) == 0
+    # Test 6: End before start → 0
+    assert get_business_days(datetime.date(2026, 8, 10), datetime.date(2026, 8, 5)) == 0
 
 
 # Fixture to clear cache before each test
@@ -586,12 +595,16 @@ class TestResourceUtilization:
         assert utilization["expected_seconds"] >= 0
         assert utilization["total_members"] == 2
 
-    def test_utilization_overlapping_leaves_counted_separately(self, util_setup):
+    def test_utilization_overlapping_leaves_are_deduplicated(self, util_setup):
         """
-        Two approved leaves from different users overlapping the same time
-        range should both be subtracted from expected_seconds independently.
-        Also verifies that two leaves from the SAME user in overlapping time
-        ranges are both counted (potential double-counting bug).
+        After the merge-intervals fix, two overlapping approved leaves from the
+        same user must only deduct the UNION of their intervals, not their sum.
+
+        Scenario:
+          leave A: 08:00 – 12:00 (4 h)
+          leave B: 10:00 – 14:00 (4 h)
+          overlap: 10:00 – 12:00 (2 h)
+          expected deduction: 6 h (not 8 h)
         """
         import datetime
 
@@ -605,73 +618,37 @@ class TestResourceUtilization:
         org = util_setup["org"]
         emp = util_setup["emp"]
 
-        # Set expected daily hours to 8
         AttendanceSettingFactory(organization=org, expected_daily_hours=8)
 
-        # Get the current week range to place leaves within it
         now = timezone.now()
-        # Create two overlapping 4-hour leaves for the SAME user on the same day
-        leave_start = now.replace(hour=8, minute=0, second=0, microsecond=0)
-        leave1_end = leave_start + datetime.timedelta(hours=4)  # 8:00-12:00
-        leave2_start = leave_start + datetime.timedelta(hours=2)  # 10:00
-        leave2_end = leave2_start + datetime.timedelta(hours=4)  # 10:00-14:00
-        # Overlap region: 10:00-12:00 (2 hours)
+        leave_start_a = now.replace(hour=8, minute=0, second=0, microsecond=0)
+        leave_end_a = leave_start_a + datetime.timedelta(hours=4)   # 08:00 – 12:00
+        leave_start_b = leave_start_a + datetime.timedelta(hours=2)  # 10:00
+        leave_end_b = leave_start_b + datetime.timedelta(hours=4)    # 10:00 – 14:00
 
-        # Both approved
-        TimeOffRequestFactory(
-            user=emp,
-            organization=org,
-            request_type=TimeOffRequest.Type.VACATION,
-            start_datetime=leave_start,
-            end_datetime=leave1_end,
-            status=TimeOffRequest.Status.APPROVED,
-        )
-        TimeOffRequestFactory(
-            user=emp,
-            organization=org,
-            request_type=TimeOffRequest.Type.SICK,
-            start_datetime=leave2_start,
-            end_datetime=leave2_end,
-            status=TimeOffRequest.Status.APPROVED,
-        )
-
-        # Clear any cached data
+        # Baseline with no leaves
         cache.clear()
-
-        # The current implementation counts each leave request separately.
-        # Total leave deducted = 4h + 4h = 8h (28800 seconds), NOT 6h.
-        # This is the known behavior — each TimeOffRequest is counted independently.
-        # The overlap of 2h is double-counted.
-        total_leave_seconds = (4 * 3600) + (4 * 3600)  # 28800
-
-        # Verify that expected_seconds is reduced by the full leave amount
-        # expected_seconds = (member_count * business_days * 8h * 3600) - 28800
-        # We can't know exact business_days, but we can verify the leave
-        # was deducted by comparing with a baseline (no-leave scenario).
-        cache.clear()
-
-        # Remove the leaves and recalculate to get baseline
         TimeOffRequest.objects.filter(organization=org).delete()
         baseline = ExecutiveDashboardService.get_dashboard(
             user=util_setup["owner"], org_id=org.id
         )
         baseline_expected = baseline["resource_utilization"]["expected_seconds"]
 
-        # Re-create the leaves
+        # Add two overlapping approved leaves
         TimeOffRequestFactory(
             user=emp,
             organization=org,
             request_type=TimeOffRequest.Type.VACATION,
-            start_datetime=leave_start,
-            end_datetime=leave1_end,
+            start_datetime=leave_start_a,
+            end_datetime=leave_end_a,
             status=TimeOffRequest.Status.APPROVED,
         )
         TimeOffRequestFactory(
             user=emp,
             organization=org,
             request_type=TimeOffRequest.Type.SICK,
-            start_datetime=leave2_start,
-            end_datetime=leave2_end,
+            start_datetime=leave_start_b,
+            end_datetime=leave_end_b,
             status=TimeOffRequest.Status.APPROVED,
         )
         cache.clear()
@@ -681,11 +658,84 @@ class TestResourceUtilization:
         )
         with_leaves_expected = with_leaves["resource_utilization"]["expected_seconds"]
 
-        # The difference should be exactly 28800 (8h = two 4h leaves counted independently)
         deducted = baseline_expected - with_leaves_expected
-        assert deducted == total_leave_seconds, (
-            f"Expected {total_leave_seconds}s deducted for overlapping leaves, "
-            f"got {deducted}s. Baseline={baseline_expected}, WithLeaves={with_leaves_expected}"
+        expected_deduction = 6 * 3600  # union = 08:00-14:00 = 6 h, NOT 8 h
+        assert deducted == expected_deduction, (
+            f"Expected {expected_deduction}s deducted (merged intervals), "
+            f"but got {deducted}s. Baseline={baseline_expected}, "
+            f"WithLeaves={with_leaves_expected}. "
+            f"(If this is 28800, the merge-intervals fix is not applied.)"
+        )
+
+    def test_utilization_non_overlapping_leaves_each_deducted_fully(self, util_setup):
+        """
+        Two approved leaves that do NOT overlap must each be fully deducted.
+
+        This test guards against over-merging: if the fix accidentally merges
+        non-overlapping intervals, the deduction would be wrong.
+
+        Scenario:
+          leave A: 08:00 – 10:00 (2 h)
+          leave B: 12:00 – 14:00 (2 h)  — gap between them
+          expected deduction: 4 h
+        """
+        import datetime
+
+        from django.utils import timezone
+
+        from attendance.models import TimeOffRequest
+        from reports.services import ExecutiveDashboardService
+
+        from .factories import AttendanceSettingFactory, TimeOffRequestFactory
+
+        org = util_setup["org"]
+        emp = util_setup["emp"]
+
+        AttendanceSettingFactory(organization=org, expected_daily_hours=8)
+
+        now = timezone.now()
+        leave_start_a = now.replace(hour=8, minute=0, second=0, microsecond=0)
+        leave_end_a = leave_start_a + datetime.timedelta(hours=2)     # 08:00 – 10:00
+        leave_start_b = leave_start_a + datetime.timedelta(hours=4)   # 12:00
+        leave_end_b = leave_start_b + datetime.timedelta(hours=2)     # 12:00 – 14:00
+
+        # Baseline with no leaves
+        cache.clear()
+        TimeOffRequest.objects.filter(organization=org).delete()
+        baseline = ExecutiveDashboardService.get_dashboard(
+            user=util_setup["owner"], org_id=org.id
+        )
+        baseline_expected = baseline["resource_utilization"]["expected_seconds"]
+
+        TimeOffRequestFactory(
+            user=emp,
+            organization=org,
+            request_type=TimeOffRequest.Type.VACATION,
+            start_datetime=leave_start_a,
+            end_datetime=leave_end_a,
+            status=TimeOffRequest.Status.APPROVED,
+        )
+        TimeOffRequestFactory(
+            user=emp,
+            organization=org,
+            request_type=TimeOffRequest.Type.SICK,
+            start_datetime=leave_start_b,
+            end_datetime=leave_end_b,
+            status=TimeOffRequest.Status.APPROVED,
+        )
+        cache.clear()
+
+        with_leaves = ExecutiveDashboardService.get_dashboard(
+            user=util_setup["owner"], org_id=org.id
+        )
+        with_leaves_expected = with_leaves["resource_utilization"]["expected_seconds"]
+
+        deducted = baseline_expected - with_leaves_expected
+        expected_deduction = 4 * 3600  # 2 h + 2 h = 4 h, non-overlapping
+        assert deducted == expected_deduction, (
+            f"Expected {expected_deduction}s deducted for non-overlapping leaves, "
+            f"but got {deducted}s. Baseline={baseline_expected}, "
+            f"WithLeaves={with_leaves_expected}."
         )
 
     def test_utilization_ignores_pending_and_rejected_leaves(self, util_setup):

@@ -89,21 +89,61 @@ def get_user_week_range(
     return week_start_utc, week_end_utc
 
 
+def _merge_intervals(
+    intervals: list[tuple[datetime.datetime, datetime.datetime]],
+) -> list[tuple[datetime.datetime, datetime.datetime]]:
+    """Return a de-duplicated, sorted list of non-overlapping intervals.
+
+    This is the classic O(n log n) merge-intervals algorithm:
+    1. Sort by start time.
+    2. Walk forward, extending the current interval whenever the next one
+       overlaps (i.e. next.start <= current.end).
+
+    Used in :func:`_get_resource_utilization` to prevent double-counting
+    leave time when two approved TimeOffRequests overlap in the same week.
+    """
+    if not intervals:
+        return []
+    sorted_intervals = sorted(intervals, key=lambda x: x[0])
+    merged = [sorted_intervals[0]]
+    for start, end in sorted_intervals[1:]:
+        cur_start, cur_end = merged[-1]
+        if start <= cur_end:  # overlap or adjacent — extend
+            merged[-1] = (cur_start, max(cur_end, end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
 def get_business_days(start_date: datetime.date, end_date: datetime.date) -> int:
-    """Calculate the number of business days (Mon-Fri) between two dates inclusive."""
+    """Calculate the number of business days (Sat-Wed) between two dates inclusive.
+
+    Assumes the Iranian work-week: Saturday through Wednesday (5 days).
+    Thursday and Friday are weekend days (Python weekday 3=Thursday, 4=Friday —
+    **but Saturday=5, Sunday=6 in Python's Monday=0 system**).
+
+    Iranian weekdays:  Sat=5, Sun=6, Mon=0, Tue=1, Wed=2  → business days
+    Iranian weekend:   Thu=3, Fri=4                        → skip
+
+    NOTE: this is intentionally hard-coded to the Iranian calendar.
+    If multi-locale support is needed in future, move working_days into
+    AttendanceSetting and read from there.
+    """
     if start_date > end_date:
         return 0
 
+    # Iranian business days: Saturday(5), Sunday(6), Monday(0), Tuesday(1), Wednesday(2)
+    BUSINESS_WEEKDAYS = {0, 1, 2, 5, 6}  # Mon, Tue, Wed, Sat, Sun
+
     days = (end_date - start_date).days + 1
     weeks = days // 7
-    business_days = weeks * 5
+    business_days = weeks * 5  # each full 7-day span contains exactly 5 business days
 
     remainder = days % 7
-    if remainder > 0:
-        start_weekday = start_date.weekday()
-        for i in range(remainder):
-            if (start_weekday + i) % 7 < 5:  # Mon-Fri
-                business_days += 1
+    start_weekday = start_date.weekday()
+    for i in range(remainder):
+        if (start_weekday + i) % 7 in BUSINESS_WEEKDAYS:
+            business_days += 1
 
     return business_days
 
@@ -713,12 +753,20 @@ class ExecutiveDashboardService:
             end_datetime__gt=week_start,
         ).values("start_datetime", "end_datetime")
 
-        leave_seconds = 0
+        # Clip each leave to the week window, then merge overlapping intervals
+        # before summing so that two leaves covering the same hours are only
+        # deducted once (merge-intervals pattern: O(n log n)).
+        clipped: list[tuple[datetime.datetime, datetime.datetime]] = []
         for req in leave_requests:
             req_start = max(req["start_datetime"], week_start)
             req_end = min(req["end_datetime"], week_end)
             if req_end > req_start:
-                leave_seconds += (req_end - req_start).total_seconds()
+                clipped.append((req_start, req_end))
+
+        merged_leaves = _merge_intervals(clipped)
+        leave_seconds = sum(
+            (end - start).total_seconds() for start, end in merged_leaves
+        )
 
         expected_seconds = int((member_count * business_days * expected_daily_hours * 3600) - leave_seconds)
         expected_seconds = max(expected_seconds, 0)
