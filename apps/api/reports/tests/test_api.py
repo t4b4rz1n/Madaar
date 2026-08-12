@@ -36,8 +36,8 @@ class TestEmployeeDashboardAPI:
 
         data = response.json()["data"]
 
-        assert len(data["today_tasks"]) == 1
-        assert data["today_tasks"][0]["id"] == str(project_data["tasks"][0].id)
+        assert len(data["upcoming_tasks"]) == 1
+        assert data["upcoming_tasks"][0]["id"] == str(project_data["tasks"][0].id)
 
         assert len(data["overdue_tasks"]) == 1
         assert data["overdue_tasks"][0]["id"] == str(project_data["tasks"][1].id)
@@ -64,7 +64,7 @@ class TestEmployeeDashboardAPI:
         response = api_client.get(url)
         data = response.json()["data"]
 
-        assert len(data["today_tasks"]) == 0
+        assert len(data["upcoming_tasks"]) == 0
         assert len(data["overdue_tasks"]) == 0
         assert data["weekly_time"]["total_seconds"] == 0
         assert len(data["active_projects"]) == 0

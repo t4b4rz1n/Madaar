@@ -62,7 +62,7 @@ class MilestoneSummarySerializer(serializers.Serializer):
 
 
 class EmployeeDashboardSerializer(serializers.Serializer):
-    today_tasks = TaskSummarySerializer(many=True)
+    upcoming_tasks = TaskSummarySerializer(many=True)
     overdue_tasks = TaskSummarySerializer(many=True)
     weekly_time = TimeSummarySerializer()
     active_projects = ActiveProjectSerializer(many=True)

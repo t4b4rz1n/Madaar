@@ -39,6 +39,9 @@ from tasks.models import Task
 
 logger = logging.getLogger(__name__)
 
+UPCOMING_TASKS_LIMIT = 5
+UPCOMING_TASKS_WINDOW_DAYS = 7
+
 
 def get_user_today_range(
     tz_name: str = "UTC",
@@ -109,23 +112,20 @@ class EmployeeDashboardService:
     """Personal dashboard data for the authenticated employee."""
 
     @staticmethod
-    def _get_today_tasks(user, today_start, today_end):
+    def _get_upcoming_tasks(user, today_start):
         today_date = today_start.date()
+        window_end = today_date + datetime.timedelta(days=UPCOMING_TASKS_WINDOW_DAYS)
         return (
             Task.objects.filter(
                 assignee=user,
                 is_deleted=False,
                 project__is_deleted=False,
-            )
-            .filter(
-                Q(due_date__date=today_date)
-                | Q(
-                    status__code__in=["in_progress", "in_review"],
-                    due_date__isnull=False,
-                )
+                due_date__date__gte=today_date,
+                due_date__date__lte=window_end,
             )
             .exclude(status__code__iexact="done")
             .select_related("status", "project")
+            .order_by("due_date", "created_at")
             .values(
                 "id",
                 "title",
@@ -135,7 +135,7 @@ class EmployeeDashboardService:
                 "status__code",
                 "project__name",
                 "project__id",
-            )
+            )[:UPCOMING_TASKS_LIMIT]
         )
 
     @staticmethod
@@ -285,7 +285,7 @@ class EmployeeDashboardService:
         week_start, week_end = get_user_week_range(tz_name)
 
         result = {
-            "today_tasks": list(cls._get_today_tasks(user, today_start, today_end)),
+            "upcoming_tasks": list(cls._get_upcoming_tasks(user, today_start)),
             "overdue_tasks": list(cls._get_overdue_tasks(user, today_start)),
             "weekly_time": cls._get_weekly_time_summary(user, week_start, week_end),
             "active_projects": list(cls._get_active_projects(user)),

@@ -9,12 +9,17 @@ from organizations.models import OrganizationMembership
 from reports.services import ExecutiveDashboardService, ManagerDashboardService
 
 from .factories import (
+    BoardFactory,
     OrganizationFactory,
     OrganizationMembershipFactory,
     ProjectFactory,
+    ProjectMemberFactory,
+    TaskFactory,
+    TaskStatusFactory,
     TeamFactory,
     TeamMembership,
     TeamMembershipFactory,
+    UserFactory,
 )
 
 
@@ -264,3 +269,206 @@ def test_version_bump_uses_no_expiry(users, org_data):
                 "cache.add() was called without an explicit timeout argument — "
                 "this will cause silent staleness when the version key expires"
             )
+
+
+@pytest.mark.django_db
+class TestUpcomingTasks:
+    """Tests for EmployeeDashboardService._get_upcoming_tasks.
+
+    The method must return tasks with due_date between today and
+    UPCOMING_TASKS_WINDOW_DAYS days ahead, ordered by nearest deadline
+    first, capped at UPCOMING_TASKS_LIMIT.
+    """
+
+    @pytest.fixture
+    def setup(self):
+        """Shared scaffold: user, project, board, statuses."""
+        user = UserFactory()
+        org = OrganizationFactory(owner=user)
+        project = ProjectFactory(organization=org, owner=user)
+        ProjectMemberFactory(user=user, project=project)
+        board = BoardFactory(project=project, created_by=user)
+        status_todo = TaskStatusFactory(board=board, name="To Do", code="todo", order=1)
+        status_done = TaskStatusFactory(board=board, name="Done", code="done", order=3)
+        return {
+            "user": user,
+            "project": project,
+            "status_todo": status_todo,
+            "status_done": status_done,
+        }
+
+    def test_window_filters_and_ordering(self, setup):
+        """Tasks at day 0, day 3, and day 10: only 0 and 3 appear, in that order."""
+        import datetime
+
+        from django.utils import timezone
+
+        from reports.services import EmployeeDashboardService
+
+        user = setup["user"]
+        project = setup["project"]
+        status = setup["status_todo"]
+        now = timezone.now()
+
+        task_today = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=now,
+            title="Due today",
+        )
+        task_3d = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=now + datetime.timedelta(days=3),
+            title="Due in 3 days",
+        )
+        TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=now + datetime.timedelta(days=10),
+            title="Due in 10 days — must NOT appear",
+        )
+
+        dashboard = EmployeeDashboardService.get_dashboard(user=user)
+        upcoming = dashboard["upcoming_tasks"]
+
+        returned_ids = [t["id"] for t in upcoming]
+        assert task_today.id in returned_ids
+        assert task_3d.id in returned_ids
+        assert len(upcoming) == 2
+        # Nearest deadline first
+        assert returned_ids[0] == task_today.id
+        assert returned_ids[1] == task_3d.id
+
+    def test_limit_caps_results(self, setup):
+        """More than UPCOMING_TASKS_LIMIT tasks in window → only closest N returned."""
+        import datetime
+
+        from django.utils import timezone
+
+        from reports.services import UPCOMING_TASKS_LIMIT, EmployeeDashboardService
+
+        user = setup["user"]
+        project = setup["project"]
+        status = setup["status_todo"]
+        now = timezone.now()
+
+        for day_offset in range(UPCOMING_TASKS_LIMIT + 3):
+            TaskFactory(
+                project=project,
+                assignee=user,
+                status=status,
+                due_date=now + datetime.timedelta(days=min(day_offset, 6)),
+                title=f"Task day {day_offset}",
+            )
+
+        dashboard = EmployeeDashboardService.get_dashboard(user=user)
+        assert len(dashboard["upcoming_tasks"]) == UPCOMING_TASKS_LIMIT
+
+    def test_boundary_day_inclusion(self, setup):
+        """Task on exactly day WINDOW (inclusive) is in; day WINDOW+1 is out."""
+        import datetime
+
+        from django.utils import timezone
+
+        from reports.services import UPCOMING_TASKS_WINDOW_DAYS, EmployeeDashboardService
+
+        user = setup["user"]
+        project = setup["project"]
+        status = setup["status_todo"]
+        now = timezone.now()
+
+        task_boundary = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=now + datetime.timedelta(days=UPCOMING_TASKS_WINDOW_DAYS),
+            title="Exactly on boundary",
+        )
+        task_outside = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=now + datetime.timedelta(days=UPCOMING_TASKS_WINDOW_DAYS + 1),
+            title="One day past boundary",
+        )
+
+        dashboard = EmployeeDashboardService.get_dashboard(user=user)
+        returned_ids = [t["id"] for t in dashboard["upcoming_tasks"]]
+        assert task_boundary.id in returned_ids
+        assert task_outside.id not in returned_ids
+
+    def test_tiebreak_by_created_at(self, setup):
+        """Two tasks with identical due_date are ordered by created_at (older first)."""
+        import datetime
+        import time
+
+        from django.utils import timezone
+
+        from reports.services import EmployeeDashboardService
+
+        user = setup["user"]
+        project = setup["project"]
+        status = setup["status_todo"]
+        tomorrow = timezone.now() + datetime.timedelta(days=1)
+
+        task_older = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=tomorrow,
+            title="Older task",
+        )
+        # Small sleep to guarantee distinct created_at timestamps
+        time.sleep(0.05)
+        task_newer = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status,
+            due_date=tomorrow,
+            title="Newer task",
+        )
+
+        dashboard = EmployeeDashboardService.get_dashboard(user=user)
+        upcoming = dashboard["upcoming_tasks"]
+
+        returned_ids = [t["id"] for t in upcoming]
+        assert returned_ids.index(task_older.id) < returned_ids.index(task_newer.id)
+
+    def test_done_tasks_excluded(self, setup):
+        """A task with due_date tomorrow but status=done must NOT appear."""
+        import datetime
+
+        from django.utils import timezone
+
+        from reports.services import EmployeeDashboardService
+
+        user = setup["user"]
+        project = setup["project"]
+        status_done = setup["status_done"]
+        status_todo = setup["status_todo"]
+        tomorrow = timezone.now() + datetime.timedelta(days=1)
+
+        task_done = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status_done,
+            due_date=tomorrow,
+            title="Done task — must NOT appear",
+        )
+        task_active = TaskFactory(
+            project=project,
+            assignee=user,
+            status=status_todo,
+            due_date=tomorrow,
+            title="Active task — must appear",
+        )
+
+        dashboard = EmployeeDashboardService.get_dashboard(user=user)
+        returned_ids = [t["id"] for t in dashboard["upcoming_tasks"]]
+        assert task_done.id not in returned_ids
+        assert task_active.id in returned_ids
+
