@@ -589,7 +589,7 @@ class ExecutiveDashboardService:
         ).aggregate(
             total=Count("id"),
             done=Count("id", filter=Q(status__code__iexact="done")),
-            in_progress=Count("id", filter=Q(status__code__iexact="in_progress")),
+            in_progress=Count("id", filter=Q(status__code__in=["doing", "in_progress"])),
         )
 
         return {
