@@ -1396,7 +1396,7 @@ class TestManagerDashboardAdminAccess:
         emp1 = UserFactory(username="emp_fix3_a")
         emp2 = UserFactory(username="emp_fix3_b")
 
-        org = OrganizationFactory()
+        org = OrganizationFactory(owner=admin)
         # admin is OWNER
         OrganizationMembershipFactory(
             user=admin, organization=org, role=OrganizationMembership.Role.OWNER

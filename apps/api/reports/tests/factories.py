@@ -40,6 +40,7 @@ class OrganizationFactory(factory.django.DjangoModelFactory):
 class OrganizationMembershipFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = OrganizationMembership
+        django_get_or_create = ("user", "organization")
 
     user = factory.SubFactory(UserFactory)
     organization = factory.SubFactory(OrganizationFactory)
