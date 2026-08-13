@@ -1,6 +1,5 @@
 import re
 
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -284,11 +283,6 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(_("Estimated hours cannot be negative."))
         return value
 
-    def validate_due_date(self, value):
-        if value is not None and value.date() < timezone.localdate():
-            raise serializers.ValidationError(_("Due date cannot be in the past."))
-        return value
-
     def validate(self, attrs):
         parent_task = attrs.get("parent_task")
         project = attrs.get("project") or (self.instance.project if self.instance else None)
@@ -369,7 +363,7 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             "blockers",
             "created_at",
         )
-        read_only_fields = ("id", "user", "organization", "created_at")
+        read_only_fields = ("id", "user", "created_at")
 
     def validate(self, attrs):
         yw = attrs.get("yesterday_work", "").strip()

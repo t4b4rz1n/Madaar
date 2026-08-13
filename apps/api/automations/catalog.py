@@ -18,6 +18,7 @@ class Recipient:
     TARGET_USERS = "target_users"
     MENTIONED_USERS = "mentioned_users"
     REQUESTER = "requester"
+    SUPERUSERS = "superusers"
 
 
 RECIPIENT_CHOICES = (
@@ -30,6 +31,7 @@ RECIPIENT_CHOICES = (
     (Recipient.TARGET_USERS, _("Users directly affected by the event")),
     (Recipient.MENTIONED_USERS, _("Mentioned users")),
     (Recipient.REQUESTER, _("Leave requester")),
+    (Recipient.SUPERUSERS, _("System superusers")),
 )
 
 RECIPIENT_CODES = {code for code, _label in RECIPIENT_CHOICES}
@@ -242,6 +244,46 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.ASSIGNEE,
             Recipient.REPORTER,
         ],
+    ),
+    # ── Superuser-specific events ──────────────────────────────────────────
+    _event(
+        "organization_created",
+        _("Organization created"),
+        _("A new organization is created."),
+        [Recipient.SUPERUSERS],
+        allowed_recipients=[Recipient.SUPERUSERS],
+    ),
+    _event(
+        "project_actually_created",
+        _("Project created"),
+        _("A new project is created in the system."),
+        [Recipient.SUPERUSERS],
+        allowed_recipients=[Recipient.SUPERUSERS],
+    ),
+    _event(
+        "project_budget_set",
+        _("Project budget set or changed"),
+        _("The budget for a project is set or updated."),
+        [Recipient.SUPERUSERS, Recipient.PROJECT_OWNER],
+        allowed_recipients=[
+            Recipient.SUPERUSERS,
+            Recipient.PROJECT_OWNER,
+            Recipient.ORGANIZATION_ADMINS,
+        ],
+    ),
+    _event(
+        "member_added_to_project",
+        _("Member added to project (admin view)"),
+        _("A user is added to a project — superusers are notified."),
+        [Recipient.SUPERUSERS],
+        allowed_recipients=[Recipient.SUPERUSERS],
+    ),
+    _event(
+        "member_added_to_org",
+        _("Member added to organization"),
+        _("A user is added to an organization — superusers are notified."),
+        [Recipient.SUPERUSERS],
+        allowed_recipients=[Recipient.SUPERUSERS],
     ),
 )
 

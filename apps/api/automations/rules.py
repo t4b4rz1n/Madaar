@@ -62,6 +62,7 @@ def process_rules_for_event(event_type: str, payload: dict):
 
     # 2. Fetch users in a single optimized query, including their WorkStyleProfile
     users = User.objects.filter(id__in=target_user_ids).select_related("work_style_profile")
+    sent_telegram_chat_ids = set()
 
     from django.conf import settings
 
@@ -123,7 +124,9 @@ def process_rules_for_event(event_type: str, payload: dict):
             send_email_notification(user.email, subject, message)
 
         if should_send_telegram:
-            send_telegram_notification.delay(telegram_chat_id, message)
+            if telegram_chat_id not in sent_telegram_chat_ids:
+                send_telegram_notification.delay(telegram_chat_id, message)
+                sent_telegram_chat_ids.add(telegram_chat_id)
 
 
 def _determine_target_users(recipients: list[str], payload: dict) -> set[str]:
@@ -182,6 +185,16 @@ def _determine_target_users(recipients: list[str], payload: dict) -> set[str]:
                         is_deleted=False,
                     ).values_list("user_id", flat=True)
                 )
+        elif recipient == Recipient.SUPERUSERS:
+            add_many(
+                User.objects.filter(
+                    is_superuser=True,
+                    work_style_profile__notify_via_telegram=True,
+                    work_style_profile__telegram_chat_id__isnull=False,
+                )
+                .exclude(work_style_profile__telegram_chat_id="")
+                .values_list("id", flat=True)
+            )
 
     return users
 
@@ -374,6 +387,84 @@ def _fmt_timer_started(p):
     )
 
 
+def _fmt_organization_created(p):
+    return (
+        _("سازمان جدید"),
+        _(
+            "🏢 <b>سازمان جدید ایجاد شد!</b>\n\n"
+            "📌 نام: <b>{org_name}</b>\n"
+            "👤 مالک: {owner_name}"
+        ).format(
+            org_name=p.get("org_name", "—"),
+            owner_name=p.get("owner_name", "—"),
+        ),
+    )
+
+
+def _fmt_project_actually_created(p):
+    return (
+        _("پروژه جدید"),
+        _(
+            "📂 <b>پروژه جدید ایجاد شد!</b>\n\n"
+            "📌 نام: <b>{project_name}</b>\n"
+            "🏢 سازمان: {org_name}\n"
+            "👤 سازنده: {creator_name}"
+        ).format(
+            project_name=p.get("project_name", "—"),
+            org_name=p.get("org_name", "—"),
+            creator_name=p.get("creator_name", "—"),
+        ),
+    )
+
+
+def _fmt_project_budget_set(p):
+    return (
+        _("تعیین بودجه پروژه"),
+        _(
+            "💰 <b>بودجه پروژه تعیین شد!</b>\n\n"
+            "📂 پروژه: <b>{project_name}</b>\n"
+            "💵 بودجه: <b>{budget}</b>\n"
+            "🏢 سازمان: {org_name}"
+        ).format(
+            project_name=p.get("project_name", "—"),
+            budget=p.get("budget", "—"),
+            org_name=p.get("org_name", "—"),
+        ),
+    )
+
+
+def _fmt_member_added_to_project(p):
+    return (
+        _("عضو جدید در پروژه"),
+        _(
+            "👤 <b>عضو جدید به پروژه اضافه شد!</b>\n\n"
+            "📂 پروژه: <b>{project_name}</b>\n"
+            "👤 عضو جدید: {member_name}\n"
+            "🏢 سازمان: {org_name}"
+        ).format(
+            project_name=p.get("project_name", "—"),
+            member_name=p.get("member_name", "—"),
+            org_name=p.get("org_name", "—"),
+        ),
+    )
+
+
+def _fmt_member_added_to_org(p):
+    return (
+        _("عضو جدید در سازمان"),
+        _(
+            "🏢 <b>عضو جدید به سازمان اضافه شد!</b>\n\n"
+            "🏢 سازمان: <b>{org_name}</b>\n"
+            "👤 عضو جدید: {member_name}\n"
+            "🎖 نقش: {role}"
+        ).format(
+            org_name=p.get("org_name", "—"),
+            member_name=p.get("member_name", "—"),
+            role=p.get("role", "—"),
+        ),
+    )
+
+
 # Map event types to their formatter functions
 _MESSAGE_FORMATTERS = {
     "project_created": _fmt_project_created,
@@ -391,4 +482,9 @@ _MESSAGE_FORMATTERS = {
     "leave_requested": _fmt_leave_requested,
     "leave_resolved": _fmt_leave_resolved,
     "timer_started": _fmt_timer_started,
+    "organization_created": _fmt_organization_created,
+    "project_actually_created": _fmt_project_actually_created,
+    "project_budget_set": _fmt_project_budget_set,
+    "member_added_to_project": _fmt_member_added_to_project,
+    "member_added_to_org": _fmt_member_added_to_org,
 }

@@ -65,7 +65,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({ isOpen, onClose }) =
         data.yesterdayWork,
         data.todayWork,
         data.blockers,
-        data.organizationId ? Number(data.organizationId) : undefined
+        data.organizationId || undefined
       );
       toast.success('Standup submitted successfully!');
       onClose();

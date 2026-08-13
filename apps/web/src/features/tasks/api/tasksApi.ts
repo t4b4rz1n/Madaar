@@ -39,11 +39,12 @@ export const reorderTasks = async (orders: { id: number; order: number }[]): Pro
   return await ApiService.post('/tasks/reorder/', { orders });
 };
 
-export const createTask = async (projectId: string, title: string, statusId: number): Promise<Task> => {
+export const createTask = async (projectId: string, title: string, statusId: number, priority: string = 'low'): Promise<Task> => {
   const data = await ApiService.post<Task>('/tasks/', {
     project: projectId,
     title,
     status: statusId,
+    priority,
   });
   return data as Task;
 };
@@ -113,8 +114,19 @@ export const addComment = async (taskId: number, content: string): Promise<TaskC
   return data as TaskComment;
 };
 
+export const updateComment = async (commentId: number, content: string): Promise<TaskComment> => {
+  const data = await ApiService.patch<TaskComment>(`/tasks/comments/${commentId}/`, {
+    content,
+  });
+  return data as TaskComment;
+};
+
+export const deleteComment = async (commentId: number): Promise<void> => {
+  await ApiService.delete(`/tasks/comments/${commentId}/`);
+};
+
 // Standups
-export const getStandups = async (organizationId?: number): Promise<AsyncStandup[]> => {
+export const getStandups = async (organizationId?: string): Promise<AsyncStandup[]> => {
   const params: Record<string, any> = {};
   if (organizationId) {
     params.organization = organizationId;
@@ -127,7 +139,7 @@ export const createStandup = async (
   yesterdayWork: string,
   todayWork: string,
   blockers?: string,
-  organizationId?: number
+  organizationId?: string
 ): Promise<AsyncStandup> => {
   const data = await ApiService.post<AsyncStandup>('/tasks/standups/', {
     yesterday_work: yesterdayWork,

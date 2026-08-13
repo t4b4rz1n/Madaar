@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Task } from '../types';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { updateTask, getTaskComments, addComment, getTaskChecklists, addChecklistItem, toggleChecklistItem, deleteTask, getTaskActivities, getProjectMembers } from '../api/tasksApi';
+import { updateTask, getTaskComments, addComment, updateComment, deleteComment, getTaskChecklists, addChecklistItem, toggleChecklistItem, deleteTask, getTaskActivities, getProjectMembers } from '../api/tasksApi';
 import { CloseSquare, Element3, TextalignLeft, Activity, Profile2User, Tag, Calendar, TaskSquare, Paperclip2, Trash, Message, More } from 'iconsax-reactjs';
 import { format } from 'date-fns';
 import { useTaskStore } from '../store/useTaskStore';
+import { ConfirmationModal } from '../../../components/ConfirmationModal';
 
 interface TaskDetailModalProps {
   task: Task;
@@ -22,12 +23,19 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   const [isAddingChecklist, setIsAddingChecklist] = useState(false);
   const [showActivityDetails, setShowActivityDetails] = useState(true);
   const [isMembersMenuOpen, setIsMembersMenuOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const membersButtonRef = useRef<HTMLDivElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   // Local state for optimistic UI updates
   const [localAssignee, setLocalAssignee] = useState<any>(task.assignee_detail || null);
   const [localDueDate, setLocalDueDate] = useState<string | null | undefined>(task.due_date);
+
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
+  const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
+  const [localPriority, setLocalPriority] = useState<string>(task.priority || 'low');
 
   const { activeProjectId } = useTaskStore();
 
@@ -79,6 +87,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
         queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
       }, 800);
     },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.due_date?.[0] || 'Failed to update task.');
+      // Revert local date if it was changed
+      setLocalDueDate(task.due_date ? new Date(task.due_date).toISOString() : null);
+    }
   });
 
   const addCommentMutation = useMutation({
@@ -87,6 +100,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       setCommentText('');
       queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });
 
@@ -95,6 +109,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taskChecklists', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setNewChecklistText('');
       setIsAddingChecklist(false);
     }
@@ -105,6 +120,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taskChecklists', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     }
   });
 
@@ -114,6 +130,24 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       onClose();
     }
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: ({ id, text }: { id: number, text: string }) => updateComment(id, text),
+    onSuccess: () => {
+      setEditingCommentId(null);
+      setEditingCommentText('');
+      queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (id: number) => deleteComment(id),
+    onSuccess: () => {
+      setDeletingCommentId(null);
+      queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
   });
 
   // Handlers
@@ -129,14 +163,17 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   };
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      deleteMutation.mutate();
-    }
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    setIsDeleteModalOpen(false);
+    deleteMutation.mutate();
   };
 
   const timeline = [
     ...comments.map((c: any) => ({ ...c, type: 'comment' })),
-    ...activities.map((a: any) => ({ ...a, type: 'activity' }))
+    ...activities.filter((a: any) => a.action !== 'Added a comment.').map((a: any) => ({ ...a, type: 'activity' }))
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const visibleTimeline = showActivityDetails ? timeline : timeline.filter(t => t.type === 'comment');
@@ -186,6 +223,19 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
 
               {/* Action Buttons Row */}
               <div className="ml-8 flex flex-wrap gap-2">
+                <select
+                  value={localPriority}
+                  onChange={(e) => {
+                    setLocalPriority(e.target.value);
+                    updateMutation.mutate({ priority: e.target.value } as any);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-[13px] text-white/80 border border-white/5 transition-colors outline-none cursor-pointer"
+                >
+                  <option value="low" className="bg-[#273043]">Priority: Low</option>
+                  <option value="medium" className="bg-[#273043]">Priority: Medium</option>
+                  <option value="high" className="bg-[#273043]">Priority: High</option>
+                  <option value="critical" className="bg-[#273043]">Priority: Critical</option>
+                </select>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-[13px] text-white/80 border border-white/5 transition-colors">
                   <span className="text-lg leading-none mb-0.5">+</span> Add
                 </button>
@@ -408,58 +458,145 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
               </div>
 
               {/* Comment Input */}
-              <div className="bg-[#273043] rounded-lg border border-white/10 p-0 focus-within:border-white/30 transition-all mb-6">
+              <div
+                className={`bg-[#273043] rounded-lg border border-white/10 p-0 transition-all mb-1 ${isCommentInputFocused || commentText.trim() ? 'focus-within:border-white/30' : ''}`}
+                tabIndex={-1}
+                onFocus={() => setIsCommentInputFocused(true)}
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setIsCommentInputFocused(false);
+                  }
+                }}
+              >
                 <textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  className="w-full bg-transparent text-sm text-white/80 outline-none resize-none p-3 pb-1"
-                  rows={2}
+                  className={`w-full bg-transparent text-[14px] text-white/90 outline-none resize-none px-3 py-2 transition-all duration-200 ${isCommentInputFocused || commentText.trim() ? 'min-h-[60px]' : 'min-h-[40px] m-0 overflow-hidden'}`}
                   placeholder="Write a comment..."
                 />
-                <div className="flex justify-between items-center px-2 pb-2">
-                  <div className="flex gap-1">
-                    <button className="p-1.5 text-white/40 hover:text-white/80 rounded transition-colors" title="Attachments disabled"><Paperclip2 size={16}/></button>
+                {(isCommentInputFocused || commentText.trim().length > 0) && (
+                  <div className="flex justify-between items-center px-2 pb-2">
+                    <div className="flex gap-1">
+                      <button className="p-1.5 text-white/40 hover:text-white/80 rounded transition-colors" title="Attachments disabled"><Paperclip2 size={16}/></button>
+                    </div>
+                    <button
+                      onMouseDown={(e) => e.preventDefault()} // prevent blur
+                      disabled={!commentText.trim()}
+                      onClick={() => {
+                        addCommentMutation.mutate(commentText);
+                        setCommentText('');
+                        setIsCommentInputFocused(false);
+                      }}
+                      className="bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/20 text-white px-4 py-1.5 rounded text-xs font-medium transition-colors"
+                    >
+                      Save
+                    </button>
                   </div>
-                  <button
-                    disabled={!commentText.trim()}
-                    onClick={() => addCommentMutation.mutate(commentText)}
-                    className="bg-white/10 disabled:opacity-50 hover:bg-white/20 text-white px-4 py-1.5 rounded text-xs font-medium transition-colors"
-                  >
-                    Save
-                  </button>
-                </div>
+                )}
               </div>
 
               {/* Activity List */}
               <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
-                {visibleTimeline.map((item: any) => (
-                  <div key={`${item.type}-${item.id}`} className={`flex gap-3 ${item.type === 'activity' ? 'opacity-60' : ''}`}>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5 ${item.type === 'comment' ? 'bg-[#EF4444]' : 'bg-white/10'}`}>
-                      {item.author_detail?.full_name?.[0] || item.actor_detail?.full_name?.[0] || item.actor_detail?.username?.[0] || 'U'}
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[13px] mb-0.5">
-                        <span className="font-semibold text-white/90 mr-1">{item.author_detail?.full_name || item.actor_detail?.full_name || item.actor_detail?.username || 'System'}</span>
-                        <span className="text-white/50">{item.type === 'comment' ? 'added a comment' : item.action}</span>
-                      </div>
-                      <div className="text-[11px] text-white/40 hover:underline cursor-pointer mb-1.5">
-                        {format(new Date(item.created_at || Date.now()), 'MMM d, p')}
-                      </div>
-                      {item.type === 'comment' && (
-                        <div className="text-[13px] text-white/80 bg-white/5 rounded-md p-2">
-                          {item.content}
+                {visibleTimeline.map((item: any) => {
+                  const isComment = item.type === 'comment';
+                  const name = item.author_detail?.full_name || item.author_detail?.username || item.actor_detail?.full_name || item.actor_detail?.username || 'System';
+                  const avatar = item.author_detail?.avatar_url || item.actor_detail?.avatar_url;
+
+                  return (
+                    <div key={`${item.type}-${item.id}`} className={`flex gap-3 ${!isComment ? 'opacity-70' : 'mt-4'}`}>
+                      {avatar ? (
+                        <img src={avatar} alt={name} className="w-8 h-8 rounded-full shrink-0" />
+                      ) : (
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ${isComment ? 'bg-primary' : 'bg-white/10'}`}>
+                          {name[0]?.toUpperCase()}
                         </div>
                       )}
+
+                      <div className="flex-1">
+                        {isComment ? (
+                          <>
+                            <div className="flex items-baseline gap-2 mb-1.5">
+                              <span className="font-bold text-[14px] text-white/90">{name}</span>
+                              <span className="text-[12px] text-white/40">{format(new Date(item.created_at || Date.now()), 'MMM d, p')}</span>
+                            </div>
+
+                            {editingCommentId === item.id ? (
+                              <div className="bg-[#273043] rounded-lg border border-white/10 p-0 focus-within:border-white/30 transition-all mb-2">
+                                <textarea
+                                  value={editingCommentText}
+                                  onChange={(e) => setEditingCommentText(e.target.value)}
+                                  className="w-full bg-transparent text-[14px] text-white/90 outline-none resize-none p-3 pb-1"
+                                  rows={2}
+                                />
+                                <div className="flex justify-end gap-2 px-3 pb-2">
+                                  <button onClick={() => setEditingCommentId(null)} className="px-3 py-1 text-white/60 hover:text-white/90 text-xs">Cancel</button>
+                                  <button onClick={() => updateCommentMutation.mutate({ id: item.id, text: editingCommentText })} className="bg-primary hover:bg-primary/80 text-white px-3 py-1 rounded text-xs font-medium">Save</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="bg-[#2C3344] p-3 rounded-lg text-[14px] text-white/90 shadow-sm border border-white/5">
+                                  {item.content}
+                                </div>
+                                <div className="relative">
+                                  <div className="flex items-center gap-3 mt-1.5 text-[12px] text-white/40 font-medium ml-1">
+                                    <button onClick={() => { setEditingCommentId(item.id); setEditingCommentText(item.content); }} className="hover:text-white/80 transition-colors">Edit</button>
+                                    <span>•</span>
+                                    <button onClick={() => setDeletingCommentId(item.id)} className="hover:text-white/80 transition-colors">Delete</button>
+                                  </div>
+
+                                  {deletingCommentId === item.id && (
+                                    <div className="absolute top-7 left-[-10px] w-[260px] bg-[#222834] rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.4)] border border-white/10 z-[100] p-4 flex flex-col">
+                                      <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+                                        <span className="text-[13px] font-bold text-white/90">Delete Comment?</span>
+                                        <button onClick={() => setDeletingCommentId(null)} className="text-white/40 hover:text-white/90 transition-colors">
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                      <p className="text-[12px] text-white/70 mb-4 leading-relaxed text-left">
+                                        Are you sure you want to delete this comment? This action cannot be undone.
+                                      </p>
+                                      <button
+                                        onClick={() => deleteCommentMutation.mutate(item.id)}
+                                        disabled={deleteCommentMutation.isPending}
+                                        className="w-full bg-[#EF4444] hover:bg-[#DC2626] text-white font-medium py-2 rounded-md text-[13px] transition-colors"
+                                      >
+                                        {deleteCommentMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <div className="pt-1 text-[13px]">
+                            <span className="font-bold text-white/90 mr-1.5">{name}</span>
+                            <span className="text-white/70">{item.action}</span>
+                            <span className="text-white/40 ml-2 text-[11px]">{format(new Date(item.created_at || Date.now()), 'MMM d, p')}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
 
-
       </div>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Task"
+        message={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };

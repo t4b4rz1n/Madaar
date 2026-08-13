@@ -80,6 +80,11 @@ export interface Task {
   parent_task?: number;
   order: number;
   checklist_items?: TaskChecklistItem[];
+  checklist_stats?: {
+    total: number;
+    done: number;
+    percent: number;
+  };
   comments?: TaskComment[];
   comments_count?: number;
 }

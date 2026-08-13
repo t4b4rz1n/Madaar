@@ -33,6 +33,7 @@ export const KanbanBoard: React.FC = () => {
   // Add task state
   const [addingTaskToStatusId, setAddingTaskToStatusId] = useState<number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('low');
 
   const { data: boards } = useQuery({
     queryKey: ['boards', activeProjectId],
@@ -87,11 +88,12 @@ export const KanbanBoard: React.FC = () => {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: ({ title, statusId }: { title: string, statusId: number }) => createTask(activeProjectId!, title, statusId),
+    mutationFn: ({ title, statusId, priority }: { title: string, statusId: number, priority: string }) => createTask(activeProjectId!, title, statusId, priority),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
       setAddingTaskToStatusId(null);
       setNewTaskTitle('');
+      setNewTaskPriority('low');
     },
     onError: (err: any) => {
       console.error(err);
@@ -104,7 +106,7 @@ export const KanbanBoard: React.FC = () => {
       setAddingTaskToStatusId(null);
       return;
     }
-    createTaskMutation.mutate({ title: newTaskTitle, statusId });
+    createTaskMutation.mutate({ title: newTaskTitle, statusId, priority: newTaskPriority });
   };
 
   const sensors = useSensors(
@@ -295,7 +297,17 @@ export const KanbanBoard: React.FC = () => {
                   </SortableContext>
 
                   {addingTaskToStatusId === status.id && (
-                    <div className="mt-2 bg-black/40 rounded-xl p-2.5 border border-white/10">
+                    <div
+                      className="mt-2 bg-black/40 rounded-xl p-2.5 border border-white/10"
+                      tabIndex={-1}
+                      onBlur={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          setAddingTaskToStatusId(null);
+                          setNewTaskTitle('');
+                          setNewTaskPriority('low');
+                        }
+                      }}
+                    >
                       <input
                         autoFocus
                         value={newTaskTitle}
@@ -305,25 +317,38 @@ export const KanbanBoard: React.FC = () => {
                           if (e.key === 'Escape') {
                             setAddingTaskToStatusId(null);
                             setNewTaskTitle('');
+                            setNewTaskPriority('low');
                           }
                         }}
                         placeholder="Task title..."
-                        className="w-full bg-transparent text-sm text-white/90 outline-none placeholder:text-white/30"
+                        className="w-full bg-transparent text-[13px] text-white/90 outline-none placeholder:text-white/30"
                       />
-                      <div className="flex justify-end mt-2.5 gap-2">
-                        <button
-                          onClick={() => handleCreateTask(status.id)}
-                          disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
-                          className="px-3 py-1 bg-white/20 hover:bg-white/30 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
+                      <div className="flex justify-between items-center mt-2.5">
+                        <select
+                          value={newTaskPriority}
+                          onChange={(e) => setNewTaskPriority(e.target.value as any)}
+                          className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[11px] text-white/80 outline-none focus:border-white/30"
                         >
-                          {createTaskMutation.isPending ? '...' : 'Add'}
-                        </button>
-                        <button
-                          onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); }}
-                          className="px-3 py-1 text-white/50 hover:text-white/80 text-xs transition-colors"
-                        >
-                          Cancel
-                        </button>
+                          <option value="low" className="bg-[#273043]">Low Priority</option>
+                          <option value="medium" className="bg-[#273043]">Medium Priority</option>
+                          <option value="high" className="bg-[#273043]">High Priority</option>
+                          <option value="critical" className="bg-[#273043]">Critical Priority</option>
+                        </select>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => handleCreateTask(status.id)}
+                            disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
+                            className="px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed text-white text-[11px] font-medium rounded transition-colors"
+                          >
+                            {createTaskMutation.isPending ? '...' : 'Add'}
+                          </button>
+                          <button
+                            onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); setNewTaskPriority('low'); }}
+                            className="px-2 py-1 text-white/50 hover:text-white/80 text-[11px] transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}

@@ -2105,3 +2105,39 @@ msgstr ""
 
 msgid "مدیر سیستم"
 msgstr "System Admin"
+
+#: .\automations\rules.py:392
+msgid "سازمان جدید"
+msgstr "New Organization"
+
+#: .\automations\rules.py:393
+msgid "🏢 <b>سازمان جدید ایجاد شد!</b>\n\n📌 نام: <b>{org_name}</b>\n👤 مالک: {owner_name}"
+msgstr "🏢 <b>New Organization Created!</b>\n\n📌 Name: <b>{org_name}</b>\n👤 Owner: {owner_name}"
+
+#: .\automations\rules.py:406
+msgid "📂 <b>پروژه جدید ایجاد شد!</b>\n\n📌 نام: <b>{project_name}</b>\n🏢 سازمان: {org_name}\n👤 سازنده: {creator_name}"
+msgstr "📂 <b>New Project Created!</b>\n\n📌 Name: <b>{project_name}</b>\n🏢 Organization: {org_name}\n👤 Creator: {creator_name}"
+
+#: .\automations\rules.py:421
+msgid "تعیین بودجه پروژه"
+msgstr "Project Budget Set"
+
+#: .\automations\rules.py:422
+msgid "💰 <b>بودجه پروژه تعیین شد!</b>\n\n📂 پروژه: <b>{project_name}</b>\n💵 بودجه: <b>{budget}</b>\n🏢 سازمان: {org_name}"
+msgstr "💰 <b>Project Budget Set!</b>\n\n📂 Project: <b>{project_name}</b>\n💵 Budget: <b>{budget}</b>\n🏢 Organization: {org_name}"
+
+#: .\automations\rules.py:436
+msgid "عضو جدید در پروژه"
+msgstr "New Project Member"
+
+#: .\automations\rules.py:437
+msgid "👤 <b>عضو جدید به پروژه اضافه شد!</b>\n\n📂 پروژه: <b>{project_name}</b>\n👤 عضو جدید: {member_name}\n🏢 سازمان: {org_name}"
+msgstr "👤 <b>New Member Added to Project!</b>\n\n📂 Project: <b>{project_name}</b>\n👤 New Member: {member_name}\n🏢 Organization: {org_name}"
+
+#: .\automations\rules.py:451
+msgid "عضو جدید در سازمان"
+msgstr "New Organization Member"
+
+#: .\automations\rules.py:452
+msgid "🏢 <b>عضو جدید به سازمان اضافه شد!</b>\n\n🏢 سازمان: <b>{org_name}</b>\n👤 عضو جدید: {member_name}\n🎖 نقش: {role}"
+msgstr "🏢 <b>New Member Added to Organization!</b>\n\n🏢 Organization: <b>{org_name}</b>\n👤 New Member: {member_name}\n🎖 Role: {role}"

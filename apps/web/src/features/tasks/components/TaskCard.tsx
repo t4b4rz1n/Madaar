@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteTask, updateTask, getProjectMembers } from '../api/tasksApi';
 import { useQuery } from '@tanstack/react-query';
 import { useTaskStore } from '../store/useTaskStore';
+import { ConfirmationModal } from '../../../components/ConfirmationModal';
 
 interface TaskCardProps {
   task: Task;
@@ -16,13 +17,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const [isDone, setIsDone] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMembersMenu, setShowMembersMenu] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { activeProjectId } = useTaskStore();
 
   const isDanger = task.is_blocked || (task.due_date && new Date(task.due_date) < new Date());
-  const hasMetadata = task.due_date || (task.comments_count && task.comments_count > 0) || task.subtasks_count > 0 || task.assignee_detail;
+  const hasMetadata = task.due_date || (task.comments_count && task.comments_count > 0) || task.subtasks_count > 0 || task.assignee_detail || (task.checklist_stats && task.checklist_stats.total > 0);
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteTask(task.id),
@@ -33,7 +35,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Task>) => updateTask(task.id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
+    },
   });
 
   const { data: users = [] } = useQuery({
@@ -56,9 +61,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsMenuOpen(false);
-    if (confirm('Are you sure you want to delete this task?')) {
-      deleteMutation.mutate();
-    }
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    setIsDeleteModalOpen(false);
+    deleteMutation.mutate();
   };
 
   const isMutating = updateMutation.isPending || deleteMutation.isPending;
@@ -250,7 +258,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
 
       {hasMetadata && (
         <div className="flex items-center justify-between text-white/40 text-[11px]">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2">
           {task.due_date && (
             <div className={`flex items-center gap-1 ${isDanger ? 'text-red-400' : ''}`}>
               <Timer1 size={13} />
@@ -269,6 +277,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
               <span>{task.subtasks_count}</span>
             </div>
           )}
+          {task.checklist_stats && task.checklist_stats.total > 0 && (
+            <div className={`flex items-center gap-1 ${task.checklist_stats.done === task.checklist_stats.total ? 'text-[#10B981]' : ''}`}>
+              <TickSquare size={13} />
+              <span>{task.checklist_stats.done}/{task.checklist_stats.total}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -282,6 +296,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         </div>
       </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Task"
+        message={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };

@@ -6,6 +6,7 @@ interface TaskStore {
   activeBoardId: string | null;
   setActiveProject: (id: string | null) => void;
   setActiveBoard: (id: string | null) => void;
+  reset: () => void;
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -15,6 +16,7 @@ export const useTaskStore = create<TaskStore>()(
       activeBoardId: null,
       setActiveProject: (id) => set({ activeProjectId: id, activeBoardId: null }),
       setActiveBoard: (id) => set({ activeBoardId: id }),
+      reset: () => set({ activeProjectId: null, activeBoardId: null }),
     }),
     {
       name: 'task-store',
