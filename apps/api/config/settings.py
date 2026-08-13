@@ -22,6 +22,19 @@ env = environ.Env(
 
 environ.Env.read_env(BASE_DIR / ".env")
 
+# --- Cache Configuration ---
+REDIS_CACHE_URL = env("REDIS_CACHE_URL", default="redis://redis:6379/1")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_CACHE_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-CHANGE-ME-IN-PRODUCTION")
 DEBUG = env("DEBUG")
 ENABLE_FIELD_FILTER_PAGINATION = env("ENABLE_FIELD_FILTER_PAGINATION")
@@ -62,6 +75,7 @@ LOCAL_APPS = [
     "tasks.apps.TasksConfig",
     "attendance.apps.AttendanceConfig",
     "automations.apps.AutomationsConfig",
+    "reports.apps.ReportsConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
