@@ -236,152 +236,156 @@ def _format_message(event_type: str, payload: dict) -> tuple:
 
 def _fmt_project_created(p):
     return (
-        _("پروژه جدید"),
+        _("Added to project"),
         _(
-            "🚀 <b>پروژه جدید ایجاد شد!</b>\n\n"
-            "شما توسط {creator} به پروژه <b>{project}</b> اضافه شدید. موفق باشید!"
-        ).format(creator=p.get("creator_name", _("همکار شما")), project=p.get("project_name", "—")),
+            "🚀 <b>You have been added to a new project!</b>\n\n"
+            "You were added by {creator} to project <b>{project}</b>. Good luck!"
+        ).format(
+            creator=p.get("creator_name", _("your colleague")), project=p.get("project_name", "—")
+        ),
     )
 
 
 def _fmt_project_member_removed(p):
     return (
-        _("حذف از پروژه"),
+        _("Removed from project"),
         _(
-            "❌ <b>شما از پروژه حذف شدید!</b>\n\n"
-            "توسط {remover} دسترسی شما از پروژه <b>{project}</b> قطع شد."
+            "❌ <b>You have been removed from a project!</b>\n\n"
+            "Your access to project <b>{project}</b> was revoked by {remover}."
         ).format(
-            remover=p.get("remover_name", _("مدیر سیستم")), project=p.get("project_name", "—")
+            remover=p.get("remover_name", _("system admin")), project=p.get("project_name", "—")
         ),
     )
 
 
 def _fmt_project_over_budget(p):
     return (
-        _("هشدار بودجه پروژه"),
+        _("Project budget warning"),
         _(
-            "⚠️ <b>هشدار بودجه!</b>\n\n"
-            "بودجه پروژه <b>{project}</b> رو به اتمام است یا از حد مجاز عبور کرده.\n"
-            "لطفاً بررسی کنید."
+            "⚠️ <b>Budget warning!</b>\n\n"
+            "The budget for project <b>{project}</b> is running low or has been exceeded.\n"
+            "Please review."
         ).format(project=p.get("project_name", "—")),
     )
 
 
 def _fmt_milestone_approaching(p):
     return (
-        _("نزدیک شدن به پایان فاز"),
+        _("Milestone deadline approaching"),
         _(
-            "⏳ <b>ددلاین نزدیک است!</b>\n\n"
-            "کمتر از ۴۸ ساعت تا پایان فاز <b>{milestone}</b> "
-            "در پروژه <b>{project}</b> باقی مانده."
+            "⏳ <b>Deadline approaching!</b>\n\n"
+            "Less than 48 hours remain until milestone <b>{milestone}</b> "
+            "in project <b>{project}</b>."
         ).format(milestone=p.get("milestone_title", "—"), project=p.get("project_name", "—")),
     )
 
 
 def _fmt_milestone_completed(p):
     return (
-        _("فاز تکمیل شد"),
+        _("Milestone completed"),
         _(
-            "✅ <b>فاز تکمیل شد!</b>\n\n"
-            "فاز <b>{milestone}</b> در پروژه <b>{project}</b> با موفقیت به پایان رسید. خسته نباشید!"
+            "✅ <b>Milestone completed!</b>\n\n"
+            "Milestone <b>{milestone}</b> in project <b>{project}</b> has been successfully completed. Great job!"
         ).format(milestone=p.get("milestone_title", "—"), project=p.get("project_name", "—")),
     )
 
 
 def _fmt_task_assigned(p):
     return (
-        _("تسک جدید"),
+        _("New task assigned"),
         _(
-            "🎯 <b>تسک جدید به شما محول شد!</b>\n\n" "📌 تسک: <b>{task}</b>\n" "👤 توسط: {assigner}"
-        ).format(task=p.get("task_title", "—"), assigner=p.get("assigner", _("مدیر"))),
+            "🎯 <b>A new task has been assigned to you!</b>\n\n"
+            "📌 Task: <b>{task}</b>\n"
+            "👤 By: {assigner}"
+        ).format(task=p.get("task_title", "—"), assigner=p.get("assigner", _("manager"))),
     )
 
 
 def _fmt_task_needs_review(p):
     return (
-        _("نیاز به بررسی"),
+        _("Task ready for review"),
         _(
-            "👀 <b>تسک آماده بررسی است!</b>\n\n"
-            "📌 تسک: <b>{task}</b>\n"
-            "👤 ارسال‌کننده: {assignee}"
-        ).format(task=p.get("task_title", "—"), assignee=p.get("assignee", _("همکار شما"))),
+            "👀 <b>Task is ready for review!</b>\n\n"
+            "📌 Task: <b>{task}</b>\n"
+            "👤 Submitted by: {assignee}"
+        ).format(task=p.get("task_title", "—"), assignee=p.get("assignee", _("your colleague"))),
     )
 
 
 def _fmt_task_completed(p):
     return (
-        _("تسک انجام شد"),
-        _("🎉 <b>تسک انجام شد!</b>\n\n" "📌 تسک <b>{task}</b> با موفقیت تکمیل شد.").format(
-            task=p.get("task_title", "—")
-        ),
+        _("Task completed"),
+        _(
+            "🎉 <b>Task completed!</b>\n\n" "📌 Task <b>{task}</b> has been successfully completed."
+        ).format(task=p.get("task_title", "—")),
     )
 
 
 def _fmt_task_deadline_approaching(p):
     return (
-        _("هشدار ددلاین"),
+        _("Task deadline warning"),
         _(
-            "⏰ <b>هشدار ددلاین!</b>\n\n" "کمتر از ۲۴ ساعت به مهلت تسک <b>{task}</b> باقی مانده."
+            "⏰ <b>Deadline warning!</b>\n\n" "Less than 24 hours remain for task <b>{task}</b>."
         ).format(task=p.get("task_title", "—")),
     )
 
 
 def _fmt_user_mentioned(p):
     return (
-        _("منشن در کامنت"),
+        _("Mentioned in comment"),
         _(
-            "🔔 <b>شما منشن شدید!</b>\n\n"
-            "{author} شما را در کامنت‌های تسک <b>{task}</b> تگ کرده است."
-        ).format(author=p.get("author", _("کسی")), task=p.get("task_title", "—")),
+            "🔔 <b>You were mentioned!</b>\n\n"
+            "{author} mentioned you in the comments of task <b>{task}</b>."
+        ).format(author=p.get("author", _("someone")), task=p.get("task_title", "—")),
     )
 
 
 def _fmt_task_commented(p):
     return (
-        _("کامنت جدید"),
+        _("New comment"),
         _(
-            "💬 <b>کامنت جدید!</b>\n\n" "{author} یک نظر جدید برای تسک <b>{task}</b> ثبت کرده است."
-        ).format(author=p.get("author", _("کسی")), task=p.get("task_title", "—")),
+            "💬 <b>New comment!</b>\n\n" "{author} added a new comment on task <b>{task}</b>."
+        ).format(author=p.get("author", _("someone")), task=p.get("task_title", "—")),
     )
 
 
 def _fmt_standup_submitted(p):
     return (
-        _("گزارش روزانه"),
+        _("Daily standup"),
         _(
-            "📝 <b>گزارش روزانه (Standup)</b>\n\n"
-            "همکار شما {user} گزارش استندآپ امروز خود را ثبت کرد."
+            "📝 <b>Daily Stand-up Report</b>\n\n"
+            "Your colleague {user} has submitted their daily standup report."
         ).format(user=p.get("user_name", "—")),
     )
 
 
 def _fmt_leave_requested(p):
     return (
-        _("درخواست مرخصی"),
+        _("Leave requested"),
         _(
-            "🏖️ <b>درخواست مرخصی جدید!</b>\n\n"
+            "🏖️ <b>New leave request!</b>\n\n"
             "👤 {user}\n"
-            "📋 نوع: {leave_type}\n\n"
-            "لطفاً بررسی کنید."
-        ).format(user=p.get("user_name", "—"), leave_type=p.get("leave_type", _("مرخصی"))),
+            "📋 Type: {leave_type}\n\n"
+            "Please review."
+        ).format(user=p.get("user_name", "—"), leave_type=p.get("leave_type", _("leave"))),
     )
 
 
 def _fmt_leave_resolved(p):
     return (
-        _("وضعیت مرخصی"),
+        _("Leave status"),
         _(
-            "📋 <b>نتیجه درخواست مرخصی</b>\n\n"
-            "درخواست مرخصی شما بررسی شد.\n"
-            "📊 وضعیت: <b>{status}</b>"
+            "📋 <b>Leave request result</b>\n\n"
+            "Your leave request has been reviewed.\n"
+            "📊 Status: <b>{status}</b>"
         ).format(status=p.get("status", "—")),
     )
 
 
 def _fmt_timer_started(p):
     return (
-        _("شروع تایمر"),
-        _("⏱️ <b>تایمر کاری روشن شد!</b>\n\n" "👤 {user}\n" "📌 تسک: <b>{task}</b>").format(
+        _("Timer started"),
+        _("⏱️ <b>Work timer started!</b>\n\n" "👤 {user}\n" "📌 Task: <b>{task}</b>").format(
             user=p.get("user_name", "—"), task=p.get("task_title", "—")
         ),
     )
@@ -389,11 +393,11 @@ def _fmt_timer_started(p):
 
 def _fmt_organization_created(p):
     return (
-        _("سازمان جدید"),
+        _("New organization"),
         _(
-            "🏢 <b>سازمان جدید ایجاد شد!</b>\n\n"
-            "📌 نام: <b>{org_name}</b>\n"
-            "👤 مالک: {owner_name}"
+            "🏢 <b>New organization created!</b>\n\n"
+            "📌 Name: <b>{org_name}</b>\n"
+            "👤 Owner: {owner_name}"
         ).format(
             org_name=p.get("org_name", "—"),
             owner_name=p.get("owner_name", "—"),
@@ -403,12 +407,12 @@ def _fmt_organization_created(p):
 
 def _fmt_project_actually_created(p):
     return (
-        _("پروژه جدید"),
+        _("New project"),
         _(
-            "📂 <b>پروژه جدید ایجاد شد!</b>\n\n"
-            "📌 نام: <b>{project_name}</b>\n"
-            "🏢 سازمان: {org_name}\n"
-            "👤 سازنده: {creator_name}"
+            "📂 <b>New project created!</b>\n\n"
+            "📌 Name: <b>{project_name}</b>\n"
+            "🏢 Organization: {org_name}\n"
+            "👤 Creator: {creator_name}"
         ).format(
             project_name=p.get("project_name", "—"),
             org_name=p.get("org_name", "—"),
@@ -419,12 +423,12 @@ def _fmt_project_actually_created(p):
 
 def _fmt_project_budget_set(p):
     return (
-        _("تعیین بودجه پروژه"),
+        _("Project budget set"),
         _(
-            "💰 <b>بودجه پروژه تعیین شد!</b>\n\n"
-            "📂 پروژه: <b>{project_name}</b>\n"
-            "💵 بودجه: <b>{budget}</b>\n"
-            "🏢 سازمان: {org_name}"
+            "💰 <b>Project budget set!</b>\n\n"
+            "📂 Project: <b>{project_name}</b>\n"
+            "💵 Budget: <b>{budget}</b>\n"
+            "🏢 Organization: {org_name}"
         ).format(
             project_name=p.get("project_name", "—"),
             budget=p.get("budget", "—"),
@@ -435,12 +439,12 @@ def _fmt_project_budget_set(p):
 
 def _fmt_member_added_to_project(p):
     return (
-        _("عضو جدید در پروژه"),
+        _("New project member"),
         _(
-            "👤 <b>عضو جدید به پروژه اضافه شد!</b>\n\n"
-            "📂 پروژه: <b>{project_name}</b>\n"
-            "👤 عضو جدید: {member_name}\n"
-            "🏢 سازمان: {org_name}"
+            "👤 <b>New member added to project!</b>\n\n"
+            "📂 Project: <b>{project_name}</b>\n"
+            "👤 New member: {member_name}\n"
+            "🏢 Organization: {org_name}"
         ).format(
             project_name=p.get("project_name", "—"),
             member_name=p.get("member_name", "—"),
@@ -451,12 +455,12 @@ def _fmt_member_added_to_project(p):
 
 def _fmt_member_added_to_org(p):
     return (
-        _("عضو جدید در سازمان"),
+        _("New organization member"),
         _(
-            "🏢 <b>عضو جدید به سازمان اضافه شد!</b>\n\n"
-            "🏢 سازمان: <b>{org_name}</b>\n"
-            "👤 عضو جدید: {member_name}\n"
-            "🎖 نقش: {role}"
+            "🏢 <b>New member added to organization!</b>\n\n"
+            "🏢 Organization: <b>{org_name}</b>\n"
+            "👤 New member: {member_name}\n"
+            "🎖 Role: {role}"
         ).format(
             org_name=p.get("org_name", "—"),
             member_name=p.get("member_name", "—"),

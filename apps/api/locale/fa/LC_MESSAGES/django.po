@@ -1,0 +1,174 @@
+# Madaar Persian (Farsi) translations
+# Copyright (C) 2026
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Madaar\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-13 16:00-0400\n"
+"PO-Revision-Date: 2026-08-13 16:00-0400\n"
+"Last-Translator: Auto\n"
+"Language-Team: Persian\n"
+"Language: fa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: automations/services.py - language change
+msgid "✅ Language successfully updated."
+msgstr "✅ زبان شما با موفقیت به روز شد."
+
+#: automations/rules.py - _fmt_project_created
+msgid "Added to project"
+msgstr "عضو جدید پروژه"
+
+msgid "🚀 <b>You have been added to a new project!</b>\n\nYou were added by {creator} to project <b>{project}</b>. Good luck!"
+msgstr "🚀 <b>پروژه جدید ایجاد شد!</b>\n\nشما توسط {creator} به پروژه <b>{project}</b> اضافه شدید. موفق باشید!"
+
+msgid "your colleague"
+msgstr "همکار شما"
+
+#: automations/rules.py - _fmt_project_member_removed
+msgid "Removed from project"
+msgstr "حذف از پروژه"
+
+msgid "❌ <b>You have been removed from a project!</b>\n\nYour access to project <b>{project}</b> was revoked by {remover}."
+msgstr "❌ <b>شما از پروژه حذف شدید!</b>\n\nتوسط {remover} دسترسی شما از پروژه <b>{project}</b> قطع شد."
+
+msgid "system admin"
+msgstr "مدیر سیستم"
+
+#: automations/rules.py - _fmt_project_over_budget
+msgid "Project budget warning"
+msgstr "هشدار بودجه پروژه"
+
+msgid "⚠️ <b>Budget warning!</b>\n\nThe budget for project <b>{project}</b> is running low or has been exceeded.\nPlease review."
+msgstr "⚠️ <b>هشدار بودجه!</b>\n\nبودجه پروژه <b>{project}</b> رو به اتمام است یا از حد مجاز عبور کرده.\nلطفاً بررسی کنید."
+
+#: automations/rules.py - _fmt_milestone_approaching
+msgid "Milestone deadline approaching"
+msgstr "نزدیک شدن به پایان فاز"
+
+msgid "⏳ <b>Deadline approaching!</b>\n\nLess than 48 hours remain until milestone <b>{milestone}</b> in project <b>{project}</b>."
+msgstr "⏳ <b>ددلاین نزدیک است!</b>\n\nکمتر از ۴۸ ساعت تا پایان فاز <b>{milestone}</b> در پروژه <b>{project}</b> باقی مانده."
+
+#: automations/rules.py - _fmt_milestone_completed
+msgid "Milestone completed"
+msgstr "فاز تکمیل شد"
+
+msgid "✅ <b>Milestone completed!</b>\n\nMilestone <b>{milestone}</b> in project <b>{project}</b> has been successfully completed. Great job!"
+msgstr "✅ <b>فاز تکمیل شد!</b>\n\nفاز <b>{milestone}</b> در پروژه <b>{project}</b> با موفقیت به پایان رسید. خسته نباشید!"
+
+#: automations/rules.py - _fmt_task_assigned
+msgid "New task assigned"
+msgstr "تسک جدید"
+
+msgid "🎯 <b>A new task has been assigned to you!</b>\n\n📌 Task: <b>{task}</b>\n👤 By: {assigner}"
+msgstr "🎯 <b>تسک جدید به شما محول شد!</b>\n\n📌 تسک: <b>{task}</b>\n👤 توسط: {assigner}"
+
+msgid "manager"
+msgstr "مدیر"
+
+#: automations/rules.py - _fmt_task_needs_review
+msgid "Task ready for review"
+msgstr "نیاز به بررسی"
+
+msgid "👀 <b>Task is ready for review!</b>\n\n📌 Task: <b>{task}</b>\n👤 Submitted by: {assignee}"
+msgstr "👀 <b>تسک آماده بررسی است!</b>\n\n📌 تسک: <b>{task}</b>\n👤 ارسال‌کننده: {assignee}"
+
+#: automations/rules.py - _fmt_task_completed
+msgid "Task completed"
+msgstr "تسک انجام شد"
+
+msgid "🎉 <b>Task completed!</b>\n\n📌 Task <b>{task}</b> has been successfully completed."
+msgstr "🎉 <b>تسک انجام شد!</b>\n\n📌 تسک <b>{task}</b> با موفقیت تکمیل شد."
+
+#: automations/rules.py - _fmt_task_deadline_approaching
+msgid "Task deadline warning"
+msgstr "هشدار ددلاین"
+
+msgid "⏰ <b>Deadline warning!</b>\n\nLess than 24 hours remain for task <b>{task}</b>."
+msgstr "⏰ <b>هشدار ددلاین!</b>\n\nکمتر از ۲۴ ساعت به مهلت تسک <b>{task}</b> باقی مانده."
+
+#: automations/rules.py - _fmt_user_mentioned
+msgid "Mentioned in comment"
+msgstr "منشن در کامنت"
+
+msgid "🔔 <b>You were mentioned!</b>\n\n{author} mentioned you in the comments of task <b>{task}</b>."
+msgstr "🔔 <b>شما منشن شدید!</b>\n\n{author} شما را در کامنت‌های تسک <b>{task}</b> تگ کرده است."
+
+msgid "someone"
+msgstr "کسی"
+
+#: automations/rules.py - _fmt_task_commented
+msgid "New comment"
+msgstr "کامنت جدید"
+
+msgid "💬 <b>New comment!</b>\n\n{author} added a new comment on task <b>{task}</b>."
+msgstr "💬 <b>کامنت جدید!</b>\n\n{author} یک نظر جدید برای تسک <b>{task}</b> ثبت کرده است."
+
+#: automations/rules.py - _fmt_standup_submitted
+msgid "Daily standup"
+msgstr "گزارش روزانه"
+
+msgid "📝 <b>Daily Stand-up Report</b>\n\nYour colleague {user} has submitted their daily standup report."
+msgstr "📝 <b>گزارش روزانه (Standup)</b>\n\nهمکار شما {user} گزارش استندآپ امروز خود را ثبت کرد."
+
+#: automations/rules.py - _fmt_leave_requested
+msgid "Leave requested"
+msgstr "درخواست مرخصی"
+
+msgid "🏖️ <b>New leave request!</b>\n\n👤 {user}\n📋 Type: {leave_type}\n\nPlease review."
+msgstr "🏖️ <b>درخواست مرخصی جدید!</b>\n\n👤 {user}\n📋 نوع: {leave_type}\n\nلطفاً بررسی کنید."
+
+msgid "leave"
+msgstr "مرخصی"
+
+#: automations/rules.py - _fmt_leave_resolved
+msgid "Leave status"
+msgstr "وضعیت مرخصی"
+
+msgid "📋 <b>Leave request result</b>\n\nYour leave request has been reviewed.\n📊 Status: <b>{status}</b>"
+msgstr "📋 <b>نتیجه درخواست مرخصی</b>\n\nدرخواست مرخصی شما بررسی شد.\n📊 وضعیت: <b>{status}</b>"
+
+#: automations/rules.py - _fmt_timer_started
+msgid "Timer started"
+msgstr "شروع تایمر"
+
+msgid "⏱️ <b>Work timer started!</b>\n\n👤 {user}\n📌 Task: <b>{task}</b>"
+msgstr "⏱️ <b>تایمر کاری روشن شد!</b>\n\n👤 {user}\n📌 تسک: <b>{task}</b>"
+
+#: automations/rules.py - _fmt_organization_created
+msgid "New organization"
+msgstr "سازمان جدید"
+
+msgid "🏢 <b>New organization created!</b>\n\n📌 Name: <b>{org_name}</b>\n👤 Owner: {owner_name}"
+msgstr "🏢 <b>سازمان جدید ایجاد شد!</b>\n\n📌 نام: <b>{org_name}</b>\n👤 مالک: {owner_name}"
+
+#: automations/rules.py - _fmt_project_actually_created
+msgid "New project"
+msgstr "پروژه جدید"
+
+msgid "📂 <b>New project created!</b>\n\n📌 Name: <b>{project_name}</b>\n🏢 Organization: {org_name}\n👤 Creator: {creator_name}"
+msgstr "📂 <b>پروژه جدید ایجاد شد!</b>\n\n📌 نام: <b>{project_name}</b>\n🏢 سازمان: {org_name}\n👤 سازنده: {creator_name}"
+
+#: automations/rules.py - _fmt_project_budget_set
+msgid "Project budget set"
+msgstr "تعیین بودجه پروژه"
+
+msgid "💰 <b>Project budget set!</b>\n\n📂 Project: <b>{project_name}</b>\n💵 Budget: <b>{budget}</b>\n🏢 Organization: {org_name}"
+msgstr "💰 <b>بودجه پروژه تعیین شد!</b>\n\n📂 پروژه: <b>{project_name}</b>\n💵 بودجه: <b>{budget}</b>\n🏢 سازمان: {org_name}"
+
+#: automations/rules.py - _fmt_member_added_to_project
+msgid "New project member"
+msgstr "عضو جدید در پروژه"
+
+msgid "👤 <b>New member added to project!</b>\n\n📂 Project: <b>{project_name}</b>\n👤 New member: {member_name}\n🏢 Organization: {org_name}"
+msgstr "👤 <b>عضو جدید به پروژه اضافه شد!</b>\n\n📂 پروژه: <b>{project_name}</b>\n👤 عضو جدید: {member_name}\n🏢 سازمان: {org_name}"
+
+#: automations/rules.py - _fmt_member_added_to_org
+msgid "New organization member"
+msgstr "عضو جدید در سازمان"
+
+msgid "🏢 <b>New member added to organization!</b>\n\n🏢 Organization: <b>{org_name}</b>\n👤 New member: {member_name}\n🎖 Role: {role}"
+msgstr "🏢 <b>عضو جدید به سازمان اضافه شد!</b>\n\n🏢 سازمان: <b>{org_name}</b>\n👤 عضو جدید: {member_name}\n🎖 نقش: {role}"
