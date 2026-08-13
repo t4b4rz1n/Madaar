@@ -7,6 +7,8 @@ export interface UserProfile {
   is_staff: boolean;
   profile_image: string | null;
   telegram_connected?: boolean;
+  notify_via_email?: boolean;
+  notify_via_telegram?: boolean;
 }
 
 export interface ProfileUpdateData {
@@ -16,6 +18,7 @@ export interface ProfileUpdateData {
   password?: string;
   password_confirm?: string;
   avatar?: File;
+  profile_image?: File | string | null;
   notify_via_email?: boolean;
   notify_via_telegram?: boolean;
 }
