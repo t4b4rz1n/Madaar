@@ -147,7 +147,13 @@ export const AutomationsPage = () => {
         <div className="flex justify-center py-16"><span className="loading loading-spinner loading-lg text-primary" /></div>
       ) : (
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {catalog?.events.map((event) => {
+          {catalog?.events.filter(event => ![
+            "Organization created",
+            "Project created",
+            "Project budget set or changed",
+            "Member added to project (admin view)",
+            "Member added to organization"
+          ].includes(event.label)).map((event) => {
             const rule = event.rule;
             const recipients = rule?.recipients ?? event.default_recipients;
             const active = rule?.is_active ?? true;

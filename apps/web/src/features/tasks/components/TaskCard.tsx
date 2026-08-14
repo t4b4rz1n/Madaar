@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Task } from '../types';
 import { Timer1, Message, Paperclip2, TickCircle, More, TaskSquare, Tag, Profile2User, Gallery, Calendar, ArrowRight, TickSquare, Copy, Link, Archive, Mirror, Trash } from 'iconsax-reactjs';
@@ -8,12 +8,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useTaskStore } from '../store/useTaskStore';
 import { ConfirmationModal } from '../../../components/ConfirmationModal';
 
+
 interface TaskCardProps {
   task: Task;
   onClick: () => void;
+  onPlayTimer?: (taskId: number) => void;
+  onStopTimer?: (taskId: number) => void;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, onStopTimer }) => {
   const [isDone, setIsDone] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMembersMenu, setShowMembersMenu] = useState(false);
@@ -24,7 +27,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const { activeProjectId } = useTaskStore();
 
   const isDanger = task.is_blocked || (task.due_date && new Date(task.due_date) < new Date());
-  const hasMetadata = task.due_date || (task.comments_count && task.comments_count > 0) || task.subtasks_count > 0 || task.assignee_detail || (task.checklist_stats && task.checklist_stats.total > 0);
+  const hasMetadata = task.due_date || (task.comments_count && task.comments_count > 0) || task.subtasks_count > 0 || task.assignee_detail || (task.checklist_stats && task.checklist_stats.total > 0) || task.is_active_timer_running || task.spent_hours;
+
+  const formatSpentTime = (hoursFloat: number | string | undefined) => {
+    if (!hoursFloat) return null;
+    const totalSeconds = Math.round(Number(hoursFloat) * 3600);
+    if (totalSeconds <= 0) return null;
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteTask(task.id),
@@ -162,7 +175,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
                       className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-md transition-colors w-full text-left"
                       onClick={(e) => {
                         e.stopPropagation();
-                        updateMutation.mutate({ assignee: null });
+                        updateMutation.mutate({ assignee: undefined });
                         setIsMenuOpen(false);
                         setShowMembersMenu(false);
                       }}
@@ -218,7 +231,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
                           <span
                             onClick={(e) => {
                               e.stopPropagation();
-                              updateMutation.mutate({ due_date: null });
+                              updateMutation.mutate({ due_date: undefined });
                               setIsMenuOpen(false);
                             }}
                             className="text-white/40 hover:text-red-400 p-0.5 rounded hover:bg-red-500/10 transition-colors"
@@ -277,11 +290,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
               <span>{task.subtasks_count}</span>
             </div>
           )}
+
+          {/* Checklist FIRST */}
           {task.checklist_stats && task.checklist_stats.total > 0 && (
             <div className={`flex items-center gap-1 ${task.checklist_stats.done === task.checklist_stats.total ? 'text-[#10B981]' : ''}`}>
               <TickSquare size={13} />
               <span>{task.checklist_stats.done}/{task.checklist_stats.total}</span>
             </div>
+          )}
+
+          {/* Start/Stop Button AT THE END */}
+          {task.is_active_timer_running ? (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onStopTimer?.(task.id); }}
+              className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors p-0.5 rounded hover:bg-red-500/10" 
+              title="Stop Timer"
+            >
+              <div className="w-2.5 h-2.5 bg-red-400 rounded-sm animate-pulse" />
+            </button>
+          ) : (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onPlayTimer?.(task.id); }}
+              className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors p-0.5 rounded hover:bg-emerald-500/10 opacity-0 group-hover:opacity-100" 
+              title="Start Timer"
+            >
+              <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-emerald-400 border-b-[5px] border-b-transparent ml-0.5" />
+            </button>
           )}
         </div>
 

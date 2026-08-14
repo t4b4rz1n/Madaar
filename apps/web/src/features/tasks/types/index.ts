@@ -38,21 +38,21 @@ export interface AsyncStandup {
 }
 
 export interface TaskStatus {
-  id: number;
+  id: string | number;
   code: string;
   name: string;
   order: number;
 }
 
 export interface TaskChecklistItem {
-  id: number;
+  id: string | number;
   description: string;
   is_completed: boolean;
   created_at: string;
 }
 
 export interface TaskComment {
-  id: number;
+  id: string | number;
   author: number;
   author_detail?: User;
   content: string;
@@ -61,7 +61,7 @@ export interface TaskComment {
 }
 
 export interface Task {
-  id: number;
+  id: string | number;
   key: string;
   title: string;
   description?: string;
@@ -87,6 +87,10 @@ export interface Task {
   };
   comments?: TaskComment[];
   comments_count?: number;
+  is_active_timer_running?: boolean;
+  estimated_hours?: number;
+  spent_hours?: number;
+  project?: number;
 }
 
 export interface Board {
