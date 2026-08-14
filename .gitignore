@@ -131,3 +131,4 @@ minio_data/
 pyrightconfig.json
 node_modules/
 .kilo/
+.local/
