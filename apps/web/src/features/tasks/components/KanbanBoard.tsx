@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBoards, getTasks, moveTask, createTask, reorderTasks } from '../api/tasksApi';
+import { startTimer, stopTimer } from '../../attendance/api/attendanceApi';
 import { useTaskStore } from '../store/useTaskStore';
 import { TaskCard } from './TaskCard';
 import { TaskDetailModal } from './TaskDetailModal';
+import { DroppableColumn } from './DroppableColumn';
 import type { Task } from '../types';
 
 import {
   DndContext,
   DragOverlay,
-  closestCenter,
+  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -23,6 +25,7 @@ import type {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableTask } from './SortableTask';
 import { More } from 'iconsax-reactjs';
+import { toast } from 'sonner';
 
 export const KanbanBoard: React.FC = () => {
   const { activeProjectId, activeBoardId } = useTaskStore();
@@ -57,18 +60,41 @@ export const KanbanBoard: React.FC = () => {
   }, [serverTasks]);
 
   const moveTaskMutation = useMutation({
-    mutationFn: ({ taskId, statusId, order }: { taskId: number, statusId: number, order: number }) => moveTask(taskId, statusId, order),
-    onMutate: async () => {
-      // Local state is already updated optimistically in onDragEnd/onDragOver
+    mutationFn: ({ taskId, statusId, order }: { taskId: string | number, statusId: string | number, order: number }) => moveTask(taskId, statusId, order),
+    onMutate: async ({ taskId, statusId }) => {
+      const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
+      const targetStatus = activeBoard?.statuses.find(s => s.id === statusId);
+      const isDoing = targetStatus && (targetStatus.code === 'doing' || targetStatus.name.toLowerCase() === 'doing' || targetStatus.name.toLowerCase() === 'in progress');
+      const isReviewOrDone = targetStatus && (targetStatus.code === 'review' || targetStatus.code === 'done' || targetStatus.name.toLowerCase() === 'review' || targetStatus.name.toLowerCase() === 'done');
+
+      if (isDoing || isReviewOrDone) {
+        setLocalTasks(tasks => tasks.map(t => {
+          if (t.id === taskId) {
+            return { ...t, is_active_timer_running: isDoing ? true : false };
+          }
+          if (isDoing) {
+             return { ...t, is_active_timer_running: false };
+          }
+          return t;
+        }));
+      }
+
       return { previousTasks: serverTasks };
     },
-    onError: (_err, _newMove, context: any) => {
+    onError: (err: any, _newMove, context: any) => {
+      const errorData = err.response?.data;
+      const errorMessage = errorData?.detail || errorData?.error || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData)) || err.message || 'Failed to move task';
+      console.error('Move task error:', err.response?.status, errorData);
+      alert('Move task error: ' + errorMessage);
+      toast.error(errorMessage);
       if (context?.previousTasks) {
+        setLocalTasks(context.previousTasks);
         queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
       }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
     },
   });
 
@@ -79,6 +105,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onError: (_err, _vars, context: any) => {
       if (context?.previousTasks) {
+        setLocalTasks(context.previousTasks);
         queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
       }
     },
@@ -109,10 +136,114 @@ export const KanbanBoard: React.FC = () => {
     createTaskMutation.mutate({ title: newTaskTitle, statusId, priority: newTaskPriority });
   };
 
+  const startTimerMutation = useMutation({
+    mutationFn: (taskId: number) => startTimer(taskId),
+    onMutate: async (taskId) => {
+      // Find "doing" or "in progress" status IN THE ACTIVE BOARD
+      const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
+      const doingStatus = activeBoard?.statuses.find(s => s.code === 'doing' || s.name.toLowerCase() === 'doing' || s.name.toLowerCase() === 'in progress');
+      
+      const previousTasks = [...localTasks];
+
+      // Stop all other timers optimistically first (only one can be active)
+      // And if there's a doing status, move this task to doing
+      setLocalTasks(tasks => tasks.map(t => {
+        if (t.id === taskId) {
+          const updatedTask = { ...t, is_active_timer_running: true };
+          if (doingStatus && t.status_detail?.id !== doingStatus.id) {
+            updatedTask.status_detail = doingStatus as any;
+          }
+          return updatedTask;
+        }
+        return { ...t, is_active_timer_running: false };
+      }));
+
+      return { previousTasks };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
+    },
+    onError: (err: any, taskId, context: any) => {
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to start timer';
+      toast.error(errorMessage);
+      // Revert completely
+      if (context?.previousTasks) {
+        setLocalTasks(context.previousTasks);
+      } else {
+        setLocalTasks(tasks => tasks.map(t => t.id === taskId ? { ...t, is_active_timer_running: false } : t));
+      }
+    }
+  });
+
+  const stopTimerMutation = useMutation({
+    mutationFn: (_taskId: number) => stopTimer(),
+    onMutate: async (taskId) => {
+      setLocalTasks(tasks => tasks.map(t => t.id === taskId ? { ...t, is_active_timer_running: false } : t));
+    },
+    onSuccess: (data, taskId) => {
+      if (data && data.duration_seconds !== undefined) {
+        setLocalTasks(tasks => tasks.map(t => {
+          if (t.id === taskId) {
+            const currentSpent = Number(t.spent_hours || 0);
+            const newSpent = currentSpent + (data.duration_seconds / 3600);
+            return { ...t, spent_hours: newSpent };
+          }
+          return t;
+        }));
+      }
+      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
+    },
+    onError: (err: any, taskId) => {
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to stop timer';
+      toast.error(errorMessage);
+      // Revert
+      setLocalTasks(tasks => tasks.map(t => t.id === taskId ? { ...t, is_active_timer_running: true } : t));
+    }
+  });
+
+  const handlePlayTimer = (taskId: number) => {
+    const task = localTasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    // Find "doing" or "in progress" status IN THE ACTIVE BOARD
+    const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
+    const doingStatus = activeBoard?.statuses.find(s => s.code === 'doing' || s.name.toLowerCase() === 'doing' || s.name.toLowerCase() === 'in progress');
+    
+    // If we have a doing status and the task is not already in it, move it optimistically
+    if (doingStatus && task.status_detail?.id !== doingStatus.id) {
+      // Optimistic update (backend will auto-move it to doing when we start the timer)
+      setLocalTasks(tasks => {
+        const newTasks = [...tasks];
+        const index = newTasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+          newTasks[index] = { ...newTasks[index], status_detail: doingStatus as any };
+        }
+        return newTasks;
+      });
+    }
+    
+    startTimerMutation.mutate(taskId);
+  };
+
+  const handleStopTimer = (taskId: number) => {
+    stopTimerMutation.mutate(taskId);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor)
   );
+
+  // Helper: find which status a task or column id belongs to
+  const findStatusId = (id: string): string | null => {
+    if (id.startsWith('col-')) {
+      return id.replace('col-', '');
+    }
+    const task = localTasks.find(t => t.id.toString() === id);
+    return task?.status_detail?.id?.toString() || null;
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     isDraggingRef.current = true;
@@ -130,50 +261,43 @@ export const KanbanBoard: React.FC = () => {
 
     if (activeId === overId) return;
 
-    const isActiveTask = active.data.current?.type === 'Task';
-    const isOverTask = over.data.current?.type === 'Task';
+    const activeStatusId = findStatusId(activeId);
+    const overStatusId = findStatusId(overId);
 
-    // If we're dragging over another task
-    if (isActiveTask && isOverTask) {
-      const activeTask = localTasks.find(t => t.id.toString() === activeId);
-      const overTask = localTasks.find(t => t.id.toString() === overId);
+    if (!activeStatusId || !overStatusId || activeStatusId === overStatusId) return;
 
-      if (!activeTask || !overTask) return;
+    // Cross-column move: update the task's status_detail locally
+    const statusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === overStatusId);
+    if (!statusDetail) return;
+    
+    const activeStatusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === activeStatusId);
+    const activeCode = activeStatusDetail?.code?.toLowerCase() || '';
+    const targetCode = statusDetail?.code?.toLowerCase() || '';
 
-      if (activeTask.status_detail?.id !== overTask.status_detail?.id) {
-        // Cross column move
-        setLocalTasks((tasks) => {
-          const activeIndex = tasks.findIndex(t => t.id.toString() === activeId);
-          const overIndex = tasks.findIndex(t => t.id.toString() === overId);
-          const newTasks = [...tasks];
-          newTasks[activeIndex] = {
-            ...newTasks[activeIndex],
-            status_detail: overTask.status_detail
-          };
+    if (targetCode === 'todo' && (activeCode === 'doing' || activeCode === 'review')) {
+      return; // Prevent dragging backwards to To Do
+    }
+
+    setLocalTasks((tasks) => {
+      const activeIndex = tasks.findIndex(t => t.id.toString() === activeId);
+      if (activeIndex === -1) return tasks;
+
+      const newTasks = [...tasks];
+      newTasks[activeIndex] = {
+        ...newTasks[activeIndex],
+        status_detail: statusDetail as any
+      };
+
+      // If dropping over a task, reorder near it
+      if (!overId.startsWith('col-')) {
+        const overIndex = newTasks.findIndex(t => t.id.toString() === overId);
+        if (overIndex !== -1) {
           return arrayMove(newTasks, activeIndex, overIndex);
-        });
-      }
-    }
-
-    // If we're dragging over an empty column
-    const isOverColumn = overId.startsWith('col-');
-    if (isActiveTask && isOverColumn) {
-      const overStatusId = parseInt(overId.replace('col-', ''));
-      setLocalTasks((tasks) => {
-        const activeIndex = tasks.findIndex(t => t.id.toString() === activeId);
-        const activeTask = tasks[activeIndex];
-        if (activeTask.status_detail?.id !== overStatusId) {
-          const statusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === overStatusId);
-          const newTasks = [...tasks];
-          newTasks[activeIndex] = {
-            ...newTasks[activeIndex],
-            status_detail: statusDetail as any
-          };
-          return arrayMove(newTasks, activeIndex, newTasks.length - 1);
         }
-        return tasks;
-      });
-    }
+      }
+
+      return newTasks;
+    });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -181,7 +305,7 @@ export const KanbanBoard: React.FC = () => {
     setActiveTask(null);
     const { active, over } = event;
     if (!over) {
-      // Sync back with server if dropped outside
+      // Snap back
       setLocalTasks(serverTasks || []);
       return;
     }
@@ -189,66 +313,76 @@ export const KanbanBoard: React.FC = () => {
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
-    const activeTask = localTasks.find(t => t.id.toString() === activeId);
-    if (!activeTask) return;
+    const movedTask = localTasks.find(t => t.id.toString() === activeId);
+    if (!movedTask) return;
 
-    let overStatusId: number | null = null;
-    let newOrder = 0;
+    const originalTask = serverTasks?.find(t => t.id.toString() === activeId);
+    const originalStatusId = originalTask?.status_detail?.id;
+    
+    // Use findStatusId to reliably get the target column, bypassing stale localTasks for the dragged item
+    const overStatusId = findStatusId(overId);
+    const newStatusId = overStatusId || movedTask.status_detail?.id;
 
-    if (overId.startsWith('col-')) {
-      overStatusId = parseInt(overId.replace('col-', ''));
-      const overColumnTasks = localTasks.filter(t => t.status_detail?.id === overStatusId) || [];
-      if (overColumnTasks.length > 0) {
-        newOrder = overColumnTasks[overColumnTasks.length - 1].order + 1;
-      } else {
-        newOrder = 0;
+    if (!newStatusId) return;
+
+    const wasCrossColumn = originalStatusId !== newStatusId;
+
+    if (wasCrossColumn) {
+      const originalStatusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === originalStatusId);
+      const targetStatusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === newStatusId);
+      const originalCode = originalStatusDetail?.code?.toLowerCase() || '';
+      const targetCode = targetStatusDetail?.code?.toLowerCase() || '';
+
+      if (targetCode === 'todo' && (originalCode === 'doing' || originalCode === 'review')) {
+        setLocalTasks(serverTasks || []); // Revert visually
+        return; // Prevent API call
       }
-    } else {
-      const overTask = localTasks.find(t => t.id.toString() === overId);
-      if (overTask && overTask.status_detail) {
-        overStatusId = overTask.status_detail.id;
+    }
 
-        const overColumnTasks = localTasks.filter(t => t.status_detail?.id === overStatusId);
-        const activeIndex = overColumnTasks.findIndex(t => t.id.toString() === activeId);
+    let finalTasks = [...localTasks];
+    const activeIndex = finalTasks.findIndex(t => t.id.toString() === activeId);
 
-        if (activeIndex !== -1) {
-          // Both in same column (dnd-kit visually sorted them, now commit to state)
-          let newColumnOrders: { id: number; order: number }[] = [];
+    if (activeIndex !== -1) {
+      // Ensure the dragged task has the correct target status (in case handleDragOver state update was batched/stale)
+      const targetStatusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === newStatusId);
+      if (targetStatusDetail) {
+        finalTasks[activeIndex] = { ...finalTasks[activeIndex], status_detail: targetStatusDetail as any };
+      }
 
-          setLocalTasks((tasks) => {
-             const allActiveIdx = tasks.findIndex(t => t.id.toString() === activeId);
-             const allOverIdx = tasks.findIndex(t => t.id.toString() === overId);
-             const newTasks = arrayMove(tasks, allActiveIdx, allOverIdx);
-
-             // Recalculate orders sequentially for the column to fix any data corruption
-             const updatedColumnTasks = newTasks.filter(t => t.status_detail?.id === overStatusId);
-             newColumnOrders = updatedColumnTasks.map((t, idx) => ({ id: t.id, order: idx }));
-
-             // Apply orders locally right away
-             return newTasks.map(t => {
-               if (t.status_detail?.id === overStatusId) {
-                 const newOrderIndex = updatedColumnTasks.findIndex(ct => ct.id === t.id);
-                 return { ...t, order: newOrderIndex };
-               }
-               return t;
-             });
-          });
-
-          // Bulk update to backend
-          reorderTasksMutation.mutate(newColumnOrders);
-          return; // Skip the single moveTaskMutation
-        } else {
-          newOrder = overTask.order;
+      // If dropped over a specific task (not just the column), reorder it relative to that task
+      if (!overId.startsWith('col-') && activeId !== overId) {
+        const overIndex = finalTasks.findIndex(t => t.id.toString() === overId);
+        if (overIndex !== -1) {
+          finalTasks = arrayMove(finalTasks, activeIndex, overIndex);
         }
       }
     }
 
-    if (overStatusId !== null) {
+    // Recalculate orders for the target column
+    const columnTasks = finalTasks.filter(t => t.status_detail?.id === newStatusId);
+    const newColumnOrders = columnTasks.map((t, idx) => ({ id: t.id, order: idx }));
+
+    // Apply orders locally
+    setLocalTasks(finalTasks.map(t => {
+      const orderEntry = newColumnOrders.find(o => o.id === t.id);
+      if (orderEntry) {
+        return { ...t, order: orderEntry.order };
+      }
+      return t;
+    }));
+
+    if (wasCrossColumn) {
+      const newOrder = newColumnOrders.find(o => o.id === movedTask.id)?.order || 0;
       moveTaskMutation.mutate({
-        taskId: activeTask.id,
-        statusId: overStatusId,
+        taskId: movedTask.id,
+        statusId: newStatusId,
         order: newOrder
       });
+    } else {
+      // Same column reorder
+      if (activeId !== overId) {
+        reorderTasksMutation.mutate(newColumnOrders);
+      }
     }
   };
 
@@ -263,7 +397,7 @@ export const KanbanBoard: React.FC = () => {
       <div className="flex gap-2 p-4 items-start pb-20 min-h-full">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
@@ -272,9 +406,10 @@ export const KanbanBoard: React.FC = () => {
             const columnTasks = localTasks.filter(t => t.status_detail?.id === status.id) || [];
 
             return (
-              <div
+              <DroppableColumn
                 key={status.id}
-                className="min-w-[260px] w-[260px] rounded-2xl p-2.5 flex flex-col max-h-[calc(100vh-12rem)]
+                id={`col-${status.id}`}
+                className="min-w-[240px] w-[240px] rounded-2xl p-2 flex flex-col h-fit max-h-[calc(100vh-12rem)]
                   bg-[#131B2C]/90 backdrop-blur-md border border-[#232F4A]"
               >
                 <div className="flex items-center justify-between mb-2 px-1.5">
@@ -289,10 +424,16 @@ export const KanbanBoard: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[4px]" id={`col-${status.id}`}>
+                <div className="overflow-y-auto flex flex-col gap-1.5 rounded-lg">
                   <SortableContext items={columnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
                     {columnTasks.map(task => (
-                      <SortableTask key={task.id} task={task} onClick={() => setSelectedTaskForModal(task)} />
+                      <SortableTask 
+                        key={task.id} 
+                        task={task} 
+                        onClick={() => setSelectedTaskForModal(task)} 
+                        onPlayTimer={handlePlayTimer}
+                        onStopTimer={handleStopTimer}
+                      />
                     ))}
                   </SortableContext>
 
@@ -363,7 +504,7 @@ export const KanbanBoard: React.FC = () => {
                     <span>Add card</span>
                   </button>
                 )}
-              </div>
+              </DroppableColumn>
             );
           })}
 

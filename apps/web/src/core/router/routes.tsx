@@ -15,6 +15,7 @@ import { dashboardRoutes } from "../../features/dashboard/routes";
 import { rolesRoutes } from "../../features/roles/routes";
 import { automationsRoutes } from "../../features/automations/routes";
 import { tasksRoutes } from "../../features/tasks/routes";
+import { attendanceRoutes } from "../../features/attendance/routes";
 
 const NotFoundPage = lazy(() => import("../../pages/NotFoundPage"));
 
@@ -38,6 +39,7 @@ export const routes: RouteObject[] = [
       ...discountsRoutes,
       ...automationsRoutes,
       ...tasksRoutes,
+      ...attendanceRoutes,
       ...teamsRoutes,
       ...notificationsRoutes,
       ...profileRoutes,

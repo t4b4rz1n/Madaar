@@ -353,23 +353,44 @@ class TaskService:
         """Handles Drag & Drop movement across Kanban statuses and reorders tasks."""
         from django.db.models import F
 
-        if task.assignee != actor and not actor.is_staff and not actor.is_superuser:
+        # Permission check for moving tasks
+        if not actor.is_staff and not actor.is_superuser:
             role = (
                 actor.org_memberships.filter(organization_id=task.project.organization_id)
                 .values_list("role", flat=True)
                 .first()
             )
+            # admin, owner, team_lead can move any task
             if role not in ["owner", "Admin", "team_lead"]:
-                from rest_framework.exceptions import PermissionDenied
+                from organizations.models import TeamMembership
+                is_team_lead = TeamMembership.objects.filter(
+                    user=actor, team__organization_id=task.project.organization_id, role="lead"
+                ).exists()
+                if not is_team_lead:
+                    # employee, hr, accounting can only move tasks assigned to them or created by them
+                    is_assignee = task.assignee and task.assignee == actor
+                    is_reporter = task.reporter and task.reporter == actor
+                    if not is_assignee and not is_reporter:
+                        from rest_framework.exceptions import PermissionDenied
 
-                raise PermissionDenied(
-                    _("Only the assignee or a project manager can move this task.")
-                )
+                        raise PermissionDenied(
+                            _("Only the assignee, creator, or a project manager can move this task.")
+                        )
+
+        old_status = task.status
+        old_order = task.order
 
         task_code = task.status.code.lower() if task.status and task.status.code else ""
+        new_code = new_status.code.lower() if new_status and new_status.code else ""
+
         if task_code == "done" and new_status and task.status != new_status:
             raise ValidationError(
                 _("Task is completed (Done) and locked. It cannot be moved to another status.")
+            )
+            
+        if task_code in ["doing", "review"] and new_code == "todo":
+            raise ValidationError(
+                _("Task cannot be moved back to To Do once it is in progress or under review.")
             )
 
         action_parts = []
@@ -387,9 +408,11 @@ class TaskService:
 
             code = new_status.code.lower() if new_status.code else ""
             if code == "doing":
-                # Only start if the actor is the assignee
-                if task.assignee == actor:
+                from rest_framework.exceptions import PermissionDenied
+                try:
                     TimeLogService.start_timer(actor, task)
+                except Exception:
+                    pass
             elif code in ["review", "done"]:
                 # Stop timers for anyone working on this task
                 from attendance.models import TimeLog
@@ -418,9 +441,6 @@ class TaskService:
                     task.is_finished = True
 
         # Order Shifting Logic
-        old_status = task.status
-        old_order = task.order
-
         if new_status and old_status != new_status:
             # Moving to a DIFFERENT status column
             if new_order is not None:

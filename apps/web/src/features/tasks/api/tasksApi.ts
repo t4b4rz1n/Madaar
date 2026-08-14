@@ -49,7 +49,7 @@ export const createTask = async (projectId: string, title: string, statusId: num
   return data as Task;
 };
 
-export const moveTask = async (taskId: number, statusId: number, order: number): Promise<Task> => {
+export const moveTask = async (taskId: number | string, statusId: number | string, order: number): Promise<Task> => {
   const data = await ApiService.post<Task>(`/tasks/${taskId}/move/`, {
     status_id: statusId,
     order: order,
@@ -57,7 +57,7 @@ export const moveTask = async (taskId: number, statusId: number, order: number):
   return data as Task;
 };
 
-export const markTaskBlocked = async (taskId: number, isBlocked: boolean): Promise<Task> => {
+export const markTaskBlocked = async (taskId: number | string, isBlocked: boolean): Promise<Task> => {
   const data = await ApiService.patch<Task>(`/tasks/${taskId}/`, {
     is_blocked: isBlocked,
   });

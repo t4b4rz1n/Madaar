@@ -74,9 +74,9 @@ export const drawerItems: DrawerItem[] = [
     icon: <User variant="Outline" />,
   },
   {
-  title: "Teams Management",
-  link: "teams",
-  icon: <TeamsIcon variant="Outline" />,
-  permission: "teams.view",
-},
+    title: "Teams Management",
+    link: "teams",
+    icon: <TeamsIcon variant="Outline" />,
+    permission: "teams.view",
+  },
 ];

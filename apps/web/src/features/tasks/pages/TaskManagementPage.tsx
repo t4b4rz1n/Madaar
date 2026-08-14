@@ -8,9 +8,10 @@ import { useTaskStore } from '../store/useTaskStore';
 import { getBoards } from '../api/tasksApi';
 import { StandupModal } from '../components/StandupModal';
 import { Edit2 } from 'iconsax-reactjs';
+import AttendancePage from '../../attendance/pages/AttendancePage';
 
 export const TaskManagementPage: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'kanban' | 'graph'>('kanban');
+  const [viewMode, setViewMode] = useState<'kanban' | 'graph' | 'attendance'>('kanban');
   const [isStandupModalOpen, setIsStandupModalOpen] = useState(false);
   const { activeProjectId, activeBoardId, setActiveBoard } = useTaskStore();
 
@@ -38,9 +39,12 @@ export const TaskManagementPage: React.FC = () => {
               {boards.map(board => (
                 <button
                   key={board.id}
-                  onClick={() => setActiveBoard(board.id)}
+                  onClick={() => {
+                    setActiveBoard(board.id.toString());
+                    setViewMode('kanban');
+                  }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    activeBoardId === board.id
+                    activeBoardId === board.id.toString()
                       ? 'bg-base-300 text-base-content'
                       : 'text-base-content/50 hover:text-base-content hover:bg-base-200'
                   }`}
@@ -88,6 +92,16 @@ export const TaskManagementPage: React.FC = () => {
               >
                 Graph
               </button>
+              <button
+                onClick={() => setViewMode('attendance')}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  viewMode === 'attendance'
+                    ? 'bg-base-100 text-primary shadow-sm'
+                    : 'text-base-content/50 hover:text-base-content'
+                }`}
+              >
+                Time & Attendance
+              </button>
             </div>
           )}
         </div>
@@ -103,9 +117,13 @@ export const TaskManagementPage: React.FC = () => {
         ) : (
           viewMode === 'kanban' ? (
             <KanbanBoard />
-          ) : (
+          ) : viewMode === 'graph' ? (
             <div className="p-4 h-full">
               <DependencyGraph />
+            </div>
+          ) : (
+            <div className="h-full overflow-hidden bg-[#0F172A]">
+              <AttendancePage />
             </div>
           )
         )}
