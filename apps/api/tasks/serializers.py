@@ -175,6 +175,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     key = serializers.CharField(read_only=True)
     checklist_stats = serializers.SerializerMethodField()
     is_active_timer_running = serializers.SerializerMethodField()
+    spent_seconds = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -196,6 +197,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             "due_date",
             "estimated_hours",
             "spent_hours",
+            "spent_seconds",
             "parent_task",
             "order",
             "is_finished",
@@ -209,6 +211,11 @@ class TaskListSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = ("id", "reporter", "created_at", "updated_at")
+
+    def get_spent_seconds(self, obj):
+        from django.db.models import Sum
+        total = obj.time_logs.filter(is_active=False).aggregate(total=Sum("duration_seconds"))["total"]
+        return total or 0
 
     def get_is_active_timer_running(self, obj):
         return getattr(obj, "is_active_timer_running", False)

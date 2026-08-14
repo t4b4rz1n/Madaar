@@ -22,10 +22,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeTab, setActiveTab] = useState<'details' | 'activities' | 'time'>('details');
 
-  const formatSpentTime = (hoursFloat: number | string | undefined) => {
-    if (!hoursFloat) return '00:00:00';
-    const totalSeconds = Math.round(Number(hoursFloat) * 3600);
-    if (totalSeconds <= 0) return '00:00:00';
+  const formatSpentTime = (seconds: number | undefined) => {
+    if (!seconds || seconds <= 0) return '00:00:00';
+    const totalSeconds = Math.round(Number(seconds));
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
@@ -419,7 +418,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                     <h3 className="text-[15px] font-semibold text-white/90">Time Tracking</h3>
                     <div className="text-sm">
                       <span className="text-white/40">Logged: </span>
-                      <span className="text-emerald-400 font-bold">{task.spent_hours ? formatSpentTime(task.spent_hours) : '00:00:00'}</span>
+                      <span className="text-emerald-400 font-bold">{task.spent_seconds ? formatSpentTime(task.spent_seconds) : '00:00:00'}</span>
                     </div>
                   </div>
                   <ManualTimeLogForm taskId={task.id} />

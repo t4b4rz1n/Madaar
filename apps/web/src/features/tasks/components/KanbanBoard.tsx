@@ -150,7 +150,8 @@ export const KanbanBoard: React.FC = () => {
       setLocalTasks(tasks => tasks.map(t => {
         if (t.id === taskId) {
           const updatedTask = { ...t, is_active_timer_running: true };
-          if (doingStatus && t.status_detail?.id !== doingStatus.id) {
+          const isTodo = t.status_detail?.code?.toLowerCase() === 'todo' || t.status_detail?.name?.toLowerCase() === 'to do';
+          if (doingStatus && t.status_detail?.id !== doingStatus.id && isTodo) {
             updatedTask.status_detail = doingStatus as any;
           }
           return updatedTask;
@@ -185,9 +186,9 @@ export const KanbanBoard: React.FC = () => {
       if (data && data.duration_seconds !== undefined) {
         setLocalTasks(tasks => tasks.map(t => {
           if (t.id === taskId) {
-            const currentSpent = Number(t.spent_hours || 0);
-            const newSpent = currentSpent + (data.duration_seconds / 3600);
-            return { ...t, spent_hours: newSpent };
+            const currentSpent = Number(t.spent_seconds || 0);
+            const newSpent = currentSpent + data.duration_seconds;
+            return { ...t, spent_seconds: newSpent };
           }
           return t;
         }));

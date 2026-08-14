@@ -164,8 +164,8 @@ class TimeLogService:
             is_active=True,
         )
 
-        # Auto-move task to Doing if it's currently in Todo or Review
-        if task.status and task.status.code.lower() in ["todo", "review"]:
+        # Auto-move task to Doing ONLY if it's currently in Todo
+        if task.status and task.status.code.lower() == "todo":
             from tasks.models import TaskStatus
 
             doing_status = TaskStatus.objects.filter(

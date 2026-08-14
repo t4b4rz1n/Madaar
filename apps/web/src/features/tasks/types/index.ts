@@ -90,6 +90,7 @@ export interface Task {
   is_active_timer_running?: boolean;
   estimated_hours?: number;
   spent_hours?: number;
+  spent_seconds?: number;
   project?: number;
 }
 
