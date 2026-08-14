@@ -4,7 +4,7 @@ import { createManualLog } from '../api/attendanceApi';
 import { Timer1, AddSquare } from 'iconsax-reactjs';
 import { toast } from 'sonner';
 
-export const ManualTimeLogForm: React.FC<{ taskId?: number; onSuccess?: () => void }> = ({ taskId, onSuccess }) => {
+export const ManualTimeLogForm: React.FC<{ taskId?: string | number; onSuccess?: () => void }> = ({ taskId, onSuccess }) => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     task: taskId || '',
@@ -57,7 +57,7 @@ export const ManualTimeLogForm: React.FC<{ taskId?: number; onSuccess?: () => vo
     const start = new Date(end.getTime() - totalMs);
 
     mutation.mutate({
-      task: Number(formData.task),
+      task: formData.task,
       start_time: start.toISOString(),
       end_time: end.toISOString(),
       description: formData.description,
