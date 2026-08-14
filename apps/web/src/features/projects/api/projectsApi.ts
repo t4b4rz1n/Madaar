@@ -38,16 +38,23 @@ export const getProjectMembers = (projectId: string | number) =>
 
 export const addProjectMember = (
   projectId: string | number,
-  data: { user_id: string | number; role: string; capacity_percentage: number }
+  data: {
+    user_id?: string | number;
+    specialty?: string;
+    allocation_percentage?: number;
+  }
 ) =>
   ApiService.post<ProjectMember>(`api/v1/projects/${projectId}/members/`, data);
 
 export const updateProjectMember = (
   projectId: string | number,
   memberId: string | number,
-  data: { role?: string; capacity_percentage?: number }
+  data: { specialty?: string; allocation_percentage?: number }
 ) =>
-  ApiService.patch<ProjectMember>(`api/v1/projects/${projectId}/members/${memberId}/`, data);
+  ApiService.patch<ProjectMember>(
+    `api/v1/projects/${projectId}/members/${memberId}/`,
+    data
+  );
 
 export const removeProjectMember = (
   projectId: string | number,
@@ -61,10 +68,17 @@ export const getProjectMilestones = (projectId: string | number) =>
 
 export const createMilestone = (
   projectId: string | number,
-  data: { title: string; description?: string; due_date: string }
+  data: {
+    title: string;
+    description?: string;
+    target_date: string;
+    weight?: number;
+  }
 ) =>
   ApiService.post<Milestone>(`api/v1/projects/${projectId}/milestones/`, data);
 
 // ۴. فید فعالیت‌ها (Activities)
 export const getProjectActivities = (projectId: string | number) =>
-  ApiService.getList<ProjectActivity>(`api/v1/projects/${projectId}/activities/`);
+  ApiService.getList<ProjectActivity>(
+    `api/v1/projects/${projectId}/activities/`
+  );

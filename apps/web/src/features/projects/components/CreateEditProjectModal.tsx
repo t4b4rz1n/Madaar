@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CloseSquare } from "iconsax-reactjs";
-import type { Project, CreateProjectDTO } from "../types";
+import type { Project, CreateProjectDTO, ProjectStatus } from "../types";
 import { useCreateProject, useUpdateProject } from "../hooks/useProjects";
 
 interface CreateEditProjectModalProps {
@@ -18,33 +18,38 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
   const updateProjectMutation = useUpdateProject();
 
   const [formData, setFormData] = useState({
-    title: "",
+    name: "",
     description: "",
+    prefix: "",
     budget: "",
+    budget_currency: "IRR",
     start_date: "",
-    end_date: "",
-    status: "planning" as Project["status"],
+    deadline: "",
+    status: "draft" as ProjectStatus,
   });
 
-  // Load project data when editing, or reset form when creating
   useEffect(() => {
     if (project) {
       setFormData({
-        title: project.title || "",
+        name: project.name || "",
         description: project.description || "",
+        prefix: project.prefix || "",
         budget: project.budget ? String(project.budget) : "",
+        budget_currency: project.budget_currency || "IRR",
         start_date: project.start_date ? project.start_date.split("T")[0] : "",
-        end_date: project.end_date ? project.end_date.split("T")[0] : "",
-        status: project.status || "planning",
+        deadline: project.deadline ? project.deadline.split("T")[0] : "",
+        status: project.status || "draft",
       });
     } else {
       setFormData({
-        title: "",
+        name: "",
         description: "",
+        prefix: "",
         budget: "",
+        budget_currency: "IRR",
         start_date: new Date().toISOString().split("T")[0],
-        end_date: "",
-        status: "planning",
+        deadline: "",
+        status: "draft",
       });
     }
   }, [project, isOpen]);
@@ -64,32 +69,30 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     e.preventDefault();
 
     const payload: CreateProjectDTO = {
-      title: formData.title,
+      name: formData.name,
       description: formData.description,
+      prefix: formData.prefix || undefined,
       budget: formData.budget ? Number(formData.budget) : undefined,
-      start_date: new Date(formData.start_date).toISOString(),
-      end_date: new Date(formData.end_date).toISOString(),
+      budget_currency: formData.budget_currency,
+      start_date: formData.start_date
+        ? new Date(formData.start_date).toISOString().split("T")[0]
+        : undefined,
+      deadline: formData.deadline
+        ? new Date(formData.deadline).toISOString().split("T")[0]
+        : undefined,
     };
 
     if (project) {
-      // Edit existing project
       updateProjectMutation.mutate(
         {
           id: project.id,
           data: { ...payload, status: formData.status },
         },
-        {
-          onSuccess: () => {
-            onClose();
-          },
-        },
+        { onSuccess: () => onClose() },
       );
     } else {
-      // Create new project
       createProjectMutation.mutate(payload, {
-        onSuccess: () => {
-          onClose();
-        },
+        onSuccess: () => onClose(),
       });
     }
   };
@@ -116,30 +119,45 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Title */}
-          <div>
-            <label className="label text-xs font-semibold text-base-content/70">
-              Project Title *
-            </label>
-            <input
-              type="text"
-              name="title"
-              required
-              placeholder="e.g. Modares Internal System"
-              value={formData.title}
-              onChange={handleChange}
-              className="input input-bordered w-full rounded-xl focus:border-primary text-sm"
-            />
+          {/* Name & Prefix Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
+              <label className="label text-xs font-semibold text-base-content/70">
+                Project Name *
+              </label>
+              <input
+                type="text"
+                name="name"
+                required
+                placeholder="e.g. Modares Internal System"
+                value={formData.name}
+                onChange={handleChange}
+                className="input input-bordered w-full rounded-xl focus:border-primary text-sm"
+              />
+            </div>
+            <div>
+              <label className="label text-xs font-semibold text-base-content/70">
+                Prefix (Key)
+              </label>
+              <input
+                type="text"
+                name="prefix"
+                maxLength={10}
+                placeholder="e.g. MAD"
+                value={formData.prefix}
+                onChange={handleChange}
+                className="input input-bordered w-full rounded-xl focus:border-primary text-sm uppercase"
+              />
+            </div>
           </div>
 
           {/* Description */}
           <div>
             <label className="label text-xs font-semibold text-base-content/70">
-              Description *
+              Description
             </label>
             <textarea
               name="description"
-              required
               rows={3}
               placeholder="Brief overview of the project objectives..."
               value={formData.description}
@@ -148,16 +166,16 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             />
           </div>
 
-          {/* Budget & Status Grid */}
+          {/* Budget & Currency Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label text-xs font-semibold text-base-content/70">
-                Budget ($)
+                Budget
               </label>
               <input
                 type="number"
                 name="budget"
-                placeholder="e.g. 50000"
+                placeholder="e.g. 500000000"
                 value={formData.budget}
                 onChange={handleChange}
                 className="input input-bordered w-full rounded-xl focus:border-primary text-sm"
@@ -175,8 +193,9 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   onChange={handleChange}
                   className="select select-bordered w-full rounded-xl text-sm"
                 >
-                  <option value="planning">Planning</option>
-                  <option value="in_progress">In Progress</option>
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="on_hold">On Hold</option>
                   <option value="completed">Completed</option>
                   <option value="archived">Archived</option>
                 </select>
@@ -188,12 +207,11 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label text-xs font-semibold text-base-content/70">
-                Start Date *
+                Start Date
               </label>
               <input
                 type="date"
                 name="start_date"
-                required
                 value={formData.start_date}
                 onChange={handleChange}
                 className="input input-bordered w-full rounded-xl focus:border-primary text-sm"
@@ -202,13 +220,12 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
 
             <div>
               <label className="label text-xs font-semibold text-base-content/70">
-                Due Date *
+                Deadline
               </label>
               <input
                 type="date"
-                name="end_date"
-                required
-                value={formData.end_date}
+                name="deadline"
+                value={formData.deadline}
                 onChange={handleChange}
                 className="input input-bordered w-full rounded-xl focus:border-primary text-sm"
               />

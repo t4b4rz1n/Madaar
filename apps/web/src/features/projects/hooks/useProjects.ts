@@ -9,7 +9,6 @@ import {
   completeProject,
   getProjectMembers,
   addProjectMember,
-//   removeProjectMember,
   getProjectMilestones,
   createMilestone,
   getProjectActivities,
@@ -122,8 +121,11 @@ export const useAddProjectMember = (projectId: string | number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { user_id: string | number; role: string; capacity_percentage: number }) =>
-      addProjectMember(projectId, data),
+    mutationFn: (data: {
+      user_id?: string | number;
+      specialty?: string;
+      allocation_percentage?: number;
+    }) => addProjectMember(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
     },
@@ -144,7 +146,7 @@ export const useCreateMilestone = (projectId: string | number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { title: string; description?: string; due_date: string }) =>
+    mutationFn: (data: { title: string; description?: string; target_date: string; weight?: number }) =>
       createMilestone(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.milestones(projectId) });

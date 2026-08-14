@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const ProjectsListPage = lazy(() => import("../pages/ProjectsListPage"));
+const ProjectDetailsPage = lazy(() => import("../pages/ProjectDetailsPage"));
 
 export const projectsRoutes = [
   {
@@ -15,6 +16,10 @@ export const projectsRoutes = [
         <ProjectsListPage />
       </PermissionGuard>
     ),
+  },
+  {
+    path: "projects/:id",
+    element: <ProjectDetailsPage />,
   },
   // بعداً روت‌های دیگه مثل جزئیات پروژه رو همینجا اضافه می‌کنیم:
   // {

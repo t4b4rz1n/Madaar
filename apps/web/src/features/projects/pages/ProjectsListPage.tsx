@@ -152,7 +152,7 @@ export default function ProjectsListPage() {
     setDeleteModalState({
       open: true,
       projectId: id,
-      projectTitle: targetProject?.title || "this project",
+      projectTitle: targetProject?.name || "this project",
     });
   };
   const handleConfirmDelete = () => {

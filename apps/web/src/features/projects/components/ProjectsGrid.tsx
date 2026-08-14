@@ -1,5 +1,6 @@
 import React from "react";
 import { Users, Edit2, Trash2, FolderDot, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { Project } from "../types";
 
 interface ProjectsGridProps {
@@ -16,37 +17,46 @@ const ProjectCard: React.FC<{
   onDelete?: (id: string | number) => void;
   canManage?: boolean;
 }> = ({ project, onEdit, onDelete, canManage }) => {
+  const navigate = useNavigate();
+
   const getStatusDisplay = (status: Project["status"]) => {
     switch (status) {
-      case "planning":
-        return { color: "bg-base-300 text-base-content/70", text: "Planning" };
-      case "in_progress":
-        return { color: "bg-info/15 text-info", text: "In Progress" };
+      case "draft":
+        return { color: "bg-base-300 text-base-content/70", text: "Draft" };
+      case "active":
+        return { color: "bg-info/15 text-info", text: "Active" };
+      case "on_hold":
+        return { color: "bg-warning/15 text-warning", text: "On Hold" };
       case "completed":
         return { color: "bg-success/15 text-success", text: "Completed" };
       case "archived":
         return { color: "bg-neutral/15 text-neutral", text: "Archived" };
       default:
-        return { color: "bg-base-300 text-base-content", text: "Unknown" };
+        return { color: "bg-base-300 text-base-content", text: "Draft" };
     }
   };
 
   const statusInfo = getStatusDisplay(project.status);
-  const formattedDate = new Date(project.end_date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const formattedDate = project.deadline
+    ? new Date(project.deadline).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "No deadline";
 
   return (
-    <div className="flex flex-col bg-base-100 border border-base-300 rounded-2xl p-5 hover:border-base-content/20 transition-colors">
+    <div
+      onClick={() => navigate(`/projects/${project.id}`)}
+      className="flex flex-col bg-base-100 border border-base-300 rounded-2xl p-5 hover:border-primary/50 transition-all cursor-pointer group"
+    >
       <div className="flex items-center gap-4 mb-5">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 group-hover:scale-105 transition-transform">
           <FolderDot size={24} />
         </div>
         <div className="overflow-hidden">
-          <h3 className="text-base font-bold text-base-content truncate">
-            {project.title}
+          <h3 className="text-base font-bold text-base-content truncate group-hover:text-primary transition-colors">
+            {project.name}
           </h3>
           <p className="text-sm text-base-content/50 truncate">
             Budget: ${project.budget?.toLocaleString() || "0"}
@@ -56,17 +66,17 @@ const ProjectCard: React.FC<{
 
       <div className="flex flex-col bg-base-200/50 dark:bg-base-200 rounded-xl p-4 mb-5 flex-grow">
         <p className="text-sm text-base-content/70 line-clamp-2 mb-4 h-10">
-          {project.description}
+          {project.description || "No description provided."}
         </p>
 
         <div className="mt-auto">
           <div className="flex justify-between text-xs text-base-content/60 mb-2 font-medium">
             <span>Progress</span>
-            <span>{project.progress_percentage}%</span>
+            <span>{project.progress_percentage || 0}%</span>
           </div>
           <progress
             className="progress progress-primary w-full h-1.5 bg-base-300"
-            value={project.progress_percentage}
+            value={project.progress_percentage || 0}
             max="100"
           />
         </div>
@@ -82,7 +92,7 @@ const ProjectCard: React.FC<{
             </span>
             <span className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-base-200 text-base-content/70 font-medium">
               <Users size={12} />
-              {project.members_count}
+              {project.members_count || 0}
             </span>
           </div>
 
@@ -93,7 +103,10 @@ const ProjectCard: React.FC<{
         </div>
 
         {canManage && (
-          <div className="flex items-center gap-1">
+          <div
+            className="flex items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => onEdit?.(project)}
               className="btn btn-ghost btn-sm btn-square text-base-content/50 hover:text-primary hover:bg-primary/10 rounded-lg"
