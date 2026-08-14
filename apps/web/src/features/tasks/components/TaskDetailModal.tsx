@@ -7,10 +7,6 @@ import { CloseSquare, Element3, TextalignLeft, Activity, Profile2User, Tag, Cale
 import { format } from 'date-fns';
 import { useTaskStore } from '../store/useTaskStore';
 import { ConfirmationModal } from '../../../components/ConfirmationModal';
-import { ManualTimeLogForm } from '../../attendance/components/ManualTimeLogForm';
-import { Timer1 } from 'iconsax-reactjs';
-import { toast } from 'sonner';
-
 
 interface TaskDetailModalProps {
   task: Task;
@@ -19,18 +15,6 @@ interface TaskDetailModalProps {
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose }) => {
   const queryClient = useQueryClient();
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [activeTab, setActiveTab] = useState<'details' | 'activities' | 'time'>('details');
-
-  const formatSpentTime = (hoursFloat: number | string | undefined) => {
-    if (!hoursFloat) return '00:00:00';
-    const totalSeconds = Math.round(Number(hoursFloat) * 3600);
-    if (totalSeconds <= 0) return '00:00:00';
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || '');
   const [isEditingDesc, setIsEditingDesc] = useState(false);
@@ -72,7 +56,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       if (!task.project) return [];
       const members = await getProjectMembers(task.project.toString());
       // map { user: {...} } to just the user object
-      return members.map((m: any) => m.user).filter(Boolean);
+      return members.map(m => m.user).filter(Boolean);
     },
     enabled: !!task.project,
   });
@@ -336,10 +320,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                         <div className="px-3 py-1.5 text-xs text-white/50 font-semibold mb-1">Select Member</div>
                         <button
                           className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/10 transition-colors text-left text-white/60 hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateMutation.mutate({ assignee: undefined });
+                          onClick={() => {
                             setLocalAssignee(null);
+                            updateMutation.mutate({ assignee: null });
                             setIsMembersMenuOpen(false);
                           }}
                         >
@@ -411,22 +394,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                 </div>
               </div>
 
-              {/* Time Tracking Section */}
-              <div className="flex gap-3 items-start mt-6 pt-6 border-t border-white/5">
-                <Timer1 size={20} className="text-white/40 mt-1 shrink-0" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-[15px] font-semibold text-white/90">Time Tracking</h3>
-                    <div className="text-sm">
-                      <span className="text-white/40">Logged: </span>
-                      <span className="text-emerald-400 font-bold">{task.spent_hours ? formatSpentTime(task.spent_hours) : '00:00:00'}</span>
-                    </div>
-                  </div>
-                  <ManualTimeLogForm taskId={task.id} />
-                </div>
-              </div>
-
-              {/* Checklist Section (below Time Tracking) */}
+              {/* Checklist Section */}
               {(checklists.length > 0 || isAddingChecklist) && (
                 <div className="flex gap-3 items-start mt-2">
                   <TaskSquare size={20} className="text-white/40 mt-1 shrink-0" />

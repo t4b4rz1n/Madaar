@@ -332,8 +332,6 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         status_id = request.data.get("status_id")
         new_order = request.data.get("order")
-        if new_order is not None:
-            new_order = int(new_order)
 
         task_status = None
         if status_id:

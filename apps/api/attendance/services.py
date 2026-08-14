@@ -44,7 +44,7 @@ class AttendanceService:
         # Stop any active timers
         active_timer = TimeLogService.get_active_timer(user)
         if active_timer and active_timer.id:
-            TimeLogService.stop_timer(user, active_timer.id, auto_move=False)
+            TimeLogService.stop_timer(user, active_timer.id)
 
         # Auto calculate overtime if setting exists
         setting = AttendanceSetting.objects.filter(
@@ -104,30 +104,10 @@ class TimeLogService:
     @staticmethod
     @transaction.atomic
     def start_timer(user, task):
-        # Permission check: Assignee, Superuser/Staff, Project Owner, Org Owner/Admin/Team Lead can start timer
-        can_start = False
-        if task.assignee == user or getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-            can_start = True
-        elif task.project:
-            if task.project.owner_id == user.id or (task.project.organization and task.project.organization.owner_id == user.id):
-                can_start = True
-            else:
-                from organizations.models import OrganizationMembership, TeamMembership
-                has_lead_role = user.org_memberships.filter(
-                    organization_id=task.project.organization_id,
-                    role__in=["owner", "Admin", "team_lead"]
-                ).exists()
-                if not has_lead_role:
-                    has_lead_role = user.team_memberships.filter(
-                        team__organization_id=task.project.organization_id,
-                        role="lead"
-                    ).exists()
-                if has_lead_role:
-                    can_start = True
-
-        if not can_start:
+        # Anti-fraud check: only assignee can start timer
+        if task.assignee != user:
             raise PermissionDenied(
-                _("You can only start a timer for tasks assigned to you, or if you are a project lead/admin.")
+                _("You can only start a timer for tasks assigned to you.")
             )
 
         # Org isolation check
@@ -152,7 +132,7 @@ class TimeLogService:
             .first()
         )
         if active and active.id:
-            TimeLogService.stop_timer(user, active.id, auto_move=False)
+            TimeLogService.stop_timer(user, active.id)
 
         now = timezone.now()
         timer = TimeLog.objects.create(
@@ -164,8 +144,9 @@ class TimeLogService:
             is_active=True,
         )
 
-        # Auto-move task to Doing if it's currently in Todo or Review
-        if task.status and task.status.code.lower() in ["todo", "review"]:
+        # Auto-move task to Doing ONLY if it's currently in Todo
+        # If task is in Review or any other status, timer starts but no status change happens
+        if task.status and task.status.code.lower() == "todo":
             from tasks.models import TaskStatus
 
             doing_status = TaskStatus.objects.filter(
@@ -250,12 +231,6 @@ class TimeLogService:
     @staticmethod
     @transaction.atomic
     def create_manual_log(user, task, start_time, end_time, description=""):
-        # Anti-fraud check: only assignee can log time manually for a task
-        if task.assignee != user:
-            raise PermissionDenied(
-                _("You can only log time for tasks assigned to you.")
-            )
-
         duration_seconds = int((end_time - start_time).total_seconds())
         if duration_seconds < 0:
             raise ValidationError(_("End time must be after start time."))
@@ -278,8 +253,8 @@ class TimeLogService:
             spent_hours=F("spent_hours") + duration_seconds / 3600.0
         )
 
-        # Auto-move task to Doing if it's in Todo or Review
-        if task.status and task.status.code.lower() in ["todo", "review"]:
+        # Auto-move task to Doing ONLY if it's in Todo
+        if task.status and task.status.code.lower() == "todo":
             from tasks.models import TaskStatus
             from tasks.services import TaskService
 
@@ -403,8 +378,8 @@ class TimeOffRequestService:
 
 class HolidayService:
     @staticmethod
-    def create(name, date, organization, description="", is_official=True):
-        return Holiday.objects.create(name=name, date=date, organization=organization, description=description, is_official=is_official)
+    def create(name, date, is_official=True):
+        return Holiday.objects.create(name=name, date=date, is_official=is_official)
 
     @staticmethod
     def get_year_holidays(year):
