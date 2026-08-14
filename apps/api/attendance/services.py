@@ -250,11 +250,19 @@ class TimeLogService:
     @staticmethod
     @transaction.atomic
     def create_manual_log(user, task, start_time, end_time, description=""):
-        # Anti-fraud check: only assignee can log time manually for a task
-        if task.assignee != user:
-            raise PermissionDenied(
-                _("You can only log time for tasks assigned to you.")
-            )
+        # Anti-fraud check: only assignee or superuser can log time manually for a task
+        if task.assignee != user and not user.is_superuser:
+            # We can also check if user has project permissions, but superuser/assignee is safe for now
+            from projects.models import ProjectMember
+            is_manager = ProjectMember.objects.filter(
+                project=task.project,
+                user=user,
+                role__in=["owner", "admin", "team_lead"]
+            ).exists()
+            if not is_manager:
+                raise PermissionDenied(
+                    _("You do not have permission to log time for this task.")
+                )
 
         duration_seconds = int((end_time - start_time).total_seconds())
         if duration_seconds < 0:
@@ -278,8 +286,8 @@ class TimeLogService:
             spent_hours=F("spent_hours") + duration_seconds / 3600.0
         )
 
-        # Auto-move task to Doing if it's in Todo or Review
-        if task.status and task.status.code.lower() in ["todo", "review"]:
+        # Auto-move task to Doing if it's in Todo
+        if task.status and task.status.code.lower() == "todo":
             from tasks.models import TaskStatus
             from tasks.services import TaskService
 
