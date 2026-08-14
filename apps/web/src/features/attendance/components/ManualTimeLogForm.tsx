@@ -23,7 +23,18 @@ export const ManualTimeLogForm: React.FC<{ taskId?: number; onSuccess?: () => vo
       onSuccess?.();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || err.response?.data?.detail || 'Failed to log time');
+      const data = err.response?.data;
+      if (data) {
+        if (data.error) return toast.error(data.error);
+        if (data.detail) return toast.error(data.detail);
+        if (typeof data === 'object') {
+          const firstKey = Object.keys(data)[0];
+          if (firstKey && Array.isArray(data[firstKey])) {
+            return toast.error(data[firstKey][0]);
+          }
+        }
+      }
+      toast.error('Failed to log time');
     }
   });
 

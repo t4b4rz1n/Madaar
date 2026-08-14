@@ -169,12 +169,6 @@ class TimeLogWriteSerializer(serializers.ModelSerializer):
                     {"end_time": _("End time must be after start time.")}
                 )
 
-            # start_time/end_time date should match if both provided
-            if start_time.date() != end_time.date():
-                raise serializers.ValidationError(
-                    {"end_time": _("Start and end time must be on the same date.")}
-                )
-
         # Task and project consistency
         if task and project:
             if task.project_id != project.id:
