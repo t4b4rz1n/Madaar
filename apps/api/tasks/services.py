@@ -202,7 +202,7 @@ class TaskService:
         spent_hours=0,
         order=0,
     ):
-        # Validate that reporter is a project member (unless staff/superuser)
+        # Validate that reporter is a project member (unless staff/superuser or org owner)
         if (
             project
             and reporter
@@ -211,12 +211,23 @@ class TaskService:
             )
         ):
             from projects.models import ProjectMember
+            from organizations.models import OrganizationMembership
 
-            is_member = ProjectMember.objects.filter(
-                project=project, user=reporter, is_active=True
-            ).exists()
-            if not is_member:
-                raise PermissionDenied(_("You are not a member of this project."))
+            is_org_owner = (
+                project.organization.owner == reporter
+                or OrganizationMembership.objects.filter(
+                    organization=project.organization,
+                    user=reporter,
+                    role=OrganizationMembership.Role.OWNER,
+                ).exists()
+            )
+
+            if not is_org_owner:
+                is_member = ProjectMember.objects.filter(
+                    project=project, user=reporter, is_active=True
+                ).exists()
+                if not is_member:
+                    raise PermissionDenied(_("You are not a member of this project."))
 
         # Validate that assignee is a member of the organization
         if assignee and project:

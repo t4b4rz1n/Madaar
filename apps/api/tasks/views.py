@@ -559,28 +559,29 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             return AsyncStandup.objects.none()
 
         if user.is_staff or user.is_superuser:
-            return AsyncStandup.objects.select_related("user").filter(is_deleted=False)
+            qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
+        else:
+            memberships = user.org_memberships.all()
+            admin_org_ids = [m.organization_id for m in memberships if m.role.lower() in ["owner", "admin"]]
+            other_org_ids = [m.organization_id for m in memberships if m.role.lower() not in ["owner", "admin"]]
 
-        # Org isolation: user can only see standups in their orgs
-        org_ids = user.org_memberships.values_list("organization_id", flat=True)
+            qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
+            
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(organization_id__in=admin_org_ids) | 
+                Q(organization_id__in=other_org_ids, user=user)
+            )
 
-        qs = (
-            AsyncStandup.objects.select_related("user")
-            .filter(is_deleted=False, organization_id__in=org_ids)
-            .distinct()
-        )
-
-        role = get_user_org_role(self.request)
-        if role in ["owner", "admin"]:
-            return qs
-
-        # Everyone else only sees their own standup reports
         user_id = self.request.query_params.get("user")
-        if user_id and str(user_id) != str(user.id):
-            return qs.none()
         if user_id:
-            return qs.filter(user_id=user_id)
-        return qs.filter(user=user)
+            qs = qs.filter(user_id=user_id)
+            
+        org_id = self.request.query_params.get("organization")
+        if org_id:
+            qs = qs.filter(organization_id=org_id)
+
+        return qs.distinct()
 
     def perform_create(self, serializer):
         standup = StandupService.create_standup(
