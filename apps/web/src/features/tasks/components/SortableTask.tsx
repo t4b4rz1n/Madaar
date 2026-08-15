@@ -9,9 +9,10 @@ interface SortableTaskProps {
   onClick: () => void;
   onPlayTimer?: (taskId: number) => void;
   onStopTimer?: (taskId: number) => void;
+  onMarkDone?: (taskId: number) => void;
 }
 
-export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPlayTimer, onStopTimer }) => {
+export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone }) => {
   const {
     attributes,
     listeners,
@@ -35,7 +36,7 @@ export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPla
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onClick={onClick} onPlayTimer={onPlayTimer} onStopTimer={onStopTimer} />
+      <TaskCard task={task} onClick={onClick} onPlayTimer={onPlayTimer} onStopTimer={onStopTimer} onMarkDone={onMarkDone} />
     </div>
   );
 };

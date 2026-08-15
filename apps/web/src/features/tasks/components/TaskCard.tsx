@@ -14,9 +14,10 @@ interface TaskCardProps {
   onClick: () => void;
   onPlayTimer?: (taskId: number) => void;
   onStopTimer?: (taskId: number) => void;
+  onMarkDone?: (taskId: number) => void;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, onStopTimer }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone }) => {
   const [isDone, setIsDone] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMembersMenu, setShowMembersMenu] = useState(false);
@@ -65,10 +66,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
     staleTime: 30_000,
   });
 
+  const isActuallyDone = task.status_detail?.code === 'done' || task.status_detail?.name?.toLowerCase() === 'done';
+
   const handleDoneClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsDone(true);
-    setTimeout(() => setIsDone(false), 600);
+    if (!isActuallyDone) {
+      setIsDone(true);
+      onMarkDone?.(task.id);
+      setTimeout(() => setIsDone(false), 600);
+    }
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -117,10 +123,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
             </style>
             <button
               onClick={handleDoneClick}
-              className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isDone ? 'bg-[#10B981] text-white scale-110 border-none' : 'border border-white/20 hover:border-[#10B981]/50 hover:bg-[#10B981]/10'}`}
-              title="Mark as done"
+              className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isActuallyDone || isDone ? 'bg-[#10B981] text-white scale-110 border-none' : 'border border-white/20 hover:border-[#10B981]/50 hover:bg-[#10B981]/10'}`}
+              title={isActuallyDone ? "Completed" : "Mark as done"}
             >
-              {isDone ? (
+              {(isActuallyDone || isDone) ? (
                 <TickCircle size={14} variant="Bulk" />
               ) : null}
 

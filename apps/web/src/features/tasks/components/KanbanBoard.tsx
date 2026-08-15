@@ -85,7 +85,6 @@ export const KanbanBoard: React.FC = () => {
       const errorData = err.response?.data;
       const errorMessage = errorData?.detail || errorData?.error || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData)) || err.message || 'Failed to move task';
       console.error('Move task error:', err.response?.status, errorData);
-      alert('Move task error: ' + errorMessage);
       toast.error(errorMessage);
       if (context?.previousTasks) {
         setLocalTasks(context.previousTasks);
@@ -230,6 +229,35 @@ export const KanbanBoard: React.FC = () => {
 
   const handleStopTimer = (taskId: number) => {
     stopTimerMutation.mutate(taskId);
+  };
+
+  const handleMarkDone = (taskId: number) => {
+    const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
+    const doneStatus = activeBoard?.statuses.find(s => s.code === 'done' || s.name.toLowerCase() === 'done');
+    if (!doneStatus) {
+      toast.error('Done status not found on this board.');
+      return;
+    }
+    
+    const task = localTasks.find(t => t.id === taskId);
+    if (!task) return;
+    if (task.status_detail?.id === doneStatus.id) return;
+
+    // Optimistically move task to done
+    setLocalTasks(tasks => {
+      const newTasks = [...tasks];
+      const index = newTasks.findIndex(t => t.id === taskId);
+      if (index !== -1) {
+        newTasks[index] = { ...newTasks[index], status_detail: doneStatus as any };
+      }
+      return newTasks;
+    });
+
+    moveTaskMutation.mutate({
+      taskId,
+      statusId: doneStatus.id,
+      order: 0
+    });
   };
 
   const sensors = useSensors(
@@ -434,6 +462,7 @@ export const KanbanBoard: React.FC = () => {
                         onClick={() => setSelectedTaskForModal(task)} 
                         onPlayTimer={handlePlayTimer}
                         onStopTimer={handleStopTimer}
+                        onMarkDone={handleMarkDone}
                       />
                     ))}
                   </SortableContext>
@@ -516,7 +545,10 @@ export const KanbanBoard: React.FC = () => {
       </div>
 
       {selectedTaskForModal && (
-        <TaskDetailModal task={selectedTaskForModal} onClose={() => setSelectedTaskForModal(null)} />
+        <TaskDetailModal 
+          task={localTasks.find(t => t.id === selectedTaskForModal.id) || selectedTaskForModal} 
+          onClose={() => setSelectedTaskForModal(null)} 
+        />
       )}
     </div>
   );

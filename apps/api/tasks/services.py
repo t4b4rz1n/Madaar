@@ -422,14 +422,18 @@ class TaskService:
                     TimeLogService.stop_timer(timer.user, timer.id, auto_move=False)
 
                 if code == "done":
-                    # Check if any time was tracked (spent_hours > 0)
-                    current_spent = (
-                        Task.objects.filter(pk=task.pk)
-                        .values_list("spent_hours", flat=True)
-                        .first()
-                    )
-                    if not current_spent or current_spent <= 0:
+                    # Check if any time was tracked
+                    has_tracked_time = task.time_logs.filter(duration_seconds__gt=0).exists()
+                    if not has_tracked_time:
                         raise ValidationError(
+                            {
+                                "detail": _(
+                                    "Cannot move to Done: No time has been tracked for this task."
+                                ),
+                                "code": "NEEDS_MANUAL_TIME",
+                            }
+                        )
+                    task.is_finished = True
                             {
                                 "detail": _(
                                     "Cannot move to Done: No time has been tracked for this task."
