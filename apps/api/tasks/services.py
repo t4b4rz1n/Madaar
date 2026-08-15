@@ -434,15 +434,6 @@ class TaskService:
                             }
                         )
                     task.is_finished = True
-                            {
-                                "detail": _(
-                                    "Cannot move to Done: No time has been tracked for this task."
-                                ),
-                                "code": "NEEDS_MANUAL_TIME",
-                            }
-                        )
-                    task.spent_hours = current_spent
-                    task.is_finished = True
 
         # Order Shifting Logic
         if new_status and old_status != new_status:

@@ -9,6 +9,7 @@ import {
   Flash,
   People as TeamsIcon,
   TaskSquare,
+  NoteText,
 } from "iconsax-reactjs";
 
 export type DrawerItem = {
@@ -78,5 +79,11 @@ export const drawerItems: DrawerItem[] = [
     link: "teams",
     icon: <TeamsIcon variant="Outline" />,
     permission: "teams.view",
+  },
+  {
+    title: "Daily Standups",
+    link: "standups",
+    icon: <NoteText variant="Outline" />,
+    requiresOrgAdmin: true,
   },
 ];

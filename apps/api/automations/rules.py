@@ -87,6 +87,10 @@ def process_rules_for_event(event_type: str, payload: dict):
     # 2. Route to enabled channels, respecting each user's delivery preferences.
     for user in users:
         wsp = getattr(user, "work_style_profile", None)
+        # select_related bypasses SoftDeleteManager, so a soft-deleted
+        # profile is still loaded.  Treat it as non-existent.
+        if wsp and getattr(wsp, "is_deleted", False):
+            wsp = None
 
         notify_email = wsp.notify_via_email if wsp else False
         notify_telegram = wsp.notify_via_telegram if wsp else False
@@ -101,6 +105,7 @@ def process_rules_for_event(event_type: str, payload: dict):
             action_type in (AutomationRule.ActionType.TELEGRAM, AutomationRule.ActionType.BOTH)
             and notify_telegram
             and telegram_chat_id
+            and str(telegram_chat_id).strip()  # Guard against empty/whitespace-only chat IDs
         )
 
         if not should_send_email and not should_send_telegram:
@@ -189,10 +194,12 @@ def _determine_target_users(recipients: list[str], payload: dict) -> set[str]:
             add_many(
                 User.objects.filter(
                     is_superuser=True,
+                    work_style_profile__is_deleted=False,
                     work_style_profile__notify_via_telegram=True,
                     work_style_profile__telegram_chat_id__isnull=False,
                 )
                 .exclude(work_style_profile__telegram_chat_id="")
+                .exclude(work_style_profile__telegram_chat_id__regex=r"^\s+$")
                 .values_list("id", flat=True)
             )
 

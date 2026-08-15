@@ -111,7 +111,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
 
       <div className={`flex items-start justify-between gap-2 ${hasMetadata ? 'mb-2' : ''}`}>
         <div className="flex items-start flex-1 justify-start text-left">
-          <div className="overflow-visible transition-all duration-200 w-0 opacity-0 group-hover:w-[18px] group-hover:opacity-100 group-hover:mr-1.5 flex shrink-0 items-start">
+          <div className={`overflow-visible transition-all duration-200 flex shrink-0 items-start ${isActuallyDone || isDone ? 'w-[18px] opacity-100 mr-1.5' : 'w-0 opacity-0 group-hover:w-[18px] group-hover:opacity-100 group-hover:mr-1.5'}`}>
             <style>
               {`
                 @keyframes burstLine {
@@ -123,11 +123,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
             </style>
             <button
               onClick={handleDoneClick}
-              className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isActuallyDone || isDone ? 'bg-[#10B981] text-white scale-110 border-none' : 'border border-white/20 hover:border-[#10B981]/50 hover:bg-[#10B981]/10'}`}
+              className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isActuallyDone || isDone ? 'text-[#10B981]' : 'border border-white/20 hover:border-[#10B981]/50 hover:bg-[#10B981]/10'}`}
               title={isActuallyDone ? "Completed" : "Mark as done"}
             >
               {(isActuallyDone || isDone) ? (
-                <TickCircle size={14} variant="Bulk" />
+                <TickCircle size={16} variant="Bulk" />
               ) : null}
 
               {isDone && (
@@ -314,7 +314,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
             >
               <div className="w-2.5 h-2.5 bg-red-400 rounded-sm animate-pulse" />
             </button>
-          ) : (
+          ) : !isActuallyDone ? (
             <button 
               onClick={(e) => { e.stopPropagation(); onPlayTimer?.(task.id); }}
               className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors p-0.5 rounded hover:bg-emerald-500/10 opacity-0 group-hover:opacity-100" 
@@ -322,7 +322,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
             >
               <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-emerald-400 border-b-[5px] border-b-transparent ml-0.5" />
             </button>
-          )}
+          ) : null}
         </div>
 
         <div className="flex items-center space-x-2">

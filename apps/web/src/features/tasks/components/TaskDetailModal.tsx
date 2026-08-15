@@ -117,6 +117,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to add comment.');
+    }
   });
 
   const addChecklistMutation = useMutation({
@@ -127,6 +130,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setNewChecklistText('');
       setIsAddingChecklist(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to add checklist item.');
+      setIsAddingChecklist(false);
     }
   });
 
@@ -136,6 +143,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['taskChecklists', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to toggle checklist item.');
     }
   });
 
@@ -144,6 +154,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       onClose();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to delete task.');
     }
   });
 
@@ -154,6 +167,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       setEditingCommentText('');
       queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
     },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to update comment.');
+    }
   });
 
   const deleteCommentMutation = useMutation({
@@ -163,6 +179,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to delete comment.');
+      setDeletingCommentId(null);
+    }
   });
 
   // Handlers

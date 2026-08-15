@@ -1,8 +1,6 @@
 import { motion } from "framer-motion";
 import { ProfileEditForm } from "../components/ProfileEditForm";
 
-import { StandupsList } from "../components/StandupsList";
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
@@ -31,9 +29,6 @@ const ProfilePage = () => {
       </motion.div>
       <motion.div variants={itemVariants} className="mt-8">
         <ProfileEditForm />
-      </motion.div>
-      <motion.div variants={itemVariants}>
-        <StandupsList />
       </motion.div>
     </motion.div>
   );
