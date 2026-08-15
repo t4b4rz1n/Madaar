@@ -446,7 +446,7 @@ def _fmt_project_budget_set(p):
 
 def _fmt_member_added_to_project(p):
     return (
-        _("New project member"),
+        _("New member added to project"),
         _(
             "👤 <b>New member added to project!</b>\n\n"
             "📂 Project: <b>{project_name}</b>\n"
@@ -476,6 +476,102 @@ def _fmt_member_added_to_org(p):
     )
 
 
+def _fmt_board_created(p):
+    return (
+        _("New Board Created"),
+        _(
+            "📋 <b>New Board Created!</b>\n\n"
+            "Board <b>{board_name}</b> has been added to project <b>{project_name}</b>."
+        ).format(
+            board_name=p.get("board_name", "—"),
+            project_name=p.get("project_name", "—"),
+        ),
+    )
+
+
+def _fmt_milestone_created(p):
+    return (
+        _("New Milestone Created"),
+        _(
+            "🚩 <b>New Milestone Created!</b>\n\n"
+            "Milestone <b>{milestone_title}</b> has been created in project <b>{project_name}</b>."
+        ).format(
+            milestone_title=p.get("milestone_title", "—"),
+            project_name=p.get("project_name", "—"),
+        ),
+    )
+
+
+def _fmt_high_priority_task_created(p):
+    return (
+        _("High Priority Task Created"),
+        _(
+            "🔴 <b>High Priority Task Created!</b>\n\n"
+            "Task: <b>{task_title}</b>\n"
+            "Project: {project_name}"
+        ).format(
+            task_title=p.get("task_title", "—"),
+            project_name=p.get("project_name", "—"),
+        ),
+    )
+
+
+def _fmt_high_priority_task_completed(p):
+    return (
+        _("High Priority Task Completed"),
+        _(
+            "🟢 <b>High Priority Task Completed!</b>\n\n"
+            "Task: <b>{task_title}</b>\n"
+            "Project: {project_name}"
+        ).format(
+            task_title=p.get("task_title", "—"),
+            project_name=p.get("project_name", "—"),
+        ),
+    )
+
+
+def _fmt_task_priority_increased_to_high(p):
+    return (
+        _("Task Priority Increased to High"),
+        _(
+            "⬆️ <b>Task Priority Increased to High!</b>\n\n"
+            "Task: <b>{task_title}</b>\n"
+            "Project: {project_name}"
+        ).format(
+            task_title=p.get("task_title", "—"),
+            project_name=p.get("project_name", "—"),
+        ),
+    )
+
+
+def _fmt_task_moved_to_testing(p):
+    return (
+        _("Task Moved to Testing"),
+        _(
+            "🧪 <b>Task Moved to Testing!</b>\n\n"
+            "Task: <b>{task_title}</b>\n"
+            "Project: {project_name}"
+        ).format(
+            task_title=p.get("task_title", "—"),
+            project_name=p.get("project_name", "—"),
+        ),
+    )
+
+
+def _fmt_task_created(p):
+    return (
+        _("New Task Created"),
+        _(
+            "📝 <b>New Task Created!</b>\n\n"
+            "Task: <b>{task_title}</b>\n"
+            "Project: {project_name}"
+        ).format(
+            task_title=p.get("task_title", "—"),
+            project_name=p.get("project_name", "—"),
+        ),
+    )
+
+
 # Map event types to their formatter functions
 _MESSAGE_FORMATTERS = {
     "project_created": _fmt_project_created,
@@ -498,4 +594,11 @@ _MESSAGE_FORMATTERS = {
     "project_budget_set": _fmt_project_budget_set,
     "member_added_to_project": _fmt_member_added_to_project,
     "member_added_to_org": _fmt_member_added_to_org,
+    "board_created": _fmt_board_created,
+    "milestone_created": _fmt_milestone_created,
+    "high_priority_task_created": _fmt_high_priority_task_created,
+    "high_priority_task_completed": _fmt_high_priority_task_completed,
+    "task_priority_increased_to_high": _fmt_task_priority_increased_to_high,
+    "task_moved_to_testing": _fmt_task_moved_to_testing,
+    "task_created": _fmt_task_created,
 }

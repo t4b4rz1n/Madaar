@@ -145,7 +145,7 @@ AUTOMATION_EVENT_CATALOG = (
         "task_completed",
         _("Task completed"),
         _("A task is marked complete."),
-        [Recipient.REPORTER, Recipient.PROJECT_OWNER],
+        [Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
         allowed_recipients=[
             Recipient.ASSIGNEE,
             Recipient.REPORTER,
@@ -159,7 +159,7 @@ AUTOMATION_EVENT_CATALOG = (
         "task_deadline_approaching",
         _("Task deadline approaching"),
         _("An unfinished task is due within 24 hours."),
-        [Recipient.ASSIGNEE, Recipient.PROJECT_OWNER],
+        [Recipient.ASSIGNEE, Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
         allowed_recipients=[
             Recipient.ASSIGNEE,
             Recipient.REPORTER,
@@ -274,16 +274,67 @@ AUTOMATION_EVENT_CATALOG = (
     _event(
         "member_added_to_project",
         _("Member added to project (admin view)"),
-        _("A user is added to a project — superusers are notified."),
-        [Recipient.SUPERUSERS],
-        allowed_recipients=[Recipient.SUPERUSERS],
+        _("A user is added to a project — admins and superusers are notified."),
+        [Recipient.SUPERUSERS, Recipient.PROJECT_OWNER, Recipient.ORGANIZATION_ADMINS],
+        allowed_recipients=[Recipient.SUPERUSERS, Recipient.PROJECT_OWNER, Recipient.ORGANIZATION_ADMINS],
     ),
     _event(
         "member_added_to_org",
         _("Member added to organization"),
-        _("A user is added to an organization — superusers are notified."),
-        [Recipient.SUPERUSERS],
-        allowed_recipients=[Recipient.SUPERUSERS],
+        _("A user is added to an organization — admins and superusers are notified."),
+        [Recipient.SUPERUSERS, Recipient.ORGANIZATION_ADMINS],
+        allowed_recipients=[Recipient.SUPERUSERS, Recipient.ORGANIZATION_ADMINS],
+    ),
+    # ── Owner-specific events ──────────────────────────────────────────────
+    _event(
+        "board_created",
+        _("Board created"),
+        _("A new board is created in a project."),
+        [Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
+        allowed_recipients=[Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
+    ),
+    _event(
+        "milestone_created",
+        _("Milestone created"),
+        _("A new milestone is created in a project."),
+        [Recipient.PROJECT_OWNER],
+        allowed_recipients=[Recipient.PROJECT_OWNER],
+    ),
+    _event(
+        "high_priority_task_created",
+        _("High priority task created"),
+        _("A task with high priority is created."),
+        [Recipient.PROJECT_OWNER],
+        allowed_recipients=[Recipient.PROJECT_OWNER],
+    ),
+    _event(
+        "high_priority_task_completed",
+        _("High priority task completed"),
+        _("A high priority task is marked complete."),
+        [Recipient.PROJECT_OWNER],
+        allowed_recipients=[Recipient.PROJECT_OWNER],
+    ),
+    _event(
+        "task_priority_increased_to_high",
+        _("Task priority increased to high"),
+        _("A low-priority task is updated to high priority."),
+        [Recipient.PROJECT_OWNER],
+        allowed_recipients=[Recipient.PROJECT_OWNER],
+    ),
+    # ── Team Lead-specific events ──────────────────────────────────────────
+    _event(
+        "task_moved_to_testing",
+        _("Task moved to testing"),
+        _("A task is moved to the testing phase."),
+        [Recipient.TEAM_LEADS],
+        allowed_recipients=[Recipient.TEAM_LEADS, Recipient.PROJECT_OWNER, Recipient.REPORTER],
+    ),
+    _event(
+        "task_created",
+        _("Task created"),
+        _("A new task is created in the project."),
+        [Recipient.TEAM_LEADS],
+        allowed_recipients=[Recipient.TEAM_LEADS, Recipient.PROJECT_OWNER],
     ),
 )
 

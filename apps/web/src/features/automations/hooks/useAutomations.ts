@@ -57,7 +57,7 @@ export const useOrganizationsForAutomation = () =>
     queryKey: ["automation-organizations"],
     queryFn: async () => {
       const response = await ApiService.getList<OrganizationOption>("/organizations/");
-      return response.data?.results ?? [];
+      return (response.data?.results ?? response.data ?? []) as OrganizationOption[];
     },
   });
 

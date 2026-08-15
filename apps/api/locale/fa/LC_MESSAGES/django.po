@@ -172,3 +172,45 @@ msgstr "عضو جدید در سازمان"
 
 msgid "🏢 <b>New member added to organization!</b>\n\n🏢 Organization: <b>{org_name}</b>\n👤 New member: {member_name}\n🎖 Role: {role}"
 msgstr "🏢 <b>عضو جدید به سازمان اضافه شد!</b>\n\n🏢 سازمان: <b>{org_name}</b>\n👤 عضو جدید: {member_name}\n🎖 نقش: {role}"
+
+msgid "New Board Created"
+msgstr "بورد جدید ساخته شد"
+
+msgid "📋 <b>New Board Created!</b>\n\nBoard <b>{board_name}</b> has been added to project <b>{project_name}</b>."
+msgstr "📋 <b>بورد جدید ساخته شد!</b>\n\nبورد <b>{board_name}</b> در پروژه <b>{project_name}</b> ایجاد گردید."
+
+msgid "New Milestone Created"
+msgstr "مایل‌استون جدید ایجاد شد"
+
+msgid "🚩 <b>New Milestone Created!</b>\n\nMilestone <b>{milestone_title}</b> has been created in project <b>{project_name}</b>."
+msgstr "🚩 <b>مایل‌استون جدید ایجاد شد!</b>\n\nمایل‌استون <b>{milestone_title}</b> در پروژه <b>{project_name}</b> تعریف گردید."
+
+msgid "High Priority Task Created"
+msgstr "تسک اولویت بالا ساخته شد"
+
+msgid "🔴 <b>High Priority Task Created!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr "🔴 <b>تسک با اولویت بالا ساخته شد!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "High Priority Task Completed"
+msgstr "تسک اولویت بالا انجام شد"
+
+msgid "🟢 <b>High Priority Task Completed!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr "🟢 <b>تسک با اولویت بالا انجام شد!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "Task Priority Increased to High"
+msgstr "افزایش اولویت تسک به بالا"
+
+msgid "⬆️ <b>Task Priority Increased to High!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr "⬆️ <b>اولویت تسک به بالا افزایش یافت!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "Task Moved to Testing"
+msgstr "انتقال تسک به مرحله تست"
+
+msgid "🧪 <b>Task Moved to Testing!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr "🧪 <b>تسک به مرحله تست منتقل شد!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "New Task Created"
+msgstr "تسک جدید ساخته شد"
+
+msgid "📝 <b>New Task Created!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr "📝 <b>یک تسک جدید ساخته شد!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
