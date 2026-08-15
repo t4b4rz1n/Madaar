@@ -378,27 +378,51 @@ class TelegramBotService:
 
         if user and hasattr(user, "work_style_profile"):
             wsp = user.work_style_profile
-            tg_status = _("✅ فعال") if wsp.notify_via_telegram else _("⏸ غیرفعال")
-            email_status = _("✅ فعال") if wsp.notify_via_email else _("⏸ غیرفعال")
-            msg = _(
-                "📊 <b>وضعیت حساب کاربری</b>\n\n"
-                "👤 <b>نام:</b> {name}\n"
-                "📧 <b>ایمیل:</b> {email}\n\n"
-                "<b>کانال‌های اعلان:</b>\n"
-                "  تلگرام: {tg_status}\n"
-                "  ایمیل: {email_status}"
-            ).format(
-                name=user.get_full_name() or user.username,
-                email=user.email,
-                tg_status=tg_status,
-                email_status=email_status,
-            )
+            if lang == "en":
+                tg_status = "✅ Active" if wsp.notify_via_telegram else "⏸ Inactive"
+                email_status = "✅ Active" if wsp.notify_via_email else "⏸ Inactive"
+                msg = (
+                    "📊 <b>Account Status</b>\n\n"
+                    "👤 <b>Name:</b> {name}\n"
+                    "📧 <b>Email:</b> {email}\n\n"
+                    "<b>Notification Channels:</b>\n"
+                    "  Telegram: {tg_status}\n"
+                    "  Email: {email_status}"
+                ).format(
+                    name=user.get_full_name() or user.username,
+                    email=user.email,
+                    tg_status=tg_status,
+                    email_status=email_status,
+                )
+            else:
+                tg_status = "✅ فعال" if wsp.notify_via_telegram else "⏸ غیرفعال"
+                email_status = "✅ فعال" if wsp.notify_via_email else "⏸ غیرفعال"
+                msg = (
+                    "📊 <b>وضعیت حساب کاربری</b>\n\n"
+                    "👤 <b>نام:</b> {name}\n"
+                    "📧 <b>ایمیل:</b> {email}\n\n"
+                    "<b>کانال‌های اعلان:</b>\n"
+                    "  تلگرام: {tg_status}\n"
+                    "  ایمیل: {email_status}"
+                ).format(
+                    name=user.get_full_name() or user.username,
+                    email=user.email,
+                    tg_status=tg_status,
+                    email_status=email_status,
+                )
         else:
-            msg = _(
-                "❌ <b>وضعیت اتصال:</b> قطع\n\n"
-                "شما هنوز حساب کاربری خود را متصل نکرده‌اید.\n"
-                "برای اتصال، دستور /start را ارسال کنید."
-            )
+            if lang == "en":
+                msg = (
+                    "❌ <b>Connection Status:</b> Disconnected\n\n"
+                    "You have not connected your account yet.\n"
+                    "Send /start to connect."
+                )
+            else:
+                msg = (
+                    "❌ <b>وضعیت اتصال:</b> قطع\n\n"
+                    "شما هنوز حساب کاربری خود را متصل نکرده‌اید.\n"
+                    "برای اتصال، دستور /start را ارسال کنید."
+                )
         cls._send_or_edit(
             chat_id, msg, reply_markup=cls._back_to_menu_markup(), edit_message_id=edit_message_id
         )

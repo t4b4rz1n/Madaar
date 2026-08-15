@@ -94,7 +94,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
     <div
       onClick={onClick}
       className={`bg-[#171F32] p-2 px-2.5 rounded-xl border cursor-pointer group
-        hover:bg-[#1C253B] transition-all relative
+        hover:bg-[#1C253B] transition-all relative min-h-[84px] flex flex-col justify-between
         ${isDanger ? 'border-red-500/50' : 'border-[#2D364D] hover:border-[#4B5E87]'}
       `}
     >
@@ -109,9 +109,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
         <div className="absolute top-0 left-0 w-1 h-full bg-red-500 rounded-l-xl pointer-events-none"></div>
       )}
 
-      <div className={`flex items-start justify-between gap-2 ${hasMetadata ? 'mb-2' : ''}`}>
+      <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-start flex-1 justify-start text-left">
-          <div className={`overflow-visible transition-all duration-200 flex shrink-0 items-start ${isActuallyDone || isDone ? 'w-[18px] opacity-100 mr-1.5' : 'w-0 opacity-0 group-hover:w-[18px] group-hover:opacity-100 group-hover:mr-1.5'}`}>
+          <div className="overflow-visible transition-all duration-200 w-0 opacity-0 group-hover:w-[18px] group-hover:opacity-100 group-hover:mr-1.5 flex shrink-0 items-start">
             <style>
               {`
                 @keyframes burstLine {
@@ -275,8 +275,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
         )}
       </div>
 
-      {hasMetadata && (
-        <div className="flex items-center justify-between text-white/40 text-[11px]">
+      <div className="flex items-center justify-between text-white/40 text-[11px] min-h-[20px]">
         <div className="flex items-center gap-2">
           {task.due_date && (
             <div className={`flex items-center gap-1 ${isDanger ? 'text-red-400' : ''}`}>
@@ -335,7 +334,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
           )}
         </div>
       </div>
-      )}
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
