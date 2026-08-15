@@ -114,7 +114,6 @@ export const StandupsPage = () => {
   const { data: standups, isLoading: standupsLoading } = useQuery({
     queryKey: ['standups', selectedOrg],
     queryFn: () => getStandups(selectedOrg),
-    enabled: !!selectedOrg,
   });
 
   const groupedStandups = useMemo(() => {

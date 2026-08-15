@@ -570,7 +570,7 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             from django.db.models import Q
             qs = qs.filter(
                 Q(organization_id__in=admin_org_ids) | 
-                Q(organization_id__in=other_org_ids, user=user)
+                Q(user=user)
             )
 
         user_id = self.request.query_params.get("user")

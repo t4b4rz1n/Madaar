@@ -84,6 +84,5 @@ export const drawerItems: DrawerItem[] = [
     title: "Daily Standups",
     link: "standups",
     icon: <NoteText variant="Outline" />,
-    requiresOrgAdmin: true,
   },
 ];
