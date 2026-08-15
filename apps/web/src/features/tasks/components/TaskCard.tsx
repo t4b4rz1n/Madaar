@@ -111,7 +111,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
 
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-start flex-1 justify-start text-left">
-          <div className="overflow-visible transition-all duration-200 w-0 opacity-0 group-hover:w-[18px] group-hover:opacity-100 group-hover:mr-1.5 flex shrink-0 items-start">
+          <div className={`overflow-visible transition-all duration-200 flex shrink-0 items-start ${isActuallyDone ? 'w-[18px] opacity-100 mr-1.5' : 'w-0 opacity-0 group-hover:w-[18px] group-hover:opacity-100 group-hover:mr-1.5'}`}>
             <style>
               {`
                 @keyframes burstLine {
