@@ -39,7 +39,7 @@ export const reorderTasks = async (orders: { id: string | number; order: number 
   return await ApiService.post('/tasks/reorder/', { orders });
 };
 
-export const createTask = async (projectId: string, title: string, statusId: number, priority: string = 'low'): Promise<Task> => {
+export const createTask = async (projectId: string, title: string, statusId: string | number, priority: string = 'low'): Promise<Task> => {
   const data = await ApiService.post<Task>('/tasks/', {
     project: projectId,
     title,
