@@ -78,15 +78,14 @@ export const AttendancePage: React.FC = () => {
           Time Off & Holidays
           {activeTab === 'timeoff' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-purple-500 rounded-t-full shadow-[0_-2px_10px_rgba(168,85,247,0.5)]" />}
         </button>
-        {true && ( // Keeping team tab open for demo, should be controlled by org role
-          <button 
-            onClick={() => setActiveTab('team')}
-            className={`px-6 py-3 text-sm font-medium transition-all relative ${activeTab === 'team' ? 'text-emerald-400' : 'text-white/50 hover:text-white/80'}`}
-          >
-            Team Timesheet
-            {activeTab === 'team' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-t-full shadow-[0_-2px_10px_rgba(16,185,129,0.5)]" />}
-          </button>
-        )}
+        {/* Keeping team tab open for demo, should be controlled by org role */}
+        <button 
+          onClick={() => setActiveTab('team')}
+          className={`px-6 py-3 text-sm font-medium transition-all relative ${activeTab === 'team' ? 'text-emerald-400' : 'text-white/50 hover:text-white/80'}`}
+        >
+          Team Timesheet
+          {activeTab === 'team' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-t-full shadow-[0_-2px_10px_rgba(16,185,129,0.5)]" />}
+        </button>
       </div>
 
       {/* Tab Content */}

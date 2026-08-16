@@ -5,7 +5,6 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { updateTask, getTaskComments, addComment, updateComment, deleteComment, getTaskChecklists, addChecklistItem, toggleChecklistItem, deleteTask, getTaskActivities, getProjectMembers } from '../api/tasksApi';
 import { CloseSquare, TextalignLeft, Activity, Tag, Calendar, TaskSquare, Paperclip2 } from 'iconsax-reactjs';
 import { format } from 'date-fns';
-import { useTaskStore } from '../store/useTaskStore';
 import { ConfirmationModal } from '../../../components/ConfirmationModal';
 import { ManualTimeLogForm } from '../../attendance/components/ManualTimeLogForm';
 import { Timer1 } from 'iconsax-reactjs';

@@ -5,7 +5,6 @@ import { Timer1, Message, Paperclip2, TickCircle, More, TaskSquare, Tag, Profile
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteTask, updateTask, getProjectMembers } from '../api/tasksApi';
 import { useQuery } from '@tanstack/react-query';
-import { useTaskStore } from '../store/useTaskStore';
 import { ConfirmationModal } from '../../../components/ConfirmationModal';
 
 
