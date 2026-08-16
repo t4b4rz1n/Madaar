@@ -7,9 +7,9 @@ import { TaskCard } from './TaskCard';
 interface SortableTaskProps {
   task: Task;
   onClick: () => void;
-  onPlayTimer?: (taskId: number) => void;
-  onStopTimer?: (taskId: number) => void;
-  onMarkDone?: (taskId: number) => void;
+  onPlayTimer?: (taskId: string | number) => void;
+  onStopTimer?: (taskId: string | number) => void;
+  onMarkDone?: (taskId: string | number) => void;
 }
 
 export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone }) => {

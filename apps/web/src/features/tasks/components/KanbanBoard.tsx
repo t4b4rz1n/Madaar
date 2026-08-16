@@ -98,7 +98,7 @@ export const KanbanBoard: React.FC = () => {
   });
 
   const reorderTasksMutation = useMutation({
-    mutationFn: (orders: { id: number; order: number }[]) => reorderTasks(orders),
+    mutationFn: (orders: { id: string | number; order: number }[]) => reorderTasks(orders as any),
     onMutate: async () => {
       return { previousTasks: serverTasks };
     },
@@ -114,7 +114,7 @@ export const KanbanBoard: React.FC = () => {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: ({ title, statusId, priority }: { title: string, statusId: number, priority: string }) => createTask(activeProjectId!, title, statusId, priority),
+    mutationFn: ({ title, statusId, priority }: { title: string, statusId: string | number, priority: string }) => createTask(activeProjectId!, title, statusId, priority),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
       setAddingTaskToStatusId(null);
@@ -136,7 +136,7 @@ export const KanbanBoard: React.FC = () => {
   };
 
   const startTimerMutation = useMutation({
-    mutationFn: (taskId: number) => startTimer(taskId),
+    mutationFn: (taskId: string | number) => startTimer(taskId as number),
     onMutate: async (taskId) => {
       // Find "doing" or "in progress" status IN THE ACTIVE BOARD
       const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
