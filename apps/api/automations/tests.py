@@ -39,7 +39,7 @@ class AutomationCatalogApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         payload = response.data.get("data", response.data)
-        self.assertEqual(len(payload["events"]), 15)
+        self.assertEqual(len(payload["events"]), len(AUTOMATION_EVENT_CATALOG))
         self.assertEqual(
             {event["code"] for event in payload["events"]},
             {event["code"] for event in AUTOMATION_EVENT_CATALOG},

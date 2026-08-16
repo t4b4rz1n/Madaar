@@ -8,6 +8,8 @@ import {
   ShieldSecurity,
   Flash,
   People as TeamsIcon,
+  TaskSquare,
+  NoteText,
 } from "iconsax-reactjs";
 
 export type DrawerItem = {
@@ -25,6 +27,11 @@ export const drawerItems: DrawerItem[] = [
     title: "Dashboard",
     link: "dashboard",
     icon: <Category variant="Outline" />,
+  },
+  {
+    title: "Tasks",
+    link: "tasks",
+    icon: <TaskSquare variant="Outline" />,
   },
   {
     title: "Automations",
@@ -68,9 +75,14 @@ export const drawerItems: DrawerItem[] = [
     icon: <User variant="Outline" />,
   },
   {
-  title: "Teams Management",
-  link: "teams",
-  icon: <TeamsIcon variant="Outline" />,
-  permission: "teams.view",
-},
+    title: "Teams Management",
+    link: "teams",
+    icon: <TeamsIcon variant="Outline" />,
+    permission: "teams.view",
+  },
+  {
+    title: "Daily Standups",
+    link: "standups",
+    icon: <NoteText variant="Outline" />,
+  },
 ];

@@ -18,13 +18,9 @@ class BoardService:
 
     @staticmethod
     @transaction.atomic
-    def create_board(
-        title, project, created_by, description=None, background_color=None
-    ):
+    def create_board(title, project, created_by, description=None, background_color=None):
         # Lock existing boards to prevent race condition
-        existing_boards = list(
-            Board.objects.filter(project=project).select_for_update()
-        )
+        existing_boards = list(Board.objects.filter(project=project).select_for_update())
         max_order = len(existing_boards)
         board = Board.objects.create(
             title=title,
@@ -66,9 +62,7 @@ class BoardService:
         if board_ids:
             boards_dict = {
                 str(b.id): b
-                for b in Board.objects.filter(
-                    id__in=board_ids, project=project
-                ).select_for_update()
+                for b in Board.objects.filter(id__in=board_ids, project=project).select_for_update()
             }
             for item in board_orders:
                 board_obj = boards_dict.get(str(item["id"]))
@@ -85,10 +79,7 @@ class BoardService:
                 board=first_board,
                 actor=actor,
                 action=Truncator(
-                    str(
-                        _("Reordered boards in project '%(project)s'")
-                        % {"project": project.name}
-                    )
+                    str(_("Reordered boards in project '%(project)s'") % {"project": project.name})
                 ).chars(255),
             )
 
@@ -100,9 +91,7 @@ class TaskStatusService:
     @transaction.atomic
     def create_status(board, code, name, order=None, actor=None):
         if order is None:
-            existing_statuses = list(
-                TaskStatus.objects.filter(board=board).select_for_update()
-            )
+            existing_statuses = list(TaskStatus.objects.filter(board=board).select_for_update())
             max_order = len(existing_statuses)
             order = max_order + 1
 
@@ -117,9 +106,9 @@ class TaskStatusService:
             TaskActivityLog.objects.create(
                 board=board,
                 actor=actor,
-                action=Truncator(
-                    str(_("Added status '%(name)s' to board") % {"name": name})
-                ).chars(255),
+                action=Truncator(str(_("Added status '%(name)s' to board") % {"name": name})).chars(
+                    255
+                ),
             )
 
         return status_obj
@@ -174,10 +163,7 @@ class TaskStatusService:
                 board=board,
                 actor=actor,
                 action=Truncator(
-                    str(
-                        _("Reordered statuses on board '%(board)s'")
-                        % {"board": board.title}
-                    )
+                    str(_("Reordered statuses on board '%(board)s'") % {"board": board.title})
                 ).chars(255),
             )
 
@@ -196,6 +182,7 @@ class TaskService:
         "due_date",
         "estimated_hours",
         "parent_task",
+        "is_blocked",
     }
 
     @staticmethod
@@ -214,23 +201,34 @@ class TaskService:
         milestone=None,
         spent_hours=0,
         order=0,
+        is_blocked=False,
     ):
-        # Validate that reporter is a project member (unless staff/superuser)
+        # Validate that reporter is a project member (unless staff/superuser or org owner)
         if (
             project
             and reporter
             and not (
-                getattr(reporter, "is_staff", False)
-                or getattr(reporter, "is_superuser", False)
+                getattr(reporter, "is_staff", False) or getattr(reporter, "is_superuser", False)
             )
         ):
+            from organizations.models import OrganizationMembership
             from projects.models import ProjectMember
 
-            is_member = ProjectMember.objects.filter(
-                project=project, user=reporter, is_active=True
-            ).exists()
-            if not is_member:
-                raise PermissionDenied(_("You are not a member of this project."))
+            is_org_owner = (
+                project.organization.owner == reporter
+                or OrganizationMembership.objects.filter(
+                    organization=project.organization,
+                    user=reporter,
+                    role=OrganizationMembership.Role.OWNER,
+                ).exists()
+            )
+
+            if not is_org_owner:
+                is_member = ProjectMember.objects.filter(
+                    project=project, user=reporter, is_active=True
+                ).exists()
+                if not is_member:
+                    raise PermissionDenied(_("You are not a member of this project."))
 
         # Validate that assignee is a member of the organization
         if assignee and project:
@@ -240,15 +238,11 @@ class TaskService:
                 organization=project.organization, user=assignee
             ).exists()
             if not is_assignee_org_member:
-                raise ValidationError(
-                    _("Assignee must be a member of the organization.")
-                )
+                raise ValidationError(_("Assignee must be a member of the organization."))
 
         if not status:
             if project:
-                status = TaskStatus.objects.filter(
-                    board__project=project, code="todo"
-                ).first()
+                status = TaskStatus.objects.filter(board__project=project, code="todo").first()
                 if not status:
                     status = TaskStatus.objects.filter(board__project=project).first()
             if not status:
@@ -256,6 +250,15 @@ class TaskService:
 
         if parent_task and project and parent_task.project != project:
             raise ValidationError(_("Parent task must belong to the same project."))
+
+        # Calculate max order for the given status to append at the bottom
+        if order == 0:
+            from django.db.models import Max
+
+            max_order_agg = Task.objects.filter(status=status).aggregate(Max("order"))
+            max_order = max_order_agg["order__max"]
+            if max_order is not None:
+                order = max_order + 1
 
         task = Task.objects.create(
             project=project,
@@ -271,6 +274,7 @@ class TaskService:
             parent_task=parent_task,
             spent_hours=spent_hours,
             order=order,
+            is_blocked=is_blocked,
         )
 
         # Log activity
@@ -285,17 +289,43 @@ class TaskService:
     @staticmethod
     @transaction.atomic
     def update_task(task, actor, **kwargs):
-        assignee = kwargs.get("assignee")
-        if assignee and task.project:
-            from organizations.models import OrganizationMembership
+        # We rely on the serializer to validate that the assignee is a valid ProjectMember.
+        # Human-readable field labels
+        field_labels = {
+            "assignee": _("Assignee"),
+            "status": _("Status"),
+            "priority": _("Priority"),
+            "title": _("Title"),
+            "description": _("Description"),
+            "due_date": _("Due date"),
+            "estimated_hours": _("Estimated hours"),
+            "order": _("Order"),
+            "parent_task": _("Parent task"),
+            "is_finished": _("Finished"),
+            "is_blocked": _("Blocked"),
+            "milestone": _("Milestone"),
+        }
 
-            is_assignee_org_member = OrganizationMembership.objects.filter(
-                organization=task.project.organization, user=assignee
-            ).exists()
-            if not is_assignee_org_member:
-                raise ValidationError(
-                    _("Assignee must be a member of the organization.")
-                )
+        def _display(val, field_name):
+            if val is None:
+                return str(_("Unassigned")) if field_name == "assignee" else str(_("empty"))
+            if isinstance(val, bool):
+                return "✓" if val else "✗"
+            if hasattr(val, "get_full_name"):
+                return val.get_full_name() or getattr(val, "email", str(val))
+            if hasattr(val, "name"):
+                return val.name
+            # Format dates nicely
+            if hasattr(val, "strftime"):
+                return val.strftime("%b %d, %Y")
+            # Truncate long text (e.g. description)
+            s = str(val)
+            if len(s) > 50:
+                return s[:47] + "..."
+            return s
+
+        # Fields to skip in activity log (noisy/internal)
+        skip_log_fields = {"order"}
 
         changes = []
         for field, value in kwargs.items():
@@ -304,11 +334,24 @@ class TaskService:
             old_val = getattr(task, field)
             if old_val != value:
                 setattr(task, field, value)
-                changes.append(f"{field}: {old_val} -> {value}")
+                if field not in skip_log_fields:
+                    if field == "assignee":
+                        if value:
+                            changes.append(
+                                str(_("Task assigned to %(user)s"))
+                                % {"user": _display(value, field)}
+                            )
+                        else:
+                            changes.append(str(_("Task unassigned")))
+                    else:
+                        label = field_labels.get(field, field)
+                        changes.append(
+                            f"{label}: {_display(old_val, field)} → {_display(value, field)}"
+                        )
 
         if changes:
             task.save()
-            action_desc = str(_("Updated fields: ")) + ", ".join(changes)
+            action_desc = ", ".join(changes)
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
@@ -320,45 +363,56 @@ class TaskService:
     @staticmethod
     @transaction.atomic
     def move_task(task, actor, new_status=None, new_order=None):
-        """Handles Drag & Drop movement across Kanban statuses."""
-        if task.assignee != actor and not actor.is_staff and not actor.is_superuser:
+        """Handles Drag & Drop movement across Kanban statuses and reorders tasks."""
+        from django.db.models import F
+
+        # Permission check for moving tasks
+        if not actor.is_staff and not actor.is_superuser:
             role = (
-                actor.org_memberships.filter(
-                    organization_id=task.project.organization_id
-                )
+                actor.org_memberships.filter(organization_id=task.project.organization_id)
                 .values_list("role", flat=True)
                 .first()
             )
+            # admin, owner, team_lead can move any task
             if role not in ["owner", "Admin", "team_lead"]:
-                from rest_framework.exceptions import PermissionDenied
+                from organizations.models import TeamMembership
+                is_team_lead = TeamMembership.objects.filter(
+                    user=actor, team__organization_id=task.project.organization_id, role="lead"
+                ).exists()
+                if not is_team_lead:
+                    # employee, hr, accounting can only move tasks assigned to them or created by them
+                    is_assignee = task.assignee and task.assignee == actor
+                    is_reporter = task.reporter and task.reporter == actor
+                    if not is_assignee and not is_reporter:
+                        from rest_framework.exceptions import PermissionDenied
 
-                raise PermissionDenied(
-                    _("Only the assignee or a project manager can move this task.")
-                )
+                        raise PermissionDenied(
+                            _("Only the assignee, creator, or a project manager can move this task.")
+                        )
+
+        old_status = task.status
+        old_order = task.order
 
         task_code = task.status.code.lower() if task.status and task.status.code else ""
+        new_code = new_status.code.lower() if new_status and new_status.code else ""
+
         if task_code == "done" and new_status and task.status != new_status:
             raise ValidationError(
-                _(
-                    "Task is completed (Done) and locked. It cannot be moved to another status."
-                )
+                _("Task is completed (Done) and locked. It cannot be moved to another status.")
+            )
+
+        if task_code in ["doing", "review"] and new_code == "todo":
+            raise ValidationError(
+                _("Task cannot be moved back to To Do once it is in progress or under review.")
             )
 
         action_parts = []
 
         changed = False
         if new_status and task.status != new_status:
-            if (
-                task.project
-                and new_status.board
-                and new_status.board.project_id != task.project_id
-            ):
-                raise ValidationError(
-                    _("Target status does not belong to the same project.")
-                )
-            action_parts.append(
-                str(_("Status changed to %(st)s") % {"st": new_status.name})
-            )
+            if task.project and new_status.board and new_status.board.project_id != task.project_id:
+                raise ValidationError(_("Target status does not belong to the same project."))
+            action_parts.append(str(_("Status changed to %(st)s") % {"st": new_status.name}))
             task.status = new_status
             changed = True
 
@@ -367,9 +421,11 @@ class TaskService:
 
             code = new_status.code.lower() if new_status.code else ""
             if code == "doing":
-                # Only start if the actor is the assignee
-                if task.assignee == actor:
+                from rest_framework.exceptions import PermissionDenied
+                try:
                     TimeLogService.start_timer(actor, task)
+                except Exception:
+                    pass
             elif code in ["review", "done"]:
                 # Stop timers for anyone working on this task
                 from attendance.models import TimeLog
@@ -379,13 +435,9 @@ class TaskService:
                     TimeLogService.stop_timer(timer.user, timer.id, auto_move=False)
 
                 if code == "done":
-                    # Check if any time was tracked (spent_hours > 0)
-                    current_spent = (
-                        Task.objects.filter(pk=task.pk)
-                        .values_list("spent_hours", flat=True)
-                        .first()
-                    )
-                    if not current_spent or current_spent <= 0:
+                    # Check if any time was tracked
+                    has_tracked_time = task.time_logs.filter(duration_seconds__gt=0).exists()
+                    if not has_tracked_time:
                         raise ValidationError(
                             {
                                 "detail": _(
@@ -394,13 +446,51 @@ class TaskService:
                                 "code": "NEEDS_MANUAL_TIME",
                             }
                         )
-                    task.spent_hours = current_spent
                     task.is_finished = True
 
-        if new_order is not None and task.order != new_order:
-            task.order = new_order
+        # Order Shifting Logic
+        if new_status and old_status != new_status:
+            # Moving to a DIFFERENT status column
+            if new_order is not None:
+                # Shift tasks in the new column down to make room
+                Task.objects.filter(status=new_status, order__gte=new_order).update(
+                    order=F("order") + 1
+                )
+                task.order = new_order
+            else:
+                # Append to the end of the new column
+                from django.db.models import Max
+
+                max_order = Task.objects.filter(status=new_status).aggregate(Max("order"))[
+                    "order__max"
+                ]
+                task.order = (max_order + 1) if max_order is not None else 0
+
+            # Shift tasks in the old column up to fill the gap
+            if old_status:
+                Task.objects.filter(status=old_status, order__gt=old_order).update(
+                    order=F("order") - 1
+                )
+
             action_parts.append(str(_("Order changed")))
             changed = True
+        else:
+            # Moving within the SAME status column
+            if new_order is not None and old_order != new_order:
+                if new_order < old_order:
+                    # Moving up: shift tasks down in the range
+                    Task.objects.filter(
+                        status=old_status, order__gte=new_order, order__lt=old_order
+                    ).update(order=F("order") + 1)
+                else:
+                    # Moving down: shift tasks up in the range
+                    Task.objects.filter(
+                        status=old_status, order__gt=old_order, order__lte=new_order
+                    ).update(order=F("order") - 1)
+
+                task.order = new_order
+                action_parts.append(str(_("Order changed")))
+                changed = True
 
         if changed:
             task.save()
@@ -430,9 +520,7 @@ class TaskService:
             task=task,
             board=board,
             actor=actor,
-            action=Truncator(
-                str(_("Deleted task: %(title)s") % {"title": title})
-            ).chars(255),
+            action=Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255),
         )
 
 
@@ -489,9 +577,9 @@ class ChecklistService:
             TaskActivityLog.objects.create(
                 task=task,
                 actor=actor,
-                action=Truncator(
-                    str(_("Deleted checklist item: %(desc)s") % {"desc": desc})
-                ).chars(255),
+                action=Truncator(str(_("Deleted checklist item: %(desc)s") % {"desc": desc})).chars(
+                    255
+                ),
             )
 
 
@@ -529,9 +617,7 @@ class StandupService:
     @transaction.atomic
     def create_standup(user, organization, yesterday_work, today_work, blockers=None):
         if not yesterday_work or not today_work:
-            raise ValidationError(
-                _("Both yesterday's work and today's work fields are required.")
-            )
+            raise ValidationError(_("Both yesterday's work and today's work fields are required."))
         from .models import AsyncStandup
 
         return AsyncStandup.objects.create(

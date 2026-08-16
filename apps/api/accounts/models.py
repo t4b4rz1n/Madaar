@@ -54,7 +54,10 @@ class User(AbstractUser, BaseModel):
         verbose_name_plural = "Users"
 
     def __str__(self):
-        return self.email
+        full_name = self.get_full_name()
+        if full_name:
+            return f"{full_name} ({self.username})"
+        return self.username or self.email or f"User {self.id}"
 
 
 
