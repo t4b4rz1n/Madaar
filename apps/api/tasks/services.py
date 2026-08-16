@@ -211,8 +211,8 @@ class TaskService:
                 getattr(reporter, "is_staff", False) or getattr(reporter, "is_superuser", False)
             )
         ):
-            from projects.models import ProjectMember
             from organizations.models import OrganizationMembership
+            from projects.models import ProjectMember
 
             is_org_owner = (
                 project.organization.owner == reporter
@@ -400,7 +400,7 @@ class TaskService:
             raise ValidationError(
                 _("Task is completed (Done) and locked. It cannot be moved to another status.")
             )
-            
+
         if task_code in ["doing", "review"] and new_code == "todo":
             raise ValidationError(
                 _("Task cannot be moved back to To Do once it is in progress or under review.")

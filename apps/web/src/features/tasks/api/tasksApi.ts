@@ -79,7 +79,7 @@ export const getTaskChecklists = async (taskId: number): Promise<TaskChecklistIt
   return extractData<TaskChecklistItem>(res);
 };
 
-export const addChecklistItem = async (taskId: number, description: string): Promise<TaskChecklistItem> => {
+export const addChecklistItem = async (taskId: string | number, description: string): Promise<TaskChecklistItem> => {
   const data = await ApiService.post<TaskChecklistItem>('/tasks/checklist-items/', {
     task: taskId,
     description,
@@ -101,12 +101,12 @@ export const getTaskComments = async (taskId: number): Promise<TaskComment[]> =>
   return extractData<TaskComment>(res);
 };
 
-export const getTaskActivities = async (taskId: number): Promise<TaskActivityLog[]> => {
+export const getTaskActivities = async (taskId: string | number): Promise<TaskActivityLog[]> => {
   const res = await ApiService.get<PaginatedResponse<TaskActivityLog> | TaskActivityLog[]>(`/tasks/${taskId}/activities/`);
   return extractData<TaskActivityLog>(res);
 };
 
-export const addComment = async (taskId: number, content: string, file?: File): Promise<TaskComment> => {
+export const addComment = async (taskId: string | number, content: string, file?: File): Promise<TaskComment> => {
   let data;
   
   if (file) {
@@ -127,14 +127,14 @@ export const addComment = async (taskId: number, content: string, file?: File): 
   return data as TaskComment;
 };
 
-export const updateComment = async (commentId: number, content: string): Promise<TaskComment> => {
+export const updateComment = async (commentId: string | number, content: string): Promise<TaskComment> => {
   const data = await ApiService.patch<TaskComment>(`/tasks/comments/${commentId}/`, {
     content,
   });
   return data as TaskComment;
 };
 
-export const deleteComment = async (commentId: number): Promise<void> => {
+export const deleteComment = async (commentId: string | number): Promise<void> => {
   await ApiService.delete(`/tasks/comments/${commentId}/`);
 };
 

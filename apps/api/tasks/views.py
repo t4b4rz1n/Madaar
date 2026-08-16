@@ -26,7 +26,6 @@ from .permissions import (
     IsTaskCommentPermission,
     IsTaskPermission,
     IsTaskStatusPermission,
-    get_user_org_role,
 )
 from .serializers import (
     AsyncStandupSerializer,
@@ -566,17 +565,17 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             other_org_ids = [m.organization_id for m in memberships if m.role.lower() not in ["owner", "admin"]]
 
             qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
-            
+
             from django.db.models import Q
             qs = qs.filter(
-                Q(organization_id__in=admin_org_ids) | 
+                Q(organization_id__in=admin_org_ids) |
                 Q(user=user)
             )
 
         user_id = self.request.query_params.get("user")
         if user_id:
             qs = qs.filter(user_id=user_id)
-            
+
         org_id = self.request.query_params.get("organization")
         if org_id:
             qs = qs.filter(organization_id=org_id)

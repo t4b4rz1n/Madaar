@@ -106,14 +106,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       }, 800);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.due_date?.[0] || 'Failed to update task.');
+      toast.error(error.message || error.response?.data?.due_date?.[0] || 'Failed to update task.');
       // Revert local date if it was changed
       setLocalDueDate(task.due_date ? new Date(task.due_date).toISOString() : null);
     }
   });
 
   const addCommentMutation = useMutation({
-    mutationFn: ({ text, file }: { text: string; file?: File | null }) => addComment(Number(task.id), text, file || undefined),
+    mutationFn: ({ text, file }: { text: string; file?: File | null }) => addComment(task.id, text, file || undefined),
     onSuccess: () => {
       setCommentText('');
       setSelectedFile(null);
@@ -122,7 +122,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to add comment.');
+      toast.error(error.message || error.response?.data?.detail || 'Failed to add comment.');
     }
   });
 
@@ -136,7 +136,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       setIsAddingChecklist(false);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to add checklist item.');
+      toast.error(error.message || error.response?.data?.detail || 'Failed to add checklist item.');
       setIsAddingChecklist(false);
     }
   });
@@ -149,7 +149,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to toggle checklist item.');
+      toast.error(error.message || error.response?.data?.detail || 'Failed to toggle checklist item.');
     }
   });
 
@@ -160,7 +160,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to delete task.');
+      toast.error(error.message || error.response?.data?.detail || 'Failed to delete task.');
     }
   });
 
@@ -172,7 +172,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to update comment.');
+      toast.error(error.message || error.response?.data?.detail || 'Failed to update comment.');
     }
   });
 
@@ -184,7 +184,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to delete comment.');
+      toast.error(error.message || error.response?.data?.detail || 'Failed to delete comment.');
       setDeletingCommentId(null);
     }
   });
@@ -539,26 +539,28 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                   </div>
                 )}
 
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  hidden 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error('File size must be less than 5MB');
+                        return;
+                      }
+                      setSelectedFile(file);
+                    }
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                />
+
                 {(isCommentInputFocused || commentText.trim().length > 0 || selectedFile) && (
                   <div className="flex justify-between items-center px-3 pb-3">
                     <div className="flex gap-1">
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        hidden 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.size > 5 * 1024 * 1024) {
-                              toast.error('File size must be less than 5MB');
-                              return;
-                            }
-                            setSelectedFile(file);
-                          }
-                          if (fileInputRef.current) fileInputRef.current.value = '';
-                        }}
-                      />
                       <button 
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => fileInputRef.current?.click()} 
                         className="p-2 text-white/50 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center" 
                         title="Attach file (Max 5MB)"
@@ -571,7 +573,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                       disabled={(!commentText.trim() && !selectedFile) || addCommentMutation.isPending}
                       onClick={() => {
                         addCommentMutation.mutate({ text: commentText, file: selectedFile });
-                        setIsCommentInputFocused(false);
                       }}
                       className="bg-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/80 text-white px-5 py-2 rounded-lg text-xs font-semibold transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
                     >
