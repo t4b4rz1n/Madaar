@@ -10,6 +10,7 @@ import { ConfirmationModal } from '../../../components/ConfirmationModal';
 import { ManualTimeLogForm } from '../../attendance/components/ManualTimeLogForm';
 import { Timer1 } from 'iconsax-reactjs';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
 
 
 interface TaskDetailModalProps {
@@ -34,6 +35,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   const [description, setDescription] = useState(task.description || '');
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newChecklistText, setNewChecklistText] = useState('');
   const [isAddingChecklist, setIsAddingChecklist] = useState(false);
   const [showActivityDetails, setShowActivityDetails] = useState(true);
@@ -110,9 +113,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   });
 
   const addCommentMutation = useMutation({
-    mutationFn: (text: string) => addComment(task.id, text),
+    mutationFn: ({ text, file }: { text: string; file?: File | null }) => addComment(Number(task.id), text, file || undefined),
     onSuccess: () => {
       setCommentText('');
+      setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -510,7 +514,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
 
               {/* Comment Input */}
               <div
-                className={`bg-[#273043] rounded-lg border border-white/10 p-0 transition-all mb-1 ${isCommentInputFocused || commentText.trim() ? 'focus-within:border-white/30' : ''}`}
+                className={`backdrop-blur-md bg-white/5 rounded-xl border border-white/10 p-0 transition-all mb-1 shadow-inner ${isCommentInputFocused || commentText.trim() || selectedFile ? 'focus-within:border-primary/50 focus-within:bg-white/10' : ''}`}
                 tabIndex={-1}
                 onFocus={() => setIsCommentInputFocused(true)}
                 onBlur={(e) => {
@@ -522,25 +526,57 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                 <textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  className={`w-full bg-transparent text-[14px] text-white/90 outline-none resize-none px-3 py-2 transition-all duration-200 ${isCommentInputFocused || commentText.trim() ? 'min-h-[60px]' : 'min-h-[40px] m-0 overflow-hidden'}`}
-                  placeholder="Write a comment..."
+                  className={`w-full bg-transparent text-[14px] text-white/90 outline-none resize-none px-4 py-3 transition-all duration-200 custom-scrollbar ${isCommentInputFocused || commentText.trim() || selectedFile ? 'min-h-[80px]' : 'min-h-[44px] m-0 overflow-hidden'}`}
+                  placeholder="Write a comment... (Markdown supported)"
                 />
-                {(isCommentInputFocused || commentText.trim().length > 0) && (
-                  <div className="flex justify-between items-center px-2 pb-2">
+                
+                {selectedFile && (
+                  <div className="px-4 py-2 flex items-center justify-between bg-primary/10 border-t border-primary/20 rounded-b-xl mb-2 mx-2">
+                    <span className="text-xs text-primary truncate flex-1">{selectedFile.name}</span>
+                    <button onClick={() => setSelectedFile(null)} className="text-white/40 hover:text-rose-400 p-1">
+                      <CloseSquare size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {(isCommentInputFocused || commentText.trim().length > 0 || selectedFile) && (
+                  <div className="flex justify-between items-center px-3 pb-3">
                     <div className="flex gap-1">
-                      <button className="p-1.5 text-white/40 hover:text-white/80 rounded transition-colors" title="Attachments disabled"><Paperclip2 size={16}/></button>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        hidden 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast.error('File size must be less than 5MB');
+                              return;
+                            }
+                            setSelectedFile(file);
+                          }
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                      />
+                      <button 
+                        onClick={() => fileInputRef.current?.click()} 
+                        className="p-2 text-white/50 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center" 
+                        title="Attach file (Max 5MB)"
+                      >
+                        <Paperclip2 size={18}/>
+                      </button>
                     </div>
                     <button
                       onMouseDown={(e) => e.preventDefault()} // prevent blur
-                      disabled={!commentText.trim()}
+                      disabled={(!commentText.trim() && !selectedFile) || addCommentMutation.isPending}
                       onClick={() => {
-                        addCommentMutation.mutate(commentText);
-                        setCommentText('');
+                        addCommentMutation.mutate({ text: commentText, file: selectedFile });
                         setIsCommentInputFocused(false);
                       }}
-                      className="bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/20 text-white px-4 py-1.5 rounded text-xs font-medium transition-colors"
+                      className="bg-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/80 text-white px-5 py-2 rounded-lg text-xs font-semibold transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
                     >
-                      Save
+                      {addCommentMutation.isPending ? <span className="loading loading-spinner loading-xs"></span> : null}
+                      Post Comment
                     </button>
                   </div>
                 )}
@@ -586,8 +622,25 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                               </div>
                             ) : (
                               <>
-                                <div className="bg-[#2C3344] p-3 rounded-lg text-[14px] text-white/90 shadow-sm border border-white/5">
-                                  {item.content}
+                                <div className="backdrop-blur-md bg-white/[0.03] p-4 rounded-xl text-[14px] text-white/90 shadow-sm border border-white/5 prose prose-invert prose-p:leading-relaxed prose-pre:bg-[#1E293B] prose-pre:border prose-pre:border-white/10 prose-pre:rounded-lg prose-a:text-primary max-w-none">
+                                  <ReactMarkdown>
+                                    {typeof item.content === 'string' ? item.content : '*No content*'}
+                                  </ReactMarkdown>
+                                  
+                                  {typeof item.attached_file_url === 'string' && (
+                                    <div className="mt-4 pt-3 border-t border-white/10">
+                                      {item.attached_file_url.match(/\.(jpeg|jpg|gif|png)$/i) != null ? (
+                                        <a href={item.attached_file_url} target="_blank" rel="noreferrer" className="block w-48 h-32 rounded-lg overflow-hidden border border-white/10 hover:border-primary/50 transition-colors">
+                                          <img src={item.attached_file_url} alt="Attachment" className="w-full h-full object-cover" />
+                                        </a>
+                                      ) : (
+                                        <a href={item.attached_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-white/80 transition-colors">
+                                          <Paperclip2 size={16} />
+                                          Download Attachment
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="relative">
                                   <div className="flex items-center gap-3 mt-1.5 text-[12px] text-white/40 font-medium ml-1">
