@@ -1,9 +1,9 @@
-import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 
 export const ChecklistNode = ({ data }: NodeProps) => {
-  const { title, isCompleted } = data;
+  const title = data.title as string;
+  const isCompleted = data.isCompleted as boolean;
 
   return (
     <div className={`relative flex items-center p-3 w-48 rounded-lg shadow-sm border backdrop-blur-sm transition-all hover:scale-105 ${

@@ -6,7 +6,9 @@ import {
   Background, 
   useNodesState, 
   useEdgesState,
-  MarkerType
+  MarkerType,
+  type Node,
+  type Edge
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
@@ -22,7 +24,7 @@ const nodeTypes = {
   checklist: ChecklistNode,
 };
 
-const getLayoutedElements = (nodes: any[], edges: any[], direction = 'TB') => {
+const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
   
@@ -76,8 +78,8 @@ export const DependencyGraph: React.FC = () => {
   const { initialNodes, initialEdges } = useMemo(() => {
     if (!tasks) return { initialNodes: [], initialEdges: [] };
 
-    const rawNodes: any[] = [];
-    const rawEdges: any[] = [];
+    const rawNodes: Node[] = [];
+    const rawEdges: Edge[] = [];
 
     tasks.forEach((task) => {
       // 1. Add Task Node
@@ -131,8 +133,8 @@ export const DependencyGraph: React.FC = () => {
     return { initialNodes: layouted.nodes, initialEdges: layouted.edges };
   }, [tasks]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   useEffect(() => {
     setNodes(initialNodes);
@@ -155,7 +157,7 @@ export const DependencyGraph: React.FC = () => {
         <MiniMap 
           nodeColor={(n) => {
             if (n.type === 'checklist') return '#94a3b8';
-            if (n.data?.task?.is_blocked) return '#ef4444';
+            if ((n.data?.task as Task)?.is_blocked) return '#ef4444';
             return '#6366f1';
           }}
           className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl"

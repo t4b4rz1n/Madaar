@@ -1,7 +1,6 @@
-import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import { Task } from '../types';
+import type { Task } from '../types';
 
 export const CustomTaskNode = ({ data }: NodeProps) => {
   const task = data.task as Task;
