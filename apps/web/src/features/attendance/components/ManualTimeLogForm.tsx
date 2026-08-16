@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createManualLog } from '../api/attendanceApi';
-import { Timer1, AddSquare } from 'iconsax-reactjs';
+import { AddSquare } from 'iconsax-reactjs';
 import { toast } from 'sonner';
 
 export const ManualTimeLogForm: React.FC<{ taskId?: string | number; onSuccess?: () => void }> = ({ taskId, onSuccess }) => {

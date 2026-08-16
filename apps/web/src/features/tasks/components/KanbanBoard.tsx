@@ -177,7 +177,8 @@ export const KanbanBoard: React.FC = () => {
   });
 
   const stopTimerMutation = useMutation({
-    mutationFn: (_taskId: number) => stopTimer(),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    mutationFn: (taskId: number) => stopTimer(),
     onMutate: async (taskId) => {
       setLocalTasks(tasks => tasks.map(t => t.id === taskId ? { ...t, is_active_timer_running: false } : t));
     },

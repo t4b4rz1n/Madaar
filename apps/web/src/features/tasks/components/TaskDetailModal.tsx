@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Task } from '../types';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { updateTask, getTaskComments, addComment, updateComment, deleteComment, getTaskChecklists, addChecklistItem, toggleChecklistItem, deleteTask, getTaskActivities, getProjectMembers } from '../api/tasksApi';
-import { CloseSquare, Element3, TextalignLeft, Activity, Profile2User, Tag, Calendar, TaskSquare, Paperclip2, Trash, Message, More } from 'iconsax-reactjs';
+import { CloseSquare, TextalignLeft, Activity, Tag, Calendar, TaskSquare, Paperclip2 } from 'iconsax-reactjs';
 import { format } from 'date-fns';
 import { useTaskStore } from '../store/useTaskStore';
 import { ConfirmationModal } from '../../../components/ConfirmationModal';
@@ -20,8 +20,6 @@ interface TaskDetailModalProps {
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose }) => {
   const queryClient = useQueryClient();
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [activeTab, setActiveTab] = useState<'details' | 'activities' | 'time'>('details');
 
   const formatSpentTime = (seconds: number | undefined) => {
     if (!seconds || seconds <= 0) return '00:00:00';
@@ -54,8 +52,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
   const [localPriority, setLocalPriority] = useState<string>(task.priority || 'low');
-
-  const { activeProjectId } = useTaskStore();
 
   // Queries
   const { data: comments = [] } = useQuery({
@@ -199,10 +195,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   const handleDescSave = () => {
     updateMutation.mutate({ description: description.trim() });
     setIsEditingDesc(false);
-  };
-
-  const handleDelete = () => {
-    setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = () => {

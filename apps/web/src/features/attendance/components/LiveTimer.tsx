@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getActiveTimer, stopTimer, cancelTimer } from '../api/attendanceApi';
-import { Play, Stop, Trash, Timer1, TaskSquare } from 'iconsax-reactjs';
+import { Stop, Trash, Timer1, TaskSquare } from 'iconsax-reactjs';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
 
 export const LiveTimer: React.FC = () => {
   const queryClient = useQueryClient();

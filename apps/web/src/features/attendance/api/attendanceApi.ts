@@ -1,5 +1,5 @@
 import ApiService from '../../../core/api/apiService';
-import type { PaginatedResponse } from '../../tasks/types';
+
 import type { Attendance, TimeLog, TimeOffRequest, Holiday, TimesheetEntry, Organization } from '../types';
 
 const extractData = <T>(res: any): T[] => {

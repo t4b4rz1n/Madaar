@@ -112,7 +112,6 @@ class TimeLogService:
             if task.project.owner_id == user.id or (task.project.organization and task.project.organization.owner_id == user.id):
                 can_start = True
             else:
-                from organizations.models import OrganizationMembership, TeamMembership
                 has_lead_role = user.org_memberships.filter(
                     organization_id=task.project.organization_id,
                     role__in=["owner", "Admin", "team_lead"]

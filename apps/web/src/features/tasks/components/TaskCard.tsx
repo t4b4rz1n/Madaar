@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Task } from '../types';
-import { Timer1, Message, Paperclip2, TickCircle, More, TaskSquare, Tag, Profile2User, Gallery, Calendar, ArrowRight, TickSquare, Copy, Link, Archive, Mirror, Trash } from 'iconsax-reactjs';
+import { Timer1, Message, Paperclip2, TickCircle, More, TaskSquare, Tag, Profile2User, Calendar, ArrowRight, TickSquare, Trash } from 'iconsax-reactjs';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteTask, updateTask, getProjectMembers } from '../api/tasksApi';
 import { useQuery } from '@tanstack/react-query';
@@ -25,20 +25,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
-  const { activeProjectId } = useTaskStore();
-
   const isDanger = task.is_blocked || (task.due_date && new Date(task.due_date) < new Date());
-  const hasMetadata = task.due_date || (task.comments_count && task.comments_count > 0) || task.subtasks_count > 0 || task.assignee_detail || (task.checklist_stats && task.checklist_stats.total > 0) || task.is_active_timer_running || task.spent_hours;
-
-  const formatSpentTime = (hoursFloat: number | string | undefined) => {
-    if (!hoursFloat) return null;
-    const totalSeconds = Math.round(Number(hoursFloat) * 3600);
-    if (totalSeconds <= 0) return null;
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteTask(task.id),
