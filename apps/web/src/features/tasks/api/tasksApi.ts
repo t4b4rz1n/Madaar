@@ -18,7 +18,7 @@ export const createBoard = async (projectId: string, title: string, backgroundCo
     title,
     background_color: backgroundColor,
   });
-  return data as Board;
+  return (data as any).data ?? data;
 };
 
 export const getProjectMembers = async (projectId: string): Promise<User[]> => {
@@ -35,7 +35,7 @@ export const getTasks = async (projectId: string, boardId?: string): Promise<Tas
   return extractData<Task>(res);
 };
 
-export const reorderTasks = async (orders: { id: number; order: number }[]): Promise<any> => {
+export const reorderTasks = async (orders: { id: string | number; order: number }[]): Promise<any> => {
   return await ApiService.post('/tasks/reorder/', { orders });
 };
 
@@ -46,7 +46,7 @@ export const createTask = async (projectId: string, title: string, statusId: num
     status: statusId,
     priority,
   });
-  return data as Task;
+  return (data as any).data ?? data;
 };
 
 export const moveTask = async (taskId: number | string, statusId: number | string, order: number): Promise<Task> => {
@@ -54,27 +54,27 @@ export const moveTask = async (taskId: number | string, statusId: number | strin
     status_id: statusId,
     order: order,
   });
-  return data as Task;
+  return (data as any).data ?? data;
 };
 
 export const markTaskBlocked = async (taskId: number | string, isBlocked: boolean): Promise<Task> => {
   const data = await ApiService.patch<Task>(`/tasks/${taskId}/`, {
     is_blocked: isBlocked,
   });
-  return data as Task;
+  return (data as any).data ?? data;
 };
 
-export const deleteTask = async (taskId: number): Promise<void> => {
+export const deleteTask = async (taskId: string | number): Promise<void> => {
   await ApiService.delete(`/tasks/${taskId}/`);
 };
 
-export const updateTask = async (taskId: number, data: Partial<Task>): Promise<Task> => {
+export const updateTask = async (taskId: string | number, data: Partial<Task>): Promise<Task> => {
   const res = await ApiService.patch<Task>(`/tasks/${taskId}/`, data);
-  return res as Task;
+  return (res as any).data ?? res;
 };
 
 // Checklists
-export const getTaskChecklists = async (taskId: number): Promise<TaskChecklistItem[]> => {
+export const getTaskChecklists = async (taskId: string | number): Promise<TaskChecklistItem[]> => {
   const res = await ApiService.get<PaginatedResponse<TaskChecklistItem> | TaskChecklistItem[]>('/tasks/checklist-items/', { params: { task: taskId } });
   return extractData<TaskChecklistItem>(res);
 };
@@ -85,18 +85,18 @@ export const addChecklistItem = async (taskId: string | number, description: str
     description,
     is_completed: false,
   });
-  return data as TaskChecklistItem;
+  return (data as any).data ?? data;
 };
 
 export const toggleChecklistItem = async (itemId: number, isCompleted: boolean): Promise<TaskChecklistItem> => {
   const data = await ApiService.patch<TaskChecklistItem>(`/tasks/checklist-items/${itemId}/`, {
     is_completed: isCompleted,
   });
-  return data as TaskChecklistItem;
+  return (data as any).data ?? data;
 };
 
 // Comments
-export const getTaskComments = async (taskId: number): Promise<TaskComment[]> => {
+export const getTaskComments = async (taskId: string | number): Promise<TaskComment[]> => {
   const res = await ApiService.get<PaginatedResponse<TaskComment> | TaskComment[]>('/tasks/comments/', { params: { task: taskId } });
   return extractData<TaskComment>(res);
 };
@@ -124,14 +124,14 @@ export const addComment = async (taskId: string | number, content: string, file?
     });
   }
   
-  return data as TaskComment;
+  return (data as any).data ?? data;
 };
 
 export const updateComment = async (commentId: string | number, content: string): Promise<TaskComment> => {
   const data = await ApiService.patch<TaskComment>(`/tasks/comments/${commentId}/`, {
     content,
   });
-  return data as TaskComment;
+  return (data as any).data ?? data;
 };
 
 export const deleteComment = async (commentId: string | number): Promise<void> => {
@@ -160,5 +160,5 @@ export const createStandup = async (
     blockers,
     organization: organizationId,
   });
-  return data as AsyncStandup;
+  return (data as any).data ?? data;
 };

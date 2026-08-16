@@ -34,7 +34,7 @@ export const KanbanBoard: React.FC = () => {
   const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null);
 
   // Add task state
-  const [addingTaskToStatusId, setAddingTaskToStatusId] = useState<number | null>(null);
+  const [addingTaskToStatusId, setAddingTaskToStatusId] = useState<string | number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('low');
 
@@ -127,7 +127,7 @@ export const KanbanBoard: React.FC = () => {
     }
   });
 
-  const handleCreateTask = (statusId: number) => {
+  const handleCreateTask = (statusId: string | number) => {
     if (!newTaskTitle.trim()) {
       setAddingTaskToStatusId(null);
       return;
@@ -178,7 +178,7 @@ export const KanbanBoard: React.FC = () => {
 
   const stopTimerMutation = useMutation({
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    mutationFn: (taskId: number) => stopTimer(),
+    mutationFn: (_taskId: string | number) => stopTimer(),
     onMutate: async (taskId) => {
       setLocalTasks(tasks => tasks.map(t => t.id === taskId ? { ...t, is_active_timer_running: false } : t));
     },
@@ -204,7 +204,7 @@ export const KanbanBoard: React.FC = () => {
     }
   });
 
-  const handlePlayTimer = (taskId: number) => {
+  const handlePlayTimer = (taskId: string | number) => {
     const task = localTasks.find(t => t.id === taskId);
     if (!task) return;
     
@@ -228,11 +228,11 @@ export const KanbanBoard: React.FC = () => {
     startTimerMutation.mutate(taskId);
   };
 
-  const handleStopTimer = (taskId: number) => {
+  const handleStopTimer = (taskId: string | number) => {
     stopTimerMutation.mutate(taskId);
   };
 
-  const handleMarkDone = (taskId: number) => {
+  const handleMarkDone = (taskId: string | number) => {
     const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
     const doneStatus = activeBoard?.statuses.find(s => s.code === 'done' || s.name.toLowerCase() === 'done');
     if (!doneStatus) {

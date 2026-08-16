@@ -41,7 +41,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({ isOpen, onClose }) =
       const fetchOrgs = async () => {
         setIsLoadingOrgs(true);
         try {
-          const res = await ApiService.get<any>('/organizations/');
+          const res: any = await ApiService.get<any>('/organizations/');
           const data = res?.results ?? res?.data?.results ?? res?.data ?? res;
           if (Array.isArray(data)) {
             setOrganizations(data);

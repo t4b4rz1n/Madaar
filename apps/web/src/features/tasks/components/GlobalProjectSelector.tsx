@@ -14,7 +14,7 @@ export const GlobalProjectSelector: React.FC = () => {
   const { data: projects } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      const res = await ApiService.get<any>('/projects/');
+      const res: any = await ApiService.get<any>('/projects/');
       const data = res?.results || res?.data?.results || res?.data || res;
       return Array.isArray(data) ? data : [];
     }
@@ -25,7 +25,7 @@ export const GlobalProjectSelector: React.FC = () => {
   const activeDotColor = PROJECT_COLORS[activeIndex % PROJECT_COLORS.length];
 
   React.useEffect(() => {
-    if (!activeProjectId && projects?.length > 0) {
+    if (!activeProjectId && projects && projects.length > 0) {
       setActiveProject(projects[0].id);
     }
   }, [projects, activeProjectId, setActiveProject]);

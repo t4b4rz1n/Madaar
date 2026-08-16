@@ -8,7 +8,8 @@ import {
   useEdgesState,
   MarkerType,
   type Node,
-  type Edge
+  type Edge,
+  Position
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
@@ -54,8 +55,8 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
     
     return {
       ...node,
-      targetPosition: isHorizontal ? 'left' : 'top',
-      sourcePosition: isHorizontal ? 'right' : 'bottom',
+      targetPosition: isHorizontal ? Position.Left : Position.Top,
+      sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
       position: {
         x: nodeWithPosition.x - width / 2,
         y: nodeWithPosition.y - height / 2,
