@@ -114,7 +114,7 @@ export const KanbanBoard: React.FC = () => {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: ({ title, statusId, priority }: { title: string, statusId: string | number, priority: string }) => createTask(activeProjectId!, title, statusId, priority),
+    mutationFn: ({ title, statusId, priority }: { title: string, statusId: string | number, priority: string }) => createTask(activeProjectId!, title, Number(statusId), priority),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
       setAddingTaskToStatusId(null);
