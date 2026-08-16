@@ -201,6 +201,7 @@ class TaskService:
         milestone=None,
         spent_hours=0,
         order=0,
+        is_blocked=False,
     ):
         # Validate that reporter is a project member (unless staff/superuser or org owner)
         if (
@@ -273,6 +274,7 @@ class TaskService:
             parent_task=parent_task,
             spent_hours=spent_hours,
             order=order,
+            is_blocked=is_blocked,
         )
 
         # Log activity
