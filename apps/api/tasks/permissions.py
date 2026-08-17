@@ -67,19 +67,20 @@ def extract_organization_id(obj_or_request):
             pass
 
     if hasattr(obj_or_request, "query_params"):
-        org_id = obj_or_request.query_params.get(
+        # query_params are a last-resort fallback; validate values are safe before querying.
+        raw_org_id = obj_or_request.query_params.get(
             "organization"
         ) or obj_or_request.query_params.get("organization_id")
-        if org_id:
-            return org_id
-        proj_id = obj_or_request.query_params.get(
+        if raw_org_id and str(raw_org_id).strip().isdigit():
+            return str(raw_org_id).strip()
+        raw_proj_id = obj_or_request.query_params.get(
             "project"
         ) or obj_or_request.query_params.get("project_id")
-        if proj_id:
+        if raw_proj_id and str(raw_proj_id).strip().isdigit():
             from projects.models import Project
 
             return (
-                Project.objects.filter(id=proj_id)
+                Project.objects.filter(id=raw_proj_id)
                 .values_list("organization_id", flat=True)
                 .first()
             )

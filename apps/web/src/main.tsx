@@ -3,7 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "sonner";
-import { MotionConfig } from "framer-motion";
+import { MotionConfig } from "motion/react";
 import { ErrorFallback } from "./components/ErrorFallback";
 import { queryClient } from "./core/config/queryClient";
 import AppRouter from "./core/router/AppRouter";

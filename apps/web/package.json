@@ -31,8 +31,6 @@
     "react-router-dom": "^7.9.0",
     "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
-    "rollup": "^4.62.2",
-    "serve": "^13.0.2",
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.13",
     "zod": "^4.1.8",
@@ -52,6 +50,8 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "msw": "^2.14.6",
+    "rollup": "^4.62.2",
+    "serve": "^13.0.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2"

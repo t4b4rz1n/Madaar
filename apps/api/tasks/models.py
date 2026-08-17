@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
@@ -6,6 +8,8 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from common.models import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 def validate_file_size(value):
@@ -236,7 +240,13 @@ class Task(BaseModel):
                         or 0
                     )
                     self.number = max_num + 1
-                except Exception:
+                except Exception as exc:
+                    logger.warning(
+                        "Task.save: select_for_update failed for project_id=%s, "
+                        "falling back to aggregate without lock. Error: %s",
+                        self.project_id,
+                        exc,
+                    )
                     max_num = (
                         Task.all_objects.filter(project_id=self.project_id).aggregate(
                             Max("number")
@@ -262,7 +272,11 @@ class Task(BaseModel):
         return self.is_finished
 
     def _progress_percent_internal(self, seen=None):
-        """Recursive progress calculation with cycle detection."""
+        """Recursive progress calculation with cycle detection.
+
+        Uses prefetched subtasks/checklist_items when available to avoid
+        issuing extra queries (N+1) during bulk progress recalculation.
+        """
         if seen is None:
             seen = set()
         if self.id in seen:
@@ -280,7 +294,15 @@ class Task(BaseModel):
             (checklist_done / checklist_total * 100) if checklist_total > 0 else None
         )
 
-        subtask_list = list(self.subtasks.all())
+        # Use prefetched subtasks if available; otherwise fall back to queryset.
+        if "subtasks" in getattr(self, "_prefetched_objects_cache", {}):
+            subtask_list = [
+                s for s in self._prefetched_objects_cache["subtasks"]
+                if not getattr(s, "is_deleted", False)
+            ]
+        else:
+            subtask_list = list(self.subtasks.all())
+
         if subtask_list:
             subtask_progress = sum(s._progress_percent_internal(seen) for s in subtask_list) / len(
                 subtask_list
