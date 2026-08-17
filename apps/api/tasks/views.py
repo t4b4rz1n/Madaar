@@ -551,7 +551,6 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
         else:
             memberships = user.org_memberships.all()
             admin_org_ids = [m.organization_id for m in memberships if m.role.lower() in ["owner", "admin"]]
-            [m.organization_id for m in memberships if m.role.lower() not in ["owner", "admin"]]
 
             qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
 
