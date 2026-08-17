@@ -20,6 +20,7 @@ import { projectsRoutes } from "../../features/projects/routes";
 import { organizationsRoutes } from "../../features/organizations/routes";
 
 const NotFoundPage = lazy(() => import("../../pages/NotFoundPage"));
+const SettingsPage = lazy(() => import("../../pages/SettingsPage"));
 
 export const routes: RouteObject[] = [
   ...authRoutes,
@@ -48,6 +49,10 @@ export const routes: RouteObject[] = [
       ...notificationsRoutes,
       ...profileRoutes,
       ...ticketsRoutes,
+      {
+        path: "settings",
+        element: <SettingsPage />,
+      },
       {
         path: "*",
         element: <NotFoundPage />,

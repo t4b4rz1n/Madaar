@@ -27,48 +27,34 @@ export const MainLayout = () => {
 
   const breadcrumbs = useMemo(() => {
     const pathSegments = pathname.split("/").filter((i) => i);
-    const rootTitle = isStaff ? "Admin panel" : "Dashboard";
-    const crumbs: Breadcrumb[] = [{ title: rootTitle, path: "/" }];
+    const crumbs: Breadcrumb[] = [{ title: "Today", path: "/" }];
 
-    let currentPath = "";
-    pathSegments.forEach((segment, index) => {
-      currentPath += `/${segment}`;
+    if (pathSegments.length === 0 || pathSegments[0] === "dashboard") {
+      return crumbs;
+    }
 
-      const matchingItem = drawerItems.find((item) => {
-        if (segment === "admin" && item.link === "dashboard" && isStaff) {
-          return true;
-        }
+    const firstSegment = pathSegments[0];
+    const matchingItem = drawerItems.find((item) => item.link === firstSegment);
 
-        return item.link === segment;
-      });
+    // If visiting /settings or any admin sub-page, inject "Workspace Settings" into breadcrumbs
+    if (firstSegment === "settings") {
+      crumbs.push({ title: "Workspace Settings", path: "/settings" });
+    } else if (matchingItem && !matchingItem.isPrimary) {
+      crumbs.push({ title: "Workspace Settings", path: "/settings" });
+      crumbs.push({ title: matchingItem.title, path: `/${firstSegment}` });
+    } else if (matchingItem) {
+      crumbs.push({ title: matchingItem.title, path: `/${firstSegment}` });
+    } else {
+      crumbs.push({ title: firstSegment, path: `/${firstSegment}` });
+    }
 
-      if (matchingItem) {
-        const itemTitle =
-          segment === "admin" && matchingItem.link === "dashboard" && isStaff
-            ? "Admin panel"
-            : matchingItem.title;
-
-        crumbs.push({
-          title: itemTitle,
-          path: currentPath,
-        });
-      } else if (index === pathSegments.length - 1) {
-        const parentItem = drawerItems.find(
-          (item) =>
-            pathSegments[0] === item.link ||
-            (pathSegments[0] === "admin" &&
-              item.link === "dashboard" &&
-              isStaff),
-        );
-
-        if (parentItem) {
-          crumbs.push({ title: "Details", path: currentPath });
-        }
-      }
-    });
+    // Add remaining nested segments if any (e.g. details pages)
+    if (pathSegments.length > 1) {
+      crumbs.push({ title: "Details", path: pathname });
+    }
 
     return crumbs;
-  }, [pathname, isStaff]);
+  }, [pathname]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
