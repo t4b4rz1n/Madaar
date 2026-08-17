@@ -124,3 +124,45 @@ export interface ManagerMemberDetail {
   overdue_tasks: number;
   week_seconds: number | null;
 }
+
+export interface ExecutiveDashboard {
+  company_overview: {
+    total_members: number;
+    projects: {
+      total: number;
+      active: number;
+      completed: number;
+      on_hold: number;
+    };
+    tasks: {
+      total: number;
+      done: number;
+      in_progress: number;
+    };
+  };
+  resource_utilization: {
+    total_work_seconds: number;
+    expected_seconds: number;
+    utilization_rate: number;
+    active_workers: number;
+    total_members: number;
+  };
+  project_health: Array<{
+    id: string;
+    name: string;
+    deadline: string | null;
+    budget: string | number | null;
+    budget_currency: string;
+    total_tasks: number;
+    done_tasks: number;
+    overdue_tasks: number;
+    overdue_milestones: number;
+    progress: number;
+    health: "on_track" | "at_risk" | "delayed" | string;
+  }>;
+  financial_summary: {
+    total_budget: string | number | null;
+    project_count: number;
+    total_time_seconds: number | null;
+  };
+}

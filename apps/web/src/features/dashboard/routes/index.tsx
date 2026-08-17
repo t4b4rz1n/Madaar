@@ -4,6 +4,7 @@ import { StaffRoute } from "../../../core/router/StaffRoute";
 import { UserRoute } from "../../../core/router/UserRoute";
 
 const DashboardPage = lazy(() => import("../pages/DashboardPage"));
+const UserDashboardPage = lazy(() => import("../pages/UserDashboardPage"));
 const ManagerDashboardPage = lazy(() => import("../pages/ManagerDashboardPage"));
 
 export const dashboardRoutes: RouteObject[] = [
@@ -19,7 +20,7 @@ export const dashboardRoutes: RouteObject[] = [
     path: "dashboard",
     element: (
       <UserRoute>
-        <DashboardPage />
+        <UserDashboardPage />
       </UserRoute>
     ),
   },
