@@ -22,13 +22,11 @@ export const TaskManagementPage: React.FC = () => {
     enabled: !!activeProjectId,
   });
 
-  const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
-  const boardBgColor = activeBoard?.background_color || undefined;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-theme(spacing.16))] -m-6 bg-base-200">
+    <div className="flex h-[calc(100vh-theme(spacing.16))] -m-6 flex-col bg-base-200">
       {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-base-300 bg-base-100 relative z-50">
+      <div className="relative z-50 flex items-center justify-between border-b border-base-content/10 bg-base-100/90 px-4 py-2 backdrop-blur-xl">
         {/* Left side: Project selector + Board tabs */}
         <div className="flex items-center gap-1">
           <GlobalProjectSelector />
@@ -110,8 +108,7 @@ export const TaskManagementPage: React.FC = () => {
 
       {/* Main Content Area */}
       <div
-        className="flex-1 overflow-hidden relative transition-colors duration-300 bg-base-200"
-        style={activeBoardId && boardBgColor ? { background: boardBgColor } : undefined}
+        className="relative flex-1 overflow-hidden bg-base-200 transition-colors duration-300"
       >
         {!activeBoardId ? (
           <WorkspaceView />

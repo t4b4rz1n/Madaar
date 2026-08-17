@@ -4,7 +4,7 @@ import { getBoards, getTasks, moveTask, createTask, reorderTasks } from '../api/
 import { startTimer, stopTimer } from '../../attendance/api/attendanceApi';
 import { useTaskStore } from '../store/useTaskStore';
 import { TaskCard } from './TaskCard';
-import { TaskDetailModal } from './TaskDetailModal';
+import { TaskSheet } from './TaskSheet';
 import { DroppableColumn } from './DroppableColumn';
 import type { Task } from '../types';
 
@@ -24,19 +24,25 @@ import type {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableTask } from './SortableTask';
-import { More } from 'iconsax-reactjs';
+import { Add, More, SearchNormal1 } from 'iconsax-reactjs';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 export const KanbanBoard: React.FC = () => {
   const { activeProjectId, activeBoardId } = useTaskStore();
   const queryClient = useQueryClient();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null);
+  const [selectedTaskForSheet, setSelectedTaskForSheet] = useState<Task | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'active' | 'blocked' | 'priority'>('all');
+  const [focusMode, setFocusMode] = useState(false);
+  const [focusedTaskId, setFocusedTaskId] = useState<string | number | null>(null);
 
   // Add task state
   const [addingTaskToStatusId, setAddingTaskToStatusId] = useState<string | number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('low');
+  const sameId = (left: string | number | undefined, right: string | number | undefined) => left?.toString() === right?.toString();
 
   const { data: boards } = useQuery({
     queryKey: ['boards', activeProjectId],
@@ -63,13 +69,13 @@ export const KanbanBoard: React.FC = () => {
     mutationFn: ({ taskId, statusId, order }: { taskId: string | number, statusId: string | number, order: number }) => moveTask(taskId, statusId, order),
     onMutate: async ({ taskId, statusId }) => {
       const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
-      const targetStatus = activeBoard?.statuses.find(s => s.id === statusId);
+      const targetStatus = activeBoard?.statuses.find(s => sameId(s.id, statusId));
       const isDoing = targetStatus && (targetStatus.code === 'doing' || targetStatus.name.toLowerCase() === 'doing' || targetStatus.name.toLowerCase() === 'in progress');
       const isReviewOrDone = targetStatus && (targetStatus.code === 'review' || targetStatus.code === 'done' || targetStatus.name.toLowerCase() === 'review' || targetStatus.name.toLowerCase() === 'done');
 
       if (isDoing || isReviewOrDone) {
         setLocalTasks(tasks => tasks.map(t => {
-          if (t.id === taskId) {
+          if (sameId(t.id, taskId)) {
             return { ...t, is_active_timer_running: isDoing ? true : false };
           }
           if (isDoing) {
@@ -114,16 +120,41 @@ export const KanbanBoard: React.FC = () => {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: ({ title, statusId, priority }: { title: string, statusId: string | number, priority: string }) => createTask(activeProjectId!, title, Number(statusId), priority),
+    mutationFn: ({ title, statusId, priority }: { title: string, statusId: string | number, priority: string }) => createTask(activeProjectId!, title, statusId, priority),
+    onMutate: async ({ title, statusId, priority }) => {
+      const queryKey = ['tasks', activeProjectId, activeBoardId];
+      await queryClient.cancelQueries({ queryKey });
+      const previousTasks = (queryClient.getQueryData<Task[]>(queryKey) || localTasks);
+      const status = boards?.find(board => board.id.toString() === activeBoardId)?.statuses.find(item => item.id.toString() === statusId.toString());
+      const optimisticTask: Task = {
+        id: `optimistic-${Date.now()}`,
+        key: 'NEW',
+        title,
+        priority: priority as Task['priority'],
+        status_detail: status,
+        is_finished: false,
+        is_blocked: false,
+        progress_percent: 0,
+        subtasks_count: 0,
+        order: previousTasks.filter(task => task.status_detail?.id?.toString() === statusId.toString()).length,
+      };
+      const nextTasks = [...previousTasks, optimisticTask];
+      queryClient.setQueryData(queryKey, nextTasks);
+      setLocalTasks(nextTasks);
+      return { previousTasks };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
       setAddingTaskToStatusId(null);
       setNewTaskTitle('');
       setNewTaskPriority('low');
     },
-    onError: (err: any) => {
-      console.error(err);
-      alert('Error creating task: ' + err.message);
+    onError: (err: any, _variables, context: any) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
+        setLocalTasks(context.previousTasks);
+      }
+      toast.error(err.response?.data?.detail || err.message || 'Error creating task.');
     }
   });
 
@@ -136,7 +167,7 @@ export const KanbanBoard: React.FC = () => {
   };
 
   const startTimerMutation = useMutation({
-    mutationFn: (taskId: string | number) => startTimer(taskId as number),
+    mutationFn: (taskId: string | number) => startTimer(taskId),
     onMutate: async (taskId) => {
       // Find "doing" or "in progress" status IN THE ACTIVE BOARD
       const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
@@ -147,10 +178,10 @@ export const KanbanBoard: React.FC = () => {
       // Stop all other timers optimistically first (only one can be active)
       // And if there's a doing status, move this task to doing
       setLocalTasks(tasks => tasks.map(t => {
-        if (t.id === taskId) {
+        if (sameId(t.id, taskId)) {
           const updatedTask = { ...t, is_active_timer_running: true };
           const isTodo = t.status_detail?.code?.toLowerCase() === 'todo' || t.status_detail?.name?.toLowerCase() === 'to do';
-          if (doingStatus && t.status_detail?.id !== doingStatus.id && isTodo) {
+          if (doingStatus && !sameId(t.status_detail?.id, doingStatus.id) && isTodo) {
             updatedTask.status_detail = doingStatus as any;
           }
           return updatedTask;
@@ -171,7 +202,7 @@ export const KanbanBoard: React.FC = () => {
       if (context?.previousTasks) {
         setLocalTasks(context.previousTasks);
       } else {
-        setLocalTasks(tasks => tasks.map(t => t.id === taskId ? { ...t, is_active_timer_running: false } : t));
+        setLocalTasks(tasks => tasks.map(t => sameId(t.id, taskId) ? { ...t, is_active_timer_running: false } : t));
       }
     }
   });
@@ -180,12 +211,12 @@ export const KanbanBoard: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mutationFn: (_taskId: string | number) => stopTimer(),
     onMutate: async (taskId) => {
-      setLocalTasks(tasks => tasks.map(t => t.id === taskId ? { ...t, is_active_timer_running: false } : t));
+      setLocalTasks(tasks => tasks.map(t => sameId(t.id, taskId) ? { ...t, is_active_timer_running: false } : t));
     },
     onSuccess: (data, taskId) => {
       if (data && data.duration_seconds !== undefined) {
         setLocalTasks(tasks => tasks.map(t => {
-          if (t.id === taskId) {
+          if (sameId(t.id, taskId)) {
             const currentSpent = Number(t.spent_seconds || 0);
             const newSpent = currentSpent + data.duration_seconds;
             return { ...t, spent_seconds: newSpent };
@@ -200,12 +231,12 @@ export const KanbanBoard: React.FC = () => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to stop timer';
       toast.error(errorMessage);
       // Revert
-      setLocalTasks(tasks => tasks.map(t => t.id === taskId ? { ...t, is_active_timer_running: true } : t));
+      setLocalTasks(tasks => tasks.map(t => sameId(t.id, taskId) ? { ...t, is_active_timer_running: true } : t));
     }
   });
 
   const handlePlayTimer = (taskId: string | number) => {
-    const task = localTasks.find(t => t.id === taskId);
+    const task = localTasks.find(t => sameId(t.id, taskId));
     if (!task) return;
     
     // Find "doing" or "in progress" status IN THE ACTIVE BOARD
@@ -213,11 +244,11 @@ export const KanbanBoard: React.FC = () => {
     const doingStatus = activeBoard?.statuses.find(s => s.code === 'doing' || s.name.toLowerCase() === 'doing' || s.name.toLowerCase() === 'in progress');
     
     // If we have a doing status and the task is not already in it, move it optimistically
-    if (doingStatus && task.status_detail?.id !== doingStatus.id) {
+    if (doingStatus && !sameId(task.status_detail?.id, doingStatus.id)) {
       // Optimistic update (backend will auto-move it to doing when we start the timer)
       setLocalTasks(tasks => {
         const newTasks = [...tasks];
-        const index = newTasks.findIndex(t => t.id === taskId);
+        const index = newTasks.findIndex(t => sameId(t.id, taskId));
         if (index !== -1) {
           newTasks[index] = { ...newTasks[index], status_detail: doingStatus as any };
         }
@@ -232,6 +263,11 @@ export const KanbanBoard: React.FC = () => {
     stopTimerMutation.mutate(taskId);
   };
 
+  const patchLocalTask = (taskId: string | number, patch: Partial<Task>) => {
+    setLocalTasks(tasks => tasks.map(task => task.id === taskId ? { ...task, ...patch } : task));
+    queryClient.setQueryData<Task[]>(['tasks', activeProjectId, activeBoardId], tasks => tasks?.map(task => task.id === taskId ? { ...task, ...patch } : task));
+  };
+
   const handleMarkDone = (taskId: string | number) => {
     const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
     const doneStatus = activeBoard?.statuses.find(s => s.code === 'done' || s.name.toLowerCase() === 'done');
@@ -240,14 +276,14 @@ export const KanbanBoard: React.FC = () => {
       return;
     }
     
-    const task = localTasks.find(t => t.id === taskId);
+    const task = localTasks.find(t => sameId(t.id, taskId));
     if (!task) return;
-    if (task.status_detail?.id === doneStatus.id) return;
+    if (sameId(task.status_detail?.id, doneStatus.id)) return;
 
     // Optimistically move task to done
     setLocalTasks(tasks => {
       const newTasks = [...tasks];
-      const index = newTasks.findIndex(t => t.id === taskId);
+      const index = newTasks.findIndex(t => sameId(t.id, taskId));
       if (index !== -1) {
         newTasks[index] = { ...newTasks[index], status_detail: doneStatus as any };
       }
@@ -297,10 +333,10 @@ export const KanbanBoard: React.FC = () => {
     if (!activeStatusId || !overStatusId || activeStatusId === overStatusId) return;
 
     // Cross-column move: update the task's status_detail locally
-    const statusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === overStatusId);
+    const statusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, overStatusId));
     if (!statusDetail) return;
     
-    const activeStatusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === activeStatusId);
+    const activeStatusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, activeStatusId));
     const activeCode = activeStatusDetail?.code?.toLowerCase() || '';
     const targetCode = statusDetail?.code?.toLowerCase() || '';
 
@@ -355,11 +391,11 @@ export const KanbanBoard: React.FC = () => {
 
     if (!newStatusId) return;
 
-    const wasCrossColumn = originalStatusId !== newStatusId;
+    const wasCrossColumn = !sameId(originalStatusId, newStatusId);
 
     if (wasCrossColumn) {
-      const originalStatusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === originalStatusId);
-      const targetStatusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === newStatusId);
+      const originalStatusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, originalStatusId));
+      const targetStatusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, newStatusId));
       const originalCode = originalStatusDetail?.code?.toLowerCase() || '';
       const targetCode = targetStatusDetail?.code?.toLowerCase() || '';
 
@@ -374,7 +410,7 @@ export const KanbanBoard: React.FC = () => {
 
     if (activeIndex !== -1) {
       // Ensure the dragged task has the correct target status (in case handleDragOver state update was batched/stale)
-      const targetStatusDetail = boards?.flatMap(b => b.statuses).find(s => s.id === newStatusId);
+      const targetStatusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, newStatusId));
       if (targetStatusDetail) {
         finalTasks[activeIndex] = { ...finalTasks[activeIndex], status_detail: targetStatusDetail as any };
       }
@@ -389,7 +425,7 @@ export const KanbanBoard: React.FC = () => {
     }
 
     // Recalculate orders for the target column
-    const columnTasks = finalTasks.filter(t => t.status_detail?.id === newStatusId);
+    const columnTasks = finalTasks.filter(t => sameId(t.status_detail?.id, newStatusId));
     const newColumnOrders = columnTasks.map((t, idx) => ({ id: t.id, order: idx }));
 
     // Apply orders locally
@@ -420,11 +456,63 @@ export const KanbanBoard: React.FC = () => {
   if (!boards || boards.length === 0) return <div className="p-8 text-center text-slate-500">No boards found for this project.</div>;
 
   const board = boards.find(b => b.id.toString() === activeBoardId) || boards[0];
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredTasks = localTasks.filter(task => {
+    const matchesSearch = !normalizedSearch || `${task.title} ${task.key}`.toLowerCase().includes(normalizedSearch);
+    const matchesFilter = filter === 'all'
+      || (filter === 'active' && !task.is_finished && task.status_detail?.code !== 'done')
+      || (filter === 'blocked' && task.is_blocked)
+      || (filter === 'priority' && ['high', 'critical'].includes(task.priority));
+    return matchesSearch && matchesFilter;
+  });
+  const focusTask = filteredTasks.find(task => task.id === focusedTaskId)
+    || filteredTasks.find(task => task.is_active_timer_running)
+    || filteredTasks.find(task => !task.is_finished)
+    || filteredTasks[0];
 
   return (
-    <div className="h-full w-full overflow-x-auto overflow-y-hidden">
-      {/* Kanban columns */}
-      <div className="flex gap-2 p-4 items-start pb-20 min-h-full">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-base-200">
+      <div className="shrink-0 border-b border-base-content/10 bg-base-100/80 px-4 py-3 backdrop-blur-xl sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Task Workspace</p>
+            <h1 className="mt-1 text-xl font-black tracking-tight text-base-content">Work in flow</h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex h-10 w-48 items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-3 text-base-content/45 focus-within:border-primary/40 sm:w-60">
+              <SearchNormal1 size={16} />
+              <input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search tasks" className="w-full bg-transparent text-xs font-semibold text-base-content outline-none placeholder:text-base-content/35" />
+            </label>
+            <button type="button" onClick={() => { const next = !focusMode; setFocusMode(next); if (next && !focusedTaskId) setFocusedTaskId(focusTask?.id || null); }} className={`motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold ${focusMode ? 'border-primary/30 bg-primary/10 text-primary' : 'border-base-content/10 text-base-content/55 hover:border-primary/30 hover:text-primary'}`}>
+              <span className="text-sm">◉</span>{focusMode ? 'Exit focus' : 'Focus mode'}
+            </button>
+            <button type="button" onClick={() => setAddingTaskToStatusId(board.statuses[0]?.id || null)} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-lg shadow-primary/15 hover:bg-primary/90">
+              <Add size={16} /> Quick add
+            </button>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-1 overflow-x-auto pb-0.5">
+          {(['all', 'active', 'blocked', 'priority'] as const).map(item => (
+            <button key={item} type="button" onClick={() => setFilter(item)} className={`motion-interactive rounded-lg px-3 py-1.5 text-[11px] font-bold capitalize ${filter === item ? 'bg-base-content text-base-100' : 'text-base-content/45 hover:bg-base-200 hover:text-base-content'}`}>
+              {item === 'priority' ? 'High priority' : item}
+            </button>
+          ))}
+          <span className="ms-auto hidden text-[11px] font-semibold text-base-content/35 sm:block">{filteredTasks.length} visible tasks</span>
+        </div>
+      </div>
+
+      {focusMode && focusTask ? (
+        <div className="flex flex-1 items-center justify-center overflow-auto p-6 sm:p-10">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="madaar-surface w-full max-w-2xl p-6 sm:p-10">
+            <div className="mb-8 flex items-center justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Focus mode</p><p className="mt-2 text-sm text-base-content/45">One task, one clear next step.</p></div><button type="button" onClick={() => setFocusMode(false)} className="motion-interactive rounded-xl border border-base-content/10 px-3 py-2 text-xs font-bold text-base-content/55 hover:text-base-content">Back to board</button></div>
+            <span className="text-xs font-bold text-primary">{focusTask.key} · {focusTask.status_detail?.name || 'No status'}</span>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-base-content">{focusTask.title}</h2>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-base-content/55">{focusTask.description || 'Open the task sheet to add context and define the next step.'}</p>
+            <div className="mt-8 flex flex-wrap items-center gap-3"><button type="button" onClick={() => focusTask.is_active_timer_running ? handleStopTimer(focusTask.id) : handlePlayTimer(focusTask.id)} className={`motion-interactive rounded-xl px-5 py-3 text-sm font-bold ${focusTask.is_active_timer_running ? 'bg-error/10 text-error' : 'bg-primary text-primary-content'}`}>{focusTask.is_active_timer_running ? 'Stop timer' : 'Start timer'}</button><button type="button" onClick={() => setSelectedTaskForSheet(focusTask)} className="motion-interactive rounded-xl border border-base-content/10 px-5 py-3 text-sm font-bold text-base-content/65 hover:border-primary/30 hover:text-primary">Open task sheet</button></div>
+          </motion.div>
+        </div>
+      ) : <div className="flex-1 overflow-x-auto overflow-y-hidden">
+      <div className="flex min-h-full items-start gap-3 p-4 pb-20 sm:gap-4 sm:p-6">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -432,35 +520,34 @@ export const KanbanBoard: React.FC = () => {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {board.statuses.sort((a, b) => a.order - b.order).map((status, index) => {
-            const columnTasks = localTasks.filter(t => t.status_detail?.id === status.id) || [];
+          {[...board.statuses].sort((a, b) => a.order - b.order).map((status, index) => {
+            const columnTasks = filteredTasks.filter(t => t.status_detail?.id?.toString() === status.id.toString()) || [];
 
             return (
               <DroppableColumn
                 key={status.id}
                 id={`col-${status.id}`}
-                className="min-w-[240px] w-[240px] rounded-2xl p-2 flex flex-col h-fit max-h-[calc(100vh-12rem)]
-                  bg-[#131B2C]/90 backdrop-blur-md border border-[#232F4A]"
+                className="madaar-surface min-w-[280px] w-[280px] rounded-2xl p-2.5 flex flex-col h-fit max-h-[calc(100vh-13rem)] bg-base-100/80"
               >
                 <div className="flex items-center justify-between mb-2 px-1.5">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-white/95 text-[13px]">{status.name}</h3>
-                    <span className="bg-white/5 text-white/50 text-[10px] px-1.5 py-0.5 rounded-md font-medium">
+                    <h3 className="font-bold text-base-content text-[13px]">{status.name}</h3>
+                    <span className="rounded-md bg-base-200 px-1.5 py-0.5 text-[10px] font-bold text-base-content/45">
                       {columnTasks.length}
                     </span>
                   </div>
-                  <div className="text-white/30 cursor-pointer hover:text-white/80 p-1 rounded hover:bg-white/5 transition-colors">
+                  <div className="cursor-pointer rounded p-1 text-base-content/30 transition-colors hover:bg-base-200 hover:text-base-content/80">
                     <More size={16} />
                   </div>
                 </div>
 
-                <div className="overflow-y-auto flex flex-col gap-1.5 rounded-lg">
+                <div className="flex flex-col gap-2 overflow-y-auto rounded-lg">
                   <SortableContext items={columnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
                     {columnTasks.map(task => (
                       <SortableTask 
                         key={task.id} 
                         task={task} 
-                        onClick={() => setSelectedTaskForModal(task)} 
+                        onClick={() => { setSelectedTaskForSheet(task); if (focusMode) setFocusedTaskId(task.id); }}
                         onPlayTimer={handlePlayTimer}
                         onStopTimer={handleStopTimer}
                         onMarkDone={handleMarkDone}
@@ -470,7 +557,7 @@ export const KanbanBoard: React.FC = () => {
 
                   {addingTaskToStatusId === status.id && (
                     <div
-                      className="mt-2 bg-black/40 rounded-xl p-2.5 border border-white/10"
+                      className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-2.5"
                       tabIndex={-1}
                       onBlur={(e) => {
                         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -493,30 +580,30 @@ export const KanbanBoard: React.FC = () => {
                           }
                         }}
                         placeholder="Task title..."
-                        className="w-full bg-transparent text-[13px] text-white/90 outline-none placeholder:text-white/30"
+                        className="w-full bg-transparent text-[13px] text-base-content outline-none placeholder:text-base-content/35"
                       />
                       <div className="flex justify-between items-center mt-2.5">
                         <select
                           value={newTaskPriority}
                           onChange={(e) => setNewTaskPriority(e.target.value as any)}
-                          className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[11px] text-white/80 outline-none focus:border-white/30"
+                          className="rounded border border-base-content/10 bg-base-100 px-1.5 py-0.5 text-[11px] text-base-content/70 outline-none focus:border-primary/30"
                         >
-                          <option value="low" className="bg-[#273043]">Low Priority</option>
-                          <option value="medium" className="bg-[#273043]">Medium Priority</option>
-                          <option value="high" className="bg-[#273043]">High Priority</option>
-                          <option value="critical" className="bg-[#273043]">Critical Priority</option>
+                          <option value="low">Low Priority</option>
+                          <option value="medium">Medium Priority</option>
+                          <option value="high">High Priority</option>
+                          <option value="critical">Critical Priority</option>
                         </select>
                         <div className="flex gap-1.5">
                           <button
                             onClick={() => handleCreateTask(status.id)}
                             disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
-                            className="px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed text-white text-[11px] font-medium rounded transition-colors"
+                            className="rounded-lg bg-primary px-3 py-1 text-[11px] font-bold text-primary-content transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             {createTaskMutation.isPending ? '...' : 'Add'}
                           </button>
                           <button
                             onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); setNewTaskPriority('low'); }}
-                            className="px-2 py-1 text-white/50 hover:text-white/80 text-[11px] transition-colors"
+                            className="px-2 py-1 text-[11px] text-base-content/45 transition-colors hover:text-base-content/80"
                           >
                             Cancel
                           </button>
@@ -529,7 +616,7 @@ export const KanbanBoard: React.FC = () => {
                 {index === 0 && addingTaskToStatusId !== status.id && (
                   <button
                     onClick={() => setAddingTaskToStatusId(status.id)}
-                    className="mt-1 flex items-center gap-2 text-white/50 hover:text-white/90 text-[13px] py-1 px-1 transition-colors w-full"
+                    className="motion-interactive mt-1 flex w-full items-center gap-2 rounded-lg px-1 py-1 text-[13px] text-base-content/45 transition-colors hover:bg-base-200 hover:text-base-content/90"
                   >
                     <span className="text-lg leading-none mb-0.5">+</span>
                     <span>Add card</span>
@@ -544,13 +631,16 @@ export const KanbanBoard: React.FC = () => {
           </DragOverlay>
         </DndContext>
       </div>
+      </div>}
 
-      {selectedTaskForModal && (
-        <TaskDetailModal 
-          task={localTasks.find(t => t.id === selectedTaskForModal.id) || selectedTaskForModal} 
-          onClose={() => setSelectedTaskForModal(null)} 
-        />
-      )}
+      <TaskSheet
+        task={selectedTaskForSheet ? localTasks.find(t => t.id === selectedTaskForSheet.id) || selectedTaskForSheet : null}
+        onClose={() => setSelectedTaskForSheet(null)}
+        onPatch={patchLocalTask}
+        onPlayTimer={handlePlayTimer}
+        onStopTimer={handleStopTimer}
+        focusMode={focusMode}
+      />
     </div>
   );
 };

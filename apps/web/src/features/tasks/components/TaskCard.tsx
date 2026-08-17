@@ -79,9 +79,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
   return (
     <div
       onClick={onClick}
-      className={`bg-[#171F32] p-2 px-2.5 rounded-xl border cursor-pointer group
-        hover:bg-[#1C253B] transition-all relative min-h-[84px] flex flex-col justify-between
-        ${isDanger ? 'border-red-500/50' : 'border-[#2D364D] hover:border-[#4B5E87]'}
+      className={`madaar-surface motion-interactive p-3 rounded-2xl border cursor-pointer group
+        hover:-translate-y-0.5 transition-all relative min-h-[92px] flex flex-col justify-between
+        ${isDanger ? 'border-error/40 bg-error/[0.03]' : 'border-base-content/10 hover:border-primary/30'}
       `}
     >
       {/* Loading overlay */}
@@ -109,7 +109,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
             </style>
             <button
               onClick={handleDoneClick}
-              className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isActuallyDone || isDone ? 'text-[#10B981]' : 'border border-white/20 hover:border-[#10B981]/50 hover:bg-[#10B981]/10'}`}
+              className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isActuallyDone || isDone ? 'text-success' : 'border border-base-content/20 hover:border-success/50 hover:bg-success/10'}`}
               title={isActuallyDone ? "Completed" : "Mark as done"}
             >
               {(isActuallyDone || isDone) ? (
@@ -133,7 +133,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
               )}
             </button>
           </div>
-          <h4 className="text-white/90 font-medium text-[12px] leading-relaxed line-clamp-2 transition-transform duration-200" dir="auto">
+          <h4 className="text-base-content/90 font-bold text-[13px] leading-relaxed line-clamp-2 transition-transform duration-200" dir="auto">
             {task.title}
           </h4>
         </div>
@@ -141,7 +141,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
         <button
           ref={menuTriggerRef}
           onClick={(e) => { e.stopPropagation(); setIsMenuOpen(true); }}
-          className="shrink-0 opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded text-white/40 hover:bg-white/5 hover:text-white/80 transition-colors"
+          className="shrink-0 opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded text-base-content/40 hover:bg-base-200 hover:text-base-content/80 transition-colors"
         >
           <More size={14} />
         </button>
@@ -150,7 +150,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
           <>
             <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); setShowMembersMenu(false); }} />
               <div
-                className="fixed z-50 bg-[#282E33] border border-white/10 rounded-lg shadow-2xl py-1.5 px-1.5 w-56 text-[13px] text-white/90 flex flex-col gap-0.5 font-medium"
+                className="fixed z-50 bg-base-100 border border-base-content/10 rounded-xl shadow-2xl py-1.5 px-1.5 w-56 text-[13px] text-base-content/90 flex flex-col gap-0.5 font-medium"
                 style={{
                   top: menuTriggerRef.current.getBoundingClientRect().bottom + 4,
                   left: menuTriggerRef.current.getBoundingClientRect().right - 224,
@@ -261,7 +261,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
         )}
       </div>
 
-      <div className="flex items-center justify-between text-white/40 text-[11px] min-h-[20px]">
+      <div className="flex items-center justify-between text-base-content/40 text-[11px] min-h-[20px]">
         <div className="flex items-center gap-2">
           {task.due_date && (
             <div className={`flex items-center gap-1 ${isDanger ? 'text-red-400' : ''}`}>
