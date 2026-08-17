@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBoards, createBoard } from '../api/tasksApi';
 import { useTaskStore } from '../store/useTaskStore';
-import { Add } from 'iconsax-reactjs';
+import { Add, FolderAdd } from 'iconsax-reactjs';
+import { useNavigate } from 'react-router-dom';
 
 export const WorkspaceView: React.FC = () => {
   const { activeProjectId, setActiveBoard } = useTaskStore();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [boardTitle, setBoardTitle] = useState('');
@@ -31,7 +33,14 @@ export const WorkspaceView: React.FC = () => {
   });
 
   if (!activeProjectId) {
-    return <div className="p-8 text-center text-slate-500">Please select a project from the top menu.</div>;
+    return (
+      <div className="madaar-surface mx-auto my-8 max-w-xl rounded-[28px] border border-dashed border-base-content/15 bg-base-100 px-6 py-14 text-center">
+        <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><FolderAdd size={28} /></div>
+        <h2 className="text-xl font-semibold text-base-content">Choose a project to get started</h2>
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-base-content/55">Tasks live inside projects. Create your first project or choose one from the selector above.</p>
+        <button type="button" onClick={() => navigate('/projects')} className="btn btn-primary mt-6 rounded-xl"><Add size={18} /> Manage projects</button>
+      </div>
+    );
   }
 
   const presetColors = [

@@ -11,6 +11,7 @@ import {
   TaskSquare,
   NoteText,
   Chart21,
+  Folder2,
 } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 import type { User as AuthUser } from "../auth/types/authTypes";
@@ -38,6 +39,12 @@ export const drawerItems: DrawerItem[] = [
     link: "tasks",
     section: "Workspace",
     icon: <TaskSquare variant="Outline" />,
+  },
+  {
+    title: "Projects",
+    link: "projects",
+    section: "Workspace",
+    icon: <Folder2 variant="Outline" />,
   },
   {
     title: "Manager overview",
