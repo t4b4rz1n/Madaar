@@ -1,5 +1,7 @@
 .PHONY: help up up-build down logs api-shell api-migrate api-test api-lint worker-up
 
+DOCKER_COMPOSE ?= $(shell command -v docker-compose 2>/dev/null || echo "docker compose")
+
 help:
 	@echo "Madar commands"
 	@echo "  make up          Start local services"
@@ -10,29 +12,30 @@ help:
 	@echo "  make worker-up   Start worker profile"
 
 up:
-	docker-compose up
+	$(DOCKER_COMPOSE) up
 
 up-build:
-	docker-compose up --build
+	$(DOCKER_COMPOSE) up --build
 
 down:
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 
 logs:
-	docker-compose logs -f
+	$(DOCKER_COMPOSE) logs -f
 
 api-shell:
-	docker-compose exec api python manage.py shell
+	$(DOCKER_COMPOSE) exec api python manage.py shell
 
 api-migrate:
-	docker-compose exec api python manage.py migrate
+	$(DOCKER_COMPOSE) exec api python manage.py migrate
 
 api-test:
-	docker-compose exec api python manage.py test
+	$(DOCKER_COMPOSE) exec api python manage.py test
 
 api-lint:
-	docker-compose exec api python -m ruff check .
+	$(DOCKER_COMPOSE) exec api python -m ruff check .
 
 worker-up:
-	docker-compose --profile worker up worker
+	$(DOCKER_COMPOSE) --profile worker up worker
+
 
