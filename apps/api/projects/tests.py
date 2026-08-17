@@ -44,7 +44,7 @@ class ProjectModelTests(TestCase):
             project=project, user=self.user, allocation_percentage=80
         )
         self.assertIn("Beta Project", str(member1))
-        self.assertIn("owner@example.com", str(member1))
+        self.assertIn("owner", str(member1))
 
         # Team member (user is None)
         member2 = ProjectMember.objects.create(

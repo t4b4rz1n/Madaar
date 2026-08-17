@@ -21,7 +21,9 @@ def cache_previous_project_member(sender, instance, **kwargs):
         instance.__original_is_deleted = False
 
 
-@receiver(post_save, sender=ProjectMember)
+@receiver(
+    post_save, sender=ProjectMember, dispatch_uid="notify_project_member_added_or_changed_uid"
+)
 def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
     """
     3. project_created: When a user is added to a project
@@ -40,6 +42,21 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
                 "project_id": str(project.id),
                 "project_name": project.name,
                 "creator_name": creator_name,
+            },
+        )
+        # Also notify superusers that a new member was added
+        member_name = instance.user.get_full_name() or instance.user.username
+        org_name = project.organization.name if project.organization else "—"
+        EventDispatcher.dispatch(
+            event_type="member_added_to_project",
+            payload={
+                "project_id": str(project.id),
+                "project_name": project.name,
+                "member_name": member_name,
+                "org_name": org_name,
+                "organization_id": str(project.organization_id)
+                if project.organization_id
+                else None,
             },
         )
     elif not created:
@@ -94,7 +111,7 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
                 )
 
 
-@receiver(post_delete, sender=ProjectMember)
+@receiver(post_delete, sender=ProjectMember, dispatch_uid="notify_project_member_deleted_uid")
 def notify_project_member_deleted(sender, instance, **kwargs):
     if instance.user:
         project = instance.project
@@ -168,12 +185,29 @@ def cache_previous_project_state(sender, instance, **kwargs):
         instance.__original_status = None
 
 
-@receiver(post_save, sender=Project)
+@receiver(post_save, sender=Project, dispatch_uid="notify_project_budget_or_status_uid")
 def notify_project_budget_or_status(sender, instance, created, **kwargs):
     """
     4. project_over_budget: Triggered if the budget changes drastically or status changes
-    (Simplified logic for budget warning)
+    Also notifies superusers on creation.
     """
+    if created:
+        creator_name = (
+            instance.owner.get_full_name() or instance.owner.username if instance.owner else "—"
+        )
+        org_name = instance.organization.name if instance.organization else "—"
+        EventDispatcher.dispatch(
+            event_type="project_actually_created",
+            payload={
+                "project_id": str(instance.id),
+                "project_name": instance.name,
+                "org_name": org_name,
+                "creator_name": creator_name,
+                "organization_id": str(instance.organization_id)
+                if instance.organization_id
+                else None,
+            },
+        )
     if not created:
         old_budget = getattr(instance, "__original_budget", None)
         if old_budget is not None and instance.budget is not None:
@@ -199,3 +233,19 @@ def notify_project_budget_or_status(sender, instance, created, **kwargs):
                             "project_name": instance.name,
                         },
                     )
+
+        # Notify superusers when budget is set or changed
+        if instance.budget != old_budget and instance.budget is not None:
+            org_name = instance.organization.name if instance.organization else "—"
+            EventDispatcher.dispatch(
+                event_type="project_budget_set",
+                payload={
+                    "project_id": str(instance.id),
+                    "project_name": instance.name,
+                    "budget": f"{instance.budget:,.0f}",
+                    "org_name": org_name,
+                    "organization_id": str(instance.organization_id)
+                    if instance.organization_id
+                    else None,
+                },
+            )

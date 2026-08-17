@@ -23,6 +23,31 @@ from organizations.models import Organization, OrganizationMembership
 logger = logging.getLogger(__name__)
 
 
+class DisconnectTelegramView(APIView):
+    """Allows a user to disconnect their Telegram account from the platform."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        from accounts.models import WorkStyleProfile
+
+        wsp = WorkStyleProfile.objects.filter(user=request.user).first()
+        if not wsp or not wsp.telegram_chat_id:
+            return Response(
+                {"error": "Telegram is not connected."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        wsp.telegram_chat_id = None
+        wsp.notify_via_telegram = False
+        wsp.telegram_connect_token = None
+        wsp.save(
+            update_fields=["telegram_chat_id", "notify_via_telegram", "telegram_connect_token"]
+        )
+
+        logger.info(f"User {request.user.username} disconnected Telegram.")
+        return Response({"status": "disconnected"})
+
 class GenerateTelegramMagicLinkView(APIView):
     permission_classes = [IsAuthenticated]
 

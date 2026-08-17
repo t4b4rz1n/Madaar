@@ -52,6 +52,14 @@ class ActiveTimerSerializer(serializers.Serializer):
     project_name = serializers.CharField(allow_null=True)
 
 
+class StandupSummarySerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    yesterday_work = serializers.CharField()
+    today_work = serializers.CharField()
+    blockers = serializers.CharField(allow_blank=True, allow_null=True)
+    created_at = serializers.DateTimeField()
+
+
 class MilestoneSummarySerializer(serializers.Serializer):
     id = serializers.UUIDField()
     title = serializers.CharField()
@@ -64,6 +72,8 @@ class MilestoneSummarySerializer(serializers.Serializer):
 class EmployeeDashboardSerializer(serializers.Serializer):
     upcoming_tasks = TaskSummarySerializer(many=True)
     overdue_tasks = TaskSummarySerializer(many=True)
+    blocked_tasks = TaskSummarySerializer(many=True)
+    today_standup = StandupSummarySerializer(allow_null=True)
     weekly_time = TimeSummarySerializer()
     active_projects = ActiveProjectSerializer(many=True)
     attendance_today = AttendanceStatusSerializer(allow_null=True)

@@ -1,0 +1,18 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { Login, Logout, TickCircle, Timer1 } from "iconsax-reactjs";
+import { toast } from "sonner";
+import { checkIn, checkOut, getTodayAttendance } from "../api/attendanceApi";
+import { useAttendanceStore } from "../store/useAttendanceStore";
+
+export const CheckInOut: React.FC = () => {
+  const queryClient = useQueryClient();
+  const { activeOrganizationId } = useAttendanceStore();
+  const { data: todayAttendance, isLoading } = useQuery({ queryKey: ["todayAttendance"], queryFn: getTodayAttendance });
+  const checkInMutation = useMutation({ mutationFn: (organizationId: string) => checkIn(organizationId), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["todayAttendance"] }); toast.success("Checked in"); }, onError: (error: any) => toast.error(error.response?.data?.detail || error.response?.data?.error || "Could not check in.") });
+  const checkOutMutation = useMutation({ mutationFn: checkOut, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["todayAttendance"] }); toast.success("Checked out"); }, onError: (error: any) => toast.error(error.response?.data?.detail || error.response?.data?.error || "Could not check out.") });
+  if (isLoading) return <div className="h-32 animate-pulse rounded-[26px] bg-base-100" />;
+  const checkedIn = Boolean(todayAttendance?.check_in);
+  const checkedOut = Boolean(todayAttendance?.check_out);
+  return <section className="madaar-surface rounded-[26px] border border-base-content/10 bg-base-100 p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><div className="grid size-11 place-items-center rounded-2xl bg-success/10 text-success"><Timer1 size={23} /></div><div><p className="text-xs font-bold uppercase tracking-[0.15em] text-success">Attendance</p><h2 className="mt-1 text-lg font-semibold">{format(new Date(), "EEEE, MMMM d")}</h2><p className="mt-1 text-xs text-base-content/50">Record when your working day starts and ends.</p></div></div><div className="flex items-center gap-4"><div><p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">In</p><p className="mt-1 text-lg font-semibold">{todayAttendance?.check_in ? format(new Date(todayAttendance.check_in), "HH:mm") : "—"}</p></div><div className="h-9 w-px bg-base-content/10" /><div><p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">Out</p><p className="mt-1 text-lg font-semibold">{todayAttendance?.check_out ? format(new Date(todayAttendance.check_out), "HH:mm") : "—"}</p></div><div className="h-9 w-px bg-base-content/10" />{!checkedIn ? <button type="button" onClick={() => activeOrganizationId ? checkInMutation.mutate(activeOrganizationId) : toast.error("Select an organization first.")} disabled={checkInMutation.isPending} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-success px-4 text-sm font-bold text-success-content hover:bg-success/90 disabled:opacity-50"><Login size={16} /> Check in</button> : !checkedOut ? <button type="button" onClick={() => checkOutMutation.mutate()} disabled={checkOutMutation.isPending} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-error px-4 text-sm font-bold text-error-content hover:bg-error/90 disabled:opacity-50"><Logout size={16} /> Check out</button> : <span className="inline-flex items-center gap-2 rounded-xl bg-success/10 px-3 py-2 text-xs font-bold text-success"><TickCircle size={16} /> Day complete</span>}</div></div></section>;
+};

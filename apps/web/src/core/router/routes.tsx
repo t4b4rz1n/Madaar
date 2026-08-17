@@ -14,8 +14,13 @@ import { ticketsRoutes } from "../../features/tickets/routes";
 import { dashboardRoutes } from "../../features/dashboard/routes";
 import { rolesRoutes } from "../../features/roles/routes";
 import { automationsRoutes } from "../../features/automations/routes";
+import { tasksRoutes } from "../../features/tasks/routes";
+import { attendanceRoutes } from "../../features/attendance/routes";
+import { projectsRoutes } from "../../features/projects/routes";
+import { organizationsRoutes } from "../../features/organizations/routes";
 
 const NotFoundPage = lazy(() => import("../../pages/NotFoundPage"));
+const SettingsPage = lazy(() => import("../../pages/SettingsPage"));
 
 export const routes: RouteObject[] = [
   ...authRoutes,
@@ -36,12 +41,20 @@ export const routes: RouteObject[] = [
       ...rolesRoutes,
       ...discountsRoutes,
       ...automationsRoutes,
+      ...tasksRoutes,
+      ...projectsRoutes,
+      ...organizationsRoutes,
+      ...attendanceRoutes,
       ...teamsRoutes,
       ...projectsRoutes,
       ...discountsRoutes,
       ...notificationsRoutes,
       ...profileRoutes,
       ...ticketsRoutes,
+      {
+        path: "settings",
+        element: <SettingsPage />,
+      },
       {
         path: "*",
         element: <NotFoundPage />,

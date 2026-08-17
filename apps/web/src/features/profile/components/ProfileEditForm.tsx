@@ -11,7 +11,7 @@ import type { ProfileUpdateData } from "../types";
 export const ProfileEditForm = () => {
   const [isWaitingForTelegram, setIsWaitingForTelegram] = useState(false);
   const user = useAuthStore((state) => state.user);
-  
+
   // Timeout for waiting state
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -29,7 +29,7 @@ export const ProfileEditForm = () => {
   // Only poll if we are waiting and the user is NOT connected yet
   const shouldPoll = isWaitingForTelegram && !user?.telegram_connected;
   useProfileQuery(shouldPoll ? 3000 : false);
-  
+
   const updateMutation = useUpdateProfile();
   const telegramMutation = useTelegramMagicLink();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -444,7 +444,7 @@ export const ProfileEditForm = () => {
                     <p className="text-xs text-base-content/60 mt-0.5">Connect your account to receive notifications and manage tasks via Telegram.</p>
                   </div>
                 </div>
-                
+
                 {user.telegram_connected ? (
                   <button
                     type="button"
@@ -508,19 +508,18 @@ export const ProfileEditForm = () => {
                     name="notify_via_email"
                     control={control}
                     render={({ field }) => (
-                      <input 
-                        type="checkbox" 
-                        className="toggle toggle-success" 
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-success"
                         checked={field.value}
                         onChange={(e) => {
                           field.onChange(e);
                           updateMutation.mutate({ notify_via_email: e.target.checked }, {
                             onSuccess: () => {
                               reset({ ...watch(), notify_via_email: e.target.checked });
-                              toast.success("Email preference updated");
                             }
                           });
-                        }} 
+                        }}
                       />
                     )}
                   />
@@ -542,19 +541,18 @@ export const ProfileEditForm = () => {
                     name="notify_via_telegram"
                     control={control}
                     render={({ field }) => (
-                      <input 
-                        type="checkbox" 
-                        className="toggle toggle-info" 
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-info"
                         checked={field.value}
                         onChange={(e) => {
                           field.onChange(e);
                           updateMutation.mutate({ notify_via_telegram: e.target.checked }, {
                             onSuccess: () => {
                               reset({ ...watch(), notify_via_telegram: e.target.checked });
-                              toast.success("Telegram preference updated");
                             }
                           });
-                        }} 
+                        }}
                         disabled={!user.telegram_connected}
                         title={!user.telegram_connected ? "Please connect to Telegram first" : ""}
                       />

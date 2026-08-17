@@ -1,6 +1,5 @@
 import re
 
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -83,10 +82,10 @@ class BoardSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_by", "order", "created_at")
 
     def validate_background_color(self, value):
-        """Validate hex color format (e.g. #6366f1 or #fff)."""
-        if value and not re.match(r"^#(?:[0-9a-fA-F]{3}){1,2}$", value):
+        """Validate hex color format or linear-gradient string."""
+        if value and not re.match(r"^(#(?:[0-9a-fA-F]{3}){1,2}|linear-gradient\(.+\))$", value):
             raise serializers.ValidationError(
-                _("Invalid background_color format. Use hex format like #6366f1.")
+                _("Invalid background_color format. Use hex format or linear-gradient.")
             )
         return value
 
@@ -99,9 +98,7 @@ class TaskChecklistItemSerializer(serializers.ModelSerializer):
 
     def validate_description(self, value):
         if not value or not value.strip():
-            raise serializers.ValidationError(
-                _("Checklist item description cannot be empty.")
-            )
+            raise serializers.ValidationError(_("Checklist item description cannot be empty."))
         return value.strip()
 
 
@@ -167,18 +164,18 @@ class TaskActivityLogSerializer(serializers.ModelSerializer):
 
 
 class TaskListSerializer(serializers.ModelSerializer):
-    status_detail = TaskStatusSerializer(
-        source="status", read_only=True, allow_null=True
-    )
+    status_detail = TaskStatusSerializer(source="status", read_only=True, allow_null=True)
     assignee_detail = UserMinimalSerializer(source="assignee", read_only=True)
     reporter_detail = UserMinimalSerializer(source="reporter", read_only=True)
     subtasks_count = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
     progress_percent = serializers.FloatField(read_only=True)
     is_finished = serializers.BooleanField(read_only=True)
     number = serializers.IntegerField(read_only=True)
     key = serializers.CharField(read_only=True)
     checklist_stats = serializers.SerializerMethodField()
     is_active_timer_running = serializers.SerializerMethodField()
+    spent_seconds = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -200,17 +197,25 @@ class TaskListSerializer(serializers.ModelSerializer):
             "due_date",
             "estimated_hours",
             "spent_hours",
+            "spent_seconds",
             "parent_task",
             "order",
             "is_finished",
+            "is_blocked",
             "progress_percent",
             "subtasks_count",
+            "comments_count",
             "checklist_stats",
             "is_active_timer_running",
             "created_at",
             "updated_at",
         )
         read_only_fields = ("id", "reporter", "created_at", "updated_at")
+
+    def get_spent_seconds(self, obj):
+        from django.db.models import Sum
+        total = obj.time_logs.filter(is_active=False).aggregate(total=Sum("duration_seconds"))["total"]
+        return total or 0
 
     def get_is_active_timer_running(self, obj):
         return getattr(obj, "is_active_timer_running", False)
@@ -219,6 +224,11 @@ class TaskListSerializer(serializers.ModelSerializer):
         if hasattr(obj, "annotated_subtasks_count"):
             return obj.annotated_subtasks_count
         return obj.subtasks.count()
+
+    def get_comments_count(self, obj):
+        if hasattr(obj, "annotated_comments_count"):
+            return obj.annotated_comments_count
+        return obj.comments.count()
 
     def get_checklist_stats(self, obj):
         if hasattr(obj, "annotated_checklist_total"):
@@ -235,12 +245,19 @@ class TaskListSerializer(serializers.ModelSerializer):
 class TaskDetailSerializer(TaskListSerializer):
     checklist_items = TaskChecklistItemSerializer(many=True, read_only=True)
     comments = TaskCommentSerializer(many=True, read_only=True)
+    subtasks = serializers.SerializerMethodField()
 
     class Meta(TaskListSerializer.Meta):
         fields = TaskListSerializer.Meta.fields + (
             "checklist_items",
             "comments",
+            "subtasks",
         )
+
+    def get_subtasks(self, obj):
+        # Prevent infinite recursion by using a simplified serializer or just TaskListSerializer
+        serializer = TaskListSerializer(obj.subtasks.all(), many=True, context=self.context)
+        return serializer.data
 
 
 class TaskCreateUpdateSerializer(serializers.ModelSerializer):
@@ -264,39 +281,35 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             "parent_task",
             "order",
             "is_finished",
+            "is_blocked",
         )
         read_only_fields = ("id", "is_finished")
-
-
 
     def validate_estimated_hours(self, value):
         if value is not None and value < 0:
             raise serializers.ValidationError(_("Estimated hours cannot be negative."))
         return value
 
-    def validate_due_date(self, value):
-        if value is not None and value.date() < timezone.localdate():
-            raise serializers.ValidationError(_("Due date cannot be in the past."))
-        return value
-
     def validate(self, attrs):
         parent_task = attrs.get("parent_task")
-        project = attrs.get("project") or (
-            self.instance.project if self.instance else None
-        )
+        project = attrs.get("project") or (self.instance.project if self.instance else None)
         task_status = attrs.get("status")
-        assignee = attrs.get('assignee', getattr(self.instance, 'assignee', None))
+        assignee = attrs.get("assignee", getattr(self.instance, "assignee", None))
 
         if project and assignee:
             from projects.models import ProjectMember
+
             is_member = ProjectMember.objects.filter(
                 project=project, user=assignee, is_active=True
             ).exists()
             if not is_member and project.owner != assignee:
                 raise serializers.ValidationError(
-                    {"assignee": _("The assignee must be an active member or owner of the project.")}
+                    {
+                        "assignee": _(
+                            "The assignee must be an active member or owner of the project."
+                        )
+                    }
                 )
-
 
         # Prevent circular parent assignment
         if self.instance and parent_task and parent_task.id == self.instance.id:
@@ -357,7 +370,7 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             "blockers",
             "created_at",
         )
-        read_only_fields = ("id", "user", "organization", "created_at")
+        read_only_fields = ("id", "user", "created_at")
 
     def validate(self, attrs):
         yw = attrs.get("yesterday_work", "").strip()
@@ -371,9 +384,7 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.Serializer):
     id = serializers.UUIDField(help_text=_("UUID of the object to reorder"))
-    order = serializers.IntegerField(
-        min_value=1, help_text=_("New 1-based order position")
-    )
+    order = serializers.IntegerField(min_value=1, help_text=_("New 1-based order position"))
 
 
 class BoardReorderSerializer(serializers.Serializer):

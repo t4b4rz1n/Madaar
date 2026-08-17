@@ -6,12 +6,14 @@ import type { User } from "../types/authTypes";
 interface AuthState {
   user: User | null;
   access: string | null;
+  refresh: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
 interface AuthActions {
-  setAuthData: (data: { user: User; access: string }) => void;
+  setAuthData: (data: { user: User; access: string; refresh?: string }) => void;
+  setTokens: (tokens: { access: string; refresh?: string }) => void;
   updateUser: (user: Partial<User>) => void;
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
@@ -20,6 +22,7 @@ interface AuthActions {
 const initialState: AuthState = {
   user: null,
   access: null,
+  refresh: null,
   isAuthenticated: false,
   isLoading: true,
 };
@@ -33,9 +36,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({
           user: data.user,
           access: data.access,
+          refresh: data.refresh || null,
           isAuthenticated: true,
           isLoading: false,
         });
+      },
+
+      setTokens: (tokens) => {
+        set((state) => ({
+          access: tokens.access,
+          refresh: tokens.refresh !== undefined ? tokens.refresh : state.refresh,
+        }));
       },
 
       updateUser: (userData) => {
@@ -51,6 +62,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({
           user: null,
           access: null,
+          refresh: null,
           isAuthenticated: false,
           isLoading: false,
         });
@@ -66,6 +78,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       partialize: (state) => ({
         user: state.user,
         access: state.access,
+        refresh: state.refresh,
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
@@ -74,3 +87,4 @@ export const useAuthStore = create<AuthState & AuthActions>()(
     }
   )
 );
+

@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -19,34 +20,46 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     )
 
     avatar = serializers.ImageField(required=False, allow_null=True)
+    access = serializers.SerializerMethodField(read_only=True)
+    refresh = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
         fields = (
+            "id",
             "username",
             "email",
-            "password",
-            "password_confirm",
             "first_name",
             "last_name",
             "avatar",
+            "password",
+            "password_confirm",
+            "access",
+            "refresh",
         )
+
+    def get_access(self, obj):
+        if not hasattr(obj, "_tokens"):
+            refresh = RefreshToken.for_user(obj)
+            obj._tokens = (str(refresh.access_token), str(refresh))
+        return obj._tokens[0]
+
+    def get_refresh(self, obj):
+        if not hasattr(obj, "_tokens"):
+            refresh = RefreshToken.for_user(obj)
+            obj._tokens = (str(refresh.access_token), str(refresh))
+        return obj._tokens[1]
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password_confirm"]:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
-
-        try:
-            validate_password(attrs["password"])
-        except DjangoValidationError as exc:
-            raise serializers.ValidationError({"password": exc.messages}) from exc
-
         return attrs
 
     def create(self, validated_data):
         validated_data.pop("password_confirm")
         user = User.objects.create_user(**validated_data)
         return user
+
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

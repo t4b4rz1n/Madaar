@@ -1,242 +1,197 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import {
-  Add,
-  ArrowRight,
-  CloseCircle,
-  MessageText1,
-  Messages,
-  TickCircle,
-} from "iconsax-reactjs";
+import { ArrowRight, Calendar, Clock, Refresh2, Timer1, TickCircle } from "iconsax-reactjs";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatDate } from "../../../utils/formatDate";
+import { toast } from "sonner";
+import { stopTimer, startTimer } from "../../attendance/api/attendanceApi";
 import { useAuthStore } from "../../auth/store/authStore";
-import { useTickets } from "../../tickets/hooks/useTickets";
-import type { Ticket, TicketStatus } from "../../tickets/types";
+import { StandupModal } from "../../tasks/components/StandupModal";
+import { getEmployeeDashboard } from "../api/dashboardApi";
+import { TodayBlockersCard } from "../components/TodayBlockersCard";
+import { TodayEmptyState, TodaySkeleton } from "../components/TodayEmptyState";
+import { TodayStandupCard } from "../components/TodayStandupCard";
+import { TodayTasksCard } from "../components/TodayTasksCard";
+import { TodayTimerCard } from "../components/TodayTimerCard";
 
-const statusStyles: Record<TicketStatus, string> = {
-  open: "bg-warning/10 text-warning border-warning/20",
-  in_progress: "bg-info/10 text-info border-info/20",
-  answered: "bg-primary/10 text-primary border-primary/20",
-  closed: "bg-success/10 text-success border-success/20",
+const getTimezone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
 };
 
-const formatStatus = (status: TicketStatus) =>
-  status.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const formatDay = () =>
+  new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
+
+const formatHours = (seconds: number) => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
+};
 
 const UserDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
-  const ticketParams = new URLSearchParams({
-    page: "1",
-    page_size: "100",
-    ordering: "-created_at",
+  const queryClient = useQueryClient();
+  const [isStandupOpen, setStandupOpen] = useState(false);
+  const timezone = useMemo(getTimezone, []);
+  const dashboardQuery = useQuery({
+    queryKey: ["employee-dashboard", timezone],
+    queryFn: async () => (await getEmployeeDashboard(timezone)).data,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
-  const { data: ticketsResponse, isLoading, isError } = useTickets(ticketParams);
 
-  const tickets: Ticket[] = ticketsResponse?.results ?? [];
-  const userTickets = tickets.filter(
-    (ticket) => !user?.username || ticket.user?.username === user.username
-  );
-  const recentTickets = userTickets.slice(0, 4);
+  const stopTimerMutation = useMutation({
+    mutationFn: (timerId: string) => stopTimer(timerId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+      toast.success("Focus timer stopped");
+    },
+    onError: () => toast.error("Could not stop the timer"),
+  });
+
+  const startTimerMutation = useMutation({
+    mutationFn: (taskId: string) => startTimer(taskId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+      toast.success("Focus timer started");
+    },
+    onError: () => toast.error("Could not start the timer"),
+  });
+
   const displayName = user?.first_name || user?.username || "there";
-
-  const stats = [
-    {
-      title: "My Tickets",
-      value: userTickets.length,
-      description: "Total support requests",
-      icon: Messages,
-      color: "text-primary",
-      background: "bg-primary/10",
-    },
-    {
-      title: "In Progress",
-      value: userTickets.filter(
-        (ticket) => ticket.status === "open" || ticket.status === "in_progress"
-      ).length,
-      description: "Currently being reviewed",
-      icon: MessageText1,
-      color: "text-info",
-      background: "bg-info/10",
-    },
-    {
-      title: "Answered",
-      value: userTickets.filter((ticket) => ticket.status === "answered").length,
-      description: "Responses ready to view",
-      icon: TickCircle,
-      color: "text-primary",
-      background: "bg-primary/10",
-    },
-    {
-      title: "Closed",
-      value: userTickets.filter((ticket) => ticket.status === "closed").length,
-      description: "Resolved requests",
-      icon: CloseCircle,
-      color: "text-success",
-      background: "bg-success/10",
-    },
-  ];
+  const dashboard = dashboardQuery.data;
+  const allOpenTasks = dashboard
+    ? [...dashboard.overdue_tasks, ...dashboard.upcoming_tasks]
+    : [];
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-6"
+      className="mx-auto max-w-[1440px] space-y-5 sm:space-y-7"
     >
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl border border-primary/20 bg-base-100 p-6 shadow-sm sm:p-8"
-      >
-        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              User Dashboard
-            </p>
-            <h1 className="text-2xl font-bold text-base-content sm:text-3xl">
-              Welcome back, {displayName}
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-base-content/65 sm:text-base">
-              Track your support requests, review replies, or open a new ticket
-              whenever you need help from the Tabarzin team.
-            </p>
+      <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+            <Calendar size={15} />
+            {formatDay()}
           </div>
-          <Link
-            to="/tickets"
-            className="btn btn-primary h-12 rounded-xl px-6 font-semibold shadow-md shadow-primary/20"
-          >
-            <Add size={20} />
-            Create a Ticket
-          </Link>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-base-content sm:text-4xl">
+            Good morning, {displayName}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/55 sm:text-base">
+            Here&apos;s your clear path through the day. Focus on what matters next.
+          </p>
         </div>
-      </motion.section>
-
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-
-          return (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 * index }}
-              className="rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-base-content/60">
-                    {stat.title}
-                  </p>
-                  <p className="mt-2 text-3xl font-bold text-base-content">
-                    {isLoading ? (
-                      <span className="loading loading-dots loading-sm" />
-                    ) : (
-                      stat.value
-                    )}
-                  </p>
-                  <p className="mt-1 text-xs text-base-content/50">
-                    {stat.description}
-                  </p>
-                </div>
-                <div
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${stat.background} ${stat.color}`}
-                >
-                  <Icon size={23} variant="Outline" />
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
+        <div className="flex flex-wrap gap-2">
+          <Link to="/tasks" className="motion-interactive inline-flex h-11 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-4 text-sm font-bold text-base-content/70 shadow-sm hover:border-primary/30 hover:text-primary">
+            Open workspace <ArrowRight size={16} />
+          </Link>
+          <button type="button" onClick={() => setStandupOpen(true)} className="motion-interactive inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-content shadow-lg shadow-primary/15 hover:bg-primary/90">
+            <TickCircle size={17} />
+            {dashboard?.today_standup ? "Update standup" : "Write standup"}
+          </button>
+        </div>
       </section>
 
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 shadow-sm"
-      >
-        <div className="flex flex-col gap-3 border-b border-base-content/10 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <h2 className="text-lg font-bold text-base-content">
-              Recent Tickets
-            </h2>
-            <p className="mt-1 text-sm text-base-content/60">
-              Your latest conversations with the support team.
-            </p>
-          </div>
-          <Link
-            to="/tickets"
-            className="btn btn-ghost btn-sm w-fit gap-2 text-primary"
-          >
-            View all tickets
-            <ArrowRight size={16} />
-          </Link>
-        </div>
+      {dashboardQuery.isLoading ? (
+        <TodayLoadingState />
+      ) : dashboardQuery.isError || !dashboard ? (
+        <section className="madaar-surface">
+          <TodayEmptyState
+            icon={<Refresh2 size={24} />}
+            title="Today is temporarily unavailable"
+            description="We couldn’t load your work overview. Try again in a moment."
+            action={<button type="button" onClick={() => dashboardQuery.refetch()} className="motion-interactive rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-content hover:bg-primary/90">Try again</button>}
+          />
+        </section>
+      ) : (
+        <>
+          <section className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)]">
+            <TodayTimerCard
+              activeTimer={dashboard.active_timer}
+              isStopping={stopTimerMutation.isPending}
+              onStop={() => dashboard.active_timer && stopTimerMutation.mutate(dashboard.active_timer.id)}
+            />
+            <WeeklyPulse totalSeconds={dashboard.weekly_time.total_seconds} totalLogs={dashboard.weekly_time.total_logs} />
+          </section>
 
-        {isLoading ? (
-          <div className="flex min-h-64 items-center justify-center">
-            <span className="loading loading-spinner loading-md text-primary" />
-          </div>
-        ) : isError ? (
-          <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
-            <CloseCircle size={42} className="text-error/70" />
-            <p className="mt-3 font-semibold text-base-content">
-              Tickets could not be loaded
-            </p>
-            <p className="mt-1 text-sm text-base-content/60">
-              Visit the tickets page to try again.
-            </p>
-          </div>
-        ) : recentTickets.length === 0 ? (
-          <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Messages size={28} />
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(19rem,0.75fr)]">
+            <TodayTasksCard
+              tasks={dashboard.upcoming_tasks}
+              overdueTasks={dashboard.overdue_tasks}
+              activeTaskId={dashboard.active_timer?.task_id}
+              startingTaskId={startTimerMutation.isPending ? startTimerMutation.variables : null}
+              onStart={(task) => startTimerMutation.mutate(task.id)}
+            />
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
+              <TodayStandupCard standup={dashboard.today_standup} onOpen={() => setStandupOpen(true)} />
+              <TodayBlockersCard blockers={dashboard.blocked_tasks} />
             </div>
-            <p className="mt-4 font-semibold text-base-content">
-              You have no support tickets yet
-            </p>
-            <p className="mt-1 max-w-md text-sm text-base-content/60">
-              Create your first ticket and the Tabarzin support team will help
-              you from there.
-            </p>
-            <Link to="/tickets" className="btn btn-primary btn-sm mt-5 rounded-lg">
-              Create a Ticket
-            </Link>
-          </div>
-        ) : (
-          <div className="divide-y divide-base-content/10">
-            {recentTickets.map((ticket) => (
-              <Link
-                key={ticket.id}
-                to={`/tickets/${ticket.id}`}
-                className="flex flex-col gap-3 p-5 transition-colors hover:bg-base-200/60 sm:flex-row sm:items-center sm:justify-between sm:px-6"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-base-content">
-                    {ticket.title}
-                  </p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-base-content/50">
-                    <span>#{ticket.id}</span>
-                    <span>{formatDate(ticket.created_at)}</span>
-                    <span className="capitalize">{ticket.priority} priority</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 sm:justify-end">
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusStyles[ticket.status]}`}
-                  >
-                    {formatStatus(ticket.status)}
-                  </span>
-                  <ArrowRight size={18} className="text-base-content/35" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </motion.section>
+          </section>
+
+          {dashboard.active_projects.length === 0 && allOpenTasks.length === 0 && !dashboard.today_standup && (
+            <section className="madaar-surface">
+              <TodayEmptyState
+                icon={<Clock size={24} />}
+                title="A calm start"
+                description="Your workspace is quiet today. Use the time to plan, learn or help unblock the team."
+                action={<Link to="/tasks" className="motion-interactive rounded-xl border border-base-content/10 px-4 py-2.5 text-xs font-bold text-base-content/70 hover:border-primary/30 hover:text-primary">Explore workspace</Link>}
+              />
+            </section>
+          )}
+        </>
+      )}
+
+      <StandupModal
+        isOpen={isStandupOpen}
+        onClose={() => {
+          setStandupOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+        }}
+      />
     </motion.div>
   );
 };
+
+const WeeklyPulse = ({ totalSeconds, totalLogs }: { totalSeconds: number; totalLogs: number }) => (
+  <section className="madaar-surface flex flex-col justify-between p-5 sm:p-6">
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-base-content/45">This week</p>
+        <h2 className="mt-2 text-xl font-bold text-base-content">Work rhythm</h2>
+      </div>
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary/10 text-secondary"><Clock size={23} /></div>
+    </div>
+    <div className="mt-8">
+      <p className="font-mono text-4xl font-bold tracking-tight text-base-content">{formatHours(totalSeconds)}</p>
+      <p className="mt-2 text-sm text-base-content/55">{totalLogs} logged focus session{totalLogs === 1 ? "" : "s"}</p>
+    </div>
+    <div className="mt-6 flex items-center gap-2 rounded-xl bg-base-200/70 px-3 py-2.5 text-xs font-semibold text-base-content/55">
+      <Timer1 size={15} className="text-secondary" />
+      Keep the streak gentle and consistent.
+    </div>
+  </section>
+);
+
+const TodayLoadingState = () => (
+  <div className="space-y-5" aria-label="Loading your day">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)]">
+      <TodaySkeleton className="min-h-64" />
+      <TodaySkeleton className="min-h-64" />
+    </div>
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(19rem,0.75fr)]">
+      <TodaySkeleton className="min-h-96" />
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1"><TodaySkeleton className="min-h-56" /><TodaySkeleton className="min-h-56" /></div>
+    </div>
+  </div>
+);
 
 export default UserDashboardPage;

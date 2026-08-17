@@ -1,8 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { ErrorBoundary } from "react-error-boundary";
+import { ErrorFallback } from "../../components/ErrorFallback";
 import { useAuthStore } from "../auth/store/authStore";
-import ThemeToggle from "../../components/ThemeToggle";
-import { drawerItems } from "./DrawerItems";
+import { usePermissions } from "../auth/hooks/usePermissions";
+import { CommandMenu } from "./CommandMenu";
+import { drawerItems, getVisibleDrawerItems } from "./DrawerItems";
 import type { Breadcrumb } from "./Header";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
@@ -12,78 +15,81 @@ export const MainLayout = () => {
   const { setSidebarOpen } = useLayoutStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const { hasAllPermissions } = usePermissions();
   const isStaff = user?.is_staff === true;
   const { pathname } = useLocation();
+  const [isCommandMenuOpen, setCommandMenuOpen] = useState(false);
+
+  const commandItems = useMemo(
+    () => getVisibleDrawerItems(user, hasAllPermissions),
+    [hasAllPermissions, user],
+  );
 
   const breadcrumbs = useMemo(() => {
     const pathSegments = pathname.split("/").filter((i) => i);
-    const rootTitle = isStaff ? "Admin panel" : "Dashboard";
-    const crumbs: Breadcrumb[] = [{ title: rootTitle, path: "/" }];
+    const crumbs: Breadcrumb[] = [{ title: "Today", path: "/" }];
 
-    let currentPath = "";
-    pathSegments.forEach((segment, index) => {
-      currentPath += `/${segment}`;
+    if (pathSegments.length === 0 || pathSegments[0] === "dashboard") {
+      return crumbs;
+    }
 
-      const matchingItem = drawerItems.find((item) => {
-        if (segment === "admin" && item.link === "dashboard" && isStaff) {
-          return true;
-        }
+    const firstSegment = pathSegments[0];
+    const matchingItem = drawerItems.find((item) => item.link === firstSegment);
 
-        return item.link === segment;
-      });
+    // If visiting /settings or any admin sub-page, inject "Workspace Settings" into breadcrumbs
+    if (firstSegment === "settings") {
+      crumbs.push({ title: "Workspace Settings", path: "/settings" });
+    } else if (matchingItem && !matchingItem.isPrimary) {
+      crumbs.push({ title: "Workspace Settings", path: "/settings" });
+      crumbs.push({ title: matchingItem.title, path: `/${firstSegment}` });
+    } else if (matchingItem) {
+      crumbs.push({ title: matchingItem.title, path: `/${firstSegment}` });
+    } else {
+      crumbs.push({ title: firstSegment, path: `/${firstSegment}` });
+    }
 
-      if (matchingItem) {
-        const itemTitle =
-          segment === "admin" && matchingItem.link === "dashboard" && isStaff
-            ? "Admin panel"
-            : matchingItem.title;
-
-        crumbs.push({
-          title: itemTitle,
-          path: currentPath,
-        });
-      } else if (index === pathSegments.length - 1) {
-        const parentItem = drawerItems.find(
-          (item) =>
-            pathSegments[0] === item.link ||
-            (pathSegments[0] === "admin" &&
-              item.link === "dashboard" &&
-              isStaff),
-        );
-
-        if (parentItem) {
-          crumbs.push({ title: "Details", path: currentPath });
-        }
-      }
-    });
+    // Add remaining nested segments if any (e.g. details pages)
+    if (pathSegments.length > 1) {
+      crumbs.push({ title: "Details", path: pathname });
+    }
 
     return crumbs;
-  }, [pathname, isStaff]);
+  }, [pathname]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   return (
-    <div className="flex h-screen bg-base-200 font-sans text-base-content">
+    <div className="flex h-screen overflow-hidden bg-base-200 font-sans text-base-content">
+      <a
+        href="#main-content"
+        className="fixed start-4 top-3 z-[200] -translate-y-24 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-content shadow-lg transition-transform focus:translate-y-0"
+      >
+        Skip to main content
+      </a>
       <Sidebar />
 
-      <div className="relative flex flex-1 flex-col overflow-hidden">
+      <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header
           onMenuClick={() => setSidebarOpen(true)}
+          onCommandMenuClick={() => setCommandMenuOpen(true)}
           breadcrumbs={breadcrumbs}
         />
 
-        <div className="pointer-events-none absolute right-5 top-4 z-30 sm:right-8 sm:top-3">
-          <div className="pointer-events-auto rounded-2xl">
-            <ThemeToggle />
-          </div>
-        </div>
-
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-base-200 p-4 sm:p-6">
-          <Outlet />
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 outline-none sm:px-8 sm:py-7">
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
+
+      <CommandMenu
+        isOpen={isCommandMenuOpen}
+        onOpenChange={setCommandMenuOpen}
+        items={commandItems}
+        isStaff={isStaff}
+      />
     </div>
   );
 };

@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from attendance.models import Attendance, AttendanceSetting, TimeLog, TimeOffRequest
 from organizations.models import OrganizationMembership, TeamMembership
 from projects.models import Milestone, Project, ProjectMember
-from tasks.models import Task
+from tasks.models import AsyncStandup, Task
 
 
 def _bump_version(version_key):
@@ -91,6 +91,11 @@ def invalidate_on_task_change(sender, instance, **kwargs):
         if project:
             _invalidate_executive(project.organization_id)
             _invalidate_manager_org(project.organization_id)
+
+
+@receiver([post_save, post_delete], sender=AsyncStandup)
+def invalidate_on_standup_change(sender, instance, **kwargs):
+    _invalidate_employee(instance.user_id)
 
 
 @receiver([post_save, post_delete], sender=TimeLog)

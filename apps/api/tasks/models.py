@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
@@ -6,6 +8,8 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from common.models import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 def validate_file_size(value):
@@ -136,7 +140,7 @@ class Task(BaseModel):
         _("Priority"),
         max_length=20,
         choices=Priority.choices,
-        default=Priority.MEDIUM,
+        default=Priority.LOW,
     )
     assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -179,6 +183,7 @@ class Task(BaseModel):
     order = models.PositiveIntegerField(_("Kanban Order"), default=0)
     is_finished = models.BooleanField(_("Is Finished"), default=False, db_index=True)
     number = models.PositiveIntegerField(_("Task Number"), null=True, blank=True, db_index=True)
+    is_blocked = models.BooleanField(_("Is Blocked"), default=False, db_index=True)
 
     class Meta:
         verbose_name = _("Task")
@@ -209,18 +214,11 @@ class Task(BaseModel):
         super().clean()
         if self.status_id and self.project_id:
             try:
-                if (
-                    self.status.board
-                    and self.status.board.project_id != self.project_id
-                ):
+                if self.status.board and self.status.board.project_id != self.project_id:
                     from django.core.exceptions import ValidationError
 
                     raise ValidationError(
-                        {
-                            "status": _(
-                                "Status must belong to a board in the same project."
-                            )
-                        }
+                        {"status": _("Status must belong to a board in the same project.")}
                     )
             except Exception:
                 pass
@@ -235,10 +233,26 @@ class Task(BaseModel):
             with transaction.atomic():
                 try:
                     project = Project.objects.select_for_update().get(id=self.project_id)
-                    max_num = Task.all_objects.filter(project=project).aggregate(Max('number'))['number__max'] or 0
+                    max_num = (
+                        Task.all_objects.filter(project=project).aggregate(Max("number"))[
+                            "number__max"
+                        ]
+                        or 0
+                    )
                     self.number = max_num + 1
-                except Exception:
-                    max_num = Task.all_objects.filter(project_id=self.project_id).aggregate(Max('number'))['number__max'] or 0
+                except Exception as exc:
+                    logger.warning(
+                        "Task.save: select_for_update failed for project_id=%s, "
+                        "falling back to aggregate without lock. Error: %s",
+                        self.project_id,
+                        exc,
+                    )
+                    max_num = (
+                        Task.all_objects.filter(project_id=self.project_id).aggregate(
+                            Max("number")
+                        )["number__max"]
+                        or 0
+                    )
                     self.number = max_num + 1
 
         super().save(*args, **kwargs)
@@ -258,16 +272,18 @@ class Task(BaseModel):
         return self.is_finished
 
     def _progress_percent_internal(self, seen=None):
-        """Recursive progress calculation with cycle detection."""
+        """Recursive progress calculation with cycle detection.
+
+        Uses prefetched subtasks/checklist_items when available to avoid
+        issuing extra queries (N+1) during bulk progress recalculation.
+        """
         if seen is None:
             seen = set()
         if self.id in seen:
             return 0.0
         seen = seen | {self.id}
 
-        if hasattr(self, "annotated_checklist_total") and hasattr(
-            self, "annotated_checklist_done"
-        ):
+        if hasattr(self, "annotated_checklist_total") and hasattr(self, "annotated_checklist_done"):
             checklist_total = self.annotated_checklist_total
             checklist_done = self.annotated_checklist_done
         else:
@@ -278,11 +294,19 @@ class Task(BaseModel):
             (checklist_done / checklist_total * 100) if checklist_total > 0 else None
         )
 
-        subtask_list = list(self.subtasks.all())
+        # Use prefetched subtasks if available; otherwise fall back to queryset.
+        if "subtasks" in getattr(self, "_prefetched_objects_cache", {}):
+            subtask_list = [
+                s for s in self._prefetched_objects_cache["subtasks"]
+                if not getattr(s, "is_deleted", False)
+            ]
+        else:
+            subtask_list = list(self.subtasks.all())
+
         if subtask_list:
-            subtask_progress = sum(
-                s._progress_percent_internal(seen) for s in subtask_list
-            ) / len(subtask_list)
+            subtask_progress = sum(s._progress_percent_internal(seen) for s in subtask_list) / len(
+                subtask_list
+            )
         else:
             subtask_progress = None
 
@@ -318,9 +342,7 @@ class TaskChecklistItem(BaseModel):
         ordering = ["created_at"]
         indexes = [
             models.Index(fields=["task"]),
-            models.Index(
-                fields=["task", "is_completed"], name="chk_task_completed_idx"
-            ),
+            models.Index(fields=["task", "is_completed"], name="chk_task_completed_idx"),
         ]
 
     def __str__(self):
@@ -376,9 +398,7 @@ class TaskComment(BaseModel):
         ordering = ["created_at"]
         indexes = [
             models.Index(fields=["task"]),
-            models.Index(
-                fields=["task", "-created_at"], name="comment_task_created_idx"
-            ),
+            models.Index(fields=["task", "-created_at"], name="comment_task_created_idx"),
         ]
 
     def __str__(self):
@@ -418,11 +438,7 @@ class TaskActivityLog(BaseModel):
         verbose_name = _("Task Activity Log")
         verbose_name_plural = _("Task Activity Logs")
         ordering = ["-created_at"]
-        indexes = [
-            models.Index(
-                fields=["task", "-created_at"], name="activity_task_created_idx"
-            )
-        ]
+        indexes = [models.Index(fields=["task", "-created_at"], name="activity_task_created_idx")]
 
     def __str__(self):
         target = (

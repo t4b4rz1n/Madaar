@@ -37,7 +37,7 @@ from django.utils import timezone
 from attendance.models import Attendance, AttendanceSetting, TimeLog, TimeOffRequest
 from organizations.models import TeamMembership
 from projects.models import Milestone, Project, ProjectMember
-from tasks.models import Task
+from tasks.models import AsyncStandup, Task
 
 logger = logging.getLogger(__name__)
 
@@ -230,6 +230,55 @@ class EmployeeDashboardService:
         )
 
     @staticmethod
+    def _get_blocked_tasks(user):
+        return (
+            Task.objects.filter(
+                assignee=user,
+                is_deleted=False,
+                project__is_deleted=False,
+                is_blocked=True,
+                is_finished=False,
+            )
+            .select_related("status", "project")
+            .annotate(
+                status_name=F("status__name"),
+                status_code=F("status__code"),
+                project_name=F("project__name"),
+            )
+            .order_by("due_date", "created_at")
+            .values(
+                "id",
+                "title",
+                "priority",
+                "due_date",
+                "status_name",
+                "status_code",
+                "project_name",
+                "project_id",
+            )[:5]
+        )
+
+    @staticmethod
+    def _get_today_standup(user, today_start, today_end):
+        return (
+            AsyncStandup.objects.filter(
+                user=user,
+                is_deleted=False,
+                created_at__gte=today_start,
+                created_at__lt=today_end,
+            )
+            .order_by("-created_at")
+            .values(
+                "id",
+                "yesterday_work",
+                "today_work",
+                "blockers",
+                "created_at",
+            )
+            .first()
+        )
+
+    @staticmethod
     def _get_weekly_time_summary(user, week_start, week_end):
         result = TimeLog.objects.filter(
             user=user,
@@ -370,6 +419,8 @@ class EmployeeDashboardService:
         result = {
             "upcoming_tasks": list(cls._get_upcoming_tasks(user, now)),
             "overdue_tasks": list(cls._get_overdue_tasks(user, now)),
+            "blocked_tasks": list(cls._get_blocked_tasks(user)),
+            "today_standup": cls._get_today_standup(user, today_start, today_end),
             "weekly_time": cls._get_weekly_time_summary(user, week_start, week_end),
             "active_projects": list(cls._get_active_projects(user)),
             "attendance_today": cls._get_attendance_status(user, today_start),

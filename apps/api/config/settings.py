@@ -22,18 +22,8 @@ env = environ.Env(
 
 environ.Env.read_env(BASE_DIR / ".env")
 
-# --- Cache Configuration ---
+# --- Cache Configuration is defined below after DB config ---
 REDIS_CACHE_URL = env("REDIS_CACHE_URL", default="redis://redis:6379/1")
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_CACHE_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
 
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-CHANGE-ME-IN-PRODUCTION")
 DEBUG = env("DEBUG")
@@ -142,8 +132,11 @@ else:
 # --- Cache Configuration ---
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_CACHE_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
 }
 
@@ -260,6 +253,14 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
     "EXCEPTION_HANDLER": "config.exception_handler.custom_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env("THROTTLE_RATE_ANON", default="60/minute"),
+        "user": env("THROTTLE_RATE_USER", default="300/minute"),
+    },
 }
 
 # --- SimpleJWT Settings ---

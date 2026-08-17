@@ -53,7 +53,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 
 class LogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = LogoutSerializer(data=request.data)

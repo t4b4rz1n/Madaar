@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { loginRequest, registerRequest } from "../api/authApi";
@@ -49,9 +49,14 @@ export const useRegister = () => {
 export const useLogout = () => {
   const navigate = useNavigate();
   const logoutAction = useAuthStore((state) => state.logout);
+  const queryClient = useQueryClient();
 
   return () => {
     logoutAction();
+    import("../../tasks/store/useTaskStore").then(module => {
+      module.useTaskStore.getState().reset();
+    });
+    queryClient.clear();
     toast.info("You have been logged out.");
     navigate("/login");
   };

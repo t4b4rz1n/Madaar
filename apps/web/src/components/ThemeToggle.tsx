@@ -18,7 +18,7 @@ const getInitialTheme = (): ThemeMode => {
 };
 
 const ThemeToggle = () => {
-  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -53,43 +53,9 @@ const ThemeToggle = () => {
       onClick={toggleTheme}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="group relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-base-300 bg-base-100 text-base-content shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-11 sm:w-[116px] sm:justify-between sm:rounded-full sm:px-2"
+      className="motion-interactive inline-flex h-10 w-10 items-center justify-center rounded-xl border border-base-content/10 bg-base-100/70 text-base-content/70 shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-11"
     >
-      <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-      <span
-        className={`absolute  h-8 w-8 rounded-full bg-primary shadow-md transition-all duration-300 sm:top-1.5 sm:h-8 sm:w-8 ${
-          isDark ? "sm:left-[calc(100%-2.5rem)]" : "left-1"
-        }`}
-      />
-
-      <span className="relative z-10 hidden w-full items-center justify-between sm:flex">
-        <span
-          className={`flex items-center gap-1 text-xs font-semibold transition-colors duration-300 ${
-            !isDark ? "text-gray-700" : "text-base-content/60"
-          }`}
-        >
-          <SunIcon className="h-4 w-4" />
-          Light
-        </span>
-
-        <span
-          className={`flex items-center gap-1 text-xs font-semibold transition-colors duration-300 ${
-            isDark ? "text-primary-content" : "text-base-content/60"
-          }`}
-        >
-          Dark
-          <MoonIcon className="h-4 w-4" />
-        </span>
-      </span>
-
-      <span className="relative z-10 sm:hidden">
-        {isDark ? (
-          <SunIcon className="h-5 w-5 text-primary-content" />
-        ) : (
-          <MoonIcon className="h-5 w-5 text-base-content" />
-        )}
-      </span>
+      {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
     </button>
   );
 };
