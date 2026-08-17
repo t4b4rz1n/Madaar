@@ -1,4 +1,11 @@
 import ApiService from "../../../core/api/apiService";
+import type { EmployeeDashboard } from "../types";
+
+export const getEmployeeDashboard = (timezone: string) => {
+  return ApiService.get<EmployeeDashboard>("reports/employee/dashboard/", {
+    params: { tz: timezone },
+  });
+};
 
 export const getOverviewKPIs = () => {
   return ApiService.get<any>("admin-panel/dashboard/overview/");

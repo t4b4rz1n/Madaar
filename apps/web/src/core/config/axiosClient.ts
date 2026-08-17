@@ -5,37 +5,35 @@ import axios, {
 } from "axios";
 import { useAuthStore } from "../../features/auth/store/authStore";
 import { API_TIMEOUT, getApiUrl } from "../api/config";
-import { AUTH_STORAGE_KEY } from "./constants";
 
 const axiosClient: AxiosInstance = axios.create({
   baseURL: getApiUrl(),
   timeout: API_TIMEOUT,
 });
 
-const getAuthToken = (): string | null => {
-  try {
-    const authDataString = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!authDataString) return null;
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: any) => void;
+}> = [];
 
-    const authData = JSON.parse(authDataString);
-    // Zustand persist stores data inside a 'state' object
-    const token = authData?.state?.access;
-
-    if (token) {
-      return `Bearer ${token}`;
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((promise) => {
+    if (error) {
+      promise.reject(error);
+    } else if (token) {
+      promise.resolve(token);
     }
-  } catch (e) {
-    console.error("Error parsing auth data from localStorage", e);
-  }
-  return null;
+  });
+  failedQueue = [];
 };
 
-// Request interceptor
+// Request interceptor: reads access token directly from Zustand memory state
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = getAuthToken();
+    const token = useAuthStore.getState().access;
     if (token) {
-      config.headers.set("Authorization", token);
+      config.headers.set("Authorization", `Bearer ${token}`);
     }
     return config;
   },
@@ -44,14 +42,70 @@ axiosClient.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor: handles 401 with Silent Token Refresh
 axiosClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  (error) => {
-    if (error?.response?.status === 401) {
-      // Clear Zustand state on 401
+  async (error) => {
+    const originalRequest = error?.config as (InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    }) | undefined;
+
+    if (error?.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      const isRefreshEndpoint = originalRequest.url?.includes("/auth/login/refresh/");
+
+      if (!isRefreshEndpoint) {
+        const refreshToken = useAuthStore.getState().refresh;
+
+        if (refreshToken) {
+          if (isRefreshing) {
+            return new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            })
+              .then((newToken) => {
+                originalRequest.headers.set("Authorization", `Bearer ${newToken}`);
+                return axiosClient(originalRequest);
+              })
+              .catch((err) => Promise.reject(err));
+          }
+
+          originalRequest._retry = true;
+          isRefreshing = true;
+
+          try {
+            const refreshUrl = `${getApiUrl()}/auth/login/refresh/`;
+            const res = await axios.post(refreshUrl, { refresh: refreshToken });
+
+            // ApiRenderer envelope format wraps data inside res.data.data
+            const responseData = res.data?.data || res.data;
+            const newAccess = responseData?.access;
+            const newRefresh = responseData?.refresh || refreshToken;
+
+            if (newAccess) {
+              useAuthStore.getState().setTokens({
+                access: newAccess,
+                refresh: newRefresh,
+              });
+
+              processQueue(null, newAccess);
+              originalRequest.headers.set("Authorization", `Bearer ${newAccess}`);
+              return axiosClient(originalRequest);
+            }
+          } catch (refreshErr) {
+            processQueue(refreshErr, null);
+            useAuthStore.getState().logout();
+            if (window.location.pathname !== "/login") {
+              window.location.href = "/login";
+            }
+            return Promise.reject(refreshErr);
+          } finally {
+            isRefreshing = false;
+          }
+        }
+      }
+
+      // If no refresh token or refresh endpoint itself failed
       useAuthStore.getState().logout();
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
@@ -79,3 +133,4 @@ axiosClient.interceptors.response.use(
 );
 
 export default axiosClient;
+

@@ -49,12 +49,12 @@ export const getActiveTimer = async (): Promise<TimeLog | null> => {
   }
 };
 
-export const startTimer = async (taskId: number): Promise<TimeLog> => {
+export const startTimer = async (taskId: string | number): Promise<TimeLog> => {
   const res = await ApiService.post<TimeLog>('/attendance/time-logs/start-timer/', { task: taskId });
   return res.data as unknown as TimeLog;
 };
 
-export const stopTimer = async (timerId?: number): Promise<TimeLog | null> => {
+export const stopTimer = async (timerId?: string | number): Promise<TimeLog | null> => {
   let id = timerId;
   if (!id) {
     const active = await getActiveTimer();
@@ -65,7 +65,7 @@ export const stopTimer = async (timerId?: number): Promise<TimeLog | null> => {
   return res.data as unknown as TimeLog;
 };
 
-export const cancelTimer = async (timerId: number): Promise<void> => {
+export const cancelTimer = async (timerId: string | number): Promise<void> => {
   await ApiService.post(`/attendance/time-logs/${timerId}/cancel/`);
 };
 

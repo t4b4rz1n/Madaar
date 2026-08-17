@@ -26,8 +26,9 @@ export const getProjectMembers = async (projectId: string): Promise<User[]> => {
   return extractData<User>(res);
 };
 
-export const getTasks = async (projectId: string, boardId?: string): Promise<Task[]> => {
-  const params: Record<string, any> = { project: projectId, page_size: 100 };
+export const getTasks = async (projectId?: string, boardId?: string): Promise<Task[]> => {
+  const params: Record<string, any> = { page_size: 100 };
+  if (projectId) params.project = projectId;
   if (boardId) {
     params.board = boardId;
   }
