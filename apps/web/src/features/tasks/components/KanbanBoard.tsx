@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBoards, getTasks, moveTask, createTask, reorderTasks } from '../api/tasksApi';
-import { startTimer, stopTimer } from '../../attendance/api/attendanceApi';
+import { getActiveTimer, startTimer, stopTimer } from '../../attendance/api/attendanceApi';
+import type { TimeLog } from '../../attendance/types';
 import { useTaskStore } from '../store/useTaskStore';
 import { TaskCard } from './TaskCard';
 import { TaskSheet } from './TaskSheet';
@@ -54,6 +55,12 @@ export const KanbanBoard: React.FC = () => {
     queryKey: ['tasks', activeProjectId, activeBoardId],
     queryFn: () => getTasks(activeProjectId!, activeBoardId!),
     enabled: !!activeProjectId && !!activeBoardId,
+  });
+
+  const { data: activeTimer = null } = useQuery<TimeLog | null>({
+    queryKey: ['activeTimer'],
+    queryFn: getActiveTimer,
+    refetchInterval: 15_000,
   });
 
   const [localTasks, setLocalTasks] = useState<Task[]>([]);
@@ -469,17 +476,21 @@ export const KanbanBoard: React.FC = () => {
     || filteredTasks.find(task => task.is_active_timer_running)
     || filteredTasks.find(task => !task.is_finished)
     || filteredTasks[0];
+  const completedCount = localTasks.filter(task => task.is_finished || task.status_detail?.code?.toLowerCase() === 'done').length;
+  const blockedCount = localTasks.filter(task => task.is_blocked).length;
+  const activeCount = Math.max(0, localTasks.length - completedCount);
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-base-200">
-      <div className="shrink-0 border-b border-base-content/10 bg-base-100/80 px-4 py-3 backdrop-blur-xl sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="shrink-0 border-b border-base-content/10 bg-base-100/80 px-4 py-4 backdrop-blur-xl sm:px-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Task Workspace</p>
-            <h1 className="mt-1 text-xl font-black tracking-tight text-base-content">Work in flow</h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Task workspace</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-base-content">Work in flow</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] font-semibold text-base-content/45"><span>{localTasks.length} tasks</span><span className="text-primary">{activeCount} active</span><span className="text-success">{completedCount} done</span>{blockedCount > 0 && <span className="text-warning">{blockedCount} blocked</span>}</div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex h-10 w-48 items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-3 text-base-content/45 focus-within:border-primary/40 sm:w-60">
+            <label className="flex h-10 w-full items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-3 text-base-content/45 focus-within:border-primary/40 sm:w-64">
               <SearchNormal1 size={16} />
               <input aria-label="Search tasks" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search tasks" className="w-full bg-transparent text-xs font-semibold text-base-content outline-none placeholder:text-base-content/35" />
             </label>
@@ -491,13 +502,13 @@ export const KanbanBoard: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-1 overflow-x-auto pb-0.5">
+        <div className="mt-4 flex items-center gap-1 overflow-x-auto pb-0.5">
           {(['all', 'active', 'blocked', 'priority'] as const).map(item => (
             <button key={item} type="button" onClick={() => setFilter(item)} className={`motion-interactive rounded-lg px-3 py-1.5 text-[11px] font-bold capitalize ${filter === item ? 'bg-base-content text-base-100' : 'text-base-content/45 hover:bg-base-200 hover:text-base-content'}`}>
               {item === 'priority' ? 'High priority' : item}
             </button>
           ))}
-          <span className="ms-auto hidden text-[11px] font-semibold text-base-content/35 sm:block">{filteredTasks.length} visible tasks</span>
+          <span className="ms-auto hidden text-[11px] font-semibold text-base-content/35 sm:block">{filteredTasks.length} visible</span>
         </div>
       </div>
 
@@ -527,21 +538,21 @@ export const KanbanBoard: React.FC = () => {
               <DroppableColumn
                 key={status.id}
                 id={`col-${status.id}`}
-                className="madaar-surface min-w-[280px] w-[280px] rounded-2xl p-2.5 flex flex-col h-fit max-h-[calc(100vh-13rem)] bg-base-100/80"
+                className="madaar-surface min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-[calc(100vh-14rem)] bg-base-100/80"
               >
-                <div className="flex items-center justify-between mb-2 px-1.5">
+                <div className="mb-3 flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base-content text-[13px]">{status.name}</h3>
-                    <span className="rounded-md bg-base-200 px-1.5 py-0.5 text-[10px] font-bold text-base-content/45">
+                    <h3 className="text-sm font-semibold text-base-content">{status.name}</h3>
+                    <span className="rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-bold text-base-content/45">
                       {columnTasks.length}
                     </span>
                   </div>
-                  <span aria-hidden="true" className="rounded p-1 text-base-content/30">
+                  <span aria-hidden="true" className="rounded-lg p-1 text-base-content/25">
                     <More size={16} />
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-2 overflow-y-auto rounded-lg">
+                <div className="flex flex-col gap-2 overflow-y-auto rounded-xl px-0.5 pb-1">
                   <SortableContext items={columnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
                     {columnTasks.map(task => (
                       <SortableTask 
@@ -551,9 +562,14 @@ export const KanbanBoard: React.FC = () => {
                         onPlayTimer={handlePlayTimer}
                         onStopTimer={handleStopTimer}
                         onMarkDone={handleMarkDone}
+                        activeTimer={activeTimer}
                       />
                     ))}
                   </SortableContext>
+
+                  {columnTasks.length === 0 && addingTaskToStatusId !== status.id && (
+                    <div className="rounded-xl border border-dashed border-base-content/10 px-3 py-8 text-center text-[11px] font-semibold text-base-content/35">No tasks here</div>
+                  )}
 
                   {addingTaskToStatusId === status.id && (
                     <div
@@ -627,7 +643,7 @@ export const KanbanBoard: React.FC = () => {
           })}
 
           <DragOverlay>
-            {activeTask ? <TaskCard task={activeTask} onClick={() => {}} /> : null}
+            {activeTask ? <TaskCard task={activeTask} onClick={() => {}} activeTimer={activeTimer} /> : null}
           </DragOverlay>
         </DndContext>
       </div>
@@ -639,6 +655,7 @@ export const KanbanBoard: React.FC = () => {
         onPatch={patchLocalTask}
         onPlayTimer={handlePlayTimer}
         onStopTimer={handleStopTimer}
+        activeTimer={activeTimer}
         focusMode={focusMode}
       />
     </div>

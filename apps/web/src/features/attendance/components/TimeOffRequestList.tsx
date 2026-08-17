@@ -42,33 +42,33 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'approved': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-      case 'rejected': return 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-      default: return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+      case 'approved': return 'text-success bg-success/10 border-success/20';
+      case 'rejected': return 'text-error bg-error/10 border-error/20';
+      default: return 'text-warning bg-warning/10 border-warning/20';
     }
   };
 
   if (!activeOrganizationId) {
-    return <div className="p-5 text-center text-base-content/50">Please select an organization to view requests.</div>;
+    return <div className="madaar-surface rounded-2xl border border-dashed border-base-content/15 bg-base-100 p-8 text-center text-sm text-base-content/50">Please select an organization to view requests.</div>;
   }
 
   return (
     <div className="madaar-surface overflow-hidden">
       <div className="flex items-center justify-between border-b border-base-content/10 p-5">
         <div className="flex items-center gap-3">
-          <DocumentText size={24} className="text-purple-400" />
-          <h2 className="text-lg font-semibold text-base-content">Time Off Requests</h2>
+          <div className="grid size-10 place-items-center rounded-xl bg-secondary/10 text-secondary"><DocumentText size={20} /></div>
+          <div><h2 className="text-base font-semibold text-base-content">Time off requests</h2><p className="mt-1 text-xs text-base-content/45">Review leave status and approvals.</p></div>
         </div>
       </div>
 
       <div className="p-0 overflow-x-auto">
         {isLoading ? (
           <div className="p-5 animate-pulse space-y-4">
-            {[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-white/5 rounded-lg" />)}
+            {[...Array(3)].map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-base-200/70" />)}
           </div>
         ) : requests.length === 0 ? (
-          <div className="text-center py-10 text-white/40">
-            <DocumentText size={48} className="mx-auto mb-3 opacity-20" />
+          <div className="py-10 text-center text-base-content/40">
+            <DocumentText size={40} className="mx-auto mb-3 text-base-content/20" />
             <p>No requests found.</p>
           </div>
         ) : (
@@ -87,7 +87,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                 <tr key={req.id} className="transition-colors hover:bg-base-200/60">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs uppercase">
+                      <div className="grid size-8 place-items-center rounded-full bg-info/10 text-xs font-bold uppercase text-info">
                         {req.user_detail?.first_name?.[0] || req.user_detail?.username?.[0] || 'U'}
                       </div>
                       <span className="font-medium text-base-content/90">{req.user_detail?.first_name || req.user_detail?.username}</span>
@@ -106,13 +106,13 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                   <td className="px-6 py-4 flex justify-end gap-2">
                     {req.status === 'pending' && isManager && (
                       <>
-                        <button onClick={() => approveMutation.mutate(req.id)} className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors" title="Approve">
+                        <button type="button" onClick={() => approveMutation.mutate(req.id)} className="rounded-lg p-2 text-success transition-colors hover:bg-success/10" title="Approve">
                           <TickCircle size={20} />
                         </button>
                         <button onClick={() => {
                           const note = prompt('Rejection reason (optional):');
                           if (note !== null) rejectMutation.mutate({ id: req.id, note });
-                        }} className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Reject">
+                        }} className="rounded-lg p-2 text-error transition-colors hover:bg-error/10" title="Reject">
                           <CloseCircle size={20} />
                         </button>
                       </>
@@ -120,7 +120,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                     {req.status === 'pending' && !isManager && (
                       <button onClick={() => {
                         if (confirm('Cancel this request?')) cancelMutation.mutate(req.id);
-                      }} className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="Cancel">
+                      }} className="rounded-lg p-2 text-base-content/35 transition-colors hover:bg-error/10 hover:text-error" title="Cancel">
                         <Trash size={20} />
                       </button>
                     )}

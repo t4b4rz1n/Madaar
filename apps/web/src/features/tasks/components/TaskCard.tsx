@@ -1,12 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import type { Task } from '../types';
-import { Timer1, Message, Paperclip2, TickCircle, More, TaskSquare, Tag, Profile2User, Calendar, ArrowRight, TickSquare, Trash } from 'iconsax-reactjs';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteTask, updateTask, getProjectMembers } from '../api/tasksApi';
-import { useQuery } from '@tanstack/react-query';
-import { ConfirmationModal } from '../../../components/ConfirmationModal';
-
+import { createPortal } from "react-dom";
+import { useEffect, useState, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Calendar1, CloseCircle, More, Play, Profile2User, Stop, TaskSquare, TickCircle, Trash } from "iconsax-reactjs";
+import { toast } from "sonner";
+import { ConfirmationModal } from "../../../components/ConfirmationModal";
+import { deleteTask, getProjectMembers, updateTask } from "../api/tasksApi";
+import type { Task } from "../types";
+import type { TimeLog } from "../../attendance/types";
 
 interface TaskCardProps {
   task: Task;
@@ -14,329 +14,90 @@ interface TaskCardProps {
   onPlayTimer?: (taskId: string | number) => void;
   onStopTimer?: (taskId: string | number) => void;
   onMarkDone?: (taskId: string | number) => void;
+  activeTimer?: TimeLog | null;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone }) => {
-  const [isDone, setIsDone] = React.useState(false);
+const priorityTone: Record<Task["priority"], string> = {
+  low: "bg-base-200 text-base-content/55",
+  medium: "bg-info/10 text-info",
+  high: "bg-warning/12 text-warning",
+  critical: "bg-error/10 text-error",
+};
+
+const formatDate = (value?: string) => value ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value)) : null;
+
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone, activeTimer }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMembersMenu, setShowMembersMenu] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
-  const isDanger = task.is_blocked || (task.due_date && new Date(task.due_date) < new Date());
+  const isActuallyDone = task.is_finished || task.status_detail?.code?.toLowerCase() === "done" || task.status_detail?.name?.toLowerCase() === "done";
+  const isOverdue = Boolean(task.due_date && new Date(task.due_date).getTime() < Date.now() && !isActuallyDone);
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteTask(task.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Task deleted"); },
+    onError: (error: any) => toast.error(error.response?.data?.detail || "Could not delete the task."),
   });
-
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Task>) => updateTask(task.id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["tasks"] }); queryClient.invalidateQueries({ queryKey: ["taskActivities", task.id] }); },
+    onError: (error: any) => toast.error(error.response?.data?.detail || "Could not update the task."),
   });
-
   const { data: users = [] } = useQuery({
-    queryKey: ['projectMembers', task.project],
-    queryFn: async () => {
-      if (!task.project) return [];
-      const members = await getProjectMembers(task.project.toString());
-      return members.map((m: any) => m.user).filter(Boolean);
-    },
-    enabled: !!task.project && (isMenuOpen || showMembersMenu),
+    queryKey: ["projectMembers", task.project],
+    queryFn: async () => { if (!task.project) return []; const members = await getProjectMembers(task.project.toString()); return members.map((member: any) => member.user).filter(Boolean); },
+    enabled: Boolean(task.project && (isMenuOpen || showMembersMenu)),
     staleTime: 30_000,
   });
 
-  const isActuallyDone = task.status_detail?.code === 'done' || task.status_detail?.name?.toLowerCase() === 'done';
+  const closeMenu = () => { setIsMenuOpen(false); setShowMembersMenu(false); };
+  const initials = task.assignee_detail ? `${task.assignee_detail.first_name?.[0] || ""}${task.assignee_detail.last_name?.[0] || ""}`.toUpperCase() || task.assignee_detail.username?.[0]?.toUpperCase() : "";
+  const checklist = task.checklist_stats;
+  const progress = checklist?.total ? checklist.percent ?? Math.round((checklist.done / checklist.total) * 100) : task.progress_percent || 0;
+  const timerBelongsToTask = Boolean(activeTimer && activeTimer.task.toString() === task.id.toString());
+  const timerIsRunning = Boolean(task.is_active_timer_running || timerBelongsToTask);
+  const [now, setNow] = useState(Date.now());
+  const [localStartedAt, setLocalStartedAt] = useState<number | null>(null);
 
-  const handleDoneClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isActuallyDone) {
-      setIsDone(true);
-      onMarkDone?.(task.id);
-      setTimeout(() => setIsDone(false), 600);
+  useEffect(() => {
+    if (!timerIsRunning) {
+      setLocalStartedAt(null);
+      return undefined;
     }
-  };
+    setLocalStartedAt((previous) => previous || Date.now());
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [timerIsRunning]);
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsMenuOpen(false);
-    setIsDeleteModalOpen(true);
-  };
+  const elapsedSeconds = timerBelongsToTask && activeTimer
+    ? Math.max(0, Math.floor((now - new Date(activeTimer.start_time).getTime()) / 1000) + Number(activeTimer.duration_seconds || 0))
+    : timerIsRunning && localStartedAt
+      ? Number(task.spent_seconds || 0) + Math.max(0, Math.floor((now - localStartedAt) / 1000))
+    : Number(task.spent_seconds || 0);
+  const formattedElapsed = [Math.floor(elapsedSeconds / 3600), Math.floor((elapsedSeconds % 3600) / 60), elapsedSeconds % 60]
+    .map((part) => part.toString().padStart(2, "0")).join(":");
 
-  const confirmDelete = () => {
-    setIsDeleteModalOpen(false);
-    deleteMutation.mutate();
-  };
-
-  const isMutating = updateMutation.isPending || deleteMutation.isPending;
-
-  return (
-    <div
-      onClick={onClick}
-      className={`madaar-surface motion-interactive p-3 rounded-2xl border cursor-pointer group
-        hover:-translate-y-0.5 transition-all relative min-h-[92px] flex flex-col justify-between
-        ${isDanger ? 'border-error/40 bg-error/[0.03]' : 'border-base-content/10 hover:border-primary/30'}
-      `}
-    >
-      {/* Loading overlay */}
-      {isMutating && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] z-30 rounded-xl flex items-center justify-center pointer-events-none">
-          <div className="w-5 h-5 border-2 border-white/20 border-t-blue-400 rounded-full animate-spin" />
-        </div>
-      )}
-
-      {task.is_blocked && (
-        <div className="absolute top-0 left-0 w-1 h-full bg-red-500 rounded-l-xl pointer-events-none"></div>
-      )}
-
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-start flex-1 justify-start text-left">
-          <div className={`overflow-visible transition-all duration-200 flex shrink-0 items-start ${isActuallyDone ? 'w-[18px] opacity-100 mr-1.5' : 'w-0 opacity-0 group-hover:w-[18px] group-hover:opacity-100 group-hover:mr-1.5'}`}>
-            <style>
-              {`
-                @keyframes burstLine {
-                  0% { transform: rotate(var(--rot)) translateY(0) scaleY(0); opacity: 1; }
-                  50% { transform: rotate(var(--rot)) translateY(-8px) scaleY(1); opacity: 1; }
-                  100% { transform: rotate(var(--rot)) translateY(-12px) scaleY(0); opacity: 0; }
-                }
-              `}
-            </style>
-            <button
-              type="button"
-              onClick={handleDoneClick}
-              className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isActuallyDone || isDone ? 'text-success' : 'border border-base-content/20 hover:border-success/50 hover:bg-success/10'}`}
-              title={isActuallyDone ? "Completed" : "Mark as done"}
-              aria-label={isActuallyDone ? "Completed" : `Mark ${task.title} as done`}
-            >
-              {(isActuallyDone || isDone) ? (
-                <TickCircle size={16} variant="Bulk" />
-              ) : null}
-
-              {isDone && (
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  {['#F43F5E', '#3B82F6', '#F59E0B', '#10B981', '#A855F7', '#EC4899'].map((color, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-0.5 h-1.5 rounded-full"
-                      style={{
-                        backgroundColor: color,
-                        '--rot': `${i * 60}deg`,
-                        animation: 'burstLine 0.4s ease-out forwards'
-                      } as React.CSSProperties}
-                    />
-                  ))}
-                </div>
-              )}
-            </button>
-          </div>
-          <h4 className="text-base-content/90 font-bold text-[13px] leading-relaxed line-clamp-2 transition-transform duration-200" dir="auto">
-            {task.title}
-          </h4>
-        </div>
-
-        <button
-          type="button"
-          ref={menuTriggerRef}
-          onClick={(e) => { e.stopPropagation(); setIsMenuOpen(true); }}
-          className="shrink-0 opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded text-base-content/40 hover:bg-base-200 hover:text-base-content/80 transition-colors"
-          aria-label={`Open actions for ${task.title}`}
-        >
-          <More size={14} />
-        </button>
-
-        {isMenuOpen && menuTriggerRef.current && createPortal(
-          <>
-            <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); setShowMembersMenu(false); }} />
-              <div
-                className="fixed z-50 bg-base-100 border border-base-content/10 rounded-xl shadow-2xl py-1.5 px-1.5 w-56 text-[13px] text-base-content/90 flex flex-col gap-0.5 font-medium"
-                style={{
-                  top: menuTriggerRef.current.getBoundingClientRect().bottom + 4,
-                  left: menuTriggerRef.current.getBoundingClientRect().right - 224,
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {showMembersMenu ? (
-                  <>
-                    <div className="px-3 py-1.5 text-xs text-white/50 font-semibold mb-1 flex items-center justify-between">
-                      <button onClick={(e) => { e.stopPropagation(); setShowMembersMenu(false); }} className="hover:text-white p-1 -ml-1 rounded"><ArrowRight className="rotate-180" size={14} /></button>
-                      Select Member
-                    </div>
-                    <button
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-md transition-colors w-full text-left"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateMutation.mutate({ assignee: undefined });
-                        setIsMenuOpen(false);
-                        setShowMembersMenu(false);
-                      }}
-                    >
-                      <div className="w-5 h-5 rounded-full border border-dashed border-white/40 flex items-center justify-center text-white/50">
-                        <span className="text-[10px]">-</span>
-                      </div>
-                      Unassigned
-                    </button>
-                    {users.map((u: any) => (
-                      <button
-                        key={u.id}
-                        className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-md transition-colors w-full text-left"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateMutation.mutate({ assignee: u.id });
-                          setIsMenuOpen(false);
-                          setShowMembersMenu(false);
-                        }}
-                      >
-                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white uppercase">
-                          {u.full_name?.[0] || u.username?.[0] || '?'}
-                        </div>
-                        <span className="truncate">{u.full_name || u.username || u.email}</span>
-                      </button>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    <button className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/10 rounded-md transition-colors w-full text-left" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); onClick(); }}>
-                      <TaskSquare size={16} className="text-white/60" /> Open card
-                    </button>
-                    <button className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/10 rounded-md transition-colors w-full text-left" onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); }}>
-                      <Tag size={16} className="text-white/60" /> Edit labels
-                    </button>
-                    <button className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/10 rounded-md transition-colors w-full text-left" onClick={(e) => { e.stopPropagation(); setShowMembersMenu(true); }}>
-                      <Profile2User size={16} className="text-white/60" /> Change members
-                    </button>
-
-                    <div>
-                      <button
-                        className="flex items-center justify-between gap-2.5 px-3 py-1.5 hover:bg-white/10 rounded-md transition-colors w-full text-left cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          dateInputRef.current?.showPicker?.();
-                        }}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Calendar size={16} className="text-white/60" />
-                          <span>{task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Edit dates'}</span>
-                        </div>
-                        {task.due_date && (
-                          <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateMutation.mutate({ due_date: undefined });
-                              setIsMenuOpen(false);
-                            }}
-                            className="text-white/40 hover:text-red-400 p-0.5 rounded hover:bg-red-500/10 transition-colors"
-                            title="Clear date"
-                          >
-                            ✕
-                          </span>
-                        )}
-                      </button>
-                      <input
-                        ref={dateInputRef}
-                        type="date"
-                        value={task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : ''}
-                        className="sr-only"
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            updateMutation.mutate({ due_date: new Date(e.target.value).toISOString() });
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                      />
-                    </div>
-
-                    <div className="h-px bg-white/10 my-1 mx-2" />
-
-                    <button className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-red-500/10 text-red-400 rounded-md transition-colors w-full text-left" onClick={handleDelete}>
-                      <Trash size={16} className="text-red-400/80" /> Delete
-                    </button>
-                  </>
-                )}
-              </div>
-          </>,
-          document.body
-        )}
+  return <>
+    <article onClick={onClick} className={`group relative cursor-pointer rounded-2xl border bg-base-100 p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-base-content/5 ${isOverdue ? "border-error/30" : task.is_blocked ? "border-warning/35" : "border-base-content/10 hover:border-primary/25"}`} aria-label={`Open task ${task.key}: ${task.title}`}>
+      {(updateMutation.isPending || deleteMutation.isPending) && <div className="absolute inset-0 z-20 grid place-items-center rounded-2xl bg-base-100/75 backdrop-blur-[2px]"><span className="loading loading-spinner loading-sm text-primary" /></div>}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2"><button type="button" onClick={(event) => { event.stopPropagation(); if (!isActuallyDone) onMarkDone?.(task.id); }} className={`grid size-5 shrink-0 place-items-center rounded-full transition ${isActuallyDone ? "text-success" : "border border-base-content/20 text-transparent hover:border-success/50 hover:bg-success/10"}`} aria-label={isActuallyDone ? "Task completed" : `Mark ${task.title} as done`}>{isActuallyDone && <TickCircle size={17} variant="Bulk" />}</button><span className="truncate text-[11px] font-bold tracking-wide text-base-content/40">{task.key}</span></div>
+        <button ref={menuTriggerRef} type="button" onClick={(event) => { event.stopPropagation(); setIsMenuOpen(true); }} className="rounded-lg p-1 text-base-content/35 opacity-100 transition hover:bg-base-200 hover:text-base-content sm:opacity-0 sm:group-hover:opacity-100" aria-label={`Actions for ${task.title}`}><More size={17} /></button>
       </div>
 
-      <div className="flex items-center justify-between text-base-content/40 text-[11px] min-h-[20px]">
-        <div className="flex items-center gap-2">
-          {task.due_date && (
-            <div className={`flex items-center gap-1 ${isDanger ? 'text-red-400' : ''}`}>
-              <Timer1 size={13} />
-              <span>{new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-            </div>
-          )}
-          {task.comments_count && task.comments_count > 0 ? (
-            <div className="flex items-center gap-1 hover:text-white/80 transition-colors" title={`${task.comments_count} comment${task.comments_count > 1 ? 's' : ''}`}>
-              <Message size={13} />
-              <span>{task.comments_count}</span>
-            </div>
-          ) : null}
-          {task.subtasks_count > 0 && (
-            <div className="flex items-center gap-1">
-              <Paperclip2 size={13} />
-              <span>{task.subtasks_count}</span>
-            </div>
-          )}
+      <h3 dir="auto" className={`mt-2 line-clamp-3 text-[13px] font-semibold leading-5 ${isActuallyDone ? "text-base-content/45 line-through decoration-base-content/25" : "text-base-content"}`}>{task.title}</h3>
+      {task.description && <p dir="auto" className="mt-2 line-clamp-2 text-[11px] leading-4 text-base-content/45">{task.description}</p>}
 
-          {/* Checklist FIRST */}
-          {task.checklist_stats && task.checklist_stats.total > 0 && (
-            <div className={`flex items-center gap-1 ${task.checklist_stats.done === task.checklist_stats.total ? 'text-[#10B981]' : ''}`}>
-              <TickSquare size={13} />
-              <span>{task.checklist_stats.done}/{task.checklist_stats.total}</span>
-            </div>
-          )}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5"><span className={`rounded-md px-2 py-1 text-[10px] font-bold capitalize ${priorityTone[task.priority]}`}>{task.priority}</span>{task.is_blocked && <span className="rounded-md bg-warning/12 px-2 py-1 text-[10px] font-bold text-warning">Blocked</span>}{isOverdue && <span className="rounded-md bg-error/10 px-2 py-1 text-[10px] font-bold text-error">Overdue</span>}</div>
 
-          {/* Start/Stop Button AT THE END */}
-          {task.is_active_timer_running ? (
-            <button 
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onStopTimer?.(task.id); }}
-              className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors p-0.5 rounded hover:bg-red-500/10" 
-              title="Stop Timer"
-            >
-              <div className="w-2.5 h-2.5 bg-red-400 rounded-sm animate-pulse" />
-            </button>
-          ) : !isActuallyDone ? (
-            <button 
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onPlayTimer?.(task.id); }}
-              className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors p-0.5 rounded hover:bg-emerald-500/10 opacity-0 group-hover:opacity-100" 
-              title="Start Timer"
-            >
-              <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-emerald-400 border-b-[5px] border-b-transparent ml-0.5" />
-            </button>
-          ) : null}
-        </div>
+      {checklist?.total ? <div className="mt-3"><div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold text-base-content/45"><span className="flex items-center gap-1"><TaskSquare size={12} /> Checklist</span><span>{checklist.done}/{checklist.total}</span></div><div className="h-1.5 overflow-hidden rounded-full bg-base-200"><div className={`h-full rounded-full ${progress === 100 ? "bg-success" : "bg-primary"}`} style={{ width: `${Math.min(100, progress)}%` }} /></div></div> : null}
 
-        <div className="flex items-center space-x-2">
-          {task.assignee_detail && (
-            <img
-              src={task.assignee_detail.avatar_url || 'https://ui-avatars.com/api/?name=' + task.assignee_detail.first_name + '&background=10B981&color=fff'}
-              alt="assignee"
-              loading="lazy"
-              decoding="async"
-              className="w-5 h-5 rounded-full border border-[#2D364D] ml-1"
-            />
-          )}
-        </div>
-      </div>
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-base-content/8 pt-3"><div className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-base-content/45">{task.due_date && <span className={`inline-flex items-center gap-1 ${isOverdue ? "text-error" : ""}`}><Calendar1 size={13} />{formatDate(task.due_date)}</span>}{task.comments_count ? <span>{task.comments_count} comments</span> : null}</div><div className="flex items-center gap-1.5"><span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary" title={task.assignee_detail ? `Assigned to ${task.assignee_detail.username}` : "Unassigned"}>{task.assignee_detail?.avatar_url || task.assignee_detail?.avatar ? <img src={task.assignee_detail.avatar_url || task.assignee_detail.avatar} alt="" loading="lazy" className="size-6 rounded-full object-cover" /> : initials || <Profile2User size={13} />}</span>{timerIsRunning && <span className="font-mono text-[10px] font-bold tabular-nums text-success">{formattedElapsed}</span>}<button type="button" onClick={(event) => { event.stopPropagation(); if (timerIsRunning) onStopTimer?.(task.id); else onPlayTimer?.(task.id); }} className={`grid size-7 place-items-center rounded-lg transition ${timerIsRunning ? "bg-error/10 text-error" : "bg-base-200 text-base-content/45 hover:bg-primary/10 hover:text-primary"}`} aria-label={timerIsRunning ? `Stop timer for ${task.title}` : `Start timer for ${task.title}`}>{timerIsRunning ? <Stop size={14} /> : <Play size={14} />}</button></div></div>
 
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="Delete Task"
-        message={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
-        isLoading={deleteMutation.isPending}
-      />
-    </div>
-  );
+      {isMenuOpen && menuTriggerRef.current && createPortal(<><div className="fixed inset-0 z-40" onClick={closeMenu} /><div className="fixed z-50 w-56 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[12px] font-semibold text-base-content shadow-2xl" style={{ top: menuTriggerRef.current.getBoundingClientRect().bottom + 5, left: menuTriggerRef.current.getBoundingClientRect().right - 224 }} onClick={(event) => event.stopPropagation()}>{showMembersMenu ? <><button type="button" onClick={() => setShowMembersMenu(false)} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-base-content/50 hover:bg-base-200"><CloseCircle size={15} /> Back</button><button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 hover:bg-base-200" onClick={() => { updateMutation.mutate({ assignee: undefined }); closeMenu(); }}><Profile2User size={15} /> Unassigned</button>{users.map((user: any) => <button type="button" key={user.id} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200" onClick={() => { updateMutation.mutate({ assignee: user.id }); closeMenu(); }}><span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] text-primary">{user.first_name?.[0] || user.username?.[0] || "?"}</span><span className="truncate">{user.full_name || user.username || user.email}</span></button>)}</> : <><button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200" onClick={() => { closeMenu(); onClick(); }}><TaskSquare size={15} className="text-primary" /> Open task</button><button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200" onClick={() => setShowMembersMenu(true)}><Profile2User size={15} className="text-base-content/50" /> Change assignee</button><label className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 hover:bg-base-200"><Calendar1 size={15} className="text-base-content/50" /> <span className="flex-1">Due date</span><input type="date" value={task.due_date ? task.due_date.slice(0, 10) : ""} onChange={(event) => { updateMutation.mutate({ due_date: event.target.value ? new Date(event.target.value).toISOString() : undefined }); closeMenu(); }} className="w-3 opacity-0" /></label><button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-error hover:bg-error/10" onClick={() => { closeMenu(); setIsDeleteModalOpen(true); }}><Trash size={15} /> Delete task</button></>}</div></>, document.body)}
+    </article>
+    <ConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={() => { setIsDeleteModalOpen(false); deleteMutation.mutate(); }} title="Delete task?" message={`This will remove “${task.title}” from the workspace.`} />
+  </>;
 };

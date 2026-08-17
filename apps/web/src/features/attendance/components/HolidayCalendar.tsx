@@ -11,35 +11,33 @@ export const HolidayCalendar: React.FC<{ year?: number }> = ({ year = new Date()
   });
 
   return (
-    <div className="bg-[#171F32] border border-[#2D364D] rounded-xl overflow-hidden shadow-lg">
-      <div className="p-5 border-b border-[#2D364D] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <CalendarTick size={24} className="text-amber-400" />
-          <h2 className="text-lg font-semibold text-white">Holiday Calendar ({year})</h2>
-        </div>
+    <div className="madaar-surface overflow-hidden rounded-[26px] border border-base-content/10 bg-base-100 shadow-sm">
+      <div className="flex items-center gap-3 border-b border-base-content/10 p-5 sm:p-6">
+        <div className="grid size-10 place-items-center rounded-xl bg-warning/10 text-warning"><CalendarTick size={20} /></div>
+        <div><h2 className="text-base font-semibold text-base-content">Holiday calendar</h2><p className="mt-1 text-xs text-base-content/45">Company and official holidays in {year}.</p></div>
       </div>
 
-      <div className="p-5">
+      <div className="p-5 sm:p-6">
         {isLoading ? (
           <div className="animate-pulse space-y-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-white/5 rounded-lg" />)}
+            {[...Array(4)].map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-base-200/70" />)}
           </div>
         ) : holidays.length === 0 ? (
-          <div className="text-center py-10 text-white/40">
-            <CalendarTick size={48} className="mx-auto mb-3 opacity-20" />
+          <div className="py-10 text-center text-base-content/40">
+            <CalendarTick size={40} className="mx-auto mb-3 text-base-content/20" />
             <p>No holidays found for this year.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {holidays.map(holiday => (
-              <div key={holiday.id} className="bg-[#1C253B] border border-white/5 rounded-lg p-4 flex items-center gap-4 hover:border-amber-500/30 transition-colors">
-                <div className="w-14 h-14 rounded-lg bg-amber-500/10 flex flex-col items-center justify-center text-amber-400 shrink-0">
+              <div key={holiday.id} className="flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/45 p-4 transition-colors hover:border-warning/30 hover:bg-base-200/75">
+                <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-warning/10 text-warning">
                   <span className="text-xs font-semibold uppercase">{format(new Date(holiday.date), 'MMM')}</span>
                   <span className="text-xl font-bold leading-none">{format(new Date(holiday.date), 'dd')}</span>
                 </div>
                 <div>
-                  <h3 className="text-white font-medium">{holiday.name}</h3>
-                  <p className="text-sm text-white/50 line-clamp-1">{holiday.description || (holiday.is_official ? 'Official Holiday' : 'Company Holiday')}</p>
+                  <h3 className="font-semibold text-base-content">{holiday.name}</h3>
+                  <p className="line-clamp-1 text-sm text-base-content/50">{holiday.description || (holiday.is_official ? 'Official holiday' : 'Company holiday')}</p>
                 </div>
               </div>
             ))}

@@ -46,25 +46,25 @@ export const TeamTimesheetView: React.FC = () => {
   const weekDates = [...Array(7)].map((_, i) => addDays(currentWeek, i));
 
   if (!activeOrganizationId) {
-    return <div className="text-white/50 p-5 text-center">Please select an organization to view team timesheet.</div>;
+    return <div className="madaar-surface rounded-2xl border border-dashed border-base-content/15 bg-base-100 p-8 text-center text-sm text-base-content/50">Please select an organization to view team timesheet.</div>;
   }
 
   return (
-    <div className="bg-[#171F32] border border-[#2D364D] rounded-xl overflow-hidden shadow-lg">
-      <div className="p-5 border-b border-[#2D364D] flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="madaar-surface overflow-hidden rounded-[26px] border border-base-content/10 bg-base-100 shadow-sm">
+      <div className="flex flex-col justify-between gap-4 border-b border-base-content/10 p-5 md:flex-row md:items-center sm:p-6">
         <div className="flex items-center gap-3">
-          <People size={24} className="text-blue-400" />
-          <h2 className="text-lg font-semibold text-white">Team Weekly Timesheet</h2>
+          <div className="grid size-10 place-items-center rounded-xl bg-info/10 text-info"><People size={20} /></div>
+          <div><h2 className="text-base font-semibold text-base-content">Team weekly timesheet</h2><p className="mt-1 text-xs text-base-content/45">Compare logged hours across the week.</p></div>
         </div>
         
-        <div className="flex items-center gap-4 bg-[#1C253B] rounded-lg p-1 border border-white/5">
-          <button onClick={prevWeek} className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-white/70 hover:text-white">
+        <div className="flex items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 p-1">
+          <button type="button" onClick={prevWeek} className="grid size-8 place-items-center rounded-lg text-base-content/45 transition-colors hover:bg-base-100 hover:text-base-content">
             <ArrowLeft2 size={18} />
           </button>
-          <span className="text-sm font-medium text-white/90 min-w-[140px] text-center">
+          <span className="min-w-[140px] text-center text-xs font-bold text-base-content/60">
             {format(currentWeek, 'MMM dd')} - {format(addDays(currentWeek, 6), 'MMM dd, yyyy')}
           </span>
-          <button onClick={nextWeek} className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-white/70 hover:text-white">
+          <button type="button" onClick={nextWeek} className="grid size-8 place-items-center rounded-lg text-base-content/45 transition-colors hover:bg-base-100 hover:text-base-content">
             <ArrowRight2 size={18} />
           </button>
         </div>
@@ -73,39 +73,39 @@ export const TeamTimesheetView: React.FC = () => {
       <div className="p-0 overflow-x-auto">
         {isLoading ? (
           <div className="p-5 animate-pulse space-y-4">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-white/5 rounded-lg" />)}
+            {[...Array(4)].map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-base-200/70" />)}
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center py-10 text-white/40">
-            <People size={48} className="mx-auto mb-3 opacity-20" />
+          <div className="py-10 text-center text-base-content/40">
+            <People size={40} className="mx-auto mb-3 text-base-content/20" />
             <p>No team logs found for this week.</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm text-white/70 min-w-[800px]">
-            <thead className="bg-[#1C253B] text-xs uppercase text-white/50 border-b border-[#2D364D]">
+          <table className="min-w-[800px] w-full text-left text-sm text-base-content/70">
+            <thead className="border-b border-base-content/10 bg-base-200 text-xs uppercase text-base-content/50">
               <tr>
-                <th className="px-6 py-4 font-semibold sticky left-0 bg-[#1C253B] z-10">Team Member</th>
-                <th className="px-6 py-4 font-bold text-emerald-400 text-center">Total</th>
+                <th className="sticky left-0 z-10 bg-base-200 px-6 py-4 font-semibold">Team member</th>
+                <th className="px-6 py-4 text-center font-bold text-success">Total</th>
                 {weekDates.map((date, i) => (
                   <th key={i} className="px-4 py-4 font-semibold text-center">
-                    <div className="text-white/40">{format(date, 'EEE')}</div>
-                    <div className="text-white/80 mt-1">{format(date, 'dd')}</div>
+                    <div className="text-base-content/40">{format(date, 'EEE')}</div>
+                    <div className="mt-1 text-base-content/80">{format(date, 'dd')}</div>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2D364D]">
+            <tbody className="divide-y divide-base-content/10">
               {users.map((user, i) => (
-                <tr key={i} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-6 py-4 sticky left-0 bg-[#171F32] z-10 font-medium text-white/90">
+              <tr key={i} className="transition-colors hover:bg-base-200/60">
+                  <td className="sticky left-0 z-10 bg-base-100 px-6 py-4 font-medium text-base-content/90">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs uppercase">
+                      <div className="grid size-8 place-items-center rounded-full bg-info/10 text-xs font-bold uppercase text-info">
                         {user.name[0]}
                       </div>
                       {user.name}
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-mono font-bold text-emerald-400 text-center bg-white/[0.01]">
+                  <td className="bg-base-200/30 px-6 py-4 text-center font-mono font-bold text-success">
                     {formatDuration(user.total)}
                   </td>
                   {weekDates.map((date, i) => {
@@ -114,9 +114,9 @@ export const TeamTimesheetView: React.FC = () => {
                     return (
                       <td key={i} className="px-4 py-4 text-center font-mono">
                         {seconds > 0 ? (
-                          <span className="text-white/80">{formatDuration(seconds)}</span>
+                          <span className="text-base-content/80">{formatDuration(seconds)}</span>
                         ) : (
-                          <span className="text-white/20">-</span>
+                          <span className="text-base-content/20">-</span>
                         )}
                       </td>
                     );

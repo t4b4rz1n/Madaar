@@ -12,6 +12,7 @@ import {
   Chart21,
   Folder2,
   Calendar,
+  Timer1,
 } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 import type { User as AuthUser } from "../auth/types/authTypes";
@@ -56,6 +57,13 @@ export const drawerItems: DrawerItem[] = [
     link: "standups",
     section: "Workspace",
     icon: <NoteText variant="Outline" />,
+    isPrimary: true,
+  },
+  {
+    title: "Time & Attendance",
+    link: "attendance",
+    section: "Workspace",
+    icon: <Timer1 variant="Outline" />,
     isPrimary: true,
   },
   {

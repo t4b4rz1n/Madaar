@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft2, Logout, Setting2, User, Add, Folder2 } from "iconsax-reactjs";
+import { ArrowLeft2, Logout, Setting2, User, Add } from "iconsax-reactjs";
 import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";

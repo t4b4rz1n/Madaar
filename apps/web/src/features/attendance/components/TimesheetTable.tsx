@@ -1,90 +1,14 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getMyWeeklyTimesheet } from '../api/attendanceApi';
-import { format, subDays, addDays, startOfWeek } from 'date-fns';
-import { Calendar, ArrowLeft2, ArrowRight2, Timer1 } from 'iconsax-reactjs';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { addDays, format, startOfWeek, subDays } from "date-fns";
+import { ArrowLeft2, ArrowRight2, Calendar1, Timer1 } from "iconsax-reactjs";
+import { getMyWeeklyTimesheet } from "../api/attendanceApi";
+
+const formatDuration = (seconds: number) => `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
 
 export const TimesheetTable: React.FC = () => {
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 6 })); // Week starts on Saturday for solar calendar contexts typically, but Date uses Sunday as 0. We'll stick to Date object.
-
-  const { data: timesheet = [], isLoading } = useQuery({
-    queryKey: ['myWeeklyTimesheet', format(currentWeek, 'yyyy-MM-dd')],
-    queryFn: () => getMyWeeklyTimesheet(format(currentWeek, 'yyyy-MM-dd')),
-  });
-
-  const nextWeek = () => setCurrentWeek(addDays(currentWeek, 7));
-  const prevWeek = () => setCurrentWeek(subDays(currentWeek, 7));
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-  };
-
-  const totalWeeklySeconds = timesheet.reduce((acc, curr) => acc + curr.total_seconds, 0);
-
-  return (
-    <div className="bg-[#171F32] border border-[#2D364D] rounded-xl overflow-hidden shadow-lg">
-      <div className="p-5 border-b border-[#2D364D] flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Calendar size={24} className="text-blue-400" />
-          <h2 className="text-lg font-semibold text-white">Weekly Timesheet</h2>
-        </div>
-        
-        <div className="flex items-center gap-4 bg-[#1C253B] rounded-lg p-1 border border-white/5">
-          <button onClick={prevWeek} className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-white/70 hover:text-white">
-            <ArrowLeft2 size={18} />
-          </button>
-          <span className="text-sm font-medium text-white/90 min-w-[140px] text-center">
-            {format(currentWeek, 'MMM dd')} - {format(addDays(currentWeek, 6), 'MMM dd, yyyy')}
-          </span>
-          <button onClick={nextWeek} className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-white/70 hover:text-white">
-            <ArrowRight2 size={18} />
-          </button>
-        </div>
-      </div>
-
-      <div className="p-5">
-        {isLoading ? (
-          <div className="animate-pulse space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-white/5 rounded-lg" />
-            ))}
-          </div>
-        ) : timesheet.length === 0 ? (
-          <div className="text-center py-10 text-white/40">
-            <Timer1 size={48} className="mx-auto mb-3 opacity-20" />
-            <p>No time logged this week.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {timesheet.map((entry, idx) => (
-              <div key={idx} className="flex items-center justify-between p-4 bg-[#1C253B] rounded-lg border border-white/5 hover:border-white/10 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex flex-col items-center justify-center text-blue-400">
-                    <span className="text-xs font-semibold uppercase">{format(new Date(entry.date), 'EEE')}</span>
-                    <span className="text-lg font-bold leading-none">{format(new Date(entry.date), 'dd')}</span>
-                  </div>
-                  <div>
-                    <h3 className="text-white font-medium">{format(new Date(entry.date), 'MMMM d, yyyy')}</h3>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-emerald-400 font-mono tracking-wider">
-                    {formatDuration(entry.total_seconds)}
-                  </p>
-                  <p className="text-xs text-white/40 uppercase tracking-wide">Logged</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="bg-[#1C253B] p-5 border-t border-[#2D364D] flex justify-between items-center">
-        <span className="text-white/60 font-medium">Total Weekly Hours</span>
-        <span className="text-xl font-bold text-white">{formatDuration(totalWeeklySeconds)}</span>
-      </div>
-    </div>
-  );
+  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 6 }));
+  const { data: timesheet = [], isLoading } = useQuery({ queryKey: ["myWeeklyTimesheet", format(currentWeek, "yyyy-MM-dd")], queryFn: () => getMyWeeklyTimesheet(format(currentWeek, "yyyy-MM-dd")) });
+  const total = timesheet.reduce((sum, entry) => sum + entry.total_seconds, 0);
+  return <section className="madaar-surface overflow-hidden rounded-[26px] border border-base-content/10 bg-base-100"><div className="flex flex-col gap-3 border-b border-base-content/10 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"><div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Calendar1 size={20} /></div><div><h2 className="font-semibold">Weekly timesheet</h2><p className="mt-1 text-xs text-base-content/45">Your saved time, grouped by day.</p></div></div><div className="flex items-center gap-2 rounded-xl bg-base-200/70 p-1"><button type="button" onClick={() => setCurrentWeek(subDays(currentWeek, 7))} className="grid size-8 place-items-center rounded-lg text-base-content/45 hover:bg-base-100 hover:text-base-content" aria-label="Previous week"><ArrowLeft2 size={16} /></button><span className="min-w-32 text-center text-xs font-bold text-base-content/60">{format(currentWeek, "MMM d")} – {format(addDays(currentWeek, 6), "MMM d, yyyy")}</span><button type="button" onClick={() => setCurrentWeek(addDays(currentWeek, 7))} className="grid size-8 place-items-center rounded-lg text-base-content/45 hover:bg-base-100 hover:text-base-content" aria-label="Next week"><ArrowRight2 size={16} /></button></div></div><div className="p-5 sm:p-6">{isLoading ? <div className="space-y-3">{[1, 2, 3, 4].map((item) => <div key={item} className="h-14 animate-pulse rounded-xl bg-base-200/70" />)}</div> : timesheet.length === 0 ? <div className="rounded-2xl border border-dashed border-base-content/10 px-5 py-12 text-center text-sm text-base-content/45"><Timer1 size={28} className="mx-auto mb-3 text-base-content/25" /><p>No time logged this week.</p><p className="mt-1 text-xs">Start a timer or add a manual log to see it here.</p></div> : <div className="space-y-2">{timesheet.map((entry, index) => <div key={`${entry.date}-${index}`} className="flex items-center justify-between rounded-xl border border-base-content/8 bg-base-200/45 px-4 py-3"><div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><span className="text-[10px] font-bold uppercase">{format(new Date(entry.date), "EEE")}</span><span className="text-sm font-semibold leading-none">{format(new Date(entry.date), "dd")}</span></div><span className="text-sm font-semibold text-base-content/70">{format(new Date(entry.date), "MMMM d, yyyy")}</span></div><span className="text-sm font-bold tabular-nums text-base-content">{formatDuration(entry.total_seconds)}</span></div>)}</div>}</div><div className="flex items-center justify-between border-t border-base-content/10 bg-base-200/40 px-5 py-4 sm:px-6"><span className="text-xs font-bold uppercase tracking-wider text-base-content/45">Week total</span><span className="text-lg font-semibold tabular-nums text-primary">{formatDuration(total)}</span></div></section>;
 };

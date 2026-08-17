@@ -1,115 +1,18 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { checkIn, checkOut, getTodayAttendance } from '../api/attendanceApi';
-import { useAttendanceStore } from '../store/useAttendanceStore';
-import { format } from 'date-fns';
-import { Login, Logout, Timer1 } from 'iconsax-reactjs';
-import { toast } from 'sonner';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { Login, Logout, TickCircle, Timer1 } from "iconsax-reactjs";
+import { toast } from "sonner";
+import { checkIn, checkOut, getTodayAttendance } from "../api/attendanceApi";
+import { useAttendanceStore } from "../store/useAttendanceStore";
 
 export const CheckInOut: React.FC = () => {
   const queryClient = useQueryClient();
   const { activeOrganizationId } = useAttendanceStore();
-
-  const { data: todayAttendance, isLoading } = useQuery({
-    queryKey: ['todayAttendance'],
-    queryFn: getTodayAttendance,
-  });
-
-  const checkInMutation = useMutation({
-    mutationFn: (orgId: string) => checkIn(orgId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todayAttendance'] });
-      toast.success('Checked in successfully!');
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to check in');
-    }
-  });
-
-  const checkOutMutation = useMutation({
-    mutationFn: () => checkOut(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todayAttendance'] });
-      queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
-      toast.success('Checked out successfully!');
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to check out');
-    }
-  });
-
-  if (isLoading) {
-    return <div className="animate-pulse h-32 bg-[#171F32] rounded-xl" />;
-  }
-
-  const isCheckedIn = !!todayAttendance?.check_in;
-  const isCheckedOut = !!todayAttendance?.check_out;
-
-  const handleCheckIn = () => {
-    if (!activeOrganizationId) {
-      toast.error('Please select an organization first.');
-      return;
-    }
-    checkInMutation.mutate(activeOrganizationId);
-  };
-
-  return (
-    <div className="bg-[#171F32] border border-[#2D364D] rounded-xl p-6 flex flex-col md:flex-row items-center justify-between shadow-lg">
-      <div className="flex items-center gap-4 mb-4 md:mb-0">
-        <div className="w-14 h-14 rounded-full bg-blue-500/10 flex items-center justify-center">
-          <Timer1 size={28} className="text-blue-400" />
-        </div>
-        <div>
-          <h2 className="text-white text-lg font-semibold">Today's Attendance</h2>
-          <p className="text-white/60 text-sm">
-            {format(new Date(), 'EEEE, MMMM d, yyyy')}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-6">
-        <div className="text-center">
-          <p className="text-white/50 text-xs mb-1 uppercase font-semibold">Check In</p>
-          <p className="text-white font-medium text-lg">
-            {todayAttendance?.check_in ? format(new Date(todayAttendance.check_in), 'HH:mm') : '--:--'}
-          </p>
-        </div>
-        
-        <div className="h-10 w-px bg-white/10" />
-
-        <div className="text-center">
-          <p className="text-white/50 text-xs mb-1 uppercase font-semibold">Check Out</p>
-          <p className="text-white font-medium text-lg">
-            {todayAttendance?.check_out ? format(new Date(todayAttendance.check_out), 'HH:mm') : '--:--'}
-          </p>
-        </div>
-
-        <div className="ml-4 flex gap-3">
-          {!isCheckedIn ? (
-            <button
-              onClick={handleCheckIn}
-              disabled={checkInMutation.isPending}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95"
-            >
-              <Login size={20} />
-              Check In
-            </button>
-          ) : !isCheckedOut ? (
-            <button
-              onClick={() => checkOutMutation.mutate()}
-              disabled={checkOutMutation.isPending}
-              className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-lg font-medium transition-all shadow-lg shadow-orange-500/20 hover:scale-105 active:scale-95"
-            >
-              <Logout size={20} />
-              Check Out
-            </button>
-          ) : (
-            <div className="px-5 py-2.5 bg-emerald-500/10 text-emerald-400 rounded-lg font-medium border border-emerald-500/20">
-              Work Completed
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const { data: todayAttendance, isLoading } = useQuery({ queryKey: ["todayAttendance"], queryFn: getTodayAttendance });
+  const checkInMutation = useMutation({ mutationFn: (organizationId: string) => checkIn(organizationId), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["todayAttendance"] }); toast.success("Checked in"); }, onError: (error: any) => toast.error(error.response?.data?.detail || error.response?.data?.error || "Could not check in.") });
+  const checkOutMutation = useMutation({ mutationFn: checkOut, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["todayAttendance"] }); toast.success("Checked out"); }, onError: (error: any) => toast.error(error.response?.data?.detail || error.response?.data?.error || "Could not check out.") });
+  if (isLoading) return <div className="h-32 animate-pulse rounded-[26px] bg-base-100" />;
+  const checkedIn = Boolean(todayAttendance?.check_in);
+  const checkedOut = Boolean(todayAttendance?.check_out);
+  return <section className="madaar-surface rounded-[26px] border border-base-content/10 bg-base-100 p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><div className="grid size-11 place-items-center rounded-2xl bg-success/10 text-success"><Timer1 size={23} /></div><div><p className="text-xs font-bold uppercase tracking-[0.15em] text-success">Attendance</p><h2 className="mt-1 text-lg font-semibold">{format(new Date(), "EEEE, MMMM d")}</h2><p className="mt-1 text-xs text-base-content/50">Record when your working day starts and ends.</p></div></div><div className="flex items-center gap-4"><div><p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">In</p><p className="mt-1 text-lg font-semibold">{todayAttendance?.check_in ? format(new Date(todayAttendance.check_in), "HH:mm") : "—"}</p></div><div className="h-9 w-px bg-base-content/10" /><div><p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">Out</p><p className="mt-1 text-lg font-semibold">{todayAttendance?.check_out ? format(new Date(todayAttendance.check_out), "HH:mm") : "—"}</p></div><div className="h-9 w-px bg-base-content/10" />{!checkedIn ? <button type="button" onClick={() => activeOrganizationId ? checkInMutation.mutate(activeOrganizationId) : toast.error("Select an organization first.")} disabled={checkInMutation.isPending} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-success px-4 text-sm font-bold text-success-content hover:bg-success/90 disabled:opacity-50"><Login size={16} /> Check in</button> : !checkedOut ? <button type="button" onClick={() => checkOutMutation.mutate()} disabled={checkOutMutation.isPending} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-error px-4 text-sm font-bold text-error-content hover:bg-error/90 disabled:opacity-50"><Logout size={16} /> Check out</button> : <span className="inline-flex items-center gap-2 rounded-xl bg-success/10 px-3 py-2 text-xs font-bold text-success"><TickCircle size={16} /> Day complete</span>}</div></div></section>;
 };

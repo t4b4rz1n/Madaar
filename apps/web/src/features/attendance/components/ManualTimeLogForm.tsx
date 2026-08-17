@@ -1,136 +1,26 @@
-import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createManualLog } from '../api/attendanceApi';
-import { AddSquare } from 'iconsax-reactjs';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AddSquare, Clock } from "iconsax-reactjs";
+import { toast } from "sonner";
+import { createManualLog } from "../api/attendanceApi";
+import type { Task } from "../../tasks/types";
 
-export const ManualTimeLogForm: React.FC<{ taskId?: string | number; onSuccess?: () => void }> = ({ taskId, onSuccess }) => {
+export const ManualTimeLogForm: React.FC<{ taskId?: string | number; tasks?: Task[]; onSuccess?: () => void }> = ({ taskId, tasks = [], onSuccess }) => {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({
-    task: taskId || '',
-    hours: '',
-    minutes: '',
-    description: '',
-  });
-
+  const [formData, setFormData] = useState({ task: taskId?.toString() || "", hours: "", minutes: "", description: "" });
   const mutation = useMutation({
-    mutationFn: (data: any) => createManualLog(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myWeeklyTimesheet'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success('Time logged successfully');
-      setFormData({ task: taskId || '', hours: '', minutes: '', description: '' });
-      onSuccess?.();
-    },
-    onError: (err: any) => {
-      const data = err.response?.data;
-      if (data) {
-        if (data.error) return toast.error(data.error);
-        if (data.detail) return toast.error(data.detail);
-        if (typeof data === 'object') {
-          const firstKey = Object.keys(data)[0];
-          if (firstKey && Array.isArray(data[firstKey])) {
-            return toast.error(data[firstKey][0]);
-          }
-        }
-      }
-      toast.error('Failed to log time');
-    }
+    mutationFn: (data: { task: string | number; start_time: string; end_time: string; description?: string }) => createManualLog(data as any),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["myWeeklyTimesheet"] }); queryClient.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Time logged successfully"); setFormData({ task: taskId?.toString() || "", hours: "", minutes: "", description: "" }); onSuccess?.(); },
+    onError: (error: any) => toast.error(error.response?.data?.detail || error.response?.data?.error || "Could not log time."),
   });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.task || (!formData.hours && !formData.minutes)) {
-      toast.error('Please enter the time duration');
-      return;
-    }
-    
-    const h = Number(formData.hours) || 0;
-    const m = Number(formData.minutes) || 0;
-    if (h === 0 && m === 0) {
-      toast.error('Time duration must be greater than 0');
-      return;
-    }
-
-    const totalMs = (h * 3600000) + (m * 60000);
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const hours = Number(formData.hours) || 0;
+    const minutes = Number(formData.minutes) || 0;
+    if (!formData.task || hours < 0 || minutes < 0 || (hours === 0 && minutes === 0)) { toast.error("Choose a task and enter a duration."); return; }
     const end = new Date();
-    const start = new Date(end.getTime() - totalMs);
-
-    mutation.mutate({
-      task: formData.task,
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      description: formData.description,
-    });
+    const start = new Date(end.getTime() - ((hours * 60 + minutes) * 60_000));
+    mutation.mutate({ task: formData.task, start_time: start.toISOString(), end_time: end.toISOString(), description: formData.description.trim() });
   };
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-[#1C253B] p-5 rounded-xl border border-white/5">
-      <div className="flex items-center gap-2 mb-4">
-        <AddSquare size={20} className="text-emerald-400" />
-        <h3 className="text-white font-semibold">Log Time Manually</h3>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        {!taskId && (
-          <div className="col-span-1 md:col-span-2">
-            <label className="block text-xs text-white/50 mb-1">Task ID</label>
-            <input
-              type="number"
-              value={formData.task}
-              onChange={(e) => setFormData({ ...formData, task: e.target.value })}
-              className="w-full bg-[#171F32] border border-white/10 rounded-lg p-2.5 text-white text-sm outline-none focus:border-blue-500"
-              placeholder="e.g. 12"
-              required
-            />
-          </div>
-        )}
-        
-        <div>
-          <label className="block text-xs text-white/50 mb-1">Hours</label>
-          <input
-            type="number"
-            min="0"
-            value={formData.hours}
-            onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-            className="w-full bg-[#171F32] border border-white/10 rounded-lg p-2.5 text-white text-sm outline-none focus:border-blue-500"
-            placeholder="e.g. 2"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-xs text-white/50 mb-1">Minutes</label>
-          <input
-            type="number"
-            min="0"
-            max="59"
-            value={formData.minutes}
-            onChange={(e) => setFormData({ ...formData, minutes: e.target.value })}
-            className="w-full bg-[#171F32] border border-white/10 rounded-lg p-2.5 text-white text-sm outline-none focus:border-blue-500"
-            placeholder="e.g. 30"
-          />
-        </div>
-        
-        <div className="col-span-1 md:col-span-2">
-          <label className="block text-xs text-white/50 mb-1">Description (Optional)</label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full bg-[#171F32] border border-white/10 rounded-lg p-2.5 text-white text-sm outline-none focus:border-blue-500 resize-none h-20"
-            placeholder="What did you work on?"
-          />
-        </div>
-      </div>
-      
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm"
-        >
-          {mutation.isPending ? 'Saving...' : 'Save Log'}
-        </button>
-      </div>
-    </form>
-  );
+  return <form onSubmit={submit} className="madaar-surface rounded-[26px] border border-base-content/10 bg-base-100 p-5 sm:p-6"><div className="flex items-start gap-3"><div className="grid size-10 place-items-center rounded-xl bg-secondary/10 text-secondary"><AddSquare size={20} /></div><div><h2 className="text-base font-semibold">Add time manually</h2><p className="mt-1 text-xs text-base-content/50">Use this when you forgot to start the timer.</p></div></div><div className="mt-5 space-y-4"><label className="block"><span className="mb-2 block text-xs font-bold uppercase tracking-wider text-base-content/45">Task</span><select required value={formData.task} onChange={(event) => setFormData({ ...formData, task: event.target.value })} disabled={Boolean(taskId) || tasks.length === 0} className="select select-bordered h-11 w-full rounded-xl bg-base-200/60 text-sm font-semibold"><option value="">Choose a task...</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.key} · {task.title}</option>)}</select></label><div className="grid grid-cols-2 gap-3"><label className="block"><span className="mb-2 block text-xs font-bold uppercase tracking-wider text-base-content/45">Hours</span><input type="number" min="0" value={formData.hours} onChange={(event) => setFormData({ ...formData, hours: event.target.value })} className="input input-bordered h-11 w-full rounded-xl bg-base-200/60" placeholder="0" /></label><label className="block"><span className="mb-2 block text-xs font-bold uppercase tracking-wider text-base-content/45">Minutes</span><input type="number" min="0" max="59" value={formData.minutes} onChange={(event) => setFormData({ ...formData, minutes: event.target.value })} className="input input-bordered h-11 w-full rounded-xl bg-base-200/60" placeholder="30" /></label></div><label className="block"><span className="mb-2 block text-xs font-bold uppercase tracking-wider text-base-content/45">Note <span className="font-normal normal-case tracking-normal">(optional)</span></span><textarea value={formData.description} onChange={(event) => setFormData({ ...formData, description: event.target.value })} className="textarea textarea-bordered min-h-20 w-full resize-y rounded-xl bg-base-200/60 text-sm" placeholder="What did you work on?" /></label><button type="submit" disabled={mutation.isPending || !formData.task || tasks.length === 0} className="motion-interactive inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 text-sm font-bold text-secondary-content hover:bg-secondary/90 disabled:opacity-50"><Clock size={17} />{mutation.isPending ? "Saving..." : "Save time log"}</button>{tasks.length === 0 && <p className="text-xs text-warning">Create or select a task before logging time.</p>}</div></form>;
 };

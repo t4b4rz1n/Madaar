@@ -96,6 +96,10 @@ export const toggleChecklistItem = async (itemId: number, isCompleted: boolean):
   return (data as any).data ?? data;
 };
 
+export const deleteChecklistItem = async (itemId: string | number): Promise<void> => {
+  await ApiService.delete(`/tasks/checklist-items/${itemId}/`);
+};
+
 // Comments
 export const getTaskComments = async (taskId: string | number): Promise<TaskComment[]> => {
   const res = await ApiService.get<PaginatedResponse<TaskComment> | TaskComment[]>('/tasks/comments/', { params: { task: taskId } });

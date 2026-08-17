@@ -49,15 +49,15 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[#171F32] border border-[#2D364D] rounded-xl overflow-hidden shadow-lg">
-      <div className="p-5 border-b border-[#2D364D] flex items-center gap-3">
-        <Calendar size={24} className="text-purple-400" />
-        <h2 className="text-lg font-semibold text-white">Request Time Off</h2>
+    <form onSubmit={handleSubmit} className="madaar-surface overflow-hidden rounded-[26px] border border-base-content/10 bg-base-100 shadow-sm">
+      <div className="flex items-center gap-3 border-b border-base-content/10 p-5 sm:p-6">
+        <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Calendar size={20} /></div>
+        <div><h2 className="text-base font-semibold text-base-content">Request time off</h2><p className="mt-1 text-xs text-base-content/45">Plan leave and keep your team informed.</p></div>
       </div>
       
-      <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 sm:p-6">
         <div className="col-span-1 md:col-span-2">
-          <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-wide font-semibold">Leave Type</label>
+          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-base-content/45">Leave type</label>
           <div className="flex flex-wrap gap-3">
             {[
               { id: 'vacation', label: 'Vacation' },
@@ -65,7 +65,7 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
               { id: 'hourly', label: 'Hourly Leave' },
               { id: 'overtime', label: 'Overtime' },
             ].map(type => (
-              <label key={type.id} className={`flex-1 min-w-[120px] p-3 rounded-lg border cursor-pointer transition-all ${formData.request_type === type.id ? 'bg-purple-500/20 border-purple-500 text-purple-300' : 'bg-[#1C253B] border-white/5 text-white/70 hover:bg-white/5'}`}>
+              <label key={type.id} className={`min-w-[120px] flex-1 cursor-pointer rounded-xl border p-3 transition-all ${formData.request_type === type.id ? 'border-primary/35 bg-primary/10 text-primary' : 'border-base-content/10 bg-base-200/60 text-base-content/60 hover:bg-base-200'}`}>
                 <input
                   type="radio"
                   name="request_type"
@@ -84,46 +84,46 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
         </div>
 
         <div>
-          <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-wide font-semibold">Start Date & Time</label>
+          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-base-content/45">Start date &amp; time</label>
           <input
             type="datetime-local"
             value={formData.start_datetime}
             onChange={(e) => setFormData({ ...formData, start_datetime: e.target.value })}
-            className="w-full bg-[#1C253B] border border-white/10 rounded-lg p-3 text-white text-sm outline-none focus:border-purple-500 transition-colors"
+            className="h-11 w-full rounded-xl border border-base-content/10 bg-base-200/60 px-3 text-sm text-base-content outline-none transition-colors focus:border-primary/40"
             required
           />
         </div>
         
         <div>
-          <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-wide font-semibold">End Date & Time</label>
+          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-base-content/45">End date &amp; time</label>
           <input
             type="datetime-local"
             value={formData.end_datetime}
             onChange={(e) => setFormData({ ...formData, end_datetime: e.target.value })}
-            className="w-full bg-[#1C253B] border border-white/10 rounded-lg p-3 text-white text-sm outline-none focus:border-purple-500 transition-colors"
+            className="h-11 w-full rounded-xl border border-base-content/10 bg-base-200/60 px-3 text-sm text-base-content outline-none transition-colors focus:border-primary/40"
             required
           />
         </div>
 
         <div className="col-span-1 md:col-span-2">
-          <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-wide font-semibold">Reason / Note</label>
+          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-base-content/45">Reason / note</label>
           <div className="relative">
-            <Note size={18} className="absolute top-3 left-3 text-white/40" />
+            <Note size={17} className="absolute left-3 top-3 text-base-content/35" />
             <textarea
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-              className="w-full bg-[#1C253B] border border-white/10 rounded-lg p-3 pl-10 text-white text-sm outline-none focus:border-purple-500 resize-none h-24 transition-colors"
+              className="min-h-24 w-full resize-none rounded-xl border border-base-content/10 bg-base-200/60 p-3 pl-10 text-sm text-base-content outline-none transition-colors focus:border-primary/40"
               placeholder="Provide a reason for your request..."
             />
           </div>
         </div>
       </div>
       
-      <div className="p-5 border-t border-[#2D364D] flex justify-end">
+      <div className="flex justify-end border-t border-base-content/10 p-5 sm:p-6">
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-all shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95"
+          className="motion-interactive rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-content shadow-lg shadow-primary/15 hover:bg-primary/90 disabled:opacity-50"
         >
           {mutation.isPending ? 'Submitting...' : 'Submit Request'}
         </button>
