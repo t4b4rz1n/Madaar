@@ -1,42 +1,42 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* 🎨 MAIN THEME CONFIGURATION */
+/* Madaar design system — phase zero */
 @plugin "daisyui/theme" {
   name: "light";
   default: true;
   color-scheme: "light";
 
   /* Backgrounds */
-  --color-base-100: oklch(100% 0 0);
-  --color-base-200: oklch(98% 0 0);
-  --color-base-300: oklch(95% 0 0);
-  --color-base-content: oklch(21% 0.006 285.885);
+  --color-base-100: #ffffff;
+  --color-base-200: #f6f7f9;
+  --color-base-300: #e9edf2;
+  --color-base-content: #182230;
 
   /* Brand Colors */
-  --color-primary: #38b6ff;
+  --color-primary: #0a84ff;
   --color-primary-content: #ffffff;
-  --color-secondary: #4a90a4;
+  --color-secondary: #5e6ad2;
   --color-secondary-content: #ffffff;
-  --color-accent: #00d1b2;
+  --color-accent: #14b8a6;
   --color-accent-content: #ffffff;
-  --color-neutral: #1f2937;
+  --color-neutral: #273142;
   --color-neutral-content: #ffffff;
 
   /* Functional Colors */
-  --color-info: #1da1f2;
+  --color-info: #0a84ff;
   --color-info-content: #ffffff;
-  --color-success: #22c55e;
+  --color-success: #34c759;
   --color-success-content: #ffffff;
-  --color-warning: #f59e0b;
+  --color-warning: #ff9f0a;
   --color-warning-content: #111111;
-  --color-error: #ef4444;
+  --color-error: #ff453a;
   --color-error-content: #ffffff;
 
   /* Shape Settings */
-  --radius-selector: 0.5rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
+  --radius-selector: 0.625rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -44,42 +44,42 @@
   --noise: 0;
 }
 
-/* 🌙 DARK THEME - ORGANIZATIONAL / CLEAN / PREMIUM */
+/* Dark mode keeps the same hierarchy with darker surfaces, not pure black. */
 @plugin "daisyui/theme" {
   name: "dark";
   prefersdark: true;
   color-scheme: "dark";
 
   /* Backgrounds */
-  --color-base-100: oklch(18% 0.02 255);
-  --color-base-200: oklch(16% 0.018 255);
-  --color-base-300: oklch(13% 0.016 255);
-  --color-base-content: oklch(96% 0.01 250);
+  --color-base-100: #1c2028;
+  --color-base-200: #151922;
+  --color-base-300: #0f131a;
+  --color-base-content: #f5f7fa;
 
   /* Brand Colors */
-  --color-primary: #38b6ff;
+  --color-primary: #64b5ff;
   --color-primary-content: #ffffff;
-  --color-secondary: #7dd3fc;
+  --color-secondary: #a9b0ff;
   --color-secondary-content: #082f49;
-  --color-accent: #22c55e;
+  --color-accent: #63d7c8;
   --color-accent-content: #052e16;
-  --color-neutral: #0f172a;
+  --color-neutral: #0f131a;
   --color-neutral-content: #e2e8f0;
 
   /* Functional Colors */
-  --color-info: #38bdf8;
+  --color-info: #64b5ff;
   --color-info-content: #082f49;
-  --color-success: #22c55e;
+  --color-success: #63d483;
   --color-success-content: #052e16;
-  --color-warning: #f59e0b;
+  --color-warning: #ffb340;
   --color-warning-content: #111827;
-  --color-error: #f87171;
+  --color-error: #ff6961;
   --color-error-content: #450a0a;
 
   /* Shape Settings */
-  --radius-selector: 0.5rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.75rem;
+  --radius-selector: 0.625rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -92,6 +92,43 @@
    (AuthLayout, Platforms, ContactCards) added here for reusability.
 */
 @theme {
+  /* Color */
+  --color-madaar-canvas: #f6f7f9;
+  --color-madaar-surface: #ffffff;
+  --color-madaar-surface-muted: #eef1f5;
+  --color-madaar-ink: #182230;
+  --color-madaar-ink-muted: #687385;
+  --color-madaar-border: #e1e6ed;
+  --color-madaar-brand: #0a84ff;
+  --color-madaar-brand-soft: #e8f3ff;
+
+  /* Spacing — 4px base scale */
+  --spacing-madaar-1: 0.25rem;
+  --spacing-madaar-2: 0.5rem;
+  --spacing-madaar-3: 0.75rem;
+  --spacing-madaar-4: 1rem;
+  --spacing-madaar-5: 1.25rem;
+  --spacing-madaar-6: 1.5rem;
+  --spacing-madaar-8: 2rem;
+  --spacing-madaar-10: 2.5rem;
+  --spacing-madaar-12: 3rem;
+  --spacing-madaar-16: 4rem;
+
+  /* Radius */
+  --radius-madaar-sm: 0.625rem;
+  --radius-madaar-md: 0.875rem;
+  --radius-madaar-lg: 1.25rem;
+  --radius-madaar-xl: 1.5rem;
+  --radius-madaar-pill: 9999px;
+
+  /* Shadows */
+  --shadow-madaar-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px rgb(15 23 42 / 0.04);
+  --shadow-madaar-raised: 0 8px 28px rgb(15 23 42 / 0.08);
+  --shadow-madaar-floating: 0 16px 48px rgb(15 23 42 / 0.14);
+
+  /* Typography */
+  --font-madaar-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+
   /* Social Media Brand Colors (found in platforms.tsx) */
   --color-telegram-bg: #d6eef9;
   --color-telegram-text: #34aadf;
@@ -119,11 +156,36 @@
   --color-auth-grad-2-end: #f7fbff;
 }
 
-/* Font Setting */
+/* Runtime tokens for components and motion */
+:root {
+  --madaar-font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+  --madaar-duration-fast: 120ms;
+  --madaar-duration-standard: 180ms;
+  --madaar-duration-slow: 280ms;
+  --madaar-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --madaar-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  --madaar-focus-ring: 0 0 0 3px rgb(10 132 255 / 0.28);
+  --madaar-sidebar-width: 16.5rem;
+  --madaar-sidebar-collapsed-width: 4.25rem;
+}
+
+[data-theme="dark"] {
+  --color-madaar-canvas: #151922;
+  --color-madaar-surface: #1c2028;
+  --color-madaar-surface-muted: #252b35;
+  --color-madaar-ink: #f5f7fa;
+  --color-madaar-ink-muted: #a5adba;
+  --color-madaar-border: #343b47;
+  --color-madaar-brand: #64b5ff;
+  --color-madaar-brand-soft: #1d3850;
+  --madaar-focus-ring: 0 0 0 3px rgb(100 181 255 / 0.34);
+}
+
+/* Font setting */
 *,
 *::after,
 *::before {
-  font-family: "Vazirmatn", sans-serif;
+  font-family: var(--madaar-font-sans);
 }
 html,
 body,
@@ -132,19 +194,69 @@ body,
 }
 
 body {
-  transition:
-    background-color 180ms ease,
-    color 180ms ease;
+  margin: 0;
+  background: var(--color-madaar-canvas);
+  color: var(--color-madaar-ink);
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
 }
 
-*,
-*::before,
-*::after {
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--madaar-focus-ring);
+}
+
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Opt-in motion prevents global transitions from fighting drag, scroll and focus. */
+.motion-interactive {
   transition:
-    background-color 180ms ease,
-    color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease;
+    color var(--madaar-duration-fast) var(--madaar-ease-standard),
+    background-color var(--madaar-duration-fast) var(--madaar-ease-standard),
+    border-color var(--madaar-duration-fast) var(--madaar-ease-standard),
+    box-shadow var(--madaar-duration-standard) var(--madaar-ease-standard),
+    transform var(--madaar-duration-standard) var(--madaar-ease-emphasized);
+}
+
+.motion-surface {
+  transition:
+    background-color var(--madaar-duration-standard) var(--madaar-ease-standard),
+    border-color var(--madaar-duration-standard) var(--madaar-ease-standard),
+    box-shadow var(--madaar-duration-standard) var(--madaar-ease-standard);
+}
+
+.madaar-surface {
+  background: var(--color-madaar-surface);
+  border: 1px solid var(--color-madaar-border);
+  border-radius: var(--radius-madaar-lg);
+  box-shadow: var(--shadow-madaar-card);
+}
+
+.madaar-glass {
+  background: color-mix(in srgb, var(--color-madaar-surface) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-madaar-border) 76%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 /* Custom Scrollbar */
@@ -156,9 +268,9 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--color-base-content) 18%, transparent);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--color-base-content) 28%, transparent);
 }

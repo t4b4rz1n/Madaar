@@ -17,6 +17,7 @@ export type DrawerItem = {
   headerTitle?: string;
   link: string;
   icon: React.ReactNode;
+  section: "Workspace" | "Organization" | "Administration" | "Support" | "Account";
   staffOnly?: boolean;
   permission?: string;
   requiresOrgAdmin?: boolean;
@@ -26,63 +27,74 @@ export const drawerItems: DrawerItem[] = [
   {
     title: "Dashboard",
     link: "dashboard",
+    section: "Workspace",
     icon: <Category variant="Outline" />,
   },
   {
     title: "Tasks",
     link: "tasks",
+    section: "Workspace",
     icon: <TaskSquare variant="Outline" />,
   },
   {
     title: "Automations",
     link: "automations",
+    section: "Administration",
     icon: <Flash variant="Outline" />,
     requiresOrgAdmin: true,
   },
   {
     title: "Roles Management",
     link: "roles",
+    section: "Administration",
     icon: <ShieldSecurity size="20" />,
     permission: "roles.manage", // تغییر از staffOnly به کنترل مبتنی بر پرمیشن
   },
   {
     title: "Users Management",
     link: "users",
+    section: "Administration",
     icon: <People variant="Outline" />,
     permission: "users.view", // تغییر به کنترل مبتنی بر پرمیشن
   },
   {
     title: "Discounts",
     link: "discounts",
+    section: "Administration",
     icon: <DiscountShape variant="Outline" />,
     permission: "discounts.manage", // تغییر به کنترل مبتنی بر پرمیشن
   },
   {
     title: "Notifications",
     link: "notifications",
+    section: "Support",
     icon: <Notification variant="Outline" />,
     permission: "notifications.view", // اضافه کردن این خط برای کنترل در سایدبار
   },
   {
     title: "Tickets",
     link: "tickets",
+    section: "Support",
     icon: <Ticket variant="Outline" />,
     permission: "tickets.view", // اینم اضافه کن که اصولی بشه (چون سارا تیکت رو داشت)
   },
   {
     title: "Profile",
     link: "profile",
+    section: "Account",
     icon: <User variant="Outline" />,
   },
   {
     title: "Teams Management",
     link: "teams",
+    section: "Organization",
     icon: <TeamsIcon variant="Outline" />,
     permission: "teams.view",
   },
   {
     title: "Daily Standups",
     link: "standups",
+    section: "Workspace",
     icon: <NoteText variant="Outline" />,
   },
 ];

@@ -1,10 +1,16 @@
 import { motion } from "framer-motion";
 import { ArrowRight2, HamburgerMenu } from "iconsax-reactjs";
 import { Link } from "react-router-dom";
+import ThemeToggle from "../../components/ThemeToggle";
+import { motionTokens } from "../../core/config/designTokens";
 
 const headerVariants = {
   hidden: { y: -100, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { duration: 0.4 } },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: motionTokens.duration.slow },
+  },
 };
 
 export interface Breadcrumb {
@@ -23,15 +29,15 @@ export const Header = ({ onMenuClick, breadcrumbs }: HeaderProps) => {
       variants={headerVariants}
       initial="hidden"
       animate="visible"
-      className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-[19.5px] bg-base-100/80 backdrop-blur-lg border-b border-base-content/10"
+      className="madaar-glass sticky top-0 z-30 flex min-h-[72px] items-center justify-between px-4 sm:px-8"
     >
       <div className="flex items-center gap-2">
         <motion.button
           onClick={onMenuClick}
-          className="lg:hidden btn btn-ghost btn-circle text-base-content"
+          className="motion-interactive btn btn-ghost btn-circle text-base-content lg:hidden"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          aria-label="Open Menu"
+          aria-label="Open navigation"
         >
           <HamburgerMenu />
         </motion.button>
@@ -45,7 +51,7 @@ export const Header = ({ onMenuClick, breadcrumbs }: HeaderProps) => {
               {index < breadcrumbs.length - 1 ? (
                 <Link
                   to={crumb.path}
-                  className="font-semibold text-base-content/60 hover:text-primary transition-colors"
+                  className="motion-interactive font-semibold text-base-content/55 hover:text-primary"
                 >
                   {crumb.title}
                 </Link>
@@ -56,15 +62,14 @@ export const Header = ({ onMenuClick, breadcrumbs }: HeaderProps) => {
               )}
 
               {index < breadcrumbs.length - 1 && (
-                <ArrowRight2
-                  size="16"
-                  className="text-base-content/40 mx-1 sm:mx-2"
-                />
+                  <ArrowRight2 size="16" className="mx-1 text-base-content/35 sm:mx-2" />
               )}
             </div>
           ))}
         </nav>
       </div>
+
+      <ThemeToggle />
     </motion.header>
   );
 };

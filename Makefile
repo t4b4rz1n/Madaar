@@ -12,10 +12,22 @@ help:
 	@echo "  make worker-up   Start worker profile"
 
 up:
-	$(DOCKER_COMPOSE) up
+	$(DOCKER_COMPOSE) up -d
+	@echo ""
+	@echo "🚀 Madaar services are up and running:"
+	@echo "  🌐 Web (Frontend): http://localhost:3000"
+	@echo "  🔌 API (Backend):  http://localhost:8000"
+	@echo "  📦 MinIO Console:  http://localhost:9001"
+	@echo ""
 
 up-build:
-	$(DOCKER_COMPOSE) up --build
+	$(DOCKER_COMPOSE) up --build -d
+	@echo ""
+	@echo "🚀 Madaar services are built and running:"
+	@echo "  🌐 Web (Frontend): http://localhost:3000"
+	@echo "  🔌 API (Backend):  http://localhost:8000"
+	@echo "  📦 MinIO Console:  http://localhost:9001"
+	@echo ""
 
 down:
 	$(DOCKER_COMPOSE) down

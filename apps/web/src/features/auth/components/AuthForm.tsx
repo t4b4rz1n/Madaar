@@ -3,6 +3,7 @@ import {
   type FieldValues,
   type UseFormRegister,
   type FieldErrors,
+  type UseFormHandleSubmit,
 } from "react-hook-form";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -25,9 +26,7 @@ interface AuthFormProps {
   footerLinkText?: string;
   isLoading?: boolean;
   register: UseFormRegister<FieldValues>;
-  handleSubmit: (
-    handler: SubmitHandler<FieldValues>,
-  ) => (e?: React.BaseSyntheticEvent) => Promise<void>;
+  handleSubmit: UseFormHandleSubmit<any>;
   errors: FieldErrors<FieldValues>;
 }
 

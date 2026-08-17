@@ -7,15 +7,16 @@ import { usePermissions } from "../auth/hooks/usePermissions"; // ایمپورت
 import { drawerItems } from "./DrawerItems";
 import { useLayoutStore } from "./store/layoutStore";
 import logoUrl from "/images/base-logo1.png";
+import { motionTokens } from "../../core/config/designTokens";
 
 const sidebarVariants = {
   expanded: {
-    width: "16rem",
-    transition: { duration: 0.3 },
+    width: "var(--madaar-sidebar-width)",
+    transition: { duration: motionTokens.duration.slow },
   },
   collapsed: {
-    width: "4rem",
-    transition: { duration: 0.3 },
+    width: "var(--madaar-sidebar-collapsed-width)",
+    transition: { duration: motionTokens.duration.slow },
   },
 };
 
@@ -42,9 +43,8 @@ export const Sidebar = () => {
     useLayoutStore();
   const logout = useLogout();
 
-  const renderNavItems = () =>
-    drawerItems
-      .filter((item) => {
+  const renderNavItems = () => {
+    const visibleItems = drawerItems.filter((item) => {
         // ۱. اگر آیتم فقط برای staff باشد و کاربر staff نباشد، فیلتر می‌شود
         if (item.staffOnly && !isStaff) return false;
 
@@ -58,8 +58,27 @@ export const Sidebar = () => {
         }
 
         return true;
-      })
-      .map((item, index) => {
+      });
+
+    const sections = [
+      "Workspace",
+      "Organization",
+      "Administration",
+      "Support",
+      "Account",
+    ] as const;
+
+    return sections.flatMap((section) => {
+      const sectionItems = visibleItems.filter((item) => item.section === section);
+      if (sectionItems.length === 0) return [];
+
+      return [
+        <li key={`${section}-heading`} className="px-3 pb-1 pt-5 first:pt-1">
+          <span className={isCollapsed ? "sr-only" : "text-[0.66rem] font-bold uppercase tracking-[0.12em] text-base-content/40"}>
+            {section}
+          </span>
+        </li>,
+        ...sectionItems.map((item, index) => {
         const isDashboardItem = item.link === "dashboard";
         const itemLink = isDashboardItem && isStaff ? "admin" : item.link;
         const itemTitle =
@@ -82,14 +101,14 @@ export const Sidebar = () => {
             <Link
               to={`/${itemLink}`}
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-200 h-12 overflow-hidden ${
+              className={`motion-interactive flex h-11 items-center gap-3 overflow-hidden rounded-xl px-3 ${
                 isActive
-                  ? "bg-primary text-primary-content shadow-md shadow-primary/20"
-                  : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
+                  ? "bg-primary/10 text-primary"
+                  : "text-base-content/65 hover:bg-base-200/80 hover:text-base-content"
               }`}
               title={isCollapsed ? itemTitle : ""}
             >
-              <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+              <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center ${isActive ? "text-primary" : "text-base-content/60"}`}>
                 {item.icon}
               </div>
 
@@ -100,7 +119,7 @@ export const Sidebar = () => {
                     initial="collapsed"
                     animate="expanded"
                     exit="collapsed"
-                    className="font-medium whitespace-nowrap"
+                    className="whitespace-nowrap text-sm font-semibold"
                   >
                     {itemTitle}
                   </motion.span>
@@ -109,7 +128,10 @@ export const Sidebar = () => {
             </Link>
           </motion.li>
         );
-      });
+        }),
+      ];
+    });
+  };
 
   return (
     <>
@@ -120,7 +142,7 @@ export const Sidebar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -128,11 +150,11 @@ export const Sidebar = () => {
       <motion.aside
         variants={sidebarVariants}
         animate={isCollapsed ? "collapsed" : "expanded"}
-        className={`fixed lg:relative top-0 left-0 h-full bg-base-100 shadow-xl z-50 flex flex-col ${
+        className={`fixed left-0 top-0 z-50 flex h-full flex-col border-r border-base-content/8 bg-base-100/95 shadow-xl backdrop-blur-xl lg:relative ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 transition-transform duration-300 ease-in-out border-r border-base-content/10`}
+        } transition-transform duration-300 ease-in-out lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between p-4 h-[63px] border-b border-base-content/10">
+        <div className="flex h-[72px] items-center justify-between border-b border-base-content/8 px-4">
           <AnimatePresence>
             {!isCollapsed && (
               <motion.img
@@ -147,7 +169,7 @@ export const Sidebar = () => {
           </AnimatePresence>
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex btn btn-ghost btn-sm btn-circle text-base-content/60 hover:text-primary"
+            className="motion-interactive btn btn-ghost btn-sm btn-circle text-base-content/55 hover:bg-base-200 hover:text-primary"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
             <ArrowLeft2
@@ -158,16 +180,15 @@ export const Sidebar = () => {
           </button>
         </div>
 
-        <nav className="flex-1 p-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-base-300">
+        <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4 scrollbar-thin scrollbar-thumb-base-300">
           <ul className="space-y-1">{renderNavItems()}</ul>
         </nav>
 
-        <div className="p-2 border-t border-base-content/10">
+        <div className="border-t border-base-content/8 p-2">
           <div className="dropdown dropdown-top w-full">
-            <motion.div
-              tabIndex={0}
-              role="button"
-              className={`w-full flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-base-200 transition-colors ${
+            <motion.button
+              type="button"
+              className={`motion-interactive flex w-full cursor-pointer border-0 bg-transparent p-2 text-start items-center gap-3 rounded-xl hover:bg-base-200 ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
@@ -200,7 +221,7 @@ export const Sidebar = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </motion.button>
 
             <ul
               tabIndex={0}
