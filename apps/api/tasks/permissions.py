@@ -103,8 +103,8 @@ def extract_project_id(obj_or_request):
         p_id = obj_or_request.query_params.get(
             "project"
         ) or obj_or_request.query_params.get("project_id")
-        if p_id:
-            return p_id
+        if p_id and str(p_id).strip().isdigit():
+            return str(p_id).strip()
 
     if hasattr(obj_or_request, "method") and obj_or_request.method in [
         "POST",
