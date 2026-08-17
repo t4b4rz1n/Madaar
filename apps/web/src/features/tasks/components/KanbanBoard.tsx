@@ -481,7 +481,7 @@ export const KanbanBoard: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex h-10 w-48 items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-3 text-base-content/45 focus-within:border-primary/40 sm:w-60">
               <SearchNormal1 size={16} />
-              <input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search tasks" className="w-full bg-transparent text-xs font-semibold text-base-content outline-none placeholder:text-base-content/35" />
+              <input aria-label="Search tasks" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search tasks" className="w-full bg-transparent text-xs font-semibold text-base-content outline-none placeholder:text-base-content/35" />
             </label>
             <button type="button" onClick={() => { const next = !focusMode; setFocusMode(next); if (next && !focusedTaskId) setFocusedTaskId(focusTask?.id || null); }} className={`motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold ${focusMode ? 'border-primary/30 bg-primary/10 text-primary' : 'border-base-content/10 text-base-content/55 hover:border-primary/30 hover:text-primary'}`}>
               <span className="text-sm">◉</span>{focusMode ? 'Exit focus' : 'Focus mode'}
@@ -536,9 +536,9 @@ export const KanbanBoard: React.FC = () => {
                       {columnTasks.length}
                     </span>
                   </div>
-                  <div className="cursor-pointer rounded p-1 text-base-content/30 transition-colors hover:bg-base-200 hover:text-base-content/80">
+                  <span aria-hidden="true" className="rounded p-1 text-base-content/30">
                     <More size={16} />
-                  </div>
+                  </span>
                 </div>
 
                 <div className="flex flex-col gap-2 overflow-y-auto rounded-lg">

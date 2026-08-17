@@ -20,6 +20,8 @@ export const CommandMenu = ({
 }: CommandMenuProps) => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -66,12 +68,32 @@ export const CommandMenu = ({
       return;
     }
 
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const focusableSelector = 'button:not([disabled]), input:not([disabled]), [role="option"]';
+    const handleTab = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(focusableSelector);
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
     requestAnimationFrame(() => inputRef.current?.focus());
+    window.addEventListener("keydown", handleTab);
 
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleTab);
+      previousActiveElement.current?.focus();
     };
   }, [isOpen]);
 
@@ -122,6 +144,7 @@ export const CommandMenu = ({
           }}
         >
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Command menu"

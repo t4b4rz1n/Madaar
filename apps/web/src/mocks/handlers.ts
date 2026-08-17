@@ -8,6 +8,8 @@ import type { Ticket, TicketFormData } from "../features/tickets/types";
 import { getApiUrl } from "../core/api/config";
 import type { TeamFormData, SquadFormData } from "../features/teams/types";
 import type { EmployeeDashboard } from "../features/dashboard/types";
+import type { ManagerDashboard, ManagerMemberDetail } from "../features/dashboard/types";
+import type { TimeOffRequest } from "../features/attendance/types";
 
 const apiUrl = getApiUrl();
 
@@ -103,6 +105,60 @@ export const handlers = [
 
     return HttpResponse.json({ status: true, message: "Success", data: dashboard });
   }),
+
+  http.get(`${apiUrl}/reports/manager/dashboard/`, () => {
+    const dashboard: ManagerDashboard = {
+      team_member_count: 6,
+      task_stats: [
+        { status_code: "todo", status_name: "To do", count: 12 },
+        { status_code: "doing", status_name: "In progress", count: 7 },
+        { status_code: "review", status_name: "Review", count: 4 },
+        { status_code: "done", status_name: "Done", count: 18 },
+      ],
+      overdue_summary: {
+        total_overdue: 3,
+        by_member: [{ username: "sarah_k", first_name: "Sarah", count: 2 }],
+      },
+      work_hours: [
+        { user_id: "member-1", username: "sarah_k", first_name: "Sarah", last_name: "Kerrigan", total_seconds: 108000, total_logs: 12 },
+        { user_id: "member-2", username: "jim_raynor", first_name: "Jim", last_name: "Raynor", total_seconds: 86400, total_logs: 10 },
+      ],
+      members_attendance: [],
+      project_summary: [
+        { id: "project-1", name: "Madaar Web", status: "active", budget: "24000", budget_currency: "USD", deadline: new Date(Date.now() + 12 * 86400000).toISOString(), active_member_count: 4, total_tasks: 24, done_tasks: 15, total_time_seconds: 194400 },
+        { id: "project-2", name: "Mobile launch", status: "active", budget: "18000", budget_currency: "USD", deadline: new Date(Date.now() - 2 * 86400000).toISOString(), active_member_count: 3, total_tasks: 14, done_tasks: 4, total_time_seconds: 108000 },
+      ],
+    };
+    return HttpResponse.json({ status: true, message: "Success", data: dashboard });
+  }),
+
+  http.get(`${apiUrl}/reports/manager/members/`, () => {
+    const members: ManagerMemberDetail[] = [
+      { id: "member-1", username: "sarah_k", first_name: "Sarah", last_name: "Kerrigan", email: "sarah.k@example.com", total_tasks: 9, done_tasks: 6, overdue_tasks: 2, week_seconds: 108000 },
+      { id: "member-2", username: "jim_raynor", first_name: "Jim", last_name: "Raynor", email: "jim.r@example.com", total_tasks: 7, done_tasks: 5, overdue_tasks: 0, week_seconds: 86400 },
+      { id: "member-3", username: "nova_terra", first_name: "Nova", last_name: "Terra", email: "nova@example.com", total_tasks: 5, done_tasks: 2, overdue_tasks: 1, week_seconds: 64800 },
+    ];
+    return HttpResponse.json({ status: true, message: "Success", data: members });
+  }),
+
+  http.get(`${apiUrl}/attendance/timeoff-requests/`, () => {
+    const request: TimeOffRequest = {
+      id: "leave-1",
+      user: "member-3",
+      user_detail: { id: 3, username: "nova_terra", email: "nova@example.com", first_name: "Nova", last_name: "Terra" },
+      organization: "org-1",
+      request_type: "vacation",
+      start_datetime: new Date(Date.now() + 3 * 86400000).toISOString(),
+      end_datetime: new Date(Date.now() + 5 * 86400000).toISOString(),
+      reason: "A short break after the mobile launch milestone.",
+      status: "pending",
+      created_at: new Date().toISOString(),
+    };
+    return HttpResponse.json({ status: true, message: "Success", data: { results: [request] } });
+  }),
+
+  http.post(`${apiUrl}/attendance/timeoff-requests/:id/approve/`, () => HttpResponse.json({ status: true, message: "Request approved", data: {} })),
+  http.post(`${apiUrl}/attendance/timeoff-requests/:id/reject/`, () => HttpResponse.json({ status: true, message: "Request rejected", data: {} })),
 
   http.post(`${apiUrl}/auth/login/`, async ({ request }) => {
     interface LoginBody {

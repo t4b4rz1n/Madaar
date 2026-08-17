@@ -26,14 +26,14 @@ export const TaskManagementPage: React.FC = () => {
   return (
     <div className="flex h-[calc(100vh-theme(spacing.16))] -m-6 flex-col bg-base-200">
       {/* Top Navigation Bar */}
-      <div className="relative z-50 flex items-center justify-between border-b border-base-content/10 bg-base-100/90 px-4 py-2 backdrop-blur-xl">
+      <div className="relative z-50 flex flex-wrap items-center justify-between gap-2 border-b border-base-content/10 bg-base-100/90 px-3 py-2 backdrop-blur-xl sm:px-4">
         {/* Left side: Project selector + Board tabs */}
         <div className="flex items-center gap-1">
           <GlobalProjectSelector />
 
           {/* Board tabs */}
           {activeProjectId && boards && boards.length > 0 && (
-            <div className="flex items-center gap-1 ml-2">
+            <div className="ml-2 flex min-w-0 max-w-[48vw] items-center gap-1 overflow-x-auto">
               <div className="w-px h-6 bg-base-300 mx-1"></div>
               {boards.map(board => (
                 <button
@@ -66,7 +66,7 @@ export const TaskManagementPage: React.FC = () => {
             className="btn btn-sm btn-outline gap-2 border-base-300 text-base-content/80 hover:bg-base-200 hover:border-base-300 hover:text-base-content"
           >
             <Edit2 size="16" />
-            Daily Standup
+            <span className="hidden sm:inline">Daily Standup</span>
           </button>
 
           {activeBoardId && (
@@ -120,7 +120,7 @@ export const TaskManagementPage: React.FC = () => {
               <DependencyGraph />
             </div>
           ) : (
-            <div className="h-full overflow-hidden bg-[#0F172A]">
+            <div className="h-full overflow-hidden bg-base-100">
               <AttendancePage />
             </div>
           )

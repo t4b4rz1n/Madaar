@@ -94,17 +94,17 @@ export const createTimeOffRequest = async (data: Partial<TimeOffRequest>): Promi
   return res as unknown as TimeOffRequest;
 };
 
-export const approveTimeOffRequest = async (id: number): Promise<TimeOffRequest> => {
+export const approveTimeOffRequest = async (id: string | number): Promise<TimeOffRequest> => {
   const res = await ApiService.post<TimeOffRequest>(`/attendance/timeoff-requests/${id}/approve/`);
   return res as unknown as TimeOffRequest;
 };
 
-export const rejectTimeOffRequest = async (id: number, manager_note: string): Promise<TimeOffRequest> => {
+export const rejectTimeOffRequest = async (id: string | number, manager_note: string): Promise<TimeOffRequest> => {
   const res = await ApiService.post<TimeOffRequest>(`/attendance/timeoff-requests/${id}/reject/`, { manager_note });
   return res as unknown as TimeOffRequest;
 };
 
-export const cancelTimeOffRequest = async (id: number): Promise<void> => {
+export const cancelTimeOffRequest = async (id: string | number): Promise<void> => {
   await ApiService.post(`/attendance/timeoff-requests/${id}/cancel/`);
 };
 

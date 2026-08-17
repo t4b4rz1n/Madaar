@@ -63,3 +63,64 @@ export interface EmployeeDashboard {
     project_id: string;
   }>;
 }
+
+export interface ManagerTaskStat {
+  status_code: string | null;
+  status_name: string | null;
+  count: number;
+}
+
+export interface ManagerWorkHours {
+  user_id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  total_seconds: number;
+  total_logs: number;
+}
+
+export interface ManagerAttendance {
+  user_id: string;
+  username: string;
+  first_name: string;
+  check_in: string | null;
+  check_out: string | null;
+  is_remote: boolean;
+}
+
+export interface ManagerProjectSummary {
+  id: string;
+  name: string;
+  status: string;
+  budget: string | number | null;
+  budget_currency: string;
+  deadline: string | null;
+  active_member_count: number;
+  total_tasks: number;
+  done_tasks: number;
+  total_time_seconds: number | null;
+}
+
+export interface ManagerDashboard {
+  team_member_count: number;
+  task_stats: ManagerTaskStat[];
+  overdue_summary: {
+    total_overdue: number;
+    by_member: Array<{ username: string; first_name: string; count: number }>;
+  };
+  work_hours: ManagerWorkHours[];
+  members_attendance: ManagerAttendance[];
+  project_summary: ManagerProjectSummary[];
+}
+
+export interface ManagerMemberDetail {
+  id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  total_tasks: number;
+  done_tasks: number;
+  overdue_tasks: number;
+  week_seconds: number | null;
+}

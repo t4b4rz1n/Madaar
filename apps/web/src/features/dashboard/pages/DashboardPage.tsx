@@ -22,7 +22,7 @@ import {
 } from '../api/dashboardApi';
 
 const EmptyState = ({ message }: { message: string }) => (
-  <div className="flex flex-col items-center justify-center h-full min-h-[140px] text-base-content/50 font-mono text-xs py-8">
+  <div className="flex min-h-[140px] flex-col items-center justify-center py-8 text-xs text-base-content/50">
     <Activity size="20" className="text-base-content/40 mb-2" />
     {message}
   </div>
@@ -104,21 +104,21 @@ const StatCard = ({ title, value, icon: Icon, delay, subtitle }: { title: string
     initial={{ opacity: 0, y: 15 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.4 }}
-    className="bg-base-100 border border-base-content/10 rounded-2xl p-6 shadow-xs hover:border-primary/20 hover:shadow-md transition-all duration-300 relative overflow-hidden group"
+    className="madaar-surface motion-interactive relative overflow-hidden p-5 group hover:border-primary/20 hover:shadow-madaar-raised"
   >
     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-primary/10 transition-all duration-500"></div>
     <div className="flex items-center justify-between relative z-10">
       <div>
-        <p className="text-base-content/50 text-xs font-mono tracking-widest uppercase mb-2">{title}</p>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-base-content/50">{title}</p>
         <div className="flex items-baseline gap-2">
           {typeof value === 'string' ? (
-            <h3 className="text-base-content text-3xl font-bold font-mono tracking-tight">{value}</h3>
+            <h3 className="text-3xl font-black tracking-tight text-base-content">{value}</h3>
           ) : (
-            <div className="text-3xl font-bold font-mono tracking-tight text-base-content">{value}</div>
+            <div className="text-3xl font-black tracking-tight text-base-content">{value}</div>
           )}
         </div>
         {subtitle && (
-          <div className="text-base-content/60 text-[10px] font-mono mt-2 opacity-85 leading-normal">
+          <div className="mt-2 text-[11px] leading-normal text-base-content/60 opacity-85">
             {subtitle}
           </div>
         )}
@@ -156,17 +156,17 @@ function ChartCard<T extends string = 'daily' | 'weekly' | 'monthly'>({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
-      className={`bg-base-100 border border-base-content/10 rounded-2xl p-5 shadow-xs hover:border-primary/20 transition-all duration-300 flex flex-col ${className}`}
+      className={`madaar-surface motion-surface flex flex-col p-5 hover:border-primary/20 ${className}`}
     >
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-base-content/90 font-mono text-sm tracking-wider uppercase flex items-center gap-2 font-semibold">
-          <div className="w-2 h-2 rounded-full bg-primary shadow-xs animate-pulse"></div>
+        <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.1em] text-base-content/90">
+          <div className="h-2 w-2 rounded-full bg-primary shadow-xs"></div>
           {title}
         </h3>
         <div className="flex items-center gap-3">
           {extraHeader}
           {activeFilter && onFilterChange && (
-            <div className="flex bg-base-200 p-0.5 rounded-lg border border-base-content/5 text-[10px] font-mono">
+      <div className="flex rounded-lg border border-base-content/5 bg-base-200 p-0.5 text-[10px]">
               {filterOptions.map((filter) => (
                 <button
                   key={filter}
@@ -553,28 +553,28 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[75vh] font-mono text-xs text-base-content/50 space-y-4">
+      <div className="flex min-h-[75vh] flex-col items-center justify-center space-y-4 text-xs text-base-content/50">
         <div className="relative w-10 h-10">
           <div className="absolute inset-0 rounded-full border-2 border-primary/20"></div>
           <div className="absolute inset-0 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
         </div>
-        <p className="animate-pulse tracking-widest uppercase">Loading Admin Dashboard...</p>
+        <p className="font-bold uppercase tracking-[0.14em]">Loading admin dashboard…</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8 min-h-screen bg-base-200/30">
+    <div className="mx-auto min-h-screen max-w-[1500px] space-y-7 bg-base-200/30 p-4 sm:p-6">
       {/* Page Header */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="flex justify-between items-center"
+        className="flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <div className="w-1.5 h-8 bg-primary shadow-xs" />
-          <h1 className="text-2xl font-bold text-base-content font-mono tracking-wide">
-            Admin Overview Dashboard <span className="text-primary animate-pulse">_</span>
+          <div className="h-10 w-1 rounded-full bg-primary shadow-xs" />
+          <h1 className="text-2xl font-black tracking-tight text-base-content sm:text-3xl">
+            Admin overview
           </h1>
         </div>
       </motion.div>

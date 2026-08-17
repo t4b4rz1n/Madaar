@@ -39,6 +39,7 @@ export const Header = ({
     >
       <div className="flex min-w-0 items-center gap-2">
         <motion.button
+          type="button"
           onClick={onMenuClick}
           className="motion-interactive btn btn-ghost btn-circle text-base-content lg:hidden"
           whileHover={{ scale: 1.1 }}

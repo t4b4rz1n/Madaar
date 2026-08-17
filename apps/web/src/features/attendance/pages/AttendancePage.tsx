@@ -31,21 +31,21 @@ export const AttendancePage: React.FC = () => {
   const isManager = user?.is_staff || false; // Ideally check org role
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar bg-[#0F172A] text-white p-6 md:p-8">
+    <div className="flex h-full flex-col overflow-y-auto bg-base-200 p-5 text-base-content custom-scrollbar md:p-8">
       {/* Header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Time & Attendance</h1>
-          <p className="text-white/50 text-sm">Manage your working hours, timesheets, and time off requests.</p>
+          <h1 className="mb-2 text-2xl font-bold text-base-content">Time & Attendance</h1>
+          <p className="text-sm text-base-content/50">Manage your working hours, timesheets, and time off requests.</p>
         </div>
         
         {organizations.length > 1 && (
           <div className="flex items-center gap-3">
-            <span className="text-xs text-white/50 uppercase tracking-wider font-semibold">Organization</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Organization</span>
             <select 
               value={activeOrganizationId || ''} 
               onChange={(e) => setActiveOrganization(e.target.value)}
-              className="bg-[#171F32] border border-[#2D364D] rounded-lg px-4 py-2 text-sm text-white/90 outline-none focus:border-blue-500"
+              className="rounded-xl border border-base-content/10 bg-base-100 px-4 py-2 text-sm text-base-content/90 outline-none focus:border-primary"
             >
               {organizations.map((org: any) => (
                 <option key={org.id} value={org.id}>{org.name}</option>
@@ -56,35 +56,35 @@ export const AttendancePage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex overflow-x-auto custom-scrollbar border-b border-[#2D364D] mb-8">
+      <div className="mb-8 flex overflow-x-auto border-b border-base-content/10 custom-scrollbar">
         <button 
           onClick={() => setActiveTab('overview')}
-          className={`px-6 py-3 text-sm font-medium transition-all relative ${activeTab === 'overview' ? 'text-blue-400' : 'text-white/50 hover:text-white/80'}`}
+          className={`relative px-6 py-3 text-sm font-medium transition-all ${activeTab === 'overview' ? 'text-primary' : 'text-base-content/50 hover:text-base-content/80'}`}
         >
           Overview
-          {activeTab === 'overview' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-full shadow-[0_-2px_10px_rgba(59,130,246,0.5)]" />}
+          {activeTab === 'overview' && <div className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-primary" />}
         </button>
         <button 
           onClick={() => setActiveTab('timesheet')}
-          className={`px-6 py-3 text-sm font-medium transition-all relative ${activeTab === 'timesheet' ? 'text-blue-400' : 'text-white/50 hover:text-white/80'}`}
+          className={`relative px-6 py-3 text-sm font-medium transition-all ${activeTab === 'timesheet' ? 'text-primary' : 'text-base-content/50 hover:text-base-content/80'}`}
         >
           My Timesheet
-          {activeTab === 'timesheet' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-full shadow-[0_-2px_10px_rgba(59,130,246,0.5)]" />}
+          {activeTab === 'timesheet' && <div className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-primary" />}
         </button>
         <button 
           onClick={() => setActiveTab('timeoff')}
-          className={`px-6 py-3 text-sm font-medium transition-all relative ${activeTab === 'timeoff' ? 'text-purple-400' : 'text-white/50 hover:text-white/80'}`}
+          className={`relative px-6 py-3 text-sm font-medium transition-all ${activeTab === 'timeoff' ? 'text-secondary' : 'text-base-content/50 hover:text-base-content/80'}`}
         >
           Time Off & Holidays
-          {activeTab === 'timeoff' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-purple-500 rounded-t-full shadow-[0_-2px_10px_rgba(168,85,247,0.5)]" />}
+          {activeTab === 'timeoff' && <div className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-secondary" />}
         </button>
         {/* Keeping team tab open for demo, should be controlled by org role */}
         <button 
           onClick={() => setActiveTab('team')}
-          className={`px-6 py-3 text-sm font-medium transition-all relative ${activeTab === 'team' ? 'text-emerald-400' : 'text-white/50 hover:text-white/80'}`}
+          className={`relative px-6 py-3 text-sm font-medium transition-all ${activeTab === 'team' ? 'text-success' : 'text-base-content/50 hover:text-base-content/80'}`}
         >
           Team Timesheet
-          {activeTab === 'team' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-t-full shadow-[0_-2px_10px_rgba(16,185,129,0.5)]" />}
+          {activeTab === 'team' && <div className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-success" />}
         </button>
       </div>
 

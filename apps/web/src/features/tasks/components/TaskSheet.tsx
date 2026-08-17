@@ -28,6 +28,8 @@ const formatTime = (seconds?: number) => {
 export const TaskSheet: React.FC<TaskSheetProps> = ({ task, onClose, onPatch, onPlayTimer, onStopTimer, focusMode = false }) => {
   const queryClient = useQueryClient();
   const titleRef = useRef<HTMLInputElement>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [priority, setPriority] = useState(task?.priority || 'low');
@@ -44,15 +46,34 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({ task, onClose, onPatch, on
 
   useEffect(() => {
     if (!task) return;
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    const focusableSelector = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href]';
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = sheetRef.current?.querySelectorAll<HTMLElement>(focusableSelector);
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
+    requestAnimationFrame(() => titleRef.current?.focus());
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      previousActiveElement.current?.focus();
     };
   }, [task, onClose]);
 
@@ -92,6 +113,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({ task, onClose, onPatch, on
         onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
       >
         <motion.aside
+          ref={sheetRef}
           role="dialog"
           aria-modal="true"
           aria-label={`Task details: ${task.title}`}
@@ -120,6 +142,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({ task, onClose, onPatch, on
                 onChange={(event) => setTitle(event.target.value)}
                 onBlur={() => title.trim() && title.trim() !== task.title && save({ title: title.trim() })}
                 onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }}
+                dir="auto"
                 className="w-full bg-transparent text-xl font-bold leading-tight text-base-content outline-none placeholder:text-base-content/30 sm:text-2xl"
                 placeholder="Untitled task"
               />
@@ -158,7 +181,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({ task, onClose, onPatch, on
 
             <section className="mb-7">
               <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-bold text-base-content">Description</h3><span className="text-[11px] text-base-content/35">Autosaves on blur</span></div>
-              <textarea value={description} onChange={(event) => setDescription(event.target.value)} onBlur={() => description !== (task.description || '') && save({ description })} placeholder="Add context, links, or acceptance criteria…" className="min-h-32 w-full resize-y rounded-2xl border border-base-content/10 bg-base-200/60 p-4 text-sm leading-6 text-base-content outline-none transition-colors focus:border-primary/40 focus:bg-base-200" />
+              <textarea dir="auto" value={description} onChange={(event) => setDescription(event.target.value)} onBlur={() => description !== (task.description || '') && save({ description })} placeholder="Add context, links, or acceptance criteria…" className="min-h-32 w-full resize-y rounded-2xl border border-base-content/10 bg-base-200/60 p-4 text-sm leading-6 text-base-content outline-none transition-colors focus:border-primary/40 focus:bg-base-200" />
             </section>
 
             <section className="grid grid-cols-2 gap-3">

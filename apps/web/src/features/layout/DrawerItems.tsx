@@ -10,6 +10,7 @@ import {
   People as TeamsIcon,
   TaskSquare,
   NoteText,
+  Chart21,
 } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 import type { User as AuthUser } from "../auth/types/authTypes";
@@ -37,6 +38,13 @@ export const drawerItems: DrawerItem[] = [
     link: "tasks",
     section: "Workspace",
     icon: <TaskSquare variant="Outline" />,
+  },
+  {
+    title: "Manager overview",
+    link: "manager",
+    section: "Workspace",
+    icon: <Chart21 variant="Outline" />,
+    permission: "teams.view",
   },
   {
     title: "Automations",

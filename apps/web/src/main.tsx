@@ -3,6 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "sonner";
+import { MotionConfig } from "framer-motion";
 import { ErrorFallback } from "./components/ErrorFallback";
 import { queryClient } from "./core/config/queryClient";
 import AppRouter from "./core/router/AppRouter";
@@ -41,8 +42,10 @@ enableMocking().finally(() => {
         onReset={() => window.location.reload()}
       >
         <QueryClientProvider client={queryClient}>
-          <AppRouter />
-          <Toaster richColors position="bottom-right" />
+          <MotionConfig reducedMotion="user">
+            <AppRouter />
+            <Toaster richColors position="bottom-right" closeButton />
+          </MotionConfig>
         </QueryClientProvider>
       </ErrorBoundary>
     </React.StrictMode>,

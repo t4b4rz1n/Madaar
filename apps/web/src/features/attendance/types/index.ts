@@ -7,7 +7,7 @@ export interface Organization {
 
 export interface Attendance {
   id: number;
-  user: number;
+  user: string | number;
   user_detail?: User;
   organization?: string;
   date: string;
@@ -33,16 +33,16 @@ export interface TimeLog {
 }
 
 export interface TimeOffRequest {
-  id: number;
-  user: number;
+  id: string | number;
+  user: string | number;
   user_detail?: User;
   organization: string;
-  request_type: 'vacation' | 'sick' | 'hourly' | 'overtime';
+  request_type: 'vacation' | 'sick' | 'hourly' | 'remote' | 'overtime';
   start_datetime: string;
   end_datetime: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
-  approved_by?: number;
+  approved_by?: string | number;
   manager_note?: string;
   created_at: string;
 }

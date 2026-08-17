@@ -76,6 +76,12 @@ export const MainLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-base-200 font-sans text-base-content">
+      <a
+        href="#main-content"
+        className="fixed start-4 top-3 z-[200] -translate-y-24 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-content shadow-lg transition-transform focus:translate-y-0"
+      >
+        Skip to main content
+      </a>
       <Sidebar />
 
       <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -85,7 +91,7 @@ export const MainLayout = () => {
           breadcrumbs={breadcrumbs}
         />
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 sm:px-8 sm:py-7">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 outline-none sm:px-8 sm:py-7">
           <ErrorBoundary FallbackComponent={ErrorFallback}>
             <Outlet />
           </ErrorBoundary>
@@ -101,4 +107,3 @@ export const MainLayout = () => {
     </div>
   );
 };
-

@@ -108,9 +108,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
               `}
             </style>
             <button
+              type="button"
               onClick={handleDoneClick}
               className={`relative mt-0.5 w-[16px] h-[16px] rounded-full transition-all duration-300 flex items-center justify-center ${isActuallyDone || isDone ? 'text-success' : 'border border-base-content/20 hover:border-success/50 hover:bg-success/10'}`}
               title={isActuallyDone ? "Completed" : "Mark as done"}
+              aria-label={isActuallyDone ? "Completed" : `Mark ${task.title} as done`}
             >
               {(isActuallyDone || isDone) ? (
                 <TickCircle size={16} variant="Bulk" />
@@ -139,9 +141,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
         </div>
 
         <button
+          type="button"
           ref={menuTriggerRef}
           onClick={(e) => { e.stopPropagation(); setIsMenuOpen(true); }}
           className="shrink-0 opacity-0 group-hover:opacity-100 p-1 -mr-1 rounded text-base-content/40 hover:bg-base-200 hover:text-base-content/80 transition-colors"
+          aria-label={`Open actions for ${task.title}`}
         >
           <More size={14} />
         </button>
@@ -293,6 +297,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
           {/* Start/Stop Button AT THE END */}
           {task.is_active_timer_running ? (
             <button 
+              type="button"
               onClick={(e) => { e.stopPropagation(); onStopTimer?.(task.id); }}
               className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors p-0.5 rounded hover:bg-red-500/10" 
               title="Stop Timer"
@@ -301,6 +306,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
             </button>
           ) : !isActuallyDone ? (
             <button 
+              type="button"
               onClick={(e) => { e.stopPropagation(); onPlayTimer?.(task.id); }}
               className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors p-0.5 rounded hover:bg-emerald-500/10 opacity-0 group-hover:opacity-100" 
               title="Start Timer"
@@ -315,6 +321,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
             <img
               src={task.assignee_detail.avatar_url || 'https://ui-avatars.com/api/?name=' + task.assignee_detail.first_name + '&background=10B981&color=fff'}
               alt="assignee"
+              loading="lazy"
+              decoding="async"
               className="w-5 h-5 rounded-full border border-[#2D364D] ml-1"
             />
           )}

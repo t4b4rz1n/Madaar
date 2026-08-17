@@ -17,7 +17,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: number) => approveTimeOffRequest(id),
+    mutationFn: (id: string | number) => approveTimeOffRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
       toast.success('Request approved');
@@ -25,7 +25,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
   });
 
   const rejectMutation = useMutation({
-    mutationFn: ({ id, note }: { id: number, note: string }) => rejectTimeOffRequest(id, note),
+    mutationFn: ({ id, note }: { id: string | number, note: string }) => rejectTimeOffRequest(id, note),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
       toast.success('Request rejected');
@@ -33,7 +33,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (id: number) => cancelTimeOffRequest(id),
+    mutationFn: (id: string | number) => cancelTimeOffRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
       toast.success('Request cancelled');
@@ -49,15 +49,15 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
   };
 
   if (!activeOrganizationId) {
-    return <div className="text-white/50 p-5 text-center">Please select an organization to view requests.</div>;
+    return <div className="p-5 text-center text-base-content/50">Please select an organization to view requests.</div>;
   }
 
   return (
-    <div className="bg-[#171F32] border border-[#2D364D] rounded-xl overflow-hidden shadow-lg">
-      <div className="p-5 border-b border-[#2D364D] flex items-center justify-between">
+    <div className="madaar-surface overflow-hidden">
+      <div className="flex items-center justify-between border-b border-base-content/10 p-5">
         <div className="flex items-center gap-3">
           <DocumentText size={24} className="text-purple-400" />
-          <h2 className="text-lg font-semibold text-white">Time Off Requests</h2>
+          <h2 className="text-lg font-semibold text-base-content">Time Off Requests</h2>
         </div>
       </div>
 
@@ -72,8 +72,8 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
             <p>No requests found.</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm text-white/70">
-            <thead className="bg-[#1C253B] text-xs uppercase text-white/50 border-b border-[#2D364D]">
+          <table className="w-full text-start text-sm text-base-content/70">
+            <thead className="border-b border-base-content/10 bg-base-200 text-xs uppercase text-base-content/50">
               <tr>
                 <th className="px-6 py-4 font-semibold">User</th>
                 <th className="px-6 py-4 font-semibold">Type</th>
@@ -82,21 +82,21 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2D364D]">
+            <tbody className="divide-y divide-base-content/10">
               {requests.map(req => (
-                <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={req.id} className="transition-colors hover:bg-base-200/60">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs uppercase">
                         {req.user_detail?.first_name?.[0] || req.user_detail?.username?.[0] || 'U'}
                       </div>
-                      <span className="font-medium text-white/90">{req.user_detail?.first_name || req.user_detail?.username}</span>
+                      <span className="font-medium text-base-content/90">{req.user_detail?.first_name || req.user_detail?.username}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 capitalize font-medium">{req.request_type}</td>
                   <td className="px-6 py-4">
-                    <div className="text-white/90">{format(new Date(req.start_datetime), 'MMM dd, HH:mm')}</div>
-                    <div className="text-xs text-white/40">to {format(new Date(req.end_datetime), 'MMM dd, HH:mm')}</div>
+                    <div className="text-base-content/90">{format(new Date(req.start_datetime), 'MMM dd, HH:mm')}</div>
+                    <div className="text-xs text-base-content/40">to {format(new Date(req.end_datetime), 'MMM dd, HH:mm')}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 text-[11px] uppercase tracking-wider font-bold rounded-full border ${getStatusColor(req.status)}`}>

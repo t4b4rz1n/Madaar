@@ -139,6 +139,7 @@ export const Sidebar = () => {
       </AnimatePresence>
 
       <motion.aside
+        aria-label="Primary navigation"
         variants={sidebarVariants}
         animate={isCollapsed ? "collapsed" : "expanded"}
         className={`fixed left-0 top-0 z-50 flex h-full flex-col border-r border-base-content/8 bg-base-100/95 shadow-xl backdrop-blur-xl lg:relative ${
@@ -204,7 +205,7 @@ export const Sidebar = () => {
                     initial="collapsed"
                     animate="expanded"
                     exit="collapsed"
-                    className="flex-grow text-left overflow-hidden"
+                    className="flex-grow overflow-hidden text-start"
                   >
                     <p className="font-semibold text-sm truncate text-base-content">
                       {user?.username || "User"}
