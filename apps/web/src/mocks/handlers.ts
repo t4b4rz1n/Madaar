@@ -7,6 +7,7 @@ import type { NotificationFormData } from "../features/notifications/types";
 import type { Ticket, TicketFormData } from "../features/tickets/types";
 import { getApiUrl } from "../core/api/config";
 import type { TeamFormData, SquadFormData } from "../features/teams/types";
+import type { EmployeeDashboard } from "../features/dashboard/types";
 
 const apiUrl = getApiUrl();
 
@@ -47,6 +48,62 @@ const createPaginatedResponse = <T>(
 };
 
 export const handlers = [
+  http.get(`${apiUrl}/reports/employee/dashboard/`, () => {
+    const dashboard: EmployeeDashboard = {
+      upcoming_tasks: [
+        {
+          id: "task-today-1",
+          title: "Review the new onboarding flow",
+          priority: "high",
+          due_date: new Date().toISOString(),
+          status_name: "In progress",
+          status_code: "doing",
+          project_name: "Madaar Web",
+          project_id: "project-1",
+        },
+        {
+          id: "task-today-2",
+          title: "Pair with Sarah on API integration",
+          priority: "medium",
+          due_date: null,
+          status_name: "Todo",
+          status_code: "todo",
+          project_name: "Madaar Web",
+          project_id: "project-1",
+        },
+      ],
+      overdue_tasks: [],
+      blocked_tasks: [
+        {
+          id: "task-blocked-1",
+          title: "Waiting for design assets",
+          priority: "medium",
+          due_date: null,
+          status_name: "Blocked",
+          status_code: "blocked",
+          project_name: "Madaar Web",
+          project_id: "project-1",
+        },
+      ],
+      today_standup: null,
+      weekly_time: { total_seconds: 18_900, total_logs: 8 },
+      active_projects: [
+        {
+          project_id: "project-1",
+          project_name: "Madaar Web",
+          project_status: "active",
+          project_deadline: null,
+          allocation_percentage: 80,
+        },
+      ],
+      attendance_today: null,
+      active_timer: null,
+      upcoming_milestones: [],
+    };
+
+    return HttpResponse.json({ status: true, message: "Success", data: dashboard });
+  }),
+
   http.post(`${apiUrl}/auth/login/`, async ({ request }) => {
     interface LoginBody {
       username?: string;
