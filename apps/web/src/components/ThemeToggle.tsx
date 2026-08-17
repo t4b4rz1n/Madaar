@@ -18,7 +18,7 @@ const getInitialTheme = (): ThemeMode => {
 };
 
 const ThemeToggle = () => {
-  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {

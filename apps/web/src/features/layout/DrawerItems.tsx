@@ -11,12 +11,14 @@ import {
   TaskSquare,
   NoteText,
 } from "iconsax-reactjs";
+import type { ReactNode } from "react";
+import type { User as AuthUser } from "../auth/types/authTypes";
 
 export type DrawerItem = {
   title: string;
   headerTitle?: string;
   link: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   section: "Workspace" | "Organization" | "Administration" | "Support" | "Account";
   staffOnly?: boolean;
   permission?: string;
@@ -98,3 +100,14 @@ export const drawerItems: DrawerItem[] = [
     icon: <NoteText variant="Outline" />,
   },
 ];
+
+export const getVisibleDrawerItems = (
+  user: AuthUser | null,
+  hasAllPermissions: (permissions: string[]) => boolean,
+) =>
+  drawerItems.filter((item) => {
+    if (item.staffOnly && !user?.is_staff) return false;
+    if (item.requiresOrgAdmin && !user?.can_manage_automations) return false;
+    if (item.permission && !hasAllPermissions([item.permission])) return false;
+    return true;
+  });

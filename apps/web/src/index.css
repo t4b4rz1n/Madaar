@@ -259,6 +259,21 @@ a,
   }
 }
 
+@media (prefers-reduced-transparency: reduce) {
+  .madaar-glass {
+    background: var(--color-madaar-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .madaar-glass,
+  .madaar-surface {
+    border-color: var(--color-base-content);
+  }
+}
+
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

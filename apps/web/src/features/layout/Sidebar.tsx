@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft2, Logout, Setting2, User } from "iconsax-reactjs";
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLogout } from "../auth/hooks/useAuth";
 import { useAuthStore } from "../auth/store/authStore";
 import { usePermissions } from "../auth/hooks/usePermissions"; // ایمپورت هوک پرمیشن‌ها
-import { drawerItems } from "./DrawerItems";
+import { getVisibleDrawerItems } from "./DrawerItems";
 import { useLayoutStore } from "./store/layoutStore";
 import logoUrl from "/images/base-logo1.png";
 import { motionTokens } from "../../core/config/designTokens";
@@ -43,22 +44,12 @@ export const Sidebar = () => {
     useLayoutStore();
   const logout = useLogout();
 
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname, setSidebarOpen]);
+
   const renderNavItems = () => {
-    const visibleItems = drawerItems.filter((item) => {
-        // ۱. اگر آیتم فقط برای staff باشد و کاربر staff نباشد، فیلتر می‌شود
-        if (item.staffOnly && !isStaff) return false;
-
-        // ۲. اگر آیتم نیاز به مدیریت سازمان داشته باشد
-        if (item.requiresOrgAdmin && !user?.can_manage_automations) return false;
-
-        // ۳. اگر آیتم نیاز به پرمیشن خاصی داشته باشد، آن را بررسی می‌کنیم
-        // (هوک usePermissions خودش به کاربرهای is_staff دسترسی کامل می‌دهد)
-        if (item.permission && !hasAllPermissions([item.permission])) {
-          return false;
-        }
-
-        return true;
-      });
+    const visibleItems = getVisibleDrawerItems(user, hasAllPermissions);
 
     const sections = [
       "Workspace",
@@ -168,8 +159,11 @@ export const Sidebar = () => {
             )}
           </AnimatePresence>
           <button
+            type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="motion-interactive btn btn-ghost btn-sm btn-circle text-base-content/55 hover:bg-base-200 hover:text-primary"
+            className="motion-interactive btn btn-ghost btn-sm btn-circle hidden text-base-content/55 hover:bg-base-200 hover:text-primary lg:flex"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!isCollapsed}
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
             <ArrowLeft2

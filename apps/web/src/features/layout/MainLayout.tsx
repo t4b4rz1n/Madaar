@@ -1,7 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuthStore } from "../auth/store/authStore";
-import { drawerItems } from "./DrawerItems";
+import { usePermissions } from "../auth/hooks/usePermissions";
+import { CommandMenu } from "./CommandMenu";
+import { drawerItems, getVisibleDrawerItems } from "./DrawerItems";
 import type { Breadcrumb } from "./Header";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
@@ -11,8 +13,15 @@ export const MainLayout = () => {
   const { setSidebarOpen } = useLayoutStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const { hasAllPermissions } = usePermissions();
   const isStaff = user?.is_staff === true;
   const { pathname } = useLocation();
+  const [isCommandMenuOpen, setCommandMenuOpen] = useState(false);
+
+  const commandItems = useMemo(
+    () => getVisibleDrawerItems(user, hasAllPermissions),
+    [hasAllPermissions, user],
+  );
 
   const breadcrumbs = useMemo(() => {
     const pathSegments = pathname.split("/").filter((i) => i);
@@ -70,6 +79,7 @@ export const MainLayout = () => {
       <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header
           onMenuClick={() => setSidebarOpen(true)}
+          onCommandMenuClick={() => setCommandMenuOpen(true)}
           breadcrumbs={breadcrumbs}
         />
 
@@ -77,6 +87,13 @@ export const MainLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      <CommandMenu
+        isOpen={isCommandMenuOpen}
+        onOpenChange={setCommandMenuOpen}
+        items={commandItems}
+        isStaff={isStaff}
+      />
     </div>
   );
 };

@@ -10,7 +10,10 @@ import {
   getNotificationHistory,
 } from "../api/notificationsApi";
 
-export const useNotificationHistory = (params: URLSearchParams) => {
+export const useNotificationHistory = (
+  params: URLSearchParams,
+  options?: { enabled?: boolean },
+) => {
   const queryKey = ["notification-history", params.toString()];
   return useQuery({
     queryKey,
@@ -19,6 +22,7 @@ export const useNotificationHistory = (params: URLSearchParams) => {
       return response.data;
     },
     placeholderData: keepPreviousData,
+    enabled: options?.enabled ?? true,
   });
 };
 
