@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { ErrorBoundary } from "react-error-boundary";
+import { ErrorFallback } from "../../components/ErrorFallback";
 import { useAuthStore } from "../auth/store/authStore";
 import { usePermissions } from "../auth/hooks/usePermissions";
 import { CommandMenu } from "./CommandMenu";
@@ -84,7 +86,9 @@ export const MainLayout = () => {
         />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 sm:px-8 sm:py-7">
-          <Outlet />
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 
@@ -97,3 +101,4 @@ export const MainLayout = () => {
     </div>
   );
 };
+

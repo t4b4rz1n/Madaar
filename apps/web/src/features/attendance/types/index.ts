@@ -18,10 +18,10 @@ export interface Attendance {
 }
 
 export interface TimeLog {
-  id: number;
+  id: string | number;
   user: number;
   user_detail?: User;
-  task: number;
+  task: string | number;
   project?: string;
   date: string;
   start_time: string;
