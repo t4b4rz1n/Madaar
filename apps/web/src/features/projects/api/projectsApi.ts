@@ -1,6 +1,6 @@
 import ApiService from "../../../core/api/apiService";
-import { getOrganizations } from "../../attendance/api/attendanceApi";
-import type { Organization } from "../../attendance/types";
+import { getOrganizations } from "../../organizations/api/organizationsApi";
+import type { Organization } from "../../organizations/types";
 import type { Project, ProjectPayload, ProjectStatus } from "../types";
 
 const unwrap = <T>(response: unknown): T => {

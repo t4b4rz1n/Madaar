@@ -109,6 +109,12 @@ export const drawerItems: DrawerItem[] = [
     permission: "teams.view",
   },
   {
+    title: "Organizations",
+    link: "organizations",
+    section: "Organization",
+    icon: <People variant="Outline" />,
+  },
+  {
     title: "Daily Standups",
     link: "standups",
     section: "Workspace",
