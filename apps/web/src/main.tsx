@@ -9,7 +9,7 @@ import AppRouter from "./core/router/AppRouter";
 import "./index.css";
 
 async function enableMocking() {
-  if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK !== "false") {
+  if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === "true") {
     const { worker } = await import("./mocks/browser");
     return worker.start({
       onUnhandledRequest: "bypass",

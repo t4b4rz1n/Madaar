@@ -1394,7 +1394,8 @@ export const handlers = [
         {
           status: false,
           message: "Squad not found",
-          data: {},
+          errors: null,
+          data: null,
         },
         { status: 404 },
       );
@@ -1403,7 +1404,7 @@ export const handlers = [
     return HttpResponse.json({
       status: true,
       message: "Squad deleted successfully",
-      data: {},
+      data: null,
     });
   }),
 ];
