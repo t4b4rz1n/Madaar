@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Add, Briefcase } from "iconsax-reactjs";
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -8,10 +8,11 @@ import { ProjectsGrid } from "../components/ProjectsGrid";
 import { ProjectsTable } from "../components/ProjectsTable";
 import { ProjectsToolbar } from "../components/ProjectsToolbar";
 import { useProjects, useDeleteProject } from "../hooks/useProjects";
-import type { Project } from "../types";
+import type { Project, ProjectListParams, ProjectStatus } from "../types";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 import { CreateEditProjectModal } from "../components/CreateEditProjectModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+
 type ViewMode = "grid" | "table";
 
 const containerVariants = {
@@ -19,42 +20,68 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.08,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0 },
 };
 
 export default function ProjectsListPage() {
+  const shouldReduceMotion = useReducedMotion();
   const { hasAllPermissions } = usePermissions();
-
   const canManageProjects = hasAllPermissions(["projects.manage"]);
   const deleteProjectMutation = useDeleteProject();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // State Management
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
     projectId: string | number | null;
     projectTitle: string;
   }>({ open: false, projectId: null, projectTitle: "" });
+
   const [modalState, setModalState] = useState<{
     open: boolean;
     project: Project | null;
   }>({ open: false, project: null });
 
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  // Memoized Search Query Params
+  const searchQueryParams = useMemo<ProjectListParams>(() => {
+    return {
+      search: searchParams.get("search") || undefined,
+      status: (searchParams.get("status") as ProjectStatus) || undefined,
+    };
+  }, [searchParams]);
 
+  // Fetch Projects Data
   const {
     data: projectsResponse,
     isLoading,
     isFetching,
-  } = useProjects(searchParams);
+  } = useProjects(searchQueryParams);
 
   const showLoading = isLoading || isFetching;
 
+  const projects = useMemo(() => projectsResponse ?? [], [projectsResponse]);
+
+  // Pagination Values
+  const requestedPage = Number(searchParams.get("page")) || 1;
+  const requestedPageSize = Number(searchParams.get("page_size")) || 10;
+  const pageSize = requestedPageSize > 0 ? requestedPageSize : 10;
+  const totalResults = projects.length;
+  const totalPages = Math.ceil(totalResults / pageSize) || 1;
+  const currentPage = Math.min(Math.max(requestedPage, 1), totalPages);
+  const visibleProjects = useMemo(() => {
+    const pageStart = (currentPage - 1) * pageSize;
+    return projects.slice(pageStart, pageStart + pageSize);
+  }, [currentPage, pageSize, projects]);
+
+  // Search & Filter Handlers
   const updateSearchParams = useCallback(
     (key: string, value: string) => {
       setSearchParams((prev) => {
@@ -120,11 +147,6 @@ export default function ProjectsListPage() {
     [setSearchParams],
   );
 
-  const currentPage = projectsResponse?.data?.current_page || 1;
-  const pageSize = Number(searchParams.get("page_size")) || 10;
-  const totalPages = projectsResponse?.data?.total_pages || 1;
-  const totalResults = projectsResponse?.data?.total_results || 0;
-
   const handlePageChange = useCallback(
     (page: number) => updateSearchParams("page", page.toString()),
     [updateSearchParams],
@@ -135,6 +157,7 @@ export default function ProjectsListPage() {
     [updateSearchParams],
   );
 
+  // Modal Actions
   const handleCreateProject = () => {
     setModalState({ open: true, project: null });
   };
@@ -155,8 +178,9 @@ export default function ProjectsListPage() {
       projectTitle: targetProject?.name || "this project",
     });
   };
+
   const handleConfirmDelete = () => {
-    if (deleteModalState.projectId) {
+    if (deleteModalState.projectId !== null) {
       deleteProjectMutation.mutate(deleteModalState.projectId, {
         onSuccess: () => {
           setDeleteModalState({
@@ -169,33 +193,29 @@ export default function ProjectsListPage() {
     }
   };
 
-  const projects = useMemo(
-    () => projectsResponse?.data?.results || [],
-    [projectsResponse?.data?.results],
-  );
-
   return (
     <>
       <motion.div
         variants={containerVariants}
-        initial="hidden"
+        initial={shouldReduceMotion ? false : "hidden"}
         animate="visible"
-        className="bg-base-100 min-h-[calc(100vh-121px)] backdrop-blur-lg border border-base-content/10 rounded-2xl p-4 sm:p-6 flex flex-col"
+        className="madaar-surface flex min-h-[calc(100vh-121px)] min-w-0 flex-col rounded-[28px] border border-base-content/10 bg-base-100 p-4 shadow-sm sm:p-6 lg:p-8"
       >
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
         >
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-base-content">
-              <Briefcase size={28} /> Projects
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-base-content sm:text-3xl">
+              <Briefcase size={30} className="shrink-0 text-primary" />
+              <span className="truncate">Projects</span>
             </h1>
-            <p className="text-base-content/70 mt-1">
+            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-base-content/60">
               Manage, track, and allocate resources for organizational projects.
             </p>
           </div>
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+          <div className="flex w-full flex-col items-stretch gap-2.5 sm:flex-row sm:items-center lg:w-auto lg:justify-end">
             <ViewSwitcher
               viewMode={viewMode}
               setViewMode={setViewMode}
@@ -203,8 +223,9 @@ export default function ProjectsListPage() {
             />
             {canManageProjects && (
               <button
+                type="button"
                 onClick={handleCreateProject}
-                className="btn btn-primary rounded-xl gap-2"
+                className="btn btn-primary min-h-11 w-full gap-2 rounded-xl text-sm shadow-lg shadow-primary/15 sm:w-auto"
               >
                 <Add size={20} />
                 <span>Create Project</span>
@@ -222,31 +243,33 @@ export default function ProjectsListPage() {
           />
         </motion.div>
 
-        {/* Content */}
-        <motion.div variants={itemVariants} className="grow mt-6">
+        {/* Content View */}
+        <motion.div variants={itemVariants} className="mt-6 min-w-0 grow">
           <AnimatePresence mode="wait">
             <motion.div
               key={viewMode}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={
+                shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }
+              }
+              animate={{ opacity: 1, y: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
               className="h-full"
             >
               {viewMode === "table" ? (
                 <ProjectsTable
-                  projects={projects}
+                  projects={visibleProjects}
                   isLoading={showLoading}
                   onEdit={handleEditProject}
-                  onDelete={handleDeleteClick} // <--- تغییر کرد
+                  onDelete={handleDeleteClick}
                   canManage={canManageProjects}
                 />
               ) : (
                 <ProjectsGrid
-                  projects={projects}
+                  projects={visibleProjects}
                   isLoading={showLoading}
                   onEdit={handleEditProject}
-                  onDelete={handleDeleteClick} // <--- تغییر کرد
+                  onDelete={handleDeleteClick}
                   canManage={canManageProjects}
                 />
               )}
@@ -255,7 +278,7 @@ export default function ProjectsListPage() {
         </motion.div>
 
         {/* Pagination */}
-        <motion.div variants={itemVariants} className="mt-auto pt-6">
+        <motion.div variants={itemVariants} className="mt-auto min-w-0 pt-6">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -268,11 +291,14 @@ export default function ProjectsListPage() {
       </motion.div>
 
       {/* Create/Edit Modal */}
-      <CreateEditProjectModal
-        isOpen={canManageProjects && modalState.open}
-        onClose={handleCloseModal}
-        project={modalState.project}
-      />
+      {canManageProjects && (
+        <CreateEditProjectModal
+          isOpen={modalState.open}
+          onClose={handleCloseModal}
+          project={modalState.project}
+        />
+      )}
+
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={deleteModalState.open}

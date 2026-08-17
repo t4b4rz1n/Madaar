@@ -111,12 +111,12 @@ export const ProjectsToolbar = ({
   )?.label;
 
   const buttonBaseClass =
-    "btn btn-ghost rounded-xl hover:bg-primary/10 hover:text-primary border-none";
+    "btn btn-ghost rounded-xl hover:bg-primary/10 hover:text-primary border-none text-xs font-semibold";
 
   const hasActiveFilters = Boolean(statusFilter);
 
   return (
-    <div className="flex w-full flex-col items-center gap-3 rounded-2xl border border-base-content/10 bg-linear-to-r from-base-100 to-base-200/40 p-2 md:flex-row">
+    <div className="madaar-surface flex w-full flex-col items-center gap-3 rounded-2xl border border-base-content/10 bg-base-100 p-2 md:flex-row">
       <div className="grow w-full">
         <InputField
           name="search"
@@ -128,7 +128,7 @@ export const ProjectsToolbar = ({
         />
       </div>
 
-      <div className="flex items-center gap-1 rounded-xl border border-base-content/10 p-1">
+      <div className="flex w-full items-center justify-between gap-1 rounded-xl border border-base-content/10 p-1 sm:w-auto sm:justify-start">
         <div className="relative" ref={filterRef}>
           <button
             type="button"
@@ -149,23 +149,24 @@ export const ProjectsToolbar = ({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="absolute right-0 top-full z-10 mt-2 w-72 rounded-box border border-base-content/10 bg-base-100 p-4 shadow-lg md:left-0 md:right-auto"
+                className="madaar-surface absolute right-0 top-full z-20 mt-2 w-72 rounded-2xl border border-base-content/10 bg-base-100 p-4 shadow-xl md:left-0 md:right-auto"
               >
                 <div className="flex flex-col space-y-4">
                   <label className="form-control w-full">
                     <div className="label pb-1">
-                      <span className="label-text text-xs font-semibold">
+                      <span className="label-text text-xs font-semibold text-base-content">
                         Status
                       </span>
                     </div>
                     <select
-                      className="select select-sm w-full border-base-300 !shadow-none"
+                      className="select select-bordered select-sm w-full rounded-xl bg-base-200/60"
                       value={statusFilter}
                       onChange={(e) => handleStatusFilterChange(e.target.value)}
                     >
                       <option value="">All Statuses</option>
-                      <option value="planning">Planning</option>
-                      <option value="in_progress">In Progress</option>
+                      <option value="draft">Draft</option>
+                      <option value="active">Active</option>
+                      <option value="on_hold">On Hold</option>
                       <option value="completed">Completed</option>
                       <option value="archived">Archived</option>
                     </select>
@@ -181,20 +182,27 @@ export const ProjectsToolbar = ({
             type="button"
             tabIndex={0}
             className={`${buttonBaseClass} flex-nowrap`}
+            aria-label={`Sort projects by ${activeSortLabel}`}
           >
             <Sort size={18} />
-            <span className="mx-1 whitespace-nowrap font-semibold">
+            <span className="mx-1 hidden whitespace-nowrap font-semibold sm:inline">
               {activeSortLabel}
             </span>
           </button>
 
           <ul
             tabIndex={0}
-            className="dropdown-content z-[1] mt-2 w-48 rounded-box border border-base-content/10 bg-base-100 p-2 shadow-lg menu"
+            className="dropdown-content madaar-surface z-20 mt-2 w-48 rounded-2xl border border-base-content/10 bg-base-100 p-2 shadow-xl menu text-xs"
           >
             {sortOptions.map((opt) => (
               <li key={opt.key} onClick={() => handleSortKeyChange(opt.key)}>
-                <a className={sortConfig.key === opt.key ? "active" : ""}>
+                <a
+                  className={
+                    sortConfig.key === opt.key
+                      ? "font-bold text-primary active"
+                      : "text-base-content"
+                  }
+                >
                   {opt.label}
                 </a>
               </li>
@@ -206,6 +214,9 @@ export const ProjectsToolbar = ({
           type="button"
           onClick={toggleSortDirection}
           className={`${buttonBaseClass} btn-circle`}
+          aria-label={`Sort ${
+            sortConfig.dir === "asc" ? "descending" : "ascending"
+          }`}
         >
           {sortConfig.dir === "asc" ? (
             <ArrowUp2 size={18} />

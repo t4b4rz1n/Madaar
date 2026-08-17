@@ -217,7 +217,7 @@ export const Sidebar = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        setActiveProject(project.id);
+                        setActiveProject(String(project.id));
                         navigate("/tasks");
                         setSidebarOpen(false);
                       }}

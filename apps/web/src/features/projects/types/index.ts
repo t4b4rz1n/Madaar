@@ -1,6 +1,13 @@
 // 1. Status Types
 export type ProjectStatus = "draft" | "active" | "on_hold" | "completed" | "archived";
 
+export type ProjectListParams =
+  | URLSearchParams
+  | {
+      search?: string;
+      status?: ProjectStatus;
+    };
+
 // 2. Auxiliary Nested Entities
 export interface ProjectOrganization {
   id: string | number;
@@ -41,6 +48,19 @@ export interface Project {
   milestone_count?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+// 4. Project Payload (DTO for Create / Update)
+export interface ProjectPayload {
+  name: string;
+  description?: string;
+  organization_id?: string | number;
+  prefix?: string;
+  budget?: number | string | null;
+  budget_currency?: string;
+  start_date?: string | null;
+  deadline?: string | null;
+  status?: ProjectStatus;
 }
 
 // 4. Project Members

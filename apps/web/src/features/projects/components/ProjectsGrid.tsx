@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Edit2, Trash2, FolderDot, Calendar } from "lucide-react";
+import { Users, Edit2, Trash2, FolderOpen, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "../types";
 
@@ -11,6 +11,14 @@ interface ProjectsGridProps {
   canManage?: boolean;
 }
 
+const statusStyles: Record<string, string> = {
+  active: "bg-success/12 text-success",
+  draft: "bg-base-200 text-base-content/65",
+  on_hold: "bg-warning/15 text-warning",
+  completed: "bg-info/12 text-info",
+  archived: "bg-error/10 text-error",
+};
+
 const ProjectCard: React.FC<{
   project: Project;
   onEdit?: (project: Project) => void;
@@ -19,110 +27,105 @@ const ProjectCard: React.FC<{
 }> = ({ project, onEdit, onDelete, canManage }) => {
   const navigate = useNavigate();
 
-  const getStatusDisplay = (status: Project["status"]) => {
-    switch (status) {
-      case "draft":
-        return { color: "bg-base-300 text-base-content/70", text: "Draft" };
-      case "active":
-        return { color: "bg-info/15 text-info", text: "Active" };
-      case "on_hold":
-        return { color: "bg-warning/15 text-warning", text: "On Hold" };
-      case "completed":
-        return { color: "bg-success/15 text-success", text: "Completed" };
-      case "archived":
-        return { color: "bg-neutral/15 text-neutral", text: "Archived" };
-      default:
-        return { color: "bg-base-300 text-base-content", text: "Draft" };
-    }
-  };
-
-  const statusInfo = getStatusDisplay(project.status);
   const formattedDate = project.deadline
-    ? new Date(project.deadline).toLocaleDateString("en-US", {
+    ? new Intl.DateTimeFormat("en", {
         month: "short",
         day: "numeric",
         year: "numeric",
-      })
+      }).format(new Date(project.deadline))
     : "No deadline";
 
-  return (
-    <div
-      onClick={() => navigate(`/projects/${project.id}`)}
-      className="flex flex-col bg-base-100 border border-base-300 rounded-2xl p-5 hover:border-primary/50 transition-all cursor-pointer group"
-    >
-      <div className="flex items-center gap-4 mb-5">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 group-hover:scale-105 transition-transform">
-          <FolderDot size={24} />
-        </div>
-        <div className="overflow-hidden">
-          <h3 className="text-base font-bold text-base-content truncate group-hover:text-primary transition-colors">
-            {project.name}
-          </h3>
-          <p className="text-sm text-base-content/50 truncate">
-            Budget: ${project.budget?.toLocaleString() || "0"}
-          </p>
-        </div>
-      </div>
+  const openProject = () => navigate(`/projects/${project.id}`);
 
-      <div className="flex flex-col bg-base-200/50 dark:bg-base-200 rounded-xl p-4 mb-5 flex-grow">
-        <p className="text-sm text-base-content/70 line-clamp-2 mb-4 h-10">
-          {project.description || "No description provided."}
+  return (
+    <article
+      onClick={openProject}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openProject();
+        }
+      }}
+      role="link"
+      tabIndex={0}
+      aria-label={`Open ${project.name}`}
+      className="madaar-surface group rounded-2xl border border-base-content/10 bg-base-100 p-5 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5 cursor-pointer flex flex-col justify-between"
+    >
+      <div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
+              <FolderOpen size={21} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="truncate text-lg font-semibold text-base-content group-hover:text-primary transition-colors">
+                {project.name}
+              </h3>
+              <p className="mt-0.5 truncate text-xs text-base-content/45">
+                Budget: ${Number(project.budget || 0).toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <span
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${statusStyles[project.status] || statusStyles.draft}`}
+          >
+            {project.status.replace("_", " ")}
+          </span>
+        </div>
+
+        <p className="mt-4 min-h-10 line-clamp-2 text-sm leading-6 text-base-content/60">
+          {project.description || "No description added yet."}
         </p>
 
-        <div className="mt-auto">
-          <div className="flex justify-between text-xs text-base-content/60 mb-2 font-medium">
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-base-content/50 mb-1.5 font-medium">
             <span>Progress</span>
             <span>{project.progress_percentage || 0}%</span>
           </div>
           <progress
-            className="progress progress-primary w-full h-1.5 bg-base-300"
+            className="progress progress-primary w-full h-1.5 bg-base-200"
             value={project.progress_percentage || 0}
             max="100"
           />
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1 border-t border-transparent mt-auto">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${statusInfo.color}`}
-            >
-              {statusInfo.text}
-            </span>
-            <span className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-base-200 text-base-content/70 font-medium">
-              <Users size={12} />
-              {project.members_count || 0}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1 text-xs text-base-content/50 ms-1">
-            <Calendar size={12} />
-            <span>Due: {formattedDate}</span>
-          </div>
+      <div className="mt-5 border-t border-base-content/10 pt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 text-xs text-base-content/50">
+          <span className="flex items-center gap-1">
+            <Calendar size={14} /> {formattedDate}
+          </span>
+          <span className="flex items-center gap-1">
+            <Users size={14} /> {project.members_count || 0}
+          </span>
         </div>
 
         {canManage && (
           <div
             className="flex items-center gap-1"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
             <button
+              type="button"
               onClick={() => onEdit?.(project)}
-              className="btn btn-ghost btn-sm btn-square text-base-content/50 hover:text-primary hover:bg-primary/10 rounded-lg"
+              className="btn btn-ghost btn-square btn-sm rounded-lg text-base-content/60 hover:text-primary"
+              aria-label={`Edit ${project.name}`}
             >
               <Edit2 size={16} />
             </button>
             <button
+              type="button"
               onClick={() => onDelete?.(project.id)}
-              className="btn btn-ghost btn-sm btn-square text-base-content/50 hover:text-error hover:bg-error/10 rounded-lg"
+              className="btn btn-ghost btn-square btn-sm rounded-lg text-base-content/60 hover:text-error"
+              aria-label={`Delete ${project.name}`}
             >
               <Trash2 size={16} />
             </button>
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 };
 
@@ -135,11 +138,11 @@ export const ProjectsGrid: React.FC<ProjectsGridProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
-            className="skeleton h-60 w-full rounded-2xl bg-base-200/50"
+            className="h-64 animate-pulse rounded-2xl bg-base-200/70"
           ></div>
         ))}
       </div>
@@ -148,15 +151,21 @@ export const ProjectsGrid: React.FC<ProjectsGridProps> = ({
 
   if (projects.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-base-content/40">
-        <FolderDot size={48} className="mb-4 opacity-20" />
-        <p>No projects found.</p>
+      <div className="madaar-surface rounded-[28px] border border-dashed border-base-content/15 bg-base-100 px-6 py-16 text-center">
+        <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <FolderOpen size={28} />
+        </div>
+        <h2 className="text-xl font-semibold">No projects found</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm text-base-content/55">
+          Try adjusting your search query or filters to find what you are
+          looking for.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {projects.map((project) => (
         <ProjectCard
           key={project.id}

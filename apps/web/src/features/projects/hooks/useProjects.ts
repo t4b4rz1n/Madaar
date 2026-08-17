@@ -13,24 +13,38 @@ import {
   createMilestone,
   getProjectActivities,
 } from "../api/projectsApi";
-import type { CreateProjectDTO, UpdateProjectDTO } from "../types";
+import type {
+  CreateProjectDTO,
+  ProjectListParams,
+  UpdateProjectDTO,
+} from "../types";
 
 // کلیدهای Query Keys برای Caching منظم
 export const projectKeys = {
   all: ["projects"] as const,
   lists: () => [...projectKeys.all, "list"] as const,
-  list: (params?: string) => [...projectKeys.lists(), { params }] as const,
+  list: (params?: ProjectListParams) =>
+    [
+      ...projectKeys.lists(),
+      {
+        params:
+          params instanceof URLSearchParams ? params.toString() : params,
+      },
+    ] as const,
   details: () => [...projectKeys.all, "detail"] as const,
   detail: (id: string | number) => [...projectKeys.details(), id] as const,
-  members: (id: string | number) => [...projectKeys.detail(id), "members"] as const,
-  milestones: (id: string | number) => [...projectKeys.detail(id), "milestones"] as const,
-  activities: (id: string | number) => [...projectKeys.detail(id), "activities"] as const,
+  members: (id: string | number) =>
+    [...projectKeys.detail(id), "members"] as const,
+  milestones: (id: string | number) =>
+    [...projectKeys.detail(id), "milestones"] as const,
+  activities: (id: string | number) =>
+    [...projectKeys.detail(id), "activities"] as const,
 };
 
 // ۱. دریافت لیست پروژه‌ها
-export const useProjects = (params?: URLSearchParams) => {
+export const useProjects = (params?: ProjectListParams) => {
   return useQuery({
-    queryKey: projectKeys.list(params?.toString()),
+    queryKey: projectKeys.list(params),
     queryFn: () => getProjects(params),
   });
 };
@@ -61,11 +75,18 @@ export const useUpdateProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: UpdateProjectDTO }) =>
-      updateProject(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string | number;
+      data: UpdateProjectDTO;
+    }) => updateProject(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(variables.id),
+      });
     },
   });
 };
@@ -127,7 +148,9 @@ export const useAddProjectMember = (projectId: string | number) => {
       allocation_percentage?: number;
     }) => addProjectMember(projectId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.members(projectId),
+      });
     },
   });
 };
@@ -146,10 +169,16 @@ export const useCreateMilestone = (projectId: string | number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { title: string; description?: string; target_date: string; weight?: number }) =>
-      createMilestone(projectId, data),
+    mutationFn: (data: {
+      title: string;
+      description?: string;
+      target_date: string;
+      weight?: number;
+    }) => createMilestone(projectId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.milestones(projectId) });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.milestones(projectId),
+      });
     },
   });
 };

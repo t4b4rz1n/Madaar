@@ -1,1 +1,11 @@
-﻿{"editor.formatOnSave":true,"files.eol":"\n","python.analysis.extraPaths":["apps/api"],"eslint.workingDirectories":["apps/web"]}
+{
+    "editor.formatOnSave": true,
+    "files.eol": "\n",
+    "python.analysis.extraPaths": [
+        "apps/api"
+    ],
+    "eslint.workingDirectories": [
+        "apps/web"
+    ],
+    "remote.autoForwardPortsFallback": 0
+}
