@@ -523,6 +523,31 @@ class TaskService:
             action=Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255),
         )
 
+    @staticmethod
+    @transaction.atomic
+    def reorder_tasks(orders, actor=None):
+        """
+        orders: list of dicts [{'id': uuid, 'order': int}, ...]
+        """
+        task_ids = [item.get("id") for item in orders if item.get("id")]
+        if not task_ids:
+            return
+
+        tasks_dict = {
+            str(t.id): t
+            for t in Task.objects.filter(id__in=task_ids).select_for_update()
+        }
+        tasks_to_update = []
+        for item in orders:
+            task_obj = tasks_dict.get(str(item.get("id")))
+            if task_obj and item.get("order") is not None:
+                task_obj.order = item["order"]
+                tasks_to_update.append(task_obj)
+
+        if tasks_to_update:
+            Task.objects.bulk_update(tasks_to_update, ["order"])
+
+
 
 class ChecklistService:
     """Service layer for Task Checklist items."""

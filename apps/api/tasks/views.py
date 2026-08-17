@@ -446,20 +446,9 @@ class TaskViewSet(viewsets.ModelViewSet):
 
             raise ValidationError({"orders": ["This field is required."]})
 
-        tasks_to_update = []
-        for item in orders:
-            task_id = item.get("id")
-            new_order = item.get("order")
-            if task_id and new_order is not None:
-                task = Task.objects.filter(id=task_id).first()
-                if task:
-                    task.order = new_order
-                    tasks_to_update.append(task)
-
-        if tasks_to_update:
-            Task.objects.bulk_update(tasks_to_update, ["order"])
-
+        TaskService.reorder_tasks(orders, actor=request.user)
         return Response({"status": "success"})
+
 
 
 # Checklist, Comment, Standup ViewSets
