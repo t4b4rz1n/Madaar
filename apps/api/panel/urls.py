@@ -20,4 +20,3 @@ urlpatterns = [
     path("discounts", discount_code_list, name="staff-discount-list-no-slash"),
     path("", include("panel.Team.urls")),
 ]
-

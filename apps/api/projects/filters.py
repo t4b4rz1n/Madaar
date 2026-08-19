@@ -31,13 +31,9 @@ class ProjectFilter(django_filters.FilterSet):
     organization = django_filters.UUIDFilter(field_name="organization__id")
     owner = django_filters.UUIDFilter(field_name="owner__id")
     team = django_filters.UUIDFilter(field_name="members__team__id", distinct=True)
-    deadline_before = django_filters.DateFilter(
-        field_name="deadline", lookup_expr="lte"
-    )
+    deadline_before = django_filters.DateFilter(field_name="deadline", lookup_expr="lte")
     deadline_after = django_filters.DateFilter(field_name="deadline", lookup_expr="gte")
-    start_date_after = django_filters.DateFilter(
-        field_name="start_date", lookup_expr="gte"
-    )
+    start_date_after = django_filters.DateFilter(field_name="start_date", lookup_expr="gte")
     budget_min = django_filters.NumberFilter(field_name="budget", lookup_expr="gte")
     budget_max = django_filters.NumberFilter(field_name="budget", lookup_expr="lte")
     my_projects = django_filters.BooleanFilter(method="filter_my_projects")
@@ -96,12 +92,8 @@ class MilestoneFilter(django_filters.FilterSet):
     """
 
     status = django_filters.ChoiceFilter(choices=Milestone.Status.choices)
-    target_date_before = django_filters.DateFilter(
-        field_name="target_date", lookup_expr="lte"
-    )
-    target_date_after = django_filters.DateFilter(
-        field_name="target_date", lookup_expr="gte"
-    )
+    target_date_before = django_filters.DateFilter(field_name="target_date", lookup_expr="lte")
+    target_date_after = django_filters.DateFilter(field_name="target_date", lookup_expr="gte")
     upcoming = django_filters.BooleanFilter(method="filter_upcoming")
 
     def filter_upcoming(self, queryset, name, value):
@@ -126,9 +118,7 @@ class ProjectActivityFilter(django_filters.FilterSet):
     """
 
     event_type = django_filters.ChoiceFilter(choices=ProjectActivity.EventType.choices)
-    entity_type = django_filters.ChoiceFilter(
-        choices=ProjectActivity.EntityType.choices
-    )
+    entity_type = django_filters.ChoiceFilter(choices=ProjectActivity.EntityType.choices)
 
     class Meta:
         model = ProjectActivity

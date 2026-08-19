@@ -17,7 +17,11 @@ def extract_detail_message(data, status_code):
                 for field, errors in data.items():
                     if field != "non_field_errors" and isinstance(errors, list) and errors:
                         return _("Field {field}: {error}").format(field=_(field), error=errors[0])
-                if "non_field_errors" in data and isinstance(data["non_field_errors"], list) and data["non_field_errors"]:
+                if (
+                    "non_field_errors" in data
+                    and isinstance(data["non_field_errors"], list)
+                    and data["non_field_errors"]
+                ):
                     return data["non_field_errors"][0]
             except Exception:
                 pass
@@ -73,4 +77,3 @@ class ApiRenderer(JSONRenderer):
             "data": data if data is not None else None,
         }
         return super().render(response, accepted_media_type, renderer_context)
-

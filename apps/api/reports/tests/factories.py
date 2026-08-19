@@ -152,9 +152,7 @@ class MilestoneFactory(factory.django.DjangoModelFactory):
 
     title = factory.Sequence(lambda n: f"Milestone {n}")
     project = factory.SubFactory(ProjectFactory)
-    target_date = factory.LazyFunction(
-        lambda: timezone.now().date() + datetime.timedelta(days=7)
-    )
+    target_date = factory.LazyFunction(lambda: timezone.now().date() + datetime.timedelta(days=7))
     status = Milestone.Status.PENDING
 
 
@@ -174,7 +172,5 @@ class TimeOffRequestFactory(factory.django.DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
     request_type = "vacation"
     start_datetime = factory.LazyFunction(timezone.now)
-    end_datetime = factory.LazyFunction(
-        lambda: timezone.now() + datetime.timedelta(hours=8)
-    )
+    end_datetime = factory.LazyFunction(lambda: timezone.now() + datetime.timedelta(hours=8))
     status = "pending"

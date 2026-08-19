@@ -51,9 +51,7 @@ class TeamSerializer(serializers.ModelSerializer):
 
     def get_leader_details(self, obj):
         membership = (
-            TeamMembership.objects.filter(
-                team=obj, role=TeamMembership.Role.LEAD, is_deleted=False
-            )
+            TeamMembership.objects.filter(team=obj, role=TeamMembership.Role.LEAD, is_deleted=False)
             .select_related("user")
             .first()
         )
@@ -79,7 +77,9 @@ class TeamSerializer(serializers.ModelSerializer):
                     if first_org:
                         validated_data["organization"] = first_org
                     else:
-                        raise serializers.ValidationError({"organization": "No organization found."})
+                        raise serializers.ValidationError(
+                            {"organization": "No organization found."}
+                        )
 
         team = super().create(validated_data)
 

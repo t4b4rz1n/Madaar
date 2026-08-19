@@ -17,7 +17,9 @@ class StaffTeamViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Team.objects.filter(is_deleted=False, parent_team__isnull=True).select_related("organization")
+        qs = Team.objects.filter(is_deleted=False, parent_team__isnull=True).select_related(
+            "organization"
+        )
         if not (user.is_staff or user.is_superuser):
             org_ids = user.org_memberships.filter(is_deleted=False).values_list(
                 "organization_id", flat=True
@@ -34,7 +36,9 @@ class StaffSquadViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Team.objects.filter(is_deleted=False, parent_team__isnull=False).select_related("parent_team")
+        qs = Team.objects.filter(is_deleted=False, parent_team__isnull=False).select_related(
+            "parent_team"
+        )
         if not (user.is_staff or user.is_superuser):
             org_ids = user.org_memberships.filter(is_deleted=False).values_list(
                 "organization_id", flat=True

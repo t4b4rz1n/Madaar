@@ -151,9 +151,7 @@ class TimeOffRequest(BaseModel):
         on_delete=models.CASCADE,
         related_name="timeoff_requests",
     )
-    request_type = models.CharField(
-        _("Request Type"), max_length=20, choices=Type.choices
-    )
+    request_type = models.CharField(_("Request Type"), max_length=20, choices=Type.choices)
     start_datetime = models.DateTimeField(_("Start Date/Time"))
     end_datetime = models.DateTimeField(_("End Date/Time"))
     reason = models.TextField(_("Reason"), blank=True)
@@ -212,9 +210,7 @@ class Holiday(BaseModel):
         verbose_name_plural = _("Holidays")
         ordering = ["-date"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["date", "organization"], name="unique_holiday_org_date"
-            )
+            models.UniqueConstraint(fields=["date", "organization"], name="unique_holiday_org_date")
         ]
 
     def __str__(self):

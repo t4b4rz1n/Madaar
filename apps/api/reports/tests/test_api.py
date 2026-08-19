@@ -45,9 +45,7 @@ class TestEmployeeDashboardAPI:
         assert data["weekly_time"]["total_seconds"] == 3600
 
         assert len(data["active_projects"]) == 1
-        assert (
-            data["active_projects"][0]["project_name"] == project_data["project"].name
-        )
+        assert data["active_projects"][0]["project_name"] == project_data["project"].name
 
         assert data["attendance_today"] is not None
         assert (
@@ -106,9 +104,7 @@ class TestManagerDashboardAPI:
 
         stats = {item["status_code"]: item["count"] for item in data["task_stats"]}
         assert stats.get("todo", 0) == 1
-        assert (
-            stats.get("doing", 0) == 1
-        )  # conftest uses code="doing" (production default)
+        assert stats.get("doing", 0) == 1  # conftest uses code="doing" (production default)
         assert stats.get("done", 0) == 1
 
         assert data["overdue_summary"]["total_overdue"] == 1
@@ -128,9 +124,7 @@ class TestManagerDashboardAPI:
         assert emp1_data["overdue_tasks"] == 1
         assert emp1_data["week_seconds"] == 3600
 
-    def test_manager_dashboard_soft_delete(
-        self, api_client, users, org_data, project_data
-    ):
+    def test_manager_dashboard_soft_delete(self, api_client, users, org_data, project_data):
         url = reverse("reports:manager-dashboard")
         api_client.force_authenticate(user=users["team_lead"])
 
@@ -148,13 +142,9 @@ class TestManagerDashboardAPI:
         assert data["overdue_summary"]["total_overdue"] == 0
 
         url_members = reverse("reports:manager-members")
-        response_members = api_client.get(
-            url_members, {"team_id": str(org_data["team_a"].id)}
-        )
+        response_members = api_client.get(url_members, {"team_id": str(org_data["team_a"].id)})
         data_members = response_members.json()["data"]
-        emp1_data = next(
-            m for m in data_members if m["id"] == str(users["employee1"].id)
-        )
+        emp1_data = next(m for m in data_members if m["id"] == str(users["employee1"].id))
         assert emp1_data["total_tasks"] == 0
         assert emp1_data["done_tasks"] == 0
         assert emp1_data["overdue_tasks"] == 0
@@ -176,9 +166,7 @@ class TestExecutiveDashboardAPI:
         response = api_client.get(url)  # Should auto-select the org
         assert response.status_code == status.HTTP_200_OK
 
-    def test_executive_dashboard_content(
-        self, api_client, users, org_data, project_data
-    ):
+    def test_executive_dashboard_content(self, api_client, users, org_data, project_data):
         url = reverse("reports:executive-dashboard")
         api_client.force_authenticate(user=users["org_owner"])
         response = api_client.get(url, {"org_id": str(org_data["org"].id)})
@@ -197,9 +185,7 @@ class TestExecutiveDashboardAPI:
         financial = data["financial_summary"]
         assert float(financial["total_budget"]) == 10000.0
 
-    def test_executive_dashboard_soft_delete(
-        self, api_client, users, org_data, project_data
-    ):
+    def test_executive_dashboard_soft_delete(self, api_client, users, org_data, project_data):
         url = reverse("reports:executive-dashboard")
         api_client.force_authenticate(user=users["org_owner"])
 
@@ -269,9 +255,7 @@ class TestReportsValidation:
         response = api_client.get(url, {"tz": "Asia/Tehran"})
         assert response.status_code == status.HTTP_200_OK
 
-    def test_missing_timezone_defaults_to_utc_returns_200(
-        self, api_client, users, org_data
-    ):
+    def test_missing_timezone_defaults_to_utc_returns_200(self, api_client, users, org_data):
         url = reverse("reports:employee-dashboard")
         api_client.force_authenticate(user=users["employee1"])
 

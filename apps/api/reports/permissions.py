@@ -145,9 +145,7 @@ class IsManagerOrAbove(permissions.BasePermission):
     leads at least one team (the view will auto-select their teams).
     """
 
-    message = _(
-        "You must be a team lead or organisation admin to access this dashboard."
-    )
+    message = _("You must be a team lead or organisation admin to access this dashboard.")
 
     def has_permission(self, request, view):
         if request.method not in permissions.SAFE_METHODS:
@@ -213,9 +211,7 @@ class IsExecutive(permissions.BasePermission):
     Access is validated against the ``org_id`` query-parameter.
     """
 
-    message = _(
-        "Only organisation owners and admins can access the executive dashboard."
-    )
+    message = _("Only organisation owners and admins can access the executive dashboard.")
 
     def has_permission(self, request, view):
         if request.method not in permissions.SAFE_METHODS:

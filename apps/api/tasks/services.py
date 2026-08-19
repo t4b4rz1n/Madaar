@@ -376,6 +376,7 @@ class TaskService:
             # admin, owner, team_lead can move any task
             if role not in ["owner", "Admin", "team_lead"]:
                 from organizations.models import TeamMembership
+
                 is_team_lead = TeamMembership.objects.filter(
                     user=actor, team__organization_id=task.project.organization_id, role="lead"
                 ).exists()
@@ -387,7 +388,9 @@ class TaskService:
                         from rest_framework.exceptions import PermissionDenied
 
                         raise PermissionDenied(
-                            _("Only the assignee, creator, or a project manager can move this task.")
+                            _(
+                                "Only the assignee, creator, or a project manager can move this task."
+                            )
                         )
 
         old_status = task.status
@@ -422,6 +425,7 @@ class TaskService:
             code = new_status.code.lower() if new_status.code else ""
             if code == "doing":
                 from rest_framework.exceptions import PermissionDenied
+
                 try:
                     TimeLogService.start_timer(actor, task)
                 except Exception:
@@ -534,8 +538,7 @@ class TaskService:
             return
 
         tasks_dict = {
-            str(t.id): t
-            for t in Task.objects.filter(id__in=task_ids).select_for_update()
+            str(t.id): t for t in Task.objects.filter(id__in=task_ids).select_for_update()
         }
         tasks_to_update = []
         for item in orders:
@@ -546,7 +549,6 @@ class TaskService:
 
         if tasks_to_update:
             Task.objects.bulk_update(tasks_to_update, ["order"])
-
 
 
 class ChecklistService:

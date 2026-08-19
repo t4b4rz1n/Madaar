@@ -59,16 +59,16 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         ret = super().to_representation(instance)
         try:
             wsp = instance.work_style_profile
-            ret['notify_via_email'] = wsp.notify_via_email if not wsp.is_deleted else True
-            ret['notify_via_telegram'] = wsp.notify_via_telegram if not wsp.is_deleted else False
+            ret["notify_via_email"] = wsp.notify_via_email if not wsp.is_deleted else True
+            ret["notify_via_telegram"] = wsp.notify_via_telegram if not wsp.is_deleted else False
         except Exception:
-            ret['notify_via_email'] = True
-            ret['notify_via_telegram'] = False
+            ret["notify_via_email"] = True
+            ret["notify_via_telegram"] = False
         return ret
 
     def update(self, instance, validated_data):
-        notify_via_email = validated_data.pop('notify_via_email', None)
-        notify_via_telegram = validated_data.pop('notify_via_telegram', None)
+        notify_via_email = validated_data.pop("notify_via_email", None)
+        notify_via_telegram = validated_data.pop("notify_via_telegram", None)
 
         validated_data.pop("password_confirm", None)
         if "password" in validated_data:

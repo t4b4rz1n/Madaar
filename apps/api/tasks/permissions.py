@@ -73,9 +73,9 @@ def extract_organization_id(obj_or_request):
         ) or obj_or_request.query_params.get("organization_id")
         if raw_org_id and str(raw_org_id).strip().isdigit():
             return str(raw_org_id).strip()
-        raw_proj_id = obj_or_request.query_params.get(
-            "project"
-        ) or obj_or_request.query_params.get("project_id")
+        raw_proj_id = obj_or_request.query_params.get("project") or obj_or_request.query_params.get(
+            "project_id"
+        )
         if raw_proj_id and str(raw_proj_id).strip().isdigit():
             from projects.models import Project
 
@@ -100,9 +100,9 @@ def extract_project_id(obj_or_request):
         return getattr(obj_or_request.task, "project_id", None)
 
     if hasattr(obj_or_request, "query_params"):
-        p_id = obj_or_request.query_params.get(
-            "project"
-        ) or obj_or_request.query_params.get("project_id")
+        p_id = obj_or_request.query_params.get("project") or obj_or_request.query_params.get(
+            "project_id"
+        )
         if p_id and str(p_id).strip().isdigit():
             return str(p_id).strip()
 

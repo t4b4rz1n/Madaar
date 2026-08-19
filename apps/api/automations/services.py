@@ -306,7 +306,7 @@ class TelegramBotService:
 
         name = user.first_name if user else _("کاربر")
         msg = _(
-            "🏠 <b>منوی اصلی ربات مدار</b>\n\n" "سلام {name}! از دکمه‌های زیر استفاده کنید:"
+            "🏠 <b>منوی اصلی ربات مدار</b>\n\nسلام {name}! از دکمه‌های زیر استفاده کنید:"
         ).format(name=name)
         cls._send_or_edit(
             chat_id, msg, reply_markup=cls._main_menu_markup(user), edit_message_id=edit_message_id
@@ -452,7 +452,7 @@ class TelegramBotService:
         )
 
         if not memberships:
-            msg = _("📂 <b>پروژه‌های من</b>\n\n" "شما در حال حاضر عضو هیچ پروژه فعالی نیستید.")
+            msg = _("📂 <b>پروژه‌های من</b>\n\nشما در حال حاضر عضو هیچ پروژه فعالی نیستید.")
         else:
             lines = [_("📂 <b>پروژه‌های من</b>\n")]
             for i, m in enumerate(memberships, 1):
@@ -495,7 +495,7 @@ class TelegramBotService:
         )
 
         if not tasks:
-            msg = _("📋 <b>تسک‌های من</b>\n\n" "🎉 هیچ تسک باز و ناتمامی ندارید! آفرین!")
+            msg = _("📋 <b>تسک‌های من</b>\n\n🎉 هیچ تسک باز و ناتمامی ندارید! آفرین!")
         else:
             priority_emoji = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢"}
             lines = [_("📋 <b>تسک‌های من (باز)</b>\n")]
@@ -504,8 +504,7 @@ class TelegramBotService:
                 status_name = t.status.name if t.status else "—"
                 project_name = t.project.name if t.project else "—"
                 lines.append(
-                    f"{i}. {p_emoji} <b>{t.title}</b>\n"
-                    f"     📁 {project_name} | 📌 {status_name}"
+                    f"{i}. {p_emoji} <b>{t.title}</b>\n     📁 {project_name} | 📌 {status_name}"
                 )
 
             # Summary
@@ -582,7 +581,7 @@ class TelegramBotService:
                 )
 
         if not owner_orgs and not member_orgs:
-            msg = _("🏢 <b>سازمان من</b>\n\n" "شما هنوز عضو هیچ سازمانی نیستید.")
+            msg = _("🏢 <b>سازمان من</b>\n\nشما هنوز عضو هیچ سازمانی نیستید.")
         else:
             lines = [_("🏢 <b>سازمان‌های مرتبط با من</b>\n")]
             if owner_orgs:
@@ -878,5 +877,5 @@ class TelegramBotService:
         else:
             send_telegram_notification.delay(
                 chat_id,
-                _("❓ <b>دستور نامعتبر!</b>\n\n" "ابتدا با دستور /start حساب خود را متصل کنید."),
+                _("❓ <b>دستور نامعتبر!</b>\n\nابتدا با دستور /start حساب خود را متصل کنید."),
             )

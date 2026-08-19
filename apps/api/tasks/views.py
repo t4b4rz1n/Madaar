@@ -450,7 +450,6 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response({"status": "success"})
 
 
-
 # Checklist, Comment, Standup ViewSets
 class TaskChecklistItemViewSet(viewsets.ModelViewSet):
     serializer_class = TaskChecklistItemSerializer
@@ -550,15 +549,15 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
         else:
             memberships = user.org_memberships.all()
-            admin_org_ids = [m.organization_id for m in memberships if m.role.lower() in ["owner", "admin"]]
+            admin_org_ids = [
+                m.organization_id for m in memberships if m.role.lower() in ["owner", "admin"]
+            ]
 
             qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
 
             from django.db.models import Q
-            qs = qs.filter(
-                Q(organization_id__in=admin_org_ids) |
-                Q(user=user)
-            )
+
+            qs = qs.filter(Q(organization_id__in=admin_org_ids) | Q(user=user))
 
         user_id = self.request.query_params.get("user")
         if user_id:

@@ -105,9 +105,7 @@ class ManagerDashboardView(APIView):
     def get(self, request):
         team_id = request.query_params.get("team_id")
         tz_name = request.query_params.get("tz", "UTC")
-        data = ManagerDashboardService.get_dashboard(
-            request.user, team_id=team_id, tz_name=tz_name
-        )
+        data = ManagerDashboardService.get_dashboard(request.user, team_id=team_id, tz_name=tz_name)
         serializer = ManagerDashboardSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -196,8 +194,6 @@ class ExecutiveDashboardView(APIView):
         org_id = request.query_params.get("org_id")
         tz_name = request.query_params.get("tz", "UTC")
 
-        data = ExecutiveDashboardService.get_dashboard(
-            request.user, org_id=org_id, tz_name=tz_name
-        )
+        data = ExecutiveDashboardService.get_dashboard(request.user, org_id=org_id, tz_name=tz_name)
         serializer = ExecutiveDashboardSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)

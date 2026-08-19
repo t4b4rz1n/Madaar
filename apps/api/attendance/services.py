@@ -47,13 +47,9 @@ class AttendanceService:
             TimeLogService.stop_timer(user, active_timer.id, auto_move=False)
 
         # Auto calculate overtime if setting exists
-        setting = AttendanceSetting.objects.filter(
-            organization=attendance.organization
-        ).first()
+        setting = AttendanceSetting.objects.filter(organization=attendance.organization).first()
         if setting and attendance.check_in:
-            duration = (
-                attendance.check_out - attendance.check_in
-            ).total_seconds() / 3600.0
+            duration = (attendance.check_out - attendance.check_in).total_seconds() / 3600.0
             expected = float(setting.expected_daily_hours)
             if duration > expected:
                 attendance.overtime_minutes = int((duration - expected) * 60)
@@ -82,13 +78,9 @@ class AttendanceService:
 
         # Recalculate overtime
         if instance.check_in and instance.check_out:
-            setting = AttendanceSetting.objects.filter(
-                organization=instance.organization
-            ).first()
+            setting = AttendanceSetting.objects.filter(organization=instance.organization).first()
             if setting:
-                duration = (
-                    instance.check_out - instance.check_in
-                ).total_seconds() / 3600.0
+                duration = (instance.check_out - instance.check_in).total_seconds() / 3600.0
                 expected = float(setting.expected_daily_hours)
                 if duration > expected:
                     instance.overtime_minutes = int((duration - expected) * 60)
@@ -100,33 +92,39 @@ class AttendanceService:
 
 
 class TimeLogService:
-
     @staticmethod
     @transaction.atomic
     def start_timer(user, task):
         # Permission check: Assignee, Superuser/Staff, Project Owner, Org Owner/Admin/Team Lead can start timer
         can_start = False
-        if task.assignee == user or getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
+        if (
+            task.assignee == user
+            or getattr(user, "is_superuser", False)
+            or getattr(user, "is_staff", False)
+        ):
             can_start = True
         elif task.project:
-            if task.project.owner_id == user.id or (task.project.organization and task.project.organization.owner_id == user.id):
+            if task.project.owner_id == user.id or (
+                task.project.organization and task.project.organization.owner_id == user.id
+            ):
                 can_start = True
             else:
                 has_lead_role = user.org_memberships.filter(
                     organization_id=task.project.organization_id,
-                    role__in=["owner", "Admin", "team_lead"]
+                    role__in=["owner", "Admin", "team_lead"],
                 ).exists()
                 if not has_lead_role:
                     has_lead_role = user.team_memberships.filter(
-                        team__organization_id=task.project.organization_id,
-                        role="lead"
+                        team__organization_id=task.project.organization_id, role="lead"
                     ).exists()
                 if has_lead_role:
                     can_start = True
 
         if not can_start:
             raise PermissionDenied(
-                _("You can only start a timer for tasks assigned to you, or if you are a project lead/admin.")
+                _(
+                    "You can only start a timer for tasks assigned to you, or if you are a project lead/admin."
+                )
             )
 
         # Org isolation check
@@ -136,9 +134,7 @@ class TimeLogService:
                     organization_id=task.project.organization_id
                 ).exists()
                 if not is_member:
-                    raise PermissionDenied(
-                        _("You are not a member of this organization.")
-                    )
+                    raise PermissionDenied(_("You are not a member of this organization."))
 
         # Guard against re-entrant calls (move_task → start_timer loop)
         if getattr(_start_timer_local, "in_start_timer", False):
@@ -203,9 +199,7 @@ class TimeLogService:
             raise ValidationError(_("Timer not found or already stopped."))
 
         timer.end_time = timezone.now()
-        timer.duration_seconds = int(
-            (timer.end_time - timer.start_time).total_seconds()
-        )
+        timer.duration_seconds = int((timer.end_time - timer.start_time).total_seconds())
         timer.is_active = False
         timer.save(update_fields=["end_time", "duration_seconds", "is_active"])
 
@@ -228,11 +222,7 @@ class TimeLogService:
 
         # auto_move=True means this is a system-triggered stop (e.g., drag to Review/Done).
         # auto_move=False means the user manually pressed Stop → task stays in current status.
-        if (
-            auto_move
-            and timer.task.status
-            and timer.task.status.code.lower() == "doing"
-        ):
+        if auto_move and timer.task.status and timer.task.status.code.lower() == "doing":
             from tasks.models import TaskStatus
 
             review_status = TaskStatus.objects.filter(
@@ -253,15 +243,12 @@ class TimeLogService:
         if task.assignee != user and not user.is_superuser:
             # We can also check if user has project permissions, but superuser/assignee is safe for now
             from projects.models import ProjectMember
+
             is_manager = ProjectMember.objects.filter(
-                project=task.project,
-                user=user,
-                role__in=["owner", "admin", "team_lead"]
+                project=task.project, user=user, role__in=["owner", "admin", "team_lead"]
             ).exists()
             if not is_manager:
-                raise PermissionDenied(
-                    _("You do not have permission to log time for this task.")
-                )
+                raise PermissionDenied(_("You do not have permission to log time for this task."))
 
         duration_seconds = int((end_time - start_time).total_seconds())
         if duration_seconds < 0:
@@ -305,9 +292,7 @@ class TimeLogService:
     @staticmethod
     @transaction.atomic
     def cancel_timer(user, log_id):
-        timer = (
-            TimeLog.objects.select_related("task").filter(id=log_id, user=user).first()
-        )
+        timer = TimeLog.objects.select_related("task").filter(id=log_id, user=user).first()
         if not timer:
             raise ValidationError(_("Time log not found."))
 
@@ -353,9 +338,7 @@ class TimeOffRequestService:
             )
             if role not in ["owner", "Admin", "team_lead"]:
                 raise PermissionDenied(
-                    _(
-                        "You do not have permission to approve requests in this organization."
-                    )
+                    _("You do not have permission to approve requests in this organization.")
                 )
 
         if req.status != TimeOffRequest.Status.PENDING:
@@ -379,9 +362,7 @@ class TimeOffRequestService:
             )
             if role not in ["owner", "Admin", "team_lead"]:
                 raise PermissionDenied(
-                    _(
-                        "You do not have permission to reject requests in this organization."
-                    )
+                    _("You do not have permission to reject requests in this organization.")
                 )
 
         if req.status != TimeOffRequest.Status.PENDING:
@@ -411,7 +392,13 @@ class TimeOffRequestService:
 class HolidayService:
     @staticmethod
     def create(name, date, organization, description="", is_official=True):
-        return Holiday.objects.create(name=name, date=date, organization=organization, description=description, is_official=is_official)
+        return Holiday.objects.create(
+            name=name,
+            date=date,
+            organization=organization,
+            description=description,
+            is_official=is_official,
+        )
 
     @staticmethod
     def get_year_holidays(year):
@@ -421,11 +408,7 @@ class HolidayService:
 class TimesheetService:
     @staticmethod
     def _aggregate(qs):
-        return (
-            qs.values("date")
-            .annotate(total_seconds=Sum("duration_seconds"))
-            .order_by("date")
-        )
+        return qs.values("date").annotate(total_seconds=Sum("duration_seconds")).order_by("date")
 
     @staticmethod
     def get_daily(user, date):
@@ -436,9 +419,7 @@ class TimesheetService:
     @staticmethod
     def get_weekly(user, week_start_date):
         week_end_date = week_start_date + datetime.timedelta(days=6)
-        qs = TimeLog.objects.filter(
-            user=user, date__range=(week_start_date, week_end_date)
-        )
+        qs = TimeLog.objects.filter(user=user, date__range=(week_start_date, week_end_date))
         return TimesheetService._aggregate(qs)
 
     @staticmethod

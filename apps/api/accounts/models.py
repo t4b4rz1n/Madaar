@@ -41,8 +41,6 @@ class User(AbstractUser, BaseModel):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-
-
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -58,8 +56,6 @@ class User(AbstractUser, BaseModel):
         if full_name:
             return f"{full_name} ({self.username})"
         return self.username or self.email or f"User {self.id}"
-
-
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
@@ -126,12 +122,11 @@ class WorkStyleProfile(BaseModel):
     telegram_connect_token = models.CharField(max_length=64, blank=True, null=True)
     telegram_language = models.CharField(
         max_length=10,
-        default='en',
-        help_text="User's preferred language for Telegram bot (e.g. 'fa', 'en')"
+        default="en",
+        help_text="User's preferred language for Telegram bot (e.g. 'fa', 'en')",
     )
     has_set_language_manually = models.BooleanField(
-        default=False,
-        help_text="True if user explicitly selected language in bot"
+        default=False, help_text="True if user explicitly selected language in bot"
     )
 
     # Notification Preferences
@@ -156,4 +151,7 @@ class WorkStyleProfile(BaseModel):
                 qs = qs.exclude(pk=self.pk)
             if qs.exists():
                 from django.core.exceptions import ValidationError
-                raise ValidationError({"user": "A Work Style Profile already exists for this user   "})
+
+                raise ValidationError(
+                    {"user": "A Work Style Profile already exists for this user   "}
+                )

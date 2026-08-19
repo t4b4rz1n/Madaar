@@ -63,9 +63,7 @@ def get_user_today_range(
         ) from None
 
     now_in_user_tz = timezone.now().astimezone(user_tz)
-    today_start_local = now_in_user_tz.replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    today_start_local = now_in_user_tz.replace(hour=0, minute=0, second=0, microsecond=0)
     today_end_local = today_start_local + datetime.timedelta(days=1)
 
     # Convert back to UTC for DB queries
@@ -829,9 +827,7 @@ class ExecutiveDashboardService:
             organization_id=org_id, is_deleted=False
         ).count()
 
-        project_stats = Project.objects.filter(
-            organization_id=org_id, is_deleted=False
-        ).aggregate(
+        project_stats = Project.objects.filter(organization_id=org_id, is_deleted=False).aggregate(
             total=Count("id"),
             active=Count("id", filter=Q(status=Project.Status.ACTIVE)),
             completed=Count("id", filter=Q(status=Project.Status.COMPLETED)),
@@ -855,9 +851,7 @@ class ExecutiveDashboardService:
             # TaskStatus.category field (todo / in_progress / done).
             in_progress=Count(
                 "id",
-                filter=Q(
-                    status__code__in=["doing", "review", "in_progress", "in_review"]
-                ),
+                filter=Q(status__code__in=["doing", "review", "in_progress", "in_review"]),
             ),
         )
 
@@ -917,9 +911,9 @@ class ExecutiveDashboardService:
         # overlapping intervals per user before summing.  Merging must happen
         # per-user: two different employees on leave at the same time each
         # deduct their own capacity — a global merge would under-count leave.
-        clipped_by_user: dict[
-            int, list[tuple[datetime.datetime, datetime.datetime]]
-        ] = defaultdict(list)
+        clipped_by_user: dict[int, list[tuple[datetime.datetime, datetime.datetime]]] = defaultdict(
+            list
+        )
         for req in leave_requests:
             req_start = max(req["start_datetime"], week_start)
             req_end = min(req["end_datetime"], week_end)
@@ -929,9 +923,7 @@ class ExecutiveDashboardService:
         leave_seconds = 0.0
         for user_intervals in clipped_by_user.values():
             merged_leaves = _merge_intervals(user_intervals)
-            leave_seconds += sum(
-                (end - start).total_seconds() for start, end in merged_leaves
-            )
+            leave_seconds += sum((end - start).total_seconds() for start, end in merged_leaves)
 
         expected_seconds = int(
             (member_count * business_days * expected_daily_hours * 3600) - leave_seconds
@@ -942,9 +934,7 @@ class ExecutiveDashboardService:
             "total_work_seconds": total_seconds,
             "expected_seconds": expected_seconds,
             "utilization_rate": (
-                round(total_seconds / expected_seconds * 100, 1)
-                if expected_seconds > 0
-                else 0.0
+                round(total_seconds / expected_seconds * 100, 1) if expected_seconds > 0 else 0.0
             ),
             "active_workers": active_workers,
             "total_members": member_count,
@@ -1091,9 +1081,7 @@ class ExecutiveDashboardService:
 
         result = {
             "company_overview": cls._get_company_overview(org_id),
-            "resource_utilization": cls._get_resource_utilization(
-                org_id, week_start, week_end
-            ),
+            "resource_utilization": cls._get_resource_utilization(org_id, week_start, week_end),
             "project_health": cls._get_project_health(org_id, today_start),
             "financial_summary": cls._get_financial_summary(org_id),
         }

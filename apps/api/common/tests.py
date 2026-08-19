@@ -1,5 +1,6 @@
-from django.test import TestCase
 from django.db.models import signals
+from django.test import TestCase
+
 from organizations.models import Organization
 
 

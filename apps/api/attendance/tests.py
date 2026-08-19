@@ -156,9 +156,7 @@ class AttendanceTests(AttendanceBaseTestCase):
         res_out = self.client.post(url_out)
         self.assertEqual(res_out.status_code, status.HTTP_200_OK)
 
-        attendance = Attendance.objects.get(
-            user=self.employee, date=timezone.localdate()
-        )
+        attendance = Attendance.objects.get(user=self.employee, date=timezone.localdate())
         self.assertIsNotNone(attendance.check_out)
 
     def test_my_today_endpoint(self):
@@ -187,9 +185,7 @@ class HolidayTests(AttendanceBaseTestCase):
 
         with transaction.atomic():
             with self.assertRaises(IntegrityError):
-                Holiday.objects.create(
-                    name="Holiday 2", date=date, organization=self.org
-                )
+                Holiday.objects.create(name="Holiday 2", date=date, organization=self.org)
 
         # This shouldn't fail:
         Holiday.objects.create(name="Holiday 3", date=date, organization=self.other_org)
@@ -221,9 +217,7 @@ class HolidayTests(AttendanceBaseTestCase):
 
 class AttendanceSettingTests(AttendanceBaseTestCase):
     def test_attendance_setting_creation(self):
-        setting = AttendanceSetting.objects.create(
-            organization=self.org, expected_daily_hours=8.0
-        )
+        setting = AttendanceSetting.objects.create(organization=self.org, expected_daily_hours=8.0)
         self.assertEqual(setting.expected_daily_hours, 8.0)
 
 
@@ -411,9 +405,7 @@ class TimeOffRequestTests(AttendanceBaseTestCase):
 
     def test_timeoffrequest_model_creation(self):
         self.assertEqual(self.req.status, TimeOffRequest.Status.PENDING)
-        self.assertEqual(
-            str(self.req), f"{self.employee} - {TimeOffRequest.Type.VACATION}"
-        )
+        self.assertEqual(str(self.req), f"{self.employee} - {TimeOffRequest.Type.VACATION}")
 
     def test_timeoffrequest_service_approve(self):
         approved = TimeOffRequestService.approve(self.req.id, self.owner)
@@ -473,9 +465,7 @@ class TimeOffRequestTests(AttendanceBaseTestCase):
         self.assertEqual(req.status, TimeOffRequest.Status.APPROVED)
 
     def test_cancel_endpoint(self):
-        url_cancel = reverse(
-            "timeoff-requests-cancel-request", kwargs={"pk": self.req.id}
-        )
+        url_cancel = reverse("timeoff-requests-cancel-request", kwargs={"pk": self.req.id})
         res = self.client.post(url_cancel)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
@@ -484,9 +474,7 @@ class TimeOffRequestTests(AttendanceBaseTestCase):
 
     def test_cancel_other_users_request_fails(self):
         self.client.force_authenticate(user=self.other_employee)
-        url_cancel = reverse(
-            "timeoff-requests-cancel-request", kwargs={"pk": self.req.id}
-        )
+        url_cancel = reverse("timeoff-requests-cancel-request", kwargs={"pk": self.req.id})
         res = self.client.post(url_cancel)
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
 

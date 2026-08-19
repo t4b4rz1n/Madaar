@@ -75,16 +75,12 @@ class TestExecutiveDashboardService:
 
         ProjectFactory(organization=org2)
 
-        dashboard_again = ExecutiveDashboardService.get_dashboard(
-            user=employee2, org_id=None
-        )
+        dashboard_again = ExecutiveDashboardService.get_dashboard(user=employee2, org_id=None)
 
         assert dashboard_again["company_overview"]["projects"]["total"] == 1
 
         # If we explicitly pass org1, project total is 0
-        dashboard_org1 = ExecutiveDashboardService.get_dashboard(
-            user=employee2, org_id=org1.id
-        )
+        dashboard_org1 = ExecutiveDashboardService.get_dashboard(user=employee2, org_id=org1.id)
         assert dashboard_org1["company_overview"]["projects"]["total"] == 0
 
     def test_get_dashboard_invalid_timezone_raises_error(self, users):
@@ -158,9 +154,7 @@ def clear_cache():
 
 
 @pytest.mark.django_db
-def test_executive_cache_invalidation_on_project_soft_delete(
-    clear_cache, users, org_data
-):
+def test_executive_cache_invalidation_on_project_soft_delete(clear_cache, users, org_data):
     user = users["org_owner"]
     org = org_data["org"]
     project = ProjectFactory(organization=org, is_deleted=False)
@@ -179,18 +173,14 @@ def test_executive_cache_invalidation_on_project_soft_delete(
     new_version = cache.get(version_key, 1)
     assert new_version == current_version + 1
     # Second call – builds new versioned key, recomputes, caches fresh data
-    dashboard2 = ExecutiveDashboardService.get_dashboard(
-        user=user, org_id=org.id, tz_name=tz
-    )
+    dashboard2 = ExecutiveDashboardService.get_dashboard(user=user, org_id=org.id, tz_name=tz)
     new_cache_key = f"reports:exec:org_{org.id}:v{new_version}:tz_{tz}"
     assert cache.get(new_cache_key) is not None
     assert dashboard2["company_overview"]["projects"]["total"] == 0
 
 
 @pytest.mark.django_db
-def test_manager_cache_invalidation_on_team_membership_change(
-    clear_cache, users, org_data
-):
+def test_manager_cache_invalidation_on_team_membership_change(clear_cache, users, org_data):
     lead = users["team_lead"]
     member = users["employee1"]
     team = TeamFactory()
@@ -209,9 +199,7 @@ def test_manager_cache_invalidation_on_team_membership_change(
     new_version = cache.get(version_key, 1)
     assert new_version > current_version
     # Fetch again – uses new versioned key, recomputes
-    dashboard2 = ManagerDashboardService.get_dashboard(
-        user=lead, team_id=team.id, tz_name=tz
-    )
+    dashboard2 = ManagerDashboardService.get_dashboard(user=lead, team_id=team.id, tz_name=tz)
     new_cache_key = f"reports:mgr:team_{team.id}:v{new_version}:tz_{tz}"
     assert cache.get(new_cache_key) is not None
     assert dashboard2["team_member_count"] == 2
@@ -252,21 +240,17 @@ def test_manager_admin_org_cache_invalidates_on_subordinate_task_change(clear_ca
     org_version_key = f"dashboard_version:mgr:org_{org.id}"
     version_before = cache.get(org_version_key, 1)
 
-    dashboard_before = ManagerDashboardService.get_dashboard(
-        user=admin, team_id=None, tz_name=tz
-    )
+    dashboard_before = ManagerDashboardService.get_dashboard(user=admin, team_id=None, tz_name=tz)
     stats_before = sum(item["count"] for item in dashboard_before["task_stats"])
 
     TaskFactory(project=project, assignee=emp, status=status_todo)
 
     version_after = cache.get(org_version_key, 1)
-    assert (
-        version_after == version_before + 1
-    ), "Org-level manager cache version must bump when a subordinate task is created."
-
-    dashboard_after = ManagerDashboardService.get_dashboard(
-        user=admin, team_id=None, tz_name=tz
+    assert version_after == version_before + 1, (
+        "Org-level manager cache version must bump when a subordinate task is created."
     )
+
+    dashboard_after = ManagerDashboardService.get_dashboard(user=admin, team_id=None, tz_name=tz)
     stats_after = sum(item["count"] for item in dashboard_after["task_stats"])
     assert stats_after == stats_before + 1, (
         f"Expected task count to increase by 1 after subordinate task creation, "
@@ -275,9 +259,7 @@ def test_manager_admin_org_cache_invalidates_on_subordinate_task_change(clear_ca
 
 
 @pytest.mark.django_db
-def test_manager_team_lead_cache_unaffected_by_org_version_key(
-    clear_cache, users, org_data
-):
+def test_manager_team_lead_cache_unaffected_by_org_version_key(clear_cache, users, org_data):
     """Team-scoped manager dashboards must keep using team_{id} version keys only."""
     from reports.services import ManagerDashboardService
 
@@ -293,9 +275,9 @@ def test_manager_team_lead_cache_unaffected_by_org_version_key(
 
     ManagerDashboardService.get_dashboard(user=lead, team_id=team.id, tz_name=tz)
     cache_key = ManagerDashboardService._build_manager_cache_key(lead, team.id, tz)
-    assert (
-        "orgs_" not in cache_key
-    ), "Team-scoped cache keys must not embed org-level version segments."
+    assert "orgs_" not in cache_key, (
+        "Team-scoped cache keys must not embed org-level version segments."
+    )
     assert cache_key.startswith(f"reports:mgr:team_{team.id}:v")
 
     team_version_before = cache.get(team_version_key, 1)
@@ -314,13 +296,11 @@ def test_manager_team_lead_cache_unaffected_by_org_version_key(
     # team_a again.  This double-bump predates the org-level cache fix and
     # only affects performance (extra cache miss), not data correctness.
     assert team_version_after - team_version_before == 2
-    assert (
-        org_version_after == org_version_before
-    ), "Team membership changes must not bump org-level manager cache versions."
-
-    dashboard2 = ManagerDashboardService.get_dashboard(
-        user=lead, team_id=team.id, tz_name=tz
+    assert org_version_after == org_version_before, (
+        "Team membership changes must not bump org-level manager cache versions."
     )
+
+    dashboard2 = ManagerDashboardService.get_dashboard(user=lead, team_id=team.id, tz_name=tz)
     assert dashboard2["team_member_count"] == 3
 
 
@@ -354,9 +334,7 @@ def test_manager_admin_org_cache_invalidates_on_project_soft_delete(clear_cache)
     org_version_key = f"dashboard_version:mgr:org_{org.id}"
     version_before = cache.get(org_version_key, 1)
 
-    dashboard_before = ManagerDashboardService.get_dashboard(
-        user=admin, team_id=None, tz_name=tz
-    )
+    dashboard_before = ManagerDashboardService.get_dashboard(user=admin, team_id=None, tz_name=tz)
     projects_before = len(dashboard_before["project_summary"])
     assert projects_before == 1
 
@@ -364,13 +342,11 @@ def test_manager_admin_org_cache_invalidates_on_project_soft_delete(clear_cache)
     project.save()
 
     version_after = cache.get(org_version_key, 1)
-    assert (
-        version_after == version_before + 1
-    ), "Org-level manager cache version must bump when a project is soft-deleted."
-
-    dashboard_after = ManagerDashboardService.get_dashboard(
-        user=admin, team_id=None, tz_name=tz
+    assert version_after == version_before + 1, (
+        "Org-level manager cache version must bump when a project is soft-deleted."
     )
+
+    dashboard_after = ManagerDashboardService.get_dashboard(user=admin, team_id=None, tz_name=tz)
     assert len(dashboard_after["project_summary"]) == 0
 
 
@@ -400,8 +376,7 @@ def test_manager_multi_org_admin_cache_key_embeds_all_org_versions(clear_cache):
     assert org_ids == sorted([org_a.id, org_b.id])
 
     org_versions = {
-        org_id: cache.get(f"dashboard_version:mgr:org_{org_id}", 1)
-        for org_id in org_ids
+        org_id: cache.get(f"dashboard_version:mgr:org_{org_id}", 1) for org_id in org_ids
     }
     user_version = cache.get(f"dashboard_version:mgr:user_{admin.id}", 1)
 
@@ -416,15 +391,10 @@ def test_manager_multi_org_admin_cache_key_embeds_all_org_versions(clear_cache):
     _bump_version(org_b_version_key)
     org_versions[org_b.id] = cache.get(org_b_version_key, 1)
 
-    key_after_org_b_change = ManagerDashboardService._build_manager_cache_key(
-        admin, None, tz
-    )
+    key_after_org_b_change = ManagerDashboardService._build_manager_cache_key(admin, None, tz)
     org_parts_after = "_".join(f"{org_id}:{org_versions[org_id]}" for org_id in org_ids)
     expected_after = f"u{user_version}_orgs_{org_parts_after}"
-    assert (
-        key_after_org_b_change
-        == f"reports:mgr:user_{admin.id}:v{expected_after}:tz_{tz}"
-    )
+    assert key_after_org_b_change == f"reports:mgr:user_{admin.id}:v{expected_after}:tz_{tz}"
     assert key_after_org_b_change != key_before
 
 
@@ -492,13 +462,11 @@ def test_version_bump_uses_no_expiry(users, org_data):
         # kwargs.get("timeout") is None would pass for BOTH — so we check
         # that "timeout" is actually present as a keyword or positional arg.
         if "timeout" in kwargs:
-            assert (
-                kwargs["timeout"] is None
-            ), "timeout must be exactly None to prevent silent staleness"
+            assert kwargs["timeout"] is None, (
+                "timeout must be exactly None to prevent silent staleness"
+            )
         elif len(_args) >= 3:
-            assert (
-                _args[2] is None
-            ), "timeout must be exactly None to prevent silent staleness"
+            assert _args[2] is None, "timeout must be exactly None to prevent silent staleness"
         else:
             pytest.fail(
                 "cache.add() was called without an explicit timeout argument — "
@@ -809,9 +777,7 @@ class TestResourceUtilization:
 
         assert not AttendanceSetting.objects.filter(organization=org).exists()
 
-        dashboard = ExecutiveDashboardService.get_dashboard(
-            user=util_setup["owner"], org_id=org.id
-        )
+        dashboard = ExecutiveDashboardService.get_dashboard(user=util_setup["owner"], org_id=org.id)
         utilization = dashboard["resource_utilization"]
 
         # expected_seconds should be computed based on 8h/day fallback
@@ -854,9 +820,7 @@ class TestResourceUtilization:
         # Baseline with no leaves
         cache.clear()
         TimeOffRequest.objects.filter(organization=org).delete()
-        baseline = ExecutiveDashboardService.get_dashboard(
-            user=util_setup["owner"], org_id=org.id
-        )
+        baseline = ExecutiveDashboardService.get_dashboard(user=util_setup["owner"], org_id=org.id)
         baseline_expected = baseline["resource_utilization"]["expected_seconds"]
 
         # Add two overlapping approved leaves
@@ -927,9 +891,7 @@ class TestResourceUtilization:
         # Baseline with no leaves
         cache.clear()
         TimeOffRequest.objects.filter(organization=org).delete()
-        baseline = ExecutiveDashboardService.get_dashboard(
-            user=util_setup["owner"], org_id=org.id
-        )
+        baseline = ExecutiveDashboardService.get_dashboard(user=util_setup["owner"], org_id=org.id)
         baseline_expected = baseline["resource_utilization"]["expected_seconds"]
 
         TimeOffRequestFactory(
@@ -963,9 +925,7 @@ class TestResourceUtilization:
             f"WithLeaves={with_leaves_expected}."
         )
 
-    def test_utilization_overlapping_leaves_different_users_each_fully_deducted(
-        self, util_setup
-    ):
+    def test_utilization_overlapping_leaves_different_users_each_fully_deducted(self, util_setup):
         """
         Two different employees on leave at the same time must each deduct their
         own hours — a global merge would incorrectly treat them as one interval.
@@ -1006,9 +966,7 @@ class TestResourceUtilization:
 
         cache.clear()
         TimeOffRequest.objects.filter(organization=org).delete()
-        baseline = ExecutiveDashboardService.get_dashboard(
-            user=util_setup["owner"], org_id=org.id
-        )
+        baseline = ExecutiveDashboardService.get_dashboard(user=util_setup["owner"], org_id=org.id)
         baseline_expected = baseline["resource_utilization"]["expected_seconds"]
 
         TimeOffRequestFactory(
@@ -1043,9 +1001,7 @@ class TestResourceUtilization:
             f"(If this is 14400, leave intervals were merged across users.)"
         )
 
-    def test_utilization_same_user_overlap_still_merges_with_per_user_grouping(
-        self, util_setup
-    ):
+    def test_utilization_same_user_overlap_still_merges_with_per_user_grouping(self, util_setup):
         """
         Regression guard: per-user grouping must not break same-user interval merge.
 
@@ -1077,9 +1033,7 @@ class TestResourceUtilization:
 
         cache.clear()
         TimeOffRequest.objects.filter(organization=org).delete()
-        baseline = ExecutiveDashboardService.get_dashboard(
-            user=util_setup["owner"], org_id=org.id
-        )
+        baseline = ExecutiveDashboardService.get_dashboard(user=util_setup["owner"], org_id=org.id)
         baseline_expected = baseline["resource_utilization"]["expected_seconds"]
 
         TimeOffRequestFactory(
@@ -1139,9 +1093,7 @@ class TestResourceUtilization:
 
         cache.clear()
         # Get baseline (no leaves)
-        baseline = ExecutiveDashboardService.get_dashboard(
-            user=util_setup["owner"], org_id=org.id
-        )
+        baseline = ExecutiveDashboardService.get_dashboard(user=util_setup["owner"], org_id=org.id)
         baseline_expected = baseline["resource_utilization"]["expected_seconds"]
 
         # Create PENDING leave — should NOT be deducted
@@ -1167,9 +1119,7 @@ class TestResourceUtilization:
         with_non_approved = ExecutiveDashboardService.get_dashboard(
             user=util_setup["owner"], org_id=org.id
         )
-        with_non_approved_expected = with_non_approved["resource_utilization"][
-            "expected_seconds"
-        ]
+        with_non_approved_expected = with_non_approved["resource_utilization"]["expected_seconds"]
 
         # Expected seconds should be UNCHANGED — pending/rejected leaves are ignored
         assert with_non_approved_expected == baseline_expected, (
@@ -1242,12 +1192,12 @@ class TestProjectSummaryInflation:
         )
 
         # Also verify Count fields are not inflated
-        assert (
-            our_project["total_tasks"] == 2
-        ), f"total_tasks inflated: expected=2, got={our_project['total_tasks']}"
-        assert (
-            our_project["active_member_count"] == 2
-        ), f"active_member_count inflated: expected=2, got={our_project['active_member_count']}"
+        assert our_project["total_tasks"] == 2, (
+            f"total_tasks inflated: expected=2, got={our_project['total_tasks']}"
+        )
+        assert our_project["active_member_count"] == 2, (
+            f"active_member_count inflated: expected=2, got={our_project['active_member_count']}"
+        )
 
 
 @pytest.mark.django_db
@@ -1284,9 +1234,9 @@ class TestInProgressMetric:
         tasks = dashboard["company_overview"]["tasks"]
 
         assert tasks["total"] == 3
-        assert (
-            tasks["in_progress"] == 0
-        ), f"todo tasks incorrectly counted as in_progress: {tasks['in_progress']}"
+        assert tasks["in_progress"] == 0, (
+            f"todo tasks incorrectly counted as in_progress: {tasks['in_progress']}"
+        )
 
     def test_doing_and_review_counted_as_in_progress(self):
         """doing and review tasks MUST appear in in_progress metric."""
@@ -1297,15 +1247,9 @@ class TestInProgressMetric:
         status_done = TaskStatusFactory(board=board, code="done", name="Done")
         member = UserFactory()
 
-        TaskFactory(
-            project=project, assignee=member, status=status_todo
-        )  # not in_progress
-        TaskFactory(
-            project=project, assignee=member, status=status_doing
-        )  # in_progress
-        TaskFactory(
-            project=project, assignee=member, status=status_review
-        )  # in_progress
+        TaskFactory(project=project, assignee=member, status=status_todo)  # not in_progress
+        TaskFactory(project=project, assignee=member, status=status_doing)  # in_progress
+        TaskFactory(project=project, assignee=member, status=status_review)  # in_progress
         TaskFactory(project=project, assignee=member, status=status_done)  # done
 
         cache.clear()
@@ -1314,9 +1258,9 @@ class TestInProgressMetric:
 
         assert tasks["total"] == 4
         assert tasks["done"] == 1
-        assert (
-            tasks["in_progress"] == 2
-        ), f"Expected 2 in_progress (doing+review), got {tasks['in_progress']}"
+        assert tasks["in_progress"] == 2, (
+            f"Expected 2 in_progress (doing+review), got {tasks['in_progress']}"
+        )
 
 
 @pytest.mark.django_db
@@ -1366,9 +1310,7 @@ class TestProjectHealthInflation:
         dashboard = ExecutiveDashboardService.get_dashboard(user=owner, org_id=org.id)
         health_list = dashboard["project_health"]
 
-        assert (
-            len(health_list) == 1
-        ), "Expected exactly one active project in health list"
+        assert len(health_list) == 1, "Expected exactly one active project in health list"
         ph = health_list[0]
 
         assert ph["total_tasks"] == 3, (
@@ -1449,7 +1391,7 @@ class TestManagerDashboardAdminAccess:
         member_ids = ManagerDashboardService._resolve_member_ids(lead, team_id=None)
 
         # Should only include the team's members (lead + emp_in), not emp_out
-        assert (
-            emp_out.id not in member_ids
-        ), "Non-admin team lead must NOT see org-wide members without team_id."
+        assert emp_out.id not in member_ids, (
+            "Non-admin team lead must NOT see org-wide members without team_id."
+        )
         assert emp_in.id in member_ids

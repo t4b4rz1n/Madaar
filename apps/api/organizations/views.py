@@ -1,9 +1,8 @@
-from django.db.models import Count, Q
 from django.db import transaction
-from rest_framework import viewsets
+from django.db.models import Count, Q
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
 
 from .models import Organization
 from .permissions import CanManageOrganization
@@ -45,8 +44,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             return queryset
 
         return queryset.filter(
-            Q(owner=user)
-            | Q(memberships__user=user, memberships__is_deleted=False)
+            Q(owner=user) | Q(memberships__user=user, memberships__is_deleted=False)
         ).distinct()
 
     def get_permissions(self):

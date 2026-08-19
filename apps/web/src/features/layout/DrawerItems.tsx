@@ -6,11 +6,12 @@ import {
   User,
   ShieldSecurity,
   Flash,
+  Briefcase,
+  Profile2User,
   People as TeamsIcon,
   TaskSquare,
   NoteText,
   Chart21,
-  Folder2,
   Calendar,
   Timer1,
 } from "iconsax-reactjs";
@@ -30,7 +31,7 @@ export type DrawerItem = {
 };
 
 export const drawerItems: DrawerItem[] = [
-  // Primary Workspace Navigation (Shown in main sidebar)
+  // Primary Workspace Navigation (Main Sidebar)
   {
     title: "Today & Focus",
     link: "dashboard",
@@ -49,7 +50,8 @@ export const drawerItems: DrawerItem[] = [
     title: "Projects",
     link: "projects",
     section: "Workspace",
-    icon: <Folder2 variant="Outline" />,
+    icon: <Briefcase variant="Outline" />,
+    permission: "projects.view",
     isPrimary: true,
   },
   {
@@ -75,7 +77,14 @@ export const drawerItems: DrawerItem[] = [
     isPrimary: true,
   },
 
-  // Admin & Settings Navigation (Shown in Settings modal & Command Menu)
+  // Admin & Settings Navigation (Settings Modal & Command Menu)
+  {
+    title: "Organizations",
+    link: "organizations",
+    section: "AdminSettings",
+    icon: <Profile2User variant="Outline" />,
+    requiresOrgAdmin: true,
+  },
   {
     title: "Users Management",
     link: "users",
@@ -105,18 +114,14 @@ export const drawerItems: DrawerItem[] = [
     requiresOrgAdmin: true,
   },
   {
-    title: "Organizations",
-    link: "organizations",
-    section: "AdminSettings",
-    icon: <People variant="Outline" />,
-  },
-  {
     title: "Discounts",
     link: "discounts",
     section: "AdminSettings",
     icon: <DiscountShape variant="Outline" />,
     permission: "discounts.manage",
   },
+
+  // Support & System
   {
     title: "Notifications",
     link: "notifications",
@@ -131,6 +136,8 @@ export const drawerItems: DrawerItem[] = [
     icon: <Ticket variant="Outline" />,
     permission: "tickets.view",
   },
+
+  // Account
   {
     title: "Profile Settings",
     link: "profile",
