@@ -43,7 +43,7 @@ export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   //projects
   {id: "projects.view", label: "View Projects", group: "PROJECT"},
   {id: "projects.manage", label: "Manage Projects", group: "PROJECT"},
-
+  
 ];
 
 export const PERMISSIONS_BY_GROUP = SYSTEM_PERMISSIONS.reduce(

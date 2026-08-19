@@ -9,6 +9,7 @@ import {
   completeProject,
   getProjectMembers,
   addProjectMember,
+  removeProjectMember,
   getProjectMilestones,
   createMilestone,
   getProjectActivities,
@@ -26,12 +27,12 @@ export const projectKeys = {
     [
       ...projectKeys.lists(),
       {
-        params:
-          params instanceof URLSearchParams ? params.toString() : params,
+        params: params instanceof URLSearchParams ? params.toString() : params,
       },
     ] as const,
   details: () => [...projectKeys.all, "detail"] as const,
-  detail: (id: string | number) => [...projectKeys.details(), String(id)] as const,
+  detail: (id: string | number) =>
+    [...projectKeys.details(), String(id)] as const,
   members: (id: string | number) =>
     [...projectKeys.detail(id), "members"] as const,
   milestones: (id: string | number) =>
@@ -151,6 +152,23 @@ export const useAddProjectMember = (projectId: string | number) => {
   });
 };
 
+export const useRemoveProjectMember = (projectId: string | number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (memberId: string | number) =>
+      removeProjectMember(projectId, memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.members(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
+    },
+  });
+};
 // ----------- نقاط عطف (Milestones) -----------
 
 export const useProjectMilestones = (projectId: string | number) => {

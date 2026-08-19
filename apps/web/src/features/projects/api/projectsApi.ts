@@ -93,6 +93,7 @@ export const addProjectMember = async (
   projectId: string | number,
   data: {
     user_id?: string | number;
+    team_id?: string | number;
     specialty?: string;
     allocation_percentage?: number;
   }

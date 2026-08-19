@@ -181,12 +181,28 @@
   --madaar-focus-ring: 0 0 0 3px rgb(100 181 255 / 0.34);
 }
 
+/* حل مشکل پس‌زمینه شفاف گزینه‌های select در مد دارک */
+select option {
+  background-color: #1e2330 !important;
+  /* پس‌زمینه تیره تِم Madaar */
+  color: #f3f4f6 !important;
+  /* رنگ متن روشن */
+  padding: 8px 12px;
+}
+
+select option:hover,
+select option:focus,
+select option:active {
+  background-color: #2b3245 !important;
+}
+
 /* Font setting */
 *,
 *::after,
 *::before {
   font-family: var(--madaar-font-sans);
 }
+
 html,
 body,
 #root {
@@ -205,6 +221,7 @@ body {
   text-rendering: optimizeLegibility;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
@@ -275,6 +292,7 @@ a,
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -298,6 +316,7 @@ a,
 }
 
 @media (prefers-contrast: more) {
+
   .madaar-glass,
   .madaar-surface {
     border-color: var(--color-base-content);
@@ -309,13 +328,16 @@ a,
   width: 6px;
   height: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--color-base-content) 18%, transparent);
   border-radius: 10px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--color-base-content) 28%, transparent);
 }

@@ -320,17 +320,24 @@ export default function ProjectsPage() {
                   {project.description || "No description added yet."}
                 </p>
 
-                <div className="mt-5 grid grid-cols-2 gap-3 border-y border-base-content/10 py-4 text-sm">
+                {/* بخش آمار ۳ تایی: Tasks, Members, Teams */}
+                <div className="mt-5 grid grid-cols-3 gap-2 border-y border-base-content/10 py-4 text-sm text-center">
                   <div>
                     <p className="text-xs text-base-content/45">Tasks</p>
                     <p className="mt-1 font-semibold">
                       {project.task_count || 0}
                     </p>
                   </div>
-                  <div>
+                  <div className="border-x border-base-content/10">
                     <p className="text-xs text-base-content/45">Members</p>
                     <p className="mt-1 font-semibold">
-                      {project.member_count || 0}
+                      {project.member_count ?? project.members_count ?? 0}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-base-content/45">Teams</p>
+                    <p className="mt-1 font-semibold text-primary">
+                      {project.teams_count ?? 0}
                     </p>
                   </div>
                 </div>

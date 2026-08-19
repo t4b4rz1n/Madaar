@@ -1,5 +1,10 @@
 // 1. Status Types
-export type ProjectStatus = "draft" | "active" | "on_hold" | "completed" | "archived";
+export type ProjectStatus =
+  | "draft"
+  | "active"
+  | "on_hold"
+  | "completed"
+  | "archived";
 
 export type ProjectListParams =
   | URLSearchParams
@@ -44,6 +49,7 @@ export interface Project {
   progress_percentage?: number;
   member_count?: number;
   members_count?: number;
+  teams_count?: number;
   task_count?: number;
   milestone_count?: number;
   created_at?: string;
@@ -82,7 +88,11 @@ export interface ProjectMember {
 }
 
 // 5. Milestones
-export type MilestoneStatus = "pending" | "in_progress" | "completed" | "cancelled";
+export type MilestoneStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
 
 export interface Milestone {
   id: string | number;
@@ -103,11 +113,18 @@ export interface Milestone {
 export interface ProjectActivity {
   id: string | number;
   project: string | number;
-  actor?: ProjectOwner | null;
+  actor?: {
+    id: string | number;
+    username?: string;
+    email?: string;
+    full_name?: string;
+    avatar?: string;
+  };
   event_type: string;
-  entity_type: "project" | "member" | "milestone" | "task";
+  event_type_display?: string;
+  entity_type: string;
   entity_id?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
   created_at: string;
 }
 
