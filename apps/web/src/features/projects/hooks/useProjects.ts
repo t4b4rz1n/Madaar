@@ -19,7 +19,6 @@ import type {
   UpdateProjectDTO,
 } from "../types";
 
-// کلیدهای Query Keys برای Caching منظم
 export const projectKeys = {
   all: ["projects"] as const,
   lists: () => [...projectKeys.all, "list"] as const,
@@ -32,7 +31,7 @@ export const projectKeys = {
       },
     ] as const,
   details: () => [...projectKeys.all, "detail"] as const,
-  detail: (id: string | number) => [...projectKeys.details(), id] as const,
+  detail: (id: string | number) => [...projectKeys.details(), String(id)] as const,
   members: (id: string | number) =>
     [...projectKeys.detail(id), "members"] as const,
   milestones: (id: string | number) =>
@@ -54,7 +53,8 @@ export const useProject = (id: string | number) => {
   return useQuery({
     queryKey: projectKeys.detail(id),
     queryFn: () => getProjectById(id),
-    enabled: !!id,
+    enabled: Boolean(id),
+    staleTime: 0, // اطمینان از به روز بودن داده‌ها هنگام سوییچ
   });
 };
 
@@ -65,11 +65,12 @@ export const useCreateProject = () => {
   return useMutation({
     mutationFn: (data: CreateProjectDTO) => createProject(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 };
 
+// ۴. ویرایش پروژه
 // ۴. ویرایش پروژه
 export const useUpdateProject = () => {
   const queryClient = useQueryClient();
@@ -82,11 +83,8 @@ export const useUpdateProject = () => {
       id: string | number;
       data: UpdateProjectDTO;
     }) => updateProject(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: projectKeys.detail(variables.id),
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 };
@@ -98,7 +96,7 @@ export const useDeleteProject = () => {
   return useMutation({
     mutationFn: (id: string | number) => deleteProject(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 };
@@ -109,9 +107,8 @@ export const useArchiveProject = () => {
 
   return useMutation({
     mutationFn: (id: string | number) => archiveProject(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 };
@@ -121,9 +118,8 @@ export const useCompleteProject = () => {
 
   return useMutation({
     mutationFn: (id: string | number) => completeProject(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 };
@@ -134,7 +130,7 @@ export const useProjectMembers = (projectId: string | number) => {
   return useQuery({
     queryKey: projectKeys.members(projectId),
     queryFn: () => getProjectMembers(projectId),
-    enabled: !!projectId,
+    enabled: Boolean(projectId),
   });
 };
 
@@ -161,7 +157,7 @@ export const useProjectMilestones = (projectId: string | number) => {
   return useQuery({
     queryKey: projectKeys.milestones(projectId),
     queryFn: () => getProjectMilestones(projectId),
-    enabled: !!projectId,
+    enabled: Boolean(projectId),
   });
 };
 
@@ -189,6 +185,6 @@ export const useProjectActivities = (projectId: string | number) => {
   return useQuery({
     queryKey: projectKeys.activities(projectId),
     queryFn: () => getProjectActivities(projectId),
-    enabled: !!projectId,
+    enabled: Boolean(projectId),
   });
 };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CloseCircle } from "iconsax-reactjs";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Project, CreateProjectDTO, ProjectStatus } from "../types";
 import { useCreateProject, useUpdateProject } from "../hooks/useProjects";
 import { getOrganizationsForProjects } from "../api/projectsApi";
@@ -16,10 +16,10 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
   onClose,
   project,
 }) => {
+  const queryClient = useQueryClient();
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
 
-  // دریافت لیست سازمان‌ها
   const { data: organizations = [], isLoading: isLoadingOrgs } = useQuery({
     queryKey: ["project-organizations"],
     queryFn: getOrganizationsForProjects,
@@ -38,7 +38,10 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     status: "draft" as ProjectStatus,
   });
 
+  // 💡 اصلاح جدی: فقط موقعی که مودال باز میشه یا پروژه تغییر میکنه فرم Reset بشه
   useEffect(() => {
+    if (!isOpen) return;
+
     if (project) {
       setFormData({
         name: project.name || "",
@@ -57,9 +60,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     } else {
       setFormData({
         name: "",
-        organization_id: organizations[0]?.id
-          ? String(organizations[0].id)
-          : "",
+        organization_id: "",
         description: "",
         prefix: "",
         budget: "",
@@ -69,7 +70,17 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         status: "draft",
       });
     }
-  }, [project, isOpen, organizations]);
+  }, [project, isOpen]); // 👈 'organizations' از اینجا حذف شد تا حلقه بی‌نهایت ایجاد نکند
+
+  // مقداردهی پیش‌فرض سازمان در صورتی که ساخت پروژه جدید باشد
+  useEffect(() => {
+    if (isOpen && !project && organizations.length > 0 && !formData.organization_id) {
+      setFormData((prev) => ({
+        ...prev,
+        organization_id: String(organizations[0].id),
+      }));
+    }
+  }, [isOpen, project, organizations, formData.organization_id]);
 
   if (!isOpen) return null;
 
@@ -115,11 +126,19 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           id: project.id,
           data: { ...payload, status: formData.status },
         },
-        { onSuccess: () => onClose() },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects"] });
+            onClose();
+          },
+        },
       );
     } else {
       createProjectMutation.mutate(payload, {
-        onSuccess: () => onClose(),
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["projects"] });
+          onClose();
+        },
       });
     }
   };
@@ -136,7 +155,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         className="madaar-surface max-h-[min(760px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in duration-200"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-start justify-between border-b border-base-content/10 p-6 sm:p-7">
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-primary">
@@ -160,7 +178,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5 p-6 sm:p-7">
           {!project && (
             <div>
@@ -271,7 +288,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="select select-bordered w-full rounded-xl bg-base-200/60"
+                  className="select select-bordered w-full rounded-xl bg-base-200/60 capitalize"
                 >
                   <option value="draft">Draft</option>
                   <option value="active">Active</option>

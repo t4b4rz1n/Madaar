@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -10,6 +10,7 @@ import {
   Calendar,
   MoneyRecive,
   Add,
+  Clock,
 } from "iconsax-reactjs";
 import {
   useProject,
@@ -18,6 +19,7 @@ import {
   useProjectActivities,
 } from "../hooks/useProjects";
 import type { ProjectMember, Milestone, ProjectActivity } from "../types";
+import { useTaskStore } from "../../tasks/store/useTaskStore";
 
 type TabType = "overview" | "members" | "milestones" | "activity";
 
@@ -32,12 +34,46 @@ const statusStyles: Record<string, string> = {
 export default function ProjectDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const setActiveProject = useTaskStore((state) => state.setActiveProject);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
-  const { data: project, isLoading: isProjectLoading } = useProject(id || "");
-  const { data: members = [] } = useProjectMembers(id || "");
-  const { data: milestones = [] } = useProjectMilestones(id || "");
-  const { data: activities = [] } = useProjectActivities(id || "");
+  // دریافت refetch ها از کیوئری‌ها
+  const {
+    data: project,
+    isLoading: isProjectLoading,
+    refetch: refetchProject,
+  } = useProject(id || "");
+  const { data: members = [], refetch: refetchMembers } = useProjectMembers(
+    id || "",
+  );
+  const { data: milestones = [], refetch: refetchMilestones } =
+    useProjectMilestones(id || "");
+  const { data: activities = [], refetch: refetchActivities } =
+    useProjectActivities(id || "");
+
+  // 💡 این بخش جادویی مشکل رو حل می‌کنه:
+  // به محض اینکه آدرس URL عوض بشه و id تغییر کنه، حتماً تمام دیتای این صفحه بدون نیاز به رفرش بازخوانی میشن!
+  useEffect(() => {
+    if (id) {
+      refetchProject();
+      refetchMembers();
+      refetchMilestones();
+      refetchActivities();
+    }
+  }, [
+    id,
+    refetchProject,
+    refetchMembers,
+    refetchMilestones,
+    refetchActivities,
+  ]);
+
+  const handleOpenTasksBoard = () => {
+    if (id) {
+      setActiveProject(id);
+      navigate("/tasks");
+    }
+  };
 
   if (isProjectLoading) {
     return (
@@ -64,7 +100,7 @@ export default function ProjectDetailsPage() {
   }
 
   return (
-    <div key={id} className="space-y-6 pb-10" >
+    <div key={id} className="space-y-6 pb-10">
       {/* Header & Back Button */}
       <div className="madaar-surface flex flex-col justify-between gap-4 rounded-2xl border border-base-content/10 bg-base-100 p-6 shadow-xs sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
@@ -90,12 +126,23 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold capitalize ${statusStyles[project.status] || statusStyles.draft}`}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold capitalize ${
+              statusStyles[project.status] || statusStyles.draft
+            }`}
           >
             {project.status.replace("_", " ")}
           </span>
+
+          <button
+            type="button"
+            onClick={handleOpenTasksBoard}
+            className="btn btn-primary rounded-xl gap-2 shadow-md shadow-primary/15"
+          >
+            <TaskSquare size={18} />
+            <span>Open Tasks Board</span>
+          </button>
         </div>
       </div>
 
@@ -156,60 +203,164 @@ export default function ProjectDetailsPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
+        className="space-y-6"
       >
         {/* Overview Tab */}
         {activeTab === "overview" && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5 flex items-center gap-4">
-              <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary shrink-0">
-                <MoneyRecive size={24} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wider text-base-content/45">
-                  Total Budget
-                </p>
-                <p className="mt-1 text-lg font-bold tracking-tight text-base-content truncate">
-                  {project.budget
-                    ? `${Number(project.budget).toLocaleString()} ${project.budget_currency || "IRR"}`
-                    : "Not specified"}
-                </p>
-              </div>
-            </div>
-
-            <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5 flex items-center gap-4">
-              <div className="grid size-12 place-items-center rounded-xl bg-info/10 text-info shrink-0">
-                <Calendar size={24} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wider text-base-content/45">
-                  Deadline
-                </p>
-                <p className="mt-1 text-lg font-bold tracking-tight text-base-content truncate">
-                  {project.deadline
-                    ? new Intl.DateTimeFormat("en", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      }).format(new Date(project.deadline))
-                    : "No deadline"}
-                </p>
-              </div>
-            </div>
-
-            <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5 flex items-center gap-4">
-              <div className="grid size-12 place-items-center rounded-xl bg-success/10 text-success shrink-0">
-                <TaskSquare size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between text-xs font-semibold text-base-content/60 mb-1">
-                  <span>Overall Progress</span>
-                  <span>{project.progress_percentage || 0}%</span>
+          <div className="space-y-6">
+            {/* Top Stat Cards */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5 flex items-center gap-4">
+                <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary shrink-0">
+                  <MoneyRecive size={24} />
                 </div>
-                <progress
-                  className="progress progress-success w-full h-2 bg-base-200"
-                  value={project.progress_percentage || 0}
-                  max="100"
-                />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-base-content/45">
+                    Total Budget
+                  </p>
+                  <p className="mt-1 text-lg font-bold tracking-tight text-base-content truncate">
+                    {project.budget
+                      ? `${Number(project.budget).toLocaleString()} ${
+                          project.budget_currency || "IRR"
+                        }`
+                      : "Not specified"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5 flex items-center gap-4">
+                <div className="grid size-12 place-items-center rounded-xl bg-info/10 text-info shrink-0">
+                  <Calendar size={24} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-base-content/45">
+                    Deadline
+                  </p>
+                  <p className="mt-1 text-lg font-bold tracking-tight text-base-content truncate">
+                    {project.deadline
+                      ? new Intl.DateTimeFormat("en", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }).format(new Date(project.deadline))
+                      : "No deadline"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5 flex items-center gap-4">
+                <div className="grid size-12 place-items-center rounded-xl bg-success/10 text-success shrink-0">
+                  <TaskSquare size={24} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between text-xs font-semibold text-base-content/60 mb-1">
+                    <span>Overall Progress</span>
+                    <span>{project.progress_percentage || 0}%</span>
+                  </div>
+                  <progress
+                    className="progress progress-success w-full h-2 bg-base-200"
+                    value={project.progress_percentage || 0}
+                    max="100"
+                  />
+                  <span className="text-[11px] text-base-content/45 mt-1 block">
+                    {project.task_count || 0} Total Tasks
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Overview Bottom Grid */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Recent Milestones Preview */}
+              <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-base-content flex items-center gap-2">
+                    <Clock size={18} className="text-primary" /> Upcoming
+                    Milestones
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab("milestones")}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    View All ({milestones.length})
+                  </button>
+                </div>
+
+                {milestones.length === 0 ? (
+                  <p className="text-xs text-base-content/50 py-4 text-center border border-dashed border-base-content/10 rounded-xl">
+                    No milestones defined yet.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {milestones.slice(0, 3).map((ms: Milestone) => (
+                      <div
+                        key={ms.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-base-200/40 border border-base-content/5"
+                      >
+                        <div>
+                          <p className="font-semibold text-xs text-base-content">
+                            {ms.title}
+                          </p>
+                          <p className="text-[11px] text-base-content/50 mt-0.5">
+                            Target:{" "}
+                            {new Intl.DateTimeFormat("en", {
+                              month: "short",
+                              day: "numeric",
+                            }).format(new Date(ms.target_date))}
+                          </p>
+                        </div>
+                        <span className="badge badge-sm font-semibold capitalize">
+                          {ms.status.replace("_", " ")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Members Preview */}
+              <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-base-content flex items-center gap-2">
+                    <People size={18} className="text-primary" /> Assigned
+                    Members
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab("members")}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    Manage ({members.length})
+                  </button>
+                </div>
+
+                {members.length === 0 ? (
+                  <p className="text-xs text-base-content/50 py-4 text-center border border-dashed border-base-content/10 rounded-xl">
+                    No members assigned to this project yet.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {members.slice(0, 4).map((m: ProjectMember) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center gap-3 p-2.5 rounded-xl bg-base-200/40 border border-base-content/5"
+                      >
+                        <div className="grid size-8 place-items-center rounded-lg bg-primary/20 text-primary font-bold text-xs">
+                          {m.user?.first_name?.[0] || "U"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-xs text-base-content truncate">
+                            {m.user
+                              ? `${m.user.first_name || ""} ${m.user.last_name || ""}`.trim()
+                              : "Member"}
+                          </p>
+                          <p className="text-[11px] text-base-content/50 truncate">
+                            {m.specialty || "General"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
