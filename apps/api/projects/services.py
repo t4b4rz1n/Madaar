@@ -109,9 +109,7 @@ class ProjectService:
         # Avoid circular imports by importing Team here or assuming it's available
         from organizations.models import Team
 
-        team_filter = Q(
-            project_memberships__project=project, project_memberships__is_deleted=False
-        )
+        team_filter = Q(project_memberships__project=project, project_memberships__is_deleted=False)
         return Team.objects.filter(team_filter).distinct()
 
     @classmethod
@@ -144,9 +142,7 @@ class ProjectService:
 
     @classmethod
     @transaction.atomic
-    def update(
-        cls, *, project: Project, actor, validated_data: dict[str, Any]
-    ) -> Project:
+    def update(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> Project:
         """Update a Project's fields and manage lifecycle timestamps."""
         old_status = project.status
         new_status = validated_data.get("status", old_status)
@@ -155,10 +151,7 @@ class ProjectService:
             setattr(project, attr, value)
 
         now = timezone.now()
-        if (
-            new_status == Project.Status.COMPLETED
-            and old_status != Project.Status.COMPLETED
-        ):
+        if new_status == Project.Status.COMPLETED and old_status != Project.Status.COMPLETED:
             project.completed_at = now
         elif (
             new_status != Project.Status.COMPLETED
@@ -169,15 +162,9 @@ class ProjectService:
             # to a non-terminal state.  ARCHIVED preserves it.
             project.completed_at = None
 
-        if (
-            new_status == Project.Status.ARCHIVED
-            and old_status != Project.Status.ARCHIVED
-        ):
+        if new_status == Project.Status.ARCHIVED and old_status != Project.Status.ARCHIVED:
             project.archived_at = now
-        elif (
-            new_status != Project.Status.ARCHIVED
-            and old_status == Project.Status.ARCHIVED
-        ):
+        elif new_status != Project.Status.ARCHIVED and old_status == Project.Status.ARCHIVED:
             # Only clear archived_at when moving BACK from archived.
             project.archived_at = None
 
@@ -267,9 +254,7 @@ class ProjectMemberService:
 
     @classmethod
     @transaction.atomic
-    def add(
-        cls, *, project: Project, actor, validated_data: dict[str, Any]
-    ) -> ProjectMember:
+    def add(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> ProjectMember:
         """Add a member (user or team) to a project.
 
         If the same user/team was previously soft-deleted from this
@@ -312,9 +297,7 @@ class ProjectMemberService:
                 "allocation_percentage": member.allocation_percentage,
             },
         )
-        logger.info(
-            "Member %s added to project %s (by %s)", member.pk, project.pk, actor
-        )
+        logger.info("Member %s added to project %s (by %s)", member.pk, project.pk, actor)
         return cls.get_by_pk(member.pk)
 
     @classmethod
@@ -360,9 +343,7 @@ class ProjectMemberService:
             entity_id=member.pk,
             metadata={"user_id": user_id},
         )
-        logger.info(
-            "Member %s removed from project %s (by %s)", member.pk, project.pk, actor
-        )
+        logger.info("Member %s removed from project %s (by %s)", member.pk, project.pk, actor)
 
 
 # ---------------------------------------------------------------------------
@@ -388,9 +369,7 @@ class MilestoneService:
 
     @classmethod
     @transaction.atomic
-    def create(
-        cls, *, project: Project, actor, validated_data: dict[str, Any]
-    ) -> Milestone:
+    def create(cls, *, project: Project, actor, validated_data: dict[str, Any]) -> Milestone:
         """Create a new Milestone under a project."""
         milestone = Milestone.objects.create(project=project, **validated_data)
 
@@ -415,9 +394,7 @@ class MilestoneService:
 
     @classmethod
     @transaction.atomic
-    def update(
-        cls, *, milestone: Milestone, actor, validated_data: dict[str, Any]
-    ) -> Milestone:
+    def update(cls, *, milestone: Milestone, actor, validated_data: dict[str, Any]) -> Milestone:
         """Update a Milestone and manage completion timestamp."""
         old_status = milestone.status
         new_status = validated_data.get("status", old_status)
@@ -425,15 +402,9 @@ class MilestoneService:
         for attr, value in validated_data.items():
             setattr(milestone, attr, value)
 
-        if (
-            new_status == Milestone.Status.COMPLETED
-            and old_status != Milestone.Status.COMPLETED
-        ):
+        if new_status == Milestone.Status.COMPLETED and old_status != Milestone.Status.COMPLETED:
             milestone.completed_at = timezone.now()
-        elif (
-            new_status != Milestone.Status.COMPLETED
-            and old_status == Milestone.Status.COMPLETED
-        ):
+        elif new_status != Milestone.Status.COMPLETED and old_status == Milestone.Status.COMPLETED:
             # Only clear completed_at when moving BACK from completed.
             milestone.completed_at = None
 
@@ -441,8 +412,7 @@ class MilestoneService:
 
         event_type = (
             ProjectActivity.EventType.MILESTONE_COMPLETED
-            if new_status == Milestone.Status.COMPLETED
-            and old_status != Milestone.Status.COMPLETED
+            if new_status == Milestone.Status.COMPLETED and old_status != Milestone.Status.COMPLETED
             else ProjectActivity.EventType.MILESTONE_UPDATED
         )
         _ActivityLogger.log(

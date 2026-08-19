@@ -18,8 +18,6 @@ urlpatterns = [
     path(
         "telegram/magic-link/", GenerateTelegramMagicLinkView.as_view(), name="telegram_magic_link"
     ),
-    path(
-        "telegram/disconnect/", DisconnectTelegramView.as_view(), name="telegram_disconnect"
-    ),
+    path("telegram/disconnect/", DisconnectTelegramView.as_view(), name="telegram_disconnect"),
     path("", include(router.urls)),
 ]

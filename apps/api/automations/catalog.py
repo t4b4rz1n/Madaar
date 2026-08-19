@@ -276,7 +276,11 @@ AUTOMATION_EVENT_CATALOG = (
         _("Member added to project (admin view)"),
         _("A user is added to a project — admins and superusers are notified."),
         [Recipient.SUPERUSERS, Recipient.PROJECT_OWNER, Recipient.ORGANIZATION_ADMINS],
-        allowed_recipients=[Recipient.SUPERUSERS, Recipient.PROJECT_OWNER, Recipient.ORGANIZATION_ADMINS],
+        allowed_recipients=[
+            Recipient.SUPERUSERS,
+            Recipient.PROJECT_OWNER,
+            Recipient.ORGANIZATION_ADMINS,
+        ],
     ),
     _event(
         "member_added_to_org",

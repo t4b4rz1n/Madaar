@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
@@ -59,7 +58,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         validated_data.pop("password_confirm")
         user = User.objects.create_user(**validated_data)
         return user
-
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

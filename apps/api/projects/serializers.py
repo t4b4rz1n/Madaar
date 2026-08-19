@@ -182,15 +182,10 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                     Q(start_date__lt=start) | Q(target_date__lt=start), is_deleted=False
                 ).exists():
                     raise serializers.ValidationError(
-                        {
-                            "start_date": _(
-                                "Start date cannot be after an existing milestone."
-                            )
-                        }
+                        {"start_date": _("Start date cannot be after an existing milestone.")}
                     )
                 if self.instance.members.filter(
-                    Q(allocation_start_date__lt=start)
-                    | Q(allocation_end_date__lt=start),
+                    Q(allocation_start_date__lt=start) | Q(allocation_end_date__lt=start),
                     is_deleted=False,
                 ).exists():
                     raise serializers.ValidationError(
@@ -207,23 +202,14 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                     is_deleted=False,
                 ).exists():
                     raise serializers.ValidationError(
-                        {
-                            "deadline": _(
-                                "Deadline cannot be before an existing milestone."
-                            )
-                        }
+                        {"deadline": _("Deadline cannot be before an existing milestone.")}
                     )
                 if self.instance.members.filter(
-                    Q(allocation_start_date__gt=deadline)
-                    | Q(allocation_end_date__gt=deadline),
+                    Q(allocation_start_date__gt=deadline) | Q(allocation_end_date__gt=deadline),
                     is_deleted=False,
                 ).exists():
                     raise serializers.ValidationError(
-                        {
-                            "deadline": _(
-                                "Deadline cannot be before an existing member allocation."
-                            )
-                        }
+                        {"deadline": _("Deadline cannot be before an existing member allocation.")}
                     )
 
         # Resolve org and related objects once
@@ -236,11 +222,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 user=owner, organization=org, is_deleted=False
             ).exists():
                 raise serializers.ValidationError(
-                    {
-                        "owner_id": _(
-                            "The selected owner is not a member of this organisation."
-                        )
-                    }
+                    {"owner_id": _("The selected owner is not a member of this organisation.")}
                 )
 
         # Prevent changing organization of an existing project
@@ -250,11 +232,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             and attrs["organization"] != self.instance.organization
         ):
             raise serializers.ValidationError(
-                {
-                    "organization_id": _(
-                        "You cannot change the organisation of an existing project."
-                    )
-                }
+                {"organization_id": _("You cannot change the organisation of an existing project.")}
             )
 
         return attrs
@@ -323,17 +301,11 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
         # At least one of user / team is required
         if not user and not team:
             raise serializers.ValidationError(
-                {
-                    "user_id": _(
-                        "A project member must have either a user or a team assigned."
-                    )
-                }
+                {"user_id": _("A project member must have either a user or a team assigned.")}
             )
 
         # Duplicate membership check
-        project_pk = getattr(
-            self.instance, "project_id", self.context.get("project_pk")
-        )
+        project_pk = getattr(self.instance, "project_id", self.context.get("project_pk"))
         if project_pk:
             user_exists = ProjectMember.objects.filter(
                 project_id=project_pk, user=user, is_deleted=False
@@ -479,19 +451,11 @@ class MilestoneSerializer(serializers.ModelSerializer):
         if project:
             if target and project.deadline and target > project.deadline:
                 raise serializers.ValidationError(
-                    {
-                        "target_date": _(
-                            "Target date cannot be after the project's deadline."
-                        )
-                    }
+                    {"target_date": _("Target date cannot be after the project's deadline.")}
                 )
             if start and project.start_date and start < project.start_date:
                 raise serializers.ValidationError(
-                    {
-                        "start_date": _(
-                            "Start date cannot be before the project's start date."
-                        )
-                    }
+                    {"start_date": _("Start date cannot be before the project's start date.")}
                 )
 
         return attrs
@@ -506,9 +470,7 @@ class ProjectActivitySerializer(serializers.ModelSerializer):
     """Read-only serialiser for the project activity feed."""
 
     actor = UserMinimalSerializer(read_only=True)
-    event_type_display = serializers.CharField(
-        source="get_event_type_display", read_only=True
-    )
+    event_type_display = serializers.CharField(source="get_event_type_display", read_only=True)
 
     class Meta:
         model = ProjectActivity

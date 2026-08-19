@@ -561,8 +561,6 @@ export const mockActivities: ProjectActivity[] = [
     actor: {
       id: 1,
       username: "johndoe",
-      first_name: "John",
-      last_name: "Doe",
     },
     event_type: "project_created",
     entity_type: "project",

@@ -88,9 +88,7 @@ class NestedProjectMixin:
 @extend_schema_view(
     list=extend_schema(
         summary=_("List projects"),
-        description=_(
-            "Return all non-deleted projects accessible to the authenticated user."
-        ),
+        description=_("Return all non-deleted projects accessible to the authenticated user."),
         tags=["projects"],
     ),
     create=extend_schema(
@@ -104,9 +102,7 @@ class NestedProjectMixin:
         tags=["projects"],
     ),
     update=extend_schema(summary=_("Update a project"), tags=["projects"]),
-    partial_update=extend_schema(
-        summary=_("Partially update a project"), tags=["projects"]
-    ),
+    partial_update=extend_schema(summary=_("Partially update a project"), tags=["projects"]),
     destroy=extend_schema(summary=_("Soft-delete a project"), tags=["projects"]),
 )
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -223,9 +219,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """Move a project to ARCHIVED status."""
         project = self.get_object()
         updated = ProjectService.archive(project=project, actor=request.user)
-        return Response(
-            ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK
-        )
+        return Response(ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary=_("Complete a project"),
@@ -238,9 +232,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """Move a project to COMPLETED status."""
         project = self.get_object()
         updated = ProjectService.complete(project=project, actor=request.user)
-        return Response(
-            ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK
-        )
+        return Response(ProjectDetailSerializer(updated).data, status=status.HTTP_200_OK)
 
 
 # ---------------------------------------------------------------------------
@@ -253,9 +245,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     create=extend_schema(summary=_("Add a project member"), tags=["projects"]),
     retrieve=extend_schema(summary=_("Retrieve a project member"), tags=["projects"]),
     update=extend_schema(summary=_("Update a project member"), tags=["projects"]),
-    partial_update=extend_schema(
-        summary=_("Partially update a project member"), tags=["projects"]
-    ),
+    partial_update=extend_schema(summary=_("Partially update a project member"), tags=["projects"]),
     destroy=extend_schema(summary=_("Remove a project member"), tags=["projects"]),
 )
 class ProjectMemberViewSet(NestedProjectMixin, viewsets.ModelViewSet):
@@ -278,9 +268,7 @@ class ProjectMemberViewSet(NestedProjectMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return ProjectMember.objects.none()
-        return ProjectMemberService.get_base_queryset(
-            project_id=self.kwargs["project_pk"]
-        )
+        return ProjectMemberService.get_base_queryset(project_id=self.kwargs["project_pk"])
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -336,9 +324,7 @@ class ProjectMemberViewSet(NestedProjectMixin, viewsets.ModelViewSet):
     create=extend_schema(summary=_("Create a milestone"), tags=["projects"]),
     retrieve=extend_schema(summary=_("Retrieve a milestone"), tags=["projects"]),
     update=extend_schema(summary=_("Update a milestone"), tags=["projects"]),
-    partial_update=extend_schema(
-        summary=_("Partially update a milestone"), tags=["projects"]
-    ),
+    partial_update=extend_schema(summary=_("Partially update a milestone"), tags=["projects"]),
     destroy=extend_schema(summary=_("Soft-delete a milestone"), tags=["projects"]),
 )
 class MilestoneViewSet(NestedProjectMixin, viewsets.ModelViewSet):
@@ -436,6 +422,4 @@ class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return ProjectActivity.objects.none()
-        return ProjectActivityService.get_base_queryset(
-            project_id=self.kwargs["project_pk"]
-        )
+        return ProjectActivityService.get_base_queryset(project_id=self.kwargs["project_pk"])

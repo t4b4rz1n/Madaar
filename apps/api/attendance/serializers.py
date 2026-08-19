@@ -77,14 +77,10 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
         check_in = attrs.get("check_in", getattr(self.instance, "check_in", None))
         check_out = attrs.get("check_out", getattr(self.instance, "check_out", None))
         date = attrs.get("date", getattr(self.instance, "date", None))
-        organization = attrs.get(
-            "organization", getattr(self.instance, "organization", None)
-        )
+        organization = attrs.get("organization", getattr(self.instance, "organization", None))
 
         if date and date > timezone.localdate():
-            raise serializers.ValidationError(
-                {"date": _("Date cannot be in the future.")}
-            )
+            raise serializers.ValidationError({"date": _("Date cannot be in the future.")})
 
         if check_in and check_out:
             if check_out <= check_in:
@@ -118,15 +114,9 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
                 is_member = request.user.org_memberships.filter(
                     organization=organization,
                 ).exists()
-                if not is_member and not (
-                    request.user.is_staff or request.user.is_superuser
-                ):
+                if not is_member and not (request.user.is_staff or request.user.is_superuser):
                     raise serializers.ValidationError(
-                        {
-                            "organization": _(
-                                "You are not a member of this organization."
-                            )
-                        }
+                        {"organization": _("You are not a member of this organization.")}
                     )
 
         return attrs
@@ -193,15 +183,9 @@ class TimeLogWriteSerializer(serializers.ModelSerializer):
                 is_member = request.user.org_memberships.filter(
                     organization=org,
                 ).exists()
-                if not is_member and not (
-                    request.user.is_staff or request.user.is_superuser
-                ):
+                if not is_member and not (request.user.is_staff or request.user.is_superuser):
                     raise serializers.ValidationError(
-                        {
-                            "organization": _(
-                                "You are not a member of this organization."
-                            )
-                        }
+                        {"organization": _("You are not a member of this organization.")}
                     )
 
         return attrs
@@ -242,16 +226,10 @@ class TimeOffRequestWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ("manager_note",)
 
     def validate(self, attrs):
-        start = attrs.get(
-            "start_datetime", getattr(self.instance, "start_datetime", None)
-        )
+        start = attrs.get("start_datetime", getattr(self.instance, "start_datetime", None))
         end = attrs.get("end_datetime", getattr(self.instance, "end_datetime", None))
-        organization = attrs.get(
-            "organization", getattr(self.instance, "organization", None)
-        )
-        request_type = attrs.get(
-            "request_type", getattr(self.instance, "request_type", None)
-        )
+        organization = attrs.get("organization", getattr(self.instance, "organization", None))
+        request_type = attrs.get("request_type", getattr(self.instance, "request_type", None))
 
         if start and end and start >= end:
             raise serializers.ValidationError(
@@ -271,15 +249,9 @@ class TimeOffRequestWriteSerializer(serializers.ModelSerializer):
                 is_member = request.user.org_memberships.filter(
                     organization=organization,
                 ).exists()
-                if not is_member and not (
-                    request.user.is_staff or request.user.is_superuser
-                ):
+                if not is_member and not (request.user.is_staff or request.user.is_superuser):
                     raise serializers.ValidationError(
-                        {
-                            "organization": _(
-                                "You are not a member of this organization."
-                            )
-                        }
+                        {"organization": _("You are not a member of this organization.")}
                     )
 
         # Type-specific validations
@@ -318,9 +290,7 @@ class HolidaySerializer(serializers.ModelSerializer):
                     is_admin = request.user.org_memberships.filter(
                         organization=organization, role__in=["owner", "admin", "hr"]
                     ).exists()
-                    if not is_admin and not (
-                        request.user.is_staff or request.user.is_superuser
-                    ):
+                    if not is_admin and not (request.user.is_staff or request.user.is_superuser):
                         raise serializers.ValidationError(
                             {
                                 "organization": _(
@@ -330,16 +300,9 @@ class HolidaySerializer(serializers.ModelSerializer):
                         )
             else:
                 # Global holiday - only superuser
-                if not (
-                    request.user
-                    and (request.user.is_staff or request.user.is_superuser)
-                ):
+                if not (request.user and (request.user.is_staff or request.user.is_superuser)):
                     raise serializers.ValidationError(
-                        {
-                            "organization": _(
-                                "Only superusers can create global holidays."
-                            )
-                        }
+                        {"organization": _("Only superusers can create global holidays.")}
                     )
 
         return attrs

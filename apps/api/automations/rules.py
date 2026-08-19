@@ -323,7 +323,7 @@ def _fmt_task_completed(p):
     return (
         _("Task completed"),
         _(
-            "🎉 <b>Task completed!</b>\n\n" "📌 Task <b>{task}</b> has been successfully completed."
+            "🎉 <b>Task completed!</b>\n\n📌 Task <b>{task}</b> has been successfully completed."
         ).format(task=p.get("task_title", "—")),
     )
 
@@ -332,7 +332,7 @@ def _fmt_task_deadline_approaching(p):
     return (
         _("Task deadline warning"),
         _(
-            "⏰ <b>Deadline warning!</b>\n\n" "Less than 24 hours remain for task <b>{task}</b>."
+            "⏰ <b>Deadline warning!</b>\n\nLess than 24 hours remain for task <b>{task}</b>."
         ).format(task=p.get("task_title", "—")),
     )
 
@@ -350,9 +350,9 @@ def _fmt_user_mentioned(p):
 def _fmt_task_commented(p):
     return (
         _("New comment"),
-        _(
-            "💬 <b>New comment!</b>\n\n" "{author} added a new comment on task <b>{task}</b>."
-        ).format(author=p.get("author", _("someone")), task=p.get("task_title", "—")),
+        _("💬 <b>New comment!</b>\n\n{author} added a new comment on task <b>{task}</b>.").format(
+            author=p.get("author", _("someone")), task=p.get("task_title", "—")
+        ),
     )
 
 
@@ -370,10 +370,7 @@ def _fmt_leave_requested(p):
     return (
         _("Leave requested"),
         _(
-            "🏖️ <b>New leave request!</b>\n\n"
-            "👤 {user}\n"
-            "📋 Type: {leave_type}\n\n"
-            "Please review."
+            "🏖️ <b>New leave request!</b>\n\n👤 {user}\n📋 Type: {leave_type}\n\nPlease review."
         ).format(user=p.get("user_name", "—"), leave_type=p.get("leave_type", _("leave"))),
     )
 
@@ -392,7 +389,7 @@ def _fmt_leave_resolved(p):
 def _fmt_timer_started(p):
     return (
         _("Timer started"),
-        _("⏱️ <b>Work timer started!</b>\n\n" "👤 {user}\n" "📌 Task: <b>{task}</b>").format(
+        _("⏱️ <b>Work timer started!</b>\n\n👤 {user}\n📌 Task: <b>{task}</b>").format(
             user=p.get("user_name", "—"), task=p.get("task_title", "—")
         ),
     )
@@ -548,9 +545,7 @@ def _fmt_task_moved_to_testing(p):
     return (
         _("Task Moved to Testing"),
         _(
-            "🧪 <b>Task Moved to Testing!</b>\n\n"
-            "Task: <b>{task_title}</b>\n"
-            "Project: {project_name}"
+            "🧪 <b>Task Moved to Testing!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
         ).format(
             task_title=p.get("task_title", "—"),
             project_name=p.get("project_name", "—"),
@@ -562,9 +557,7 @@ def _fmt_task_created(p):
     return (
         _("New Task Created"),
         _(
-            "📝 <b>New Task Created!</b>\n\n"
-            "Task: <b>{task_title}</b>\n"
-            "Project: {project_name}"
+            "📝 <b>New Task Created!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
         ).format(
             task_title=p.get("task_title", "—"),
             project_name=p.get("project_name", "—"),

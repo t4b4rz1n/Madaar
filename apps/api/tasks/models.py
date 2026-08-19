@@ -297,7 +297,8 @@ class Task(BaseModel):
         # Use prefetched subtasks if available; otherwise fall back to queryset.
         if "subtasks" in getattr(self, "_prefetched_objects_cache", {}):
             subtask_list = [
-                s for s in self._prefetched_objects_cache["subtasks"]
+                s
+                for s in self._prefetched_objects_cache["subtasks"]
                 if not getattr(s, "is_deleted", False)
             ]
         else:

@@ -214,7 +214,10 @@ class TaskListSerializer(serializers.ModelSerializer):
 
     def get_spent_seconds(self, obj):
         from django.db.models import Sum
-        total = obj.time_logs.filter(is_active=False).aggregate(total=Sum("duration_seconds"))["total"]
+
+        total = obj.time_logs.filter(is_active=False).aggregate(total=Sum("duration_seconds"))[
+            "total"
+        ]
         return total or 0
 
     def get_is_active_timer_running(self, obj):

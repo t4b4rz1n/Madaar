@@ -14,6 +14,7 @@ from .validators import profile_picture_validator
 
 User = get_user_model()
 
+
 class UserProfileUpdateViewTestCase(TestCase):
     def setUp(self):
         self.url = reverse("profile")

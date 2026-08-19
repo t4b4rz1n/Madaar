@@ -42,7 +42,7 @@ class Project(BaseModel):
         blank=True,
         null=True,
         db_index=True,
-        help_text=_("Short identifier for tasks (e.g., MAD)")
+        help_text=_("Short identifier for tasks (e.g., MAD)"),
     )
     budget = models.DecimalField(
         _("Budget"),
@@ -52,9 +52,7 @@ class Project(BaseModel):
         blank=True,
         validators=[MinValueValidator(0)],
     )
-    budget_currency = models.CharField(
-        _("Budget currency"), max_length=10, default="IRR"
-    )
+    budget_currency = models.CharField(_("Budget currency"), max_length=10, default="IRR")
     status = models.CharField(
         _("Status"),
         max_length=20,
@@ -82,13 +80,9 @@ class Project(BaseModel):
         verbose_name_plural = _("Projects")
         ordering = ["-updated_at"]
         indexes = [
-            models.Index(
-                fields=["organization", "status"], name="project_org_status_idx"
-            ),
+            models.Index(fields=["organization", "status"], name="project_org_status_idx"),
             models.Index(fields=["owner", "status"], name="project_owner_status_idx"),
-            models.Index(
-                fields=["status", "deadline"], name="project_status_deadline_idx"
-            ),
+            models.Index(fields=["status", "deadline"], name="project_status_deadline_idx"),
         ]
         constraints = [
             models.CheckConstraint(
@@ -107,13 +101,18 @@ class Project(BaseModel):
     def save(self, *args, **kwargs):
         if not self.prefix and self.name:
             import re
-            base_prefix = re.sub(r'[^A-Z0-9]', '', self.name.upper())[:4]
+
+            base_prefix = re.sub(r"[^A-Z0-9]", "", self.name.upper())[:4]
             if not base_prefix:
                 base_prefix = "PRJ"
 
             prefix = base_prefix
             counter = 1
-            while Project.all_objects.filter(organization_id=self.organization_id, prefix=prefix).exclude(id=self.id).exists():
+            while (
+                Project.all_objects.filter(organization_id=self.organization_id, prefix=prefix)
+                .exclude(id=self.id)
+                .exists()
+            ):
                 prefix = f"{base_prefix[:3]}{counter}"
                 counter += 1
             self.prefix = prefix
@@ -161,9 +160,7 @@ class ProjectMember(BaseModel):
         _("Allocation percentage"),
         default=100,
         validators=[MinValueValidator(1), MaxValueValidator(100)],
-        help_text=_(
-            "Percentage of user's work capacity dedicated to this project (1-100%)"
-        ),
+        help_text=_("Percentage of user's work capacity dedicated to this project (1-100%)"),
     )
     allocation_start_date = models.DateField(
         _("Allocation start date"),
@@ -187,9 +184,7 @@ class ProjectMember(BaseModel):
         verbose_name = _("Project Member")
         verbose_name_plural = _("Project Members")
         ordering = ["project", models.F("user").asc(nulls_last=True)]
-        indexes = [
-            models.Index(fields=["user", "is_active"], name="member_user_active_idx")
-        ]
+        indexes = [models.Index(fields=["user", "is_active"], name="member_user_active_idx")]
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "user"],
@@ -210,9 +205,7 @@ class ProjectMember(BaseModel):
         ]
 
     def __str__(self):
-        project_name = (
-            self.project.name if getattr(self, "project", None) else _("No project")
-        )
+        project_name = self.project.name if getattr(self, "project", None) else _("No project")
         identity = self.user or self.team or _("Unassigned")
         return f"{project_name} — {identity} ({self.allocation_percentage}%)"
 
@@ -275,8 +268,7 @@ class Milestone(BaseModel):
         ]
         constraints = [
             models.CheckConstraint(
-                condition=Q(start_date__isnull=True)
-                | Q(target_date__gte=models.F("start_date")),
+                condition=Q(start_date__isnull=True) | Q(target_date__gte=models.F("start_date")),
                 name="milestone_target_after_start",
             )
         ]
@@ -324,12 +316,8 @@ class ProjectActivity(BaseModel):
         blank=True,
         db_index=True,
     )
-    event_type = models.CharField(
-        _("Event type"), max_length=30, choices=EventType.choices
-    )
-    entity_type = models.CharField(
-        _("Entity type"), max_length=20, choices=EntityType.choices
-    )
+    event_type = models.CharField(_("Event type"), max_length=30, choices=EventType.choices)
+    entity_type = models.CharField(_("Entity type"), max_length=20, choices=EntityType.choices)
     entity_id = models.CharField(
         _("Entity ID"), max_length=255, null=True, blank=True, db_index=True
     )
@@ -340,12 +328,8 @@ class ProjectActivity(BaseModel):
         verbose_name_plural = _("Project Activities")
         ordering = ["-created_at"]
         indexes = [
-            models.Index(
-                fields=["project", "created_at"], name="activity_project_created_idx"
-            ),
-            models.Index(
-                fields=["project", "event_type"], name="activity_project_event_idx"
-            ),
+            models.Index(fields=["project", "created_at"], name="activity_project_created_idx"),
+            models.Index(fields=["project", "event_type"], name="activity_project_event_idx"),
         ]
 
     def __str__(self):

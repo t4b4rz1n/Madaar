@@ -35,7 +35,7 @@ def send_telegram_notification(chat_id: str, message: str, reply_markup: dict = 
     Uses a persistent Session for connection reuse and performance.
     Auto-disables notifications if the bot is blocked by the user.
     """
-    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+    bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
 
     if not bot_token:
         logger.warning(f"[MOCK] Telegram Token not set. Message to {chat_id}: {message[:80]}...")
@@ -59,7 +59,7 @@ def send_telegram_notification(chat_id: str, message: str, reply_markup: dict = 
         response = _session.post(url, json=payload, timeout=15)
         data = response.json()
         if not data.get("ok"):
-            error_desc = data.get('description', 'Unknown error')
+            error_desc = data.get("description", "Unknown error")
             logger.error(f"Telegram API error for chat {chat_id}: {error_desc}")
 
             # If bot was blocked by user or chat doesn't exist,
@@ -91,7 +91,7 @@ def answer_callback_query(callback_query_id: str, text: str = "", show_alert: bo
     """
     Answers an inline keyboard callback query to remove the loading indicator.
     """
-    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+    bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
     if not bot_token:
         return False
 
@@ -113,7 +113,7 @@ def edit_telegram_message(chat_id: str, message_id: int, text: str, reply_markup
     """
     Edits an existing Telegram message (used for updating inline button responses).
     """
-    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+    bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
     if not bot_token:
         return False
 

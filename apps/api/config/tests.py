@@ -40,10 +40,7 @@ class ApiRendererTestCase(TestCase):
         self.assertFalse(result["status"])
         self.assertEqual(result["errors"], error_payload)
         self.assertIsNone(result["data"])
-        self.assertTrue(
-            "username" in result["message"] or "نام کاربری" in result["message"]
-        )
-
+        self.assertTrue("username" in result["message"] or "نام کاربری" in result["message"])
 
     def test_render_already_formatted_envelope(self):
         already_wrapped = {

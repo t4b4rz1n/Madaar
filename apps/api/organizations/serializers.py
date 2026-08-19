@@ -64,7 +64,9 @@ class OrganizationSerializer(serializers.ModelSerializer):
         supplied_slug = attrs.get("slug")
         base_slug = slugify(supplied_slug or name)
         if not base_slug:
-            raise serializers.ValidationError({"slug": "Provide a name that can be used as a URL slug."})
+            raise serializers.ValidationError(
+                {"slug": "Provide a name that can be used as a URL slug."}
+            )
 
         candidate = base_slug
         suffix = 2

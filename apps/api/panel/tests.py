@@ -182,9 +182,7 @@ class PanelBillingAndTicketingTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         self.client.force_authenticate(user=self.admin_user)
-        response = self.client.post(
-            self.staff_ticket_type_list_url, {"name": "Operations Support"}
-        )
+        response = self.client.post(self.staff_ticket_type_list_url, {"name": "Operations Support"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(TicketType.objects.filter(name="Operations Support").exists())
 

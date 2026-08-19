@@ -48,6 +48,7 @@ class DisconnectTelegramView(APIView):
         logger.info(f"User {request.user.username} disconnected Telegram.")
         return Response({"status": "disconnected"})
 
+
 class GenerateTelegramMagicLinkView(APIView):
     permission_classes = [IsAuthenticated]
 

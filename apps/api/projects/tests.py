@@ -22,9 +22,7 @@ class ProjectModelTests(TestCase):
             last_name="Owner",
             password="password123",
         )
-        cls.org = Organization.objects.create(
-            name="Test Org", slug="test-org", owner=cls.user
-        )
+        cls.org = Organization.objects.create(name="Test Org", slug="test-org", owner=cls.user)
         cls.team = Team.objects.create(name="Dev Team", organization=cls.org)
 
     def test_project_str_and_creation(self):
@@ -192,9 +190,7 @@ class ProjectAPITests(APITestCase):
             password="Password123!",
         )
 
-        cls.org = Organization.objects.create(
-            name="Madaar Org", slug="madaar-org", owner=cls.admin
-        )
+        cls.org = Organization.objects.create(name="Madaar Org", slug="madaar-org", owner=cls.admin)
         OrganizationMembership.objects.create(
             user=cls.member_user,
             organization=cls.org,
@@ -276,9 +272,7 @@ class ProjectAPITests(APITestCase):
 
     def test_activity_feed_filter_by_event_type(self):
         self.client.force_authenticate(user=self.admin)
-        url = (
-            f"/api/v1/projects/{self.project.id}/activities/?event_type=project_created"
-        )
+        url = f"/api/v1/projects/{self.project.id}/activities/?event_type=project_created"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for item in response.data.get("results", response.data):

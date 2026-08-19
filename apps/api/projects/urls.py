@@ -38,9 +38,7 @@ projects_router = routers.NestedDefaultRouter(router, r"", lookup="project")
 
 projects_router.register(r"members", ProjectMemberViewSet, basename="project-member")
 projects_router.register(r"milestones", MilestoneViewSet, basename="project-milestone")
-projects_router.register(
-    r"activities", ProjectActivityViewSet, basename="project-activity"
-)
+projects_router.register(r"activities", ProjectActivityViewSet, basename="project-activity")
 
 # URLs ordering: manual/specific endpoints first, then routers at the end
 urlpatterns = [

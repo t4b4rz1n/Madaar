@@ -23,9 +23,7 @@ class TaskCascadeService:
         from .models import TaskStatus
 
         status_ids = list(
-            TaskStatus.all_objects.filter(board=board, is_deleted=True).values_list(
-                "id", flat=True
-            )
+            TaskStatus.all_objects.filter(board=board, is_deleted=True).values_list("id", flat=True)
         )
         if not status_ids:
             return
@@ -48,9 +46,9 @@ class TaskCascadeService:
         from .models import Task
 
         task_ids = list(
-            Task.all_objects.filter(
-                status_id__in=status_ids, is_deleted=False
-            ).values_list("id", flat=True)
+            Task.all_objects.filter(status_id__in=status_ids, is_deleted=False).values_list(
+                "id", flat=True
+            )
         )
         if not task_ids:
             return
@@ -63,9 +61,9 @@ class TaskCascadeService:
         from .models import Task
 
         task_ids = list(
-            Task.all_objects.filter(
-                status_id__in=status_ids, is_deleted=True
-            ).values_list("id", flat=True)
+            Task.all_objects.filter(status_id__in=status_ids, is_deleted=True).values_list(
+                "id", flat=True
+            )
         )
         if not task_ids:
             return
@@ -90,16 +88,16 @@ class TaskCascadeService:
         from .models import Task, TaskChecklistItem, TaskComment
 
         subtask_ids = list(
-            Task.all_objects.filter(
-                parent_task_id__in=task_ids, is_deleted=False
-            ).values_list("id", flat=True)
+            Task.all_objects.filter(parent_task_id__in=task_ids, is_deleted=False).values_list(
+                "id", flat=True
+            )
         )
         if subtask_ids:
             Task.all_objects.filter(id__in=subtask_ids).update(is_deleted=True)
             TaskCascadeService._soft_delete_task_children(subtask_ids, depth + 1)
-        TaskChecklistItem.all_objects.filter(
-            task_id__in=task_ids, is_deleted=False
-        ).update(is_deleted=True)
+        TaskChecklistItem.all_objects.filter(task_id__in=task_ids, is_deleted=False).update(
+            is_deleted=True
+        )
         TaskComment.all_objects.filter(task_id__in=task_ids, is_deleted=False).update(
             is_deleted=True
         )
@@ -112,16 +110,16 @@ class TaskCascadeService:
         from .models import Task, TaskChecklistItem, TaskComment
 
         subtask_ids = list(
-            Task.all_objects.filter(
-                parent_task_id__in=task_ids, is_deleted=True
-            ).values_list("id", flat=True)
+            Task.all_objects.filter(parent_task_id__in=task_ids, is_deleted=True).values_list(
+                "id", flat=True
+            )
         )
         if subtask_ids:
             Task.all_objects.filter(id__in=subtask_ids).update(is_deleted=False)
             TaskCascadeService._restore_task_children(subtask_ids, depth + 1)
-        TaskChecklistItem.all_objects.filter(
-            task_id__in=task_ids, is_deleted=True
-        ).update(is_deleted=False)
+        TaskChecklistItem.all_objects.filter(task_id__in=task_ids, is_deleted=True).update(
+            is_deleted=False
+        )
         TaskComment.all_objects.filter(task_id__in=task_ids, is_deleted=True).update(
             is_deleted=False
         )

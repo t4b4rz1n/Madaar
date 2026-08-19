@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from organizations.models import Organization, Team, TeamMembership
+from organizations.models import Organization, Team
 
 User = get_user_model()
 
@@ -17,7 +17,9 @@ class PanelTeamTestCase(APITestCase):
         )
         self.org = Organization.objects.create(name="Test Org", slug="test-org", owner=self.user)
         self.team = Team.objects.create(name="Backend Devs", organization=self.org)
-        self.squad = Team.objects.create(name="Core Squad", organization=self.org, parent_team=self.team)
+        self.squad = Team.objects.create(
+            name="Core Squad", organization=self.org, parent_team=self.team
+        )
         self.client.force_authenticate(user=self.user)
 
     def test_list_teams_success(self):
@@ -37,9 +39,12 @@ class PanelTeamTestCase(APITestCase):
 
         json_data = response.json()
         self.assertTrue(json_data["status"])
-        squads = json_data["data"]["results"] if isinstance(json_data["data"], dict) and "results" in json_data["data"] else json_data["data"]
+        squads = (
+            json_data["data"]["results"]
+            if isinstance(json_data["data"], dict) and "results" in json_data["data"]
+            else json_data["data"]
+        )
         self.assertEqual(squads[0]["name"], self.squad.name)
-
 
     def test_create_team(self):
         url = reverse("staff-teams-list")

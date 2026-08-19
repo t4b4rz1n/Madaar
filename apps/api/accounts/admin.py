@@ -21,7 +21,12 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(WorkStyleProfile)
 class WorkStyleProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "communication_preference", "preferred_working_hours_start", "preferred_working_hours_end")
+    list_display = (
+        "user",
+        "communication_preference",
+        "preferred_working_hours_start",
+        "preferred_working_hours_end",
+    )
     list_filter = ("communication_preference",)
     search_fields = ("user__username", "user__email", "disc_result", "neo_result")
     raw_id_fields = ("user",)
