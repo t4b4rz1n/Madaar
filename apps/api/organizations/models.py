@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from common.models import BaseModel
@@ -69,14 +70,6 @@ class Team(BaseModel):
 
 
 class OrganizationMembership(BaseModel):
-    class Role(models.TextChoices):
-        OWNER = "owner", "Owner"
-        ADMIN = "Admin", "Admin"
-        TEAM_LEAD = "team_lead", "Team Lead"
-        EMPLOYEE = "employee", "Employee"
-        HR = "hr", "Human Resources"
-        ACCOUNTANT = "accountant", "Accountant"
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -87,17 +80,13 @@ class OrganizationMembership(BaseModel):
         on_delete=models.CASCADE,
         related_name="memberships",
     )
-    role = models.CharField(
-        max_length=20,
-        choices=Role.choices,
-        default=Role.EMPLOYEE,
-    )
-    invited_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+    role = models.ForeignKey(
+        "access_control.Role",
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name="invited_memberships",
+        related_name="org_memberships",
+        help_text="RBAC Role assigned to this member within this organization.",
     )
 
     class Meta:
@@ -115,12 +104,17 @@ class OrganizationMembership(BaseModel):
     def __str__(self):
         return f"{self.user_id} - {self.organization_id} ({self.role})"
 
+    def clean(self):
+        if self.role_id and self.role.organization_id != self.organization_id:
+            raise ValidationError({"role": "Role must belong to the same organization."})
+        if (
+            self.role_id
+            and self.role.assignment_scope != self.role.AssignmentScope.ORGANIZATION
+        ):
+            raise ValidationError({"role": "Organization membership requires an organization role."})
+
 
 class TeamMembership(BaseModel):
-    class Role(models.TextChoices):
-        LEAD = "lead", "Lead"
-        MEMBER = "member", "Member"
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -131,10 +125,11 @@ class TeamMembership(BaseModel):
         on_delete=models.CASCADE,
         related_name="memberships",
     )
-    role = models.CharField(
-        max_length=20,
-        choices=Role.choices,
-        default=Role.MEMBER,
+    role = models.ForeignKey(
+        "access_control.Role",
+        on_delete=models.PROTECT,
+        related_name="team_memberships",
+        help_text="RBAC Role assigned to this member within this team.",
     )
 
     class Meta:
@@ -151,3 +146,23 @@ class TeamMembership(BaseModel):
 
     def __str__(self):
         return f"{self.user_id} - {self.team_id} ({self.role})"
+
+    def clean(self):
+        if self.role_id:
+            if self.role.organization_id != self.team.organization_id:
+                raise ValidationError({"role": "Role must belong to the team's organization."})
+            if self.role.assignment_scope != self.role.AssignmentScope.TEAM:
+                raise ValidationError({"role": "Team membership requires a team role."})
+            if not self.role.is_active:
+                raise ValidationError({"role": "Team membership role must be active."})
+
+        if self.user_id and self.team_id:
+            has_active_org_membership = OrganizationMembership.objects.filter(
+                user_id=self.user_id,
+                organization_id=self.team.organization_id,
+                is_deleted=False,
+            ).exists()
+            if not has_active_org_membership:
+                raise ValidationError(
+                    {"user": "User must be an active organization member before joining a team."}
+                )
