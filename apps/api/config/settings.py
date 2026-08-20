@@ -132,9 +132,11 @@ else:
 # --- Cache Configuration ---
 import socket
 
+
 def _redis_available(url):
     try:
         from urllib.parse import urlparse
+
         parsed = urlparse(url)
         host = parsed.hostname or "localhost"
         port = parsed.port or 6379
@@ -143,6 +145,7 @@ def _redis_available(url):
         return True
     except Exception:
         return False
+
 
 if _redis_available(REDIS_CACHE_URL):
     CACHES = {

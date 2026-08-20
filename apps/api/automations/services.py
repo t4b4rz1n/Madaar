@@ -190,7 +190,12 @@ class TelegramBotService:
 
             if is_owner:
                 keyboard.append(
-                    [{"text": _("👑 Organization Admin Panel"), "callback_data": "cmd_org_admin_menu"}]
+                    [
+                        {
+                            "text": _("👑 Organization Admin Panel"),
+                            "callback_data": "cmd_org_admin_menu",
+                        }
+                    ]
                 )
 
             if user.is_superuser:
@@ -247,7 +252,9 @@ class TelegramBotService:
 
         if not token:
             msg = (
-                _("❌ <b>Error:</b> Invalid connection link.\n\nPlease click on the \"Connect to Telegram\" button from your site dashboard to enter the bot.")
+                _(
+                    '❌ <b>Error:</b> Invalid connection link.\n\nPlease click on the "Connect to Telegram" button from your site dashboard to enter the bot.'
+                )
                 if lang == "fa"
                 else "❌ <b>Error:</b> Invalid connection link.\n\nPlease click the 'Connect to Telegram' button from your website dashboard to enter the bot."
             )
@@ -261,7 +268,9 @@ class TelegramBotService:
         )
         if not wsp:
             msg = (
-                _("❌ <b>The link has expired or is invalid!</b>\n\nPlease generate a new connection link from the website.")
+                _(
+                    "❌ <b>The link has expired or is invalid!</b>\n\nPlease generate a new connection link from the website."
+                )
                 if lang == "fa"
                 else "❌ <b>Link expired or invalid!</b>\n\nPlease generate a new connection link from the website."
             )
@@ -273,7 +282,9 @@ class TelegramBotService:
         existing_wsp = WorkStyleProfile.objects.filter(telegram_chat_id=chat_id).first()
         if existing_wsp and existing_wsp.id != wsp.id:
             msg = (
-                _("❌ <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account in the Madaar system. Each Telegram account can only be connected to one site account.")
+                _(
+                    "❌ <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account in the Madaar system. Each Telegram account can only be connected to one site account."
+                )
                 if lang == "fa"
                 else "❌ <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account. Each Telegram account can only be connected to one site account."
             )
@@ -305,10 +316,9 @@ class TelegramBotService:
         cls._update_user_language(user, lang)
 
         name = user.first_name if user else _("User")
-        msg = _(
-            "🏠 <b>Madaar Bot Main Menu</b>\n\n"
-            "Hello {name}! Use the buttons below:"
-        ).format(name=name)
+        msg = _("🏠 <b>Madaar Bot Main Menu</b>\n\n" "Hello {name}! Use the buttons below:").format(
+            name=name
+        )
         cls._send_or_edit(
             chat_id, msg, reply_markup=cls._main_menu_markup(user), edit_message_id=edit_message_id
         )
@@ -336,9 +346,7 @@ class TelegramBotService:
     @classmethod
     def _handle_language_menu(cls, chat_id: str, lang: str, edit_message_id: int = None):
         """Shows language selection menu."""
-        msg = _(
-            "🌐 <b>Language Selection</b>\n\nPlease select your preferred language:"
-        )
+        msg = _("🌐 <b>Language Selection</b>\n\nPlease select your preferred language:")
         keyboard = {
             "inline_keyboard": [
                 [
@@ -453,7 +461,9 @@ class TelegramBotService:
         )
 
         if not memberships:
-            msg = _("📂 <b>My Projects</b>\n\nYou are currently not a member of any active project.")
+            msg = _(
+                "📂 <b>My Projects</b>\n\nYou are currently not a member of any active project."
+            )
         else:
             lines = [_("📂 <b>My Projects</b>\n")]
             for i, m in enumerate(memberships, 1):
@@ -570,9 +580,9 @@ class TelegramBotService:
 
             if m.role == OrganizationMembership.Role.OWNER:
                 owner_orgs.append(
-                    _("👑 You are the owner of organization <b>{org}</b> (👥 {count} members)").format(
-                        org=org.name, count=member_count
-                    )
+                    _(
+                        "👑 You are the owner of organization <b>{org}</b> (👥 {count} members)"
+                    ).format(org=org.name, count=member_count)
                 )
                 owner_org_ids.add(org.id)
             else:
@@ -606,7 +616,9 @@ class TelegramBotService:
         cls._update_user_language(user, lang)
 
         if not user or not user.is_superuser:
-            cls._send_or_edit(chat_id, _("❌ Unauthorized access."), edit_message_id=edit_message_id)
+            cls._send_or_edit(
+                chat_id, _("❌ Unauthorized access."), edit_message_id=edit_message_id
+            )
             return
 
         from accounts.models import User as AccountUser
@@ -870,7 +882,9 @@ class TelegramBotService:
         if user:
             cls._update_user_language(user, lang)
             error_msg = _(
-                _("❓ <b>Invalid command!</b>\n\nI didn\'t understand. Please use the buttons below:")
+                _(
+                    "❓ <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:"
+                )
             )
             send_telegram_notification.delay(
                 chat_id, error_msg, reply_markup=cls._main_menu_markup(user)
@@ -879,5 +893,7 @@ class TelegramBotService:
         else:
             send_telegram_notification.delay(
                 chat_id,
-                _("❓ <b>Invalid command!</b>\n\nFirst, connect your account using the /start command."),
+                _(
+                    "❓ <b>Invalid command!</b>\n\nFirst, connect your account using the /start command."
+                ),
             )

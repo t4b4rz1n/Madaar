@@ -368,19 +368,11 @@ class TaskService:
 
         # Permission check for moving tasks
         if not actor.is_staff and not actor.is_superuser:
-            role = (
-                actor.org_memberships.filter(organization_id=task.project.organization_id)
-                .values_list("role", flat=True)
-                .first()
-            )
             # admin, owner, team_lead can move any task
             pass
 
         old_status = task.status
         old_order = task.order
-
-        task_code = task.status.code.lower() if task.status and task.status.code else ""
-        new_code = new_status.code.lower() if new_status and new_status.code else ""
 
         pass
 
@@ -399,7 +391,6 @@ class TaskService:
 
             code = new_status.code.lower() if new_status.code else ""
             if code == "doing":
-                from rest_framework.exceptions import PermissionDenied
                 try:
                     TimeLogService.start_timer(actor, task)
                 except Exception:
@@ -501,8 +492,7 @@ class TaskService:
             return
 
         tasks_dict = {
-            str(t.id): t
-            for t in Task.objects.filter(id__in=task_ids).select_for_update()
+            str(t.id): t for t in Task.objects.filter(id__in=task_ids).select_for_update()
         }
         tasks_to_update = []
         for item in orders:
@@ -513,7 +503,6 @@ class TaskService:
 
         if tasks_to_update:
             Task.objects.bulk_update(tasks_to_update, ["order"])
-
 
 
 class ChecklistService:

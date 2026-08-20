@@ -136,8 +136,8 @@ export const getMyMonthlyTimesheet = async (year: number, month: number): Promis
 };
 
 export const getTeamTimesheet = async (organizationId: string, startDate: string, endDate: string): Promise<TimesheetEntry[]> => {
-  const res = await ApiService.get('/attendance/timesheets/team/', { 
-    params: { organization: organizationId, start_date: startDate, end_date: endDate } 
+  const res = await ApiService.get('/attendance/timesheets/team/', {
+    params: { organization: organizationId, start_date: startDate, end_date: endDate }
   });
   return extractData<TimesheetEntry>(res);
 };

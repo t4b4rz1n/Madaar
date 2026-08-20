@@ -239,10 +239,10 @@ class TaskViewSet(viewsets.ModelViewSet):
             .annotate(
                 is_active_timer_running=Exists(
                     TimeLog.objects.filter(
-                        task=OuterRef("pk"), 
-                        is_active=True, 
+                        task=OuterRef("pk"),
+                        is_active=True,
                         is_deleted=False,
-                        user=self.request.user
+                        user=self.request.user,
                     )
                 )
             )
@@ -467,6 +467,7 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
         )
         if org_ids is not None:
             from django.db.models import Q
+
             qs = qs.filter(
                 Q(task__project__organization_id__in=org_ids)
                 | Q(task__assignee=user)

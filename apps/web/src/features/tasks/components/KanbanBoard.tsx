@@ -183,7 +183,7 @@ export const KanbanBoard: React.FC = () => {
       // Find "doing" or "in progress" status IN THE ACTIVE BOARD
       const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
       const doingStatus = activeBoard?.statuses.find(s => s.code === 'doing' || s.name.toLowerCase() === 'doing' || s.name.toLowerCase() === 'in progress');
-      
+
       const previousTasks = [...localTasks];
 
       // Stop all other timers optimistically first (only one can be active)
@@ -249,11 +249,11 @@ export const KanbanBoard: React.FC = () => {
   const handlePlayTimer = (taskId: string | number) => {
     const task = localTasks.find(t => sameId(t.id, taskId));
     if (!task) return;
-    
+
     // Find "doing" or "in progress" status IN THE ACTIVE BOARD
     const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
     const doingStatus = activeBoard?.statuses.find(s => s.code === 'doing' || s.name.toLowerCase() === 'doing' || s.name.toLowerCase() === 'in progress');
-    
+
     // If we have a doing status and the task is not already in it, move it optimistically
     if (doingStatus && !sameId(task.status_detail?.id, doingStatus.id)) {
       // Optimistic update (backend will auto-move it to doing when we start the timer)
@@ -266,7 +266,7 @@ export const KanbanBoard: React.FC = () => {
         return newTasks;
       });
     }
-    
+
     startTimerMutation.mutate(taskId);
   };
 
@@ -286,7 +286,7 @@ export const KanbanBoard: React.FC = () => {
       toast.error('Done status not found on this board.');
       return;
     }
-    
+
     const task = localTasks.find(t => sameId(t.id, taskId));
     if (!task) return;
     if (sameId(task.status_detail?.id, doneStatus.id)) return;
@@ -406,7 +406,7 @@ export const KanbanBoard: React.FC = () => {
       setActiveTask(null);
       return;
     }
-    
+
     // Use findStatusId to reliably get the target column, bypassing stale localTasks for the dragged item
     const overStatusId = findStatusId(overId);
     const newStatusId = overStatusId || movedTask.status_detail?.id;
@@ -451,7 +451,7 @@ export const KanbanBoard: React.FC = () => {
     // Use activeTask's original status to determine if it was a cross-column move
     // This avoids stale state bugs if handleDragOver mutated localTasks during hover
     const wasCrossColumn = activeTask && !sameId(activeTask.status_detail?.id, newStatusId);
-    
+
     if (wasCrossColumn) {
       const newOrder = newColumnOrders.find(o => sameId(o.id, movedTask.id))?.order || 0;
       moveTaskMutation.mutate({
@@ -465,7 +465,7 @@ export const KanbanBoard: React.FC = () => {
         reorderTasksMutation.mutate(newColumnOrders);
       }
     }
-    
+
     setActiveTask(null);
   };
 
@@ -565,9 +565,9 @@ export const KanbanBoard: React.FC = () => {
                 <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1">
                   <SortableContext items={columnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
                     {columnTasks.map(task => (
-                      <SortableTask 
-                        key={task.id} 
-                        task={task} 
+                      <SortableTask
+                        key={task.id}
+                        task={task}
                         onClick={() => { setSelectedTaskForSheet(task); if (focusMode) setFocusedTaskId(task.id); }}
                         onPlayTimer={handlePlayTimer}
                         onStopTimer={handleStopTimer}

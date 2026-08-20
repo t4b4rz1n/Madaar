@@ -111,13 +111,13 @@ export const getTaskActivities = async (taskId: string | number): Promise<TaskAc
 
 export const addComment = async (taskId: string | number, content: string, file?: File): Promise<TaskComment> => {
   let data;
-  
+
   if (file) {
     const formData = new FormData();
     formData.append('task', taskId.toString());
     formData.append('content', content);
     formData.append('attached_file', file);
-    
+
     // Axios handles FormData correctly and sets multipart/form-data
     data = await ApiService.post<TaskComment>('/tasks/comments/', formData);
   } else {
@@ -126,7 +126,7 @@ export const addComment = async (taskId: string | number, content: string, file?
       content,
     });
   }
-  
+
   return (data as any).data ?? data;
 };
 
