@@ -304,35 +304,7 @@ AUTOMATION_EVENT_CATALOG = (
         [Recipient.PROJECT_OWNER],
         allowed_recipients=[Recipient.PROJECT_OWNER],
     ),
-    _event(
-        "high_priority_task_created",
-        _("High priority task created"),
-        _("A task with high priority is created."),
-        [Recipient.PROJECT_OWNER],
-        allowed_recipients=[Recipient.PROJECT_OWNER],
-    ),
-    _event(
-        "high_priority_task_completed",
-        _("High priority task completed"),
-        _("A high priority task is marked complete."),
-        [Recipient.PROJECT_OWNER],
-        allowed_recipients=[Recipient.PROJECT_OWNER],
-    ),
-    _event(
-        "task_priority_increased_to_high",
-        _("Task priority increased to high"),
-        _("A low-priority task is updated to high priority."),
-        [Recipient.PROJECT_OWNER],
-        allowed_recipients=[Recipient.PROJECT_OWNER],
-    ),
     # ── Team Lead-specific events ──────────────────────────────────────────
-    _event(
-        "task_moved_to_testing",
-        _("Task moved to testing"),
-        _("A task is moved to the testing phase."),
-        [Recipient.TEAM_LEADS],
-        allowed_recipients=[Recipient.TEAM_LEADS, Recipient.PROJECT_OWNER, Recipient.REPORTER],
-    ),
     _event(
         "task_created",
         _("Task created"),

@@ -130,7 +130,7 @@ export const AutomationsPage = () => {
             <Flash size={30} variant="Bold" className="text-primary" />
             Workflow automation
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-base-content/60">Manage delivery settings for the 15 standard workflow events in the organization.</p>
+          <p className="mt-2 max-w-2xl text-sm text-base-content/60">Manage delivery settings for the {catalog?.events ? catalog.events.filter(event => !['Organization created', 'Project created', 'Project budget set or changed', 'Member added to project (admin view)', 'Member added to organization'].includes(event.label)).length : 'standard'} workflow events in the organization.</p>
         </div>
         <div className="w-full md:w-72">
           <label htmlFor="automation-organization" className="mb-2 block text-sm font-medium text-base-content/70">Organization</label>

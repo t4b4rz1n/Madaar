@@ -89,10 +89,8 @@ export const addChecklistItem = async (taskId: string | number, description: str
   return (data as any).data ?? data;
 };
 
-export const toggleChecklistItem = async (itemId: number, isCompleted: boolean): Promise<TaskChecklistItem> => {
-  const data = await ApiService.patch<TaskChecklistItem>(`/tasks/checklist-items/${itemId}/`, {
-    is_completed: isCompleted,
-  });
+export const toggleChecklistItem = async (itemId: string | number, _isCompleted?: boolean): Promise<TaskChecklistItem> => {
+  const data = await ApiService.post<TaskChecklistItem>(`/tasks/checklist-items/${itemId}/toggle/`);
   return (data as any).data ?? data;
 };
 
@@ -164,6 +162,17 @@ export const createStandup = async (
     today_work: todayWork,
     blockers,
     organization: organizationId,
+  });
+  return (data as any).data ?? data;
+};
+
+export const createStatus = async (boardId: string | number, name: string, code?: string): Promise<any> => {
+  const statusCode = code || name.toLowerCase().replace(/\s+/g, '-');
+  const data = await ApiService.post<any>('/tasks/statuses/', {
+    board: boardId,
+    name,
+    code: statusCode,
+    order: 99,
   });
   return (data as any).data ?? data;
 };

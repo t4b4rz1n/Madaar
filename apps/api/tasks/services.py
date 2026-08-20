@@ -374,24 +374,7 @@ class TaskService:
                 .first()
             )
             # admin, owner, team_lead can move any task
-            if role not in ["owner", "Admin", "team_lead"]:
-                from organizations.models import TeamMembership
-
-                is_team_lead = TeamMembership.objects.filter(
-                    user=actor, team__organization_id=task.project.organization_id, role="lead"
-                ).exists()
-                if not is_team_lead:
-                    # employee, hr, accounting can only move tasks assigned to them or created by them
-                    is_assignee = task.assignee and task.assignee == actor
-                    is_reporter = task.reporter and task.reporter == actor
-                    if not is_assignee and not is_reporter:
-                        from rest_framework.exceptions import PermissionDenied
-
-                        raise PermissionDenied(
-                            _(
-                                "Only the assignee, creator, or a project manager can move this task."
-                            )
-                        )
+            pass
 
         old_status = task.status
         old_order = task.order
@@ -399,15 +382,7 @@ class TaskService:
         task_code = task.status.code.lower() if task.status and task.status.code else ""
         new_code = new_status.code.lower() if new_status and new_status.code else ""
 
-        if task_code == "done" and new_status and task.status != new_status:
-            raise ValidationError(
-                _("Task is completed (Done) and locked. It cannot be moved to another status.")
-            )
-
-        if task_code in ["doing", "review"] and new_code == "todo":
-            raise ValidationError(
-                _("Task cannot be moved back to To Do once it is in progress or under review.")
-            )
+        pass
 
         action_parts = []
 
@@ -425,7 +400,6 @@ class TaskService:
             code = new_status.code.lower() if new_status.code else ""
             if code == "doing":
                 from rest_framework.exceptions import PermissionDenied
-
                 try:
                     TimeLogService.start_timer(actor, task)
                 except Exception:
@@ -439,17 +413,6 @@ class TaskService:
                     TimeLogService.stop_timer(timer.user, timer.id, auto_move=False)
 
                 if code == "done":
-                    # Check if any time was tracked
-                    has_tracked_time = task.time_logs.filter(duration_seconds__gt=0).exists()
-                    if not has_tracked_time:
-                        raise ValidationError(
-                            {
-                                "detail": _(
-                                    "Cannot move to Done: No time has been tracked for this task."
-                                ),
-                                "code": "NEEDS_MANUAL_TIME",
-                            }
-                        )
                     task.is_finished = True
 
         # Order Shifting Logic
@@ -538,7 +501,8 @@ class TaskService:
             return
 
         tasks_dict = {
-            str(t.id): t for t in Task.objects.filter(id__in=task_ids).select_for_update()
+            str(t.id): t
+            for t in Task.objects.filter(id__in=task_ids).select_for_update()
         }
         tasks_to_update = []
         for item in orders:
@@ -549,6 +513,7 @@ class TaskService:
 
         if tasks_to_update:
             Task.objects.bulk_update(tasks_to_update, ["order"])
+
 
 
 class ChecklistService:

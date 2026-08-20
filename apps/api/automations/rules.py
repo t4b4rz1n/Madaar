@@ -233,8 +233,8 @@ def _format_message(event_type: str, payload: dict) -> tuple:
         return formatter(payload)
 
     # Fallback
-    return _("اعلان سیستم مدار"), _(
-        "📩 یک رویداد جدید در سیستم ثبت شد: <code>{event_type}</code>"
+    return _("Madaar System Notification"), _(
+        "📩 A new event has been logged in the system: <code>{event_type}</code>"
     ).format(event_type=event_type)
 
 
@@ -499,59 +499,6 @@ def _fmt_milestone_created(p):
     )
 
 
-def _fmt_high_priority_task_created(p):
-    return (
-        _("High Priority Task Created"),
-        _(
-            "🔴 <b>High Priority Task Created!</b>\n\n"
-            "Task: <b>{task_title}</b>\n"
-            "Project: {project_name}"
-        ).format(
-            task_title=p.get("task_title", "—"),
-            project_name=p.get("project_name", "—"),
-        ),
-    )
-
-
-def _fmt_high_priority_task_completed(p):
-    return (
-        _("High Priority Task Completed"),
-        _(
-            "🟢 <b>High Priority Task Completed!</b>\n\n"
-            "Task: <b>{task_title}</b>\n"
-            "Project: {project_name}"
-        ).format(
-            task_title=p.get("task_title", "—"),
-            project_name=p.get("project_name", "—"),
-        ),
-    )
-
-
-def _fmt_task_priority_increased_to_high(p):
-    return (
-        _("Task Priority Increased to High"),
-        _(
-            "⬆️ <b>Task Priority Increased to High!</b>\n\n"
-            "Task: <b>{task_title}</b>\n"
-            "Project: {project_name}"
-        ).format(
-            task_title=p.get("task_title", "—"),
-            project_name=p.get("project_name", "—"),
-        ),
-    )
-
-
-def _fmt_task_moved_to_testing(p):
-    return (
-        _("Task Moved to Testing"),
-        _(
-            "🧪 <b>Task Moved to Testing!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
-        ).format(
-            task_title=p.get("task_title", "—"),
-            project_name=p.get("project_name", "—"),
-        ),
-    )
-
 
 def _fmt_task_created(p):
     return (
@@ -589,9 +536,5 @@ _MESSAGE_FORMATTERS = {
     "member_added_to_org": _fmt_member_added_to_org,
     "board_created": _fmt_board_created,
     "milestone_created": _fmt_milestone_created,
-    "high_priority_task_created": _fmt_high_priority_task_created,
-    "high_priority_task_completed": _fmt_high_priority_task_completed,
-    "task_priority_increased_to_high": _fmt_task_priority_increased_to_high,
-    "task_moved_to_testing": _fmt_task_moved_to_testing,
     "task_created": _fmt_task_created,
 }

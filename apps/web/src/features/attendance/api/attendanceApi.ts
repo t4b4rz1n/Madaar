@@ -28,7 +28,7 @@ export const getTodayAttendance = async (): Promise<Attendance | null> => {
     const res = await ApiService.get<Attendance>('/attendance/attendances/my_today/');
     return res as unknown as Attendance;
   } catch (error: any) {
-    if (error.response?.status === 404) return null;
+    if (error.response?.status === 404 || error.message === 'Not checked in today.' || error.detail === 'Not checked in today.') return null;
     throw error;
   }
 };
@@ -44,7 +44,7 @@ export const getActiveTimer = async (): Promise<TimeLog | null> => {
     const res = await ApiService.get<TimeLog>('/attendance/time-logs/active-timer/');
     return res.data as unknown as TimeLog;
   } catch (error: any) {
-    if (error.response?.status === 404) return null;
+    if (error.response?.status === 404 || error.message === 'No active timer.' || error.detail === 'No active timer.') return null;
     throw error;
   }
 };

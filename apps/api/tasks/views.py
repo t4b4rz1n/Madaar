@@ -238,7 +238,12 @@ class TaskViewSet(viewsets.ModelViewSet):
             )
             .annotate(
                 is_active_timer_running=Exists(
-                    TimeLog.objects.filter(task=OuterRef("pk"), is_active=True, is_deleted=False)
+                    TimeLog.objects.filter(
+                        task=OuterRef("pk"), 
+                        is_active=True, 
+                        is_deleted=False,
+                        user=self.request.user
+                    )
                 )
             )
             .filter(is_deleted=False)
@@ -364,15 +369,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         is_done = task.status.code.lower() == "done" if task.status and task.status.code else False
 
         if is_done:
-            from rest_framework.exceptions import ValidationError
-
-            raise ValidationError(
-                {
-                    "error": _(
-                        "Task is completed (Done) and locked. It cannot be moved to another status."
-                    )
-                }
-            )
+            pass
 
         target_code = "done"
 
@@ -469,7 +466,12 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
             is_deleted=False
         )
         if org_ids is not None:
-            qs = qs.filter(task__project__organization_id__in=org_ids)
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(task__project__organization_id__in=org_ids)
+                | Q(task__assignee=user)
+                | Q(task__reporter=user)
+            )
 
         task_id = self.request.query_params.get("task")
         if task_id:

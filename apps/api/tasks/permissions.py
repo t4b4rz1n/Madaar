@@ -328,10 +328,12 @@ class IsTaskChecklistPermission(BaseMadaarPermission):
             return True
 
         if hasattr(obj, "task") and obj.task:
-            if project_id and not is_user_project_member(request, project_id):
-                return False
             if obj.task.assignee == request.user or obj.task.reporter == request.user:
                 return True
+            if project_id and not is_user_project_member(request, project_id):
+                return False
+            # Allow active project members to toggle/modify checklist items
+            return True
 
         return False
 

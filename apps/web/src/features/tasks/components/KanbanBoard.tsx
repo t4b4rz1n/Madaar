@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getBoards, getTasks, moveTask, createTask, reorderTasks } from '../api/tasksApi';
+import { getBoards, getTasks, moveTask, createTask, reorderTasks, createStatus } from '../api/tasksApi';
 import { getActiveTimer, startTimer, stopTimer } from '../../attendance/api/attendanceApi';
 import type { TimeLog } from '../../attendance/types';
 import { useTaskStore } from '../store/useTaskStore';
@@ -40,7 +40,11 @@ export const KanbanBoard: React.FC = () => {
   const [focusedTaskId, setFocusedTaskId] = useState<string | number | null>(null);
 
   // Add task state
+
   const [addingTaskToStatusId, setAddingTaskToStatusId] = useState<string | number | null>(null);
+  const [isAddingStatus, setIsAddingStatus] = useState(false);
+  const [newStatusName, setNewStatusName] = useState('');
+
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('low');
   const sameId = (left: string | number | undefined, right: string | number | undefined) => left?.toString() === right?.toString();
@@ -318,6 +322,25 @@ export const KanbanBoard: React.FC = () => {
     return task?.status_detail?.id?.toString() || null;
   };
 
+
+  const createStatusMutation = useMutation({
+    mutationFn: (name: string) => createStatus(activeBoardId!, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      setIsAddingStatus(false);
+      setNewStatusName('');
+      toast.success('Status added successfully');
+    },
+    onError: () => {
+      toast.error('Failed to add status');
+    }
+  });
+
+  const handleCreateStatus = () => {
+    if (!newStatusName.trim() || createStatusMutation.isPending) return;
+    createStatusMutation.mutate(newStatusName);
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     isDraggingRef.current = true;
     const { active } = event;
@@ -342,14 +365,6 @@ export const KanbanBoard: React.FC = () => {
     // Cross-column move: update the task's status_detail locally
     const statusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, overStatusId));
     if (!statusDetail) return;
-    
-    const activeStatusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, activeStatusId));
-    const activeCode = activeStatusDetail?.code?.toLowerCase() || '';
-    const targetCode = statusDetail?.code?.toLowerCase() || '';
-
-    if (targetCode === 'todo' && (activeCode === 'doing' || activeCode === 'review')) {
-      return; // Prevent dragging backwards to To Do
-    }
 
     setLocalTasks((tasks) => {
       const activeIndex = tasks.findIndex(t => t.id.toString() === activeId);
@@ -375,41 +390,30 @@ export const KanbanBoard: React.FC = () => {
 
   const handleDragEnd = (event: DragEndEvent) => {
     isDraggingRef.current = false;
-    setActiveTask(null);
     const { active, over } = event;
     if (!over) {
       // Snap back
       setLocalTasks(serverTasks || []);
+      setActiveTask(null);
       return;
     }
 
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
-    const movedTask = localTasks.find(t => t.id.toString() === activeId);
-    if (!movedTask) return;
-
-    const originalTask = serverTasks?.find(t => t.id.toString() === activeId);
-    const originalStatusId = originalTask?.status_detail?.id;
+    const movedTask = localTasks.find(t => t.id.toString() === activeId) || activeTask;
+    if (!movedTask) {
+      setActiveTask(null);
+      return;
+    }
     
     // Use findStatusId to reliably get the target column, bypassing stale localTasks for the dragged item
     const overStatusId = findStatusId(overId);
     const newStatusId = overStatusId || movedTask.status_detail?.id;
 
-    if (!newStatusId) return;
-
-    const wasCrossColumn = !sameId(originalStatusId, newStatusId);
-
-    if (wasCrossColumn) {
-      const originalStatusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, originalStatusId));
-      const targetStatusDetail = boards?.flatMap(b => b.statuses).find(s => sameId(s.id, newStatusId));
-      const originalCode = originalStatusDetail?.code?.toLowerCase() || '';
-      const targetCode = targetStatusDetail?.code?.toLowerCase() || '';
-
-      if (targetCode === 'todo' && (originalCode === 'doing' || originalCode === 'review')) {
-        setLocalTasks(serverTasks || []); // Revert visually
-        return; // Prevent API call
-      }
+    if (!newStatusId) {
+      setActiveTask(null);
+      return;
     }
 
     let finalTasks = [...localTasks];
@@ -437,15 +441,19 @@ export const KanbanBoard: React.FC = () => {
 
     // Apply orders locally
     setLocalTasks(finalTasks.map(t => {
-      const orderEntry = newColumnOrders.find(o => o.id === t.id);
+      const orderEntry = newColumnOrders.find(o => sameId(o.id, t.id));
       if (orderEntry) {
         return { ...t, order: orderEntry.order };
       }
       return t;
     }));
 
+    // Use activeTask's original status to determine if it was a cross-column move
+    // This avoids stale state bugs if handleDragOver mutated localTasks during hover
+    const wasCrossColumn = activeTask && !sameId(activeTask.status_detail?.id, newStatusId);
+    
     if (wasCrossColumn) {
-      const newOrder = newColumnOrders.find(o => o.id === movedTask.id)?.order || 0;
+      const newOrder = newColumnOrders.find(o => sameId(o.id, movedTask.id))?.order || 0;
       moveTaskMutation.mutate({
         taskId: movedTask.id,
         statusId: newStatusId,
@@ -457,6 +465,8 @@ export const KanbanBoard: React.FC = () => {
         reorderTasksMutation.mutate(newColumnOrders);
       }
     }
+    
+    setActiveTask(null);
   };
 
   if (!activeProjectId || !activeBoardId) return null;
@@ -523,7 +533,7 @@ export const KanbanBoard: React.FC = () => {
           </motion.div>
         </div>
       ) : <div className="flex-1 overflow-x-auto overflow-y-hidden">
-      <div className="flex min-h-full items-start gap-3 p-4 pb-20 sm:gap-4 sm:p-6">
+      <div className="flex h-full items-start gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -538,9 +548,9 @@ export const KanbanBoard: React.FC = () => {
               <DroppableColumn
                 key={status.id}
                 id={`col-${status.id}`}
-                className="madaar-surface min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-[calc(100vh-14rem)] bg-base-100/80"
+                className="madaar-surface min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-full bg-base-100/80"
               >
-                <div className="mb-3 flex items-center justify-between px-1">
+                <div className="mb-3 flex shrink-0 items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-base-content">{status.name}</h3>
                     <span className="rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-bold text-base-content/45">
@@ -552,7 +562,7 @@ export const KanbanBoard: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-2 overflow-y-auto rounded-xl px-0.5 pb-1">
+                <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1">
                   <SortableContext items={columnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
                     {columnTasks.map(task => (
                       <SortableTask 
@@ -596,32 +606,32 @@ export const KanbanBoard: React.FC = () => {
                           }
                         }}
                         placeholder="Task title..."
-                        className="w-full bg-transparent text-[13px] text-base-content outline-none placeholder:text-base-content/35"
+                        className="w-full bg-transparent text-[13px] font-medium text-base-content outline-none placeholder:text-base-content/40 placeholder:font-normal"
                       />
-                      <div className="flex justify-between items-center mt-2.5">
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                         <select
                           value={newTaskPriority}
                           onChange={(e) => setNewTaskPriority(e.target.value as any)}
-                          className="rounded border border-base-content/10 bg-base-100 px-1.5 py-0.5 text-[11px] text-base-content/70 outline-none focus:border-primary/30"
+                          className="h-7 cursor-pointer rounded-md border border-base-content/15 bg-base-100 px-2 text-[11px] font-medium text-base-content/70 outline-none transition-colors hover:bg-base-200 focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
                         >
                           <option value="low">Low Priority</option>
                           <option value="medium">Medium Priority</option>
                           <option value="high">High Priority</option>
                           <option value="critical">Critical Priority</option>
                         </select>
-                        <div className="flex gap-1.5">
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <button
+                            onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); setNewTaskPriority('low'); }}
+                            className="h-7 rounded-md px-2.5 text-[11px] font-medium text-base-content/60 transition-colors hover:bg-base-content/10 hover:text-base-content"
+                          >
+                            Cancel
+                          </button>
                           <button
                             onClick={() => handleCreateTask(status.id)}
                             disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
-                            className="rounded-lg bg-primary px-3 py-1 text-[11px] font-bold text-primary-content transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="h-7 rounded-md bg-primary px-3 text-[11px] font-bold text-primary-content shadow-sm transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {createTaskMutation.isPending ? '...' : 'Add'}
-                          </button>
-                          <button
-                            onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); setNewTaskPriority('low'); }}
-                            className="px-2 py-1 text-[11px] text-base-content/45 transition-colors hover:text-base-content/80"
-                          >
-                            Cancel
+                            {createTaskMutation.isPending ? 'Adding...' : 'Add'}
                           </button>
                         </div>
                       </div>
@@ -632,7 +642,7 @@ export const KanbanBoard: React.FC = () => {
                 {index === 0 && addingTaskToStatusId !== status.id && (
                   <button
                     onClick={() => setAddingTaskToStatusId(status.id)}
-                    className="motion-interactive mt-1 flex w-full items-center gap-2 rounded-lg px-1 py-1 text-[13px] text-base-content/45 transition-colors hover:bg-base-200 hover:text-base-content/90"
+                    className="motion-interactive mt-1 flex shrink-0 w-full items-center gap-2 rounded-lg px-1 py-1 text-[13px] text-base-content/45 transition-colors hover:bg-base-200 hover:text-base-content/90"
                   >
                     <span className="text-lg leading-none mb-0.5">+</span>
                     <span>Add card</span>
@@ -642,6 +652,48 @@ export const KanbanBoard: React.FC = () => {
             );
           })}
 
+
+          {isAddingStatus ? (
+            <div className="madaar-surface min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-full bg-base-100/80">
+              <input
+                autoFocus
+                value={newStatusName}
+                onChange={e => setNewStatusName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleCreateStatus();
+                  if (e.key === 'Escape') {
+                    setIsAddingStatus(false);
+                    setNewStatusName('');
+                  }
+                }}
+                placeholder="Status name..."
+                className="w-full bg-transparent text-[13px] text-base-content outline-none placeholder:text-base-content/35 px-2 py-1 mb-2 border border-base-content/10 rounded-lg"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCreateStatus}
+                  disabled={!newStatusName.trim() || createStatusMutation.isPending}
+                  className="rounded-lg bg-primary px-3 py-1.5 text-[12px] font-bold text-primary-content transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 flex-1"
+                >
+                  {createStatusMutation.isPending ? '...' : 'Add Status'}
+                </button>
+                <button
+                  onClick={() => { setIsAddingStatus(false); setNewStatusName(''); }}
+                  className="px-3 py-1.5 text-[12px] text-base-content/45 transition-colors hover:text-base-content/80"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsAddingStatus(true)}
+              className="min-w-[292px] w-[292px] rounded-[22px] p-3 flex items-center justify-center gap-2 border-2 border-dashed border-base-content/10 text-base-content/45 hover:border-base-content/20 hover:bg-base-200/50 hover:text-base-content/60 transition-all h-[56px] font-semibold text-sm"
+            >
+              <span className="text-lg leading-none mb-0.5">+</span>
+              Add Status
+            </button>
+          )}
           <DragOverlay>
             {activeTask ? <TaskCard task={activeTask} onClick={() => {}} activeTimer={activeTimer} /> : null}
           </DragOverlay>
