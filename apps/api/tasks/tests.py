@@ -777,9 +777,9 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         self.assertEqual(task.status.code, "done")
         self.assertTrue(task.is_finished)
 
-        # Second toggle should fail because task is locked in 'done'
+        # Second toggle now succeeds because backward restriction is removed, it acts as a no-op.
         res2 = self.client.post(url)
-        self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res2.status_code, status.HTTP_200_OK)
         task.refresh_from_db()
         self.assertEqual(task.status.code, "done")
         self.assertTrue(task.is_finished)

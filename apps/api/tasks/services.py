@@ -404,6 +404,19 @@ class TaskService:
                     TimeLogService.stop_timer(timer.user, timer.id, auto_move=False)
 
                 if code == "done":
+                    # Check if any time was tracked
+                    has_tracked_time = task.time_logs.filter(duration_seconds__gt=0).exists()
+                    if not has_tracked_time:
+                        from rest_framework.exceptions import ValidationError
+                        from django.utils.translation import gettext as gettext_local
+                        raise ValidationError(
+                            {
+                                "detail": gettext_local(
+                                    "Cannot move to Done: No time has been tracked for this task."
+                                ),
+                                "code": "NEEDS_MANUAL_TIME",
+                            }
+                        )
                     task.is_finished = True
 
         # Order Shifting Logic
