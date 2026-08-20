@@ -534,14 +534,14 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         self.assertIn("Task created", activities.first().action)
 
     def test_move_task_requires_timer_for_done(self):
-        """A task without a timer cannot be moved to Done."""
+        """A task without a timer CAN be moved to Done (limitation removed)."""
         task = Task.objects.create(
             project=self.project,
             title="No Timer Task",
             reporter=self.user,
             status=self.status_todo,
         )
-        # Manually delete the auto-created timer to test the validation
+        # Manually delete the auto-created timer to test the logic
         TimeLog.objects.filter(task=task).delete()
 
         url = reverse("task-move-task", kwargs={"pk": task.id})
@@ -549,8 +549,9 @@ class TaskCRUDAndProgressTestCase(APITestCase):
             url,
             {"status_id": str(self.status_done.id), "order": 1},
         )
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(res.data["code"], "NEEDS_MANUAL_TIME")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        task.refresh_from_db()
+        self.assertTrue(task.is_finished)
 
     def test_create_subtask(self):
         """Creating a subtask should link to parent task."""
