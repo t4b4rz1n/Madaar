@@ -209,7 +209,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   });
 
   const checklistToggleMutation = useMutation({
-    mutationFn: ({ id, completed }: { id: string | number; completed: boolean }) => toggleChecklistItem(id, completed),
+    mutationFn: ({ id, completed: _completed }: { id: string | number; completed: boolean }) => toggleChecklistItem(id),
     onSuccess: invalidateTaskDetails,
     onError: (error: any) => toast.error(error.response?.data?.detail || error.message || 'Could not update checklist item.'),
   });

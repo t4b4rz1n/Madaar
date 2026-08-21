@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { TimeLog } from "../../attendance/types";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, Clock, Refresh2, Timer1, TickCircle } from "iconsax-reactjs";
 import { useCallback, useMemo, useState } from "react";
@@ -11,6 +12,7 @@ import { TaskSheet } from "../../tasks/components/TaskSheet";
 import { getTask, updateTask } from "../../tasks/api/tasksApi";
 import type { Task } from "../../tasks/types";
 import { getEmployeeDashboard } from "../api/dashboardApi";
+import type { EmployeeActiveTimer } from "../types";
 import { TodayBlockersCard } from "../components/TodayBlockersCard";
 import { TodayEmptyState, TodaySkeleton } from "../components/TodayEmptyState";
 import { TodayStandupCard } from "../components/TodayStandupCard";
@@ -111,6 +113,21 @@ const UserDashboardPage = () => {
   const handleCloseTaskSheet = useCallback(() => {
     setSelectedTaskId(null);
   }, []);
+  const toTimeLog = (timer: EmployeeActiveTimer | null | undefined): TimeLog | null => {
+    if (!timer) return null;
+    return {
+      id: timer.id,
+      user: 0,
+      task: timer.task_id ?? '',
+      start_time: timer.start_time,
+      end_time: null,
+      duration_seconds: 0,
+      is_active: true,
+      description: '',
+      created_at: timer.start_time,
+      date: timer.start_time,
+    };
+  };
 
   const displayName = user?.first_name || user?.username || "there";
   const dashboard = dashboardQuery.data;
@@ -212,7 +229,7 @@ const UserDashboardPage = () => {
         onPatch={handlePatchTask}
         onPlayTimer={(taskId) => startTimerMutation.mutate(taskId.toString())}
         onStopTimer={() => { if (dashboard?.active_timer) stopTimerMutation.mutate(dashboard.active_timer.id); }}
-        activeTimer={dashboard?.active_timer ?? null}
+        activeTimer={toTimeLog(dashboard?.active_timer)}
       />
     </motion.div>
   );
