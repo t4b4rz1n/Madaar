@@ -95,7 +95,7 @@ export const addChecklistItem = async (taskId: string | number, description: str
   return (data as any).data ?? data;
 };
 
-export const toggleChecklistItem = async (itemId: string | number, _isCompleted?: boolean): Promise<TaskChecklistItem> => {
+export const toggleChecklistItem = async (itemId: string | number): Promise<TaskChecklistItem> => {
   const data = await ApiService.post<TaskChecklistItem>(`/tasks/checklist-items/${itemId}/toggle/`);
   return (data as any).data ?? data;
 };
