@@ -111,6 +111,9 @@ export const KanbanBoard: React.FC = () => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
       queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['active-timer'] });
+      queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
     },
   });
 
@@ -205,6 +208,9 @@ export const KanbanBoard: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
       queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['active-timer'] });
+      queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
     },
     onError: (err: any, taskId, context: any) => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to start timer';
@@ -237,6 +243,9 @@ export const KanbanBoard: React.FC = () => {
       }
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
       queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['active-timer'] });
+      queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
     },
     onError: (err: any, taskId) => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to stop timer';

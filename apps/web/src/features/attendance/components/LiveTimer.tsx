@@ -33,6 +33,8 @@ export const LiveTimer: React.FC<LiveTimerProps> = ({ tasks = [] }) => {
     queryClient.invalidateQueries({ queryKey: ["activeTimer"] });
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
     queryClient.invalidateQueries({ queryKey: ["myWeeklyTimesheet"] });
+    queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["active-timer"] });
   };
   const startMutation = useMutation({ mutationFn: () => startTimer(selectedTaskId), onSuccess: () => { invalidate(); toast.success("Timer started"); }, onError: (error: any) => toast.error(error.response?.data?.detail || "Could not start the timer.") });
   const stopMutation = useMutation({ mutationFn: () => stopTimer(activeTimer?.id), onSuccess: () => { invalidate(); toast.success("Time logged"); }, onError: (error: any) => toast.error(error.response?.data?.detail || "Could not stop the timer.") });

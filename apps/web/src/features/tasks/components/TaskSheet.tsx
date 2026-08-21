@@ -94,7 +94,10 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   const [now, setNow] = useState(Date.now());
 
   const taskId = task?.id;
-  const timerBelongsToTask = Boolean(activeTimer && task && activeTimer.task.toString() === task.id.toString());
+  const timerBelongsToTask = Boolean(
+    activeTimer && task &&
+    (activeTimer.task?.toString() ?? (activeTimer as { task_id?: string | number }).task_id?.toString()) === task.id.toString()
+  );
   const timerIsRunning = Boolean(task && (task.is_active_timer_running || timerBelongsToTask));
 
   const { data: checklists = [], isLoading: isChecklistLoading } = useQuery({

@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, Clock, Refresh2, Timer1, TickCircle } from "iconsax-reactjs";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { stopTimer, startTimer } from "../../attendance/api/attendanceApi";
 import { useAuthStore } from "../../auth/store/authStore";
 import { StandupModal } from "../../tasks/components/StandupModal";
+import { TaskSheet } from "../../tasks/components/TaskSheet";
+import { getTask, updateTask } from "../../tasks/api/tasksApi";
+import type { Task } from "../../tasks/types";
 import { getEmployeeDashboard } from "../api/dashboardApi";
 import { TodayBlockersCard } from "../components/TodayBlockersCard";
 import { TodayEmptyState, TodaySkeleton } from "../components/TodayEmptyState";
@@ -39,31 +42,79 @@ const UserDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [isStandupOpen, setStandupOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const timezone = useMemo(getTimezone, []);
   const dashboardQuery = useQuery({
     queryKey: ["employee-dashboard", timezone],
+ 
     queryFn: async () => (await getEmployeeDashboard(timezone)).data,
+ 
     staleTime: 30_000,
+ 
     refetchInterval: 60_000,
+ 
   });
+ 
+  const taskQuery = useQuery({
+    queryKey: ["task", selectedTaskId],
+    queryFn: () => getTask(selectedTaskId!),
+    enabled: Boolean(selectedTaskId),
+    staleTime: 60_000,
+  });
+ 
 
+ 
   const stopTimerMutation = useMutation({
     mutationFn: (timerId: string) => stopTimer(timerId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["active-timer"] });
+      await queryClient.invalidateQueries({ queryKey: ["activeTimer"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["attendanceTasks"] });
       toast.success("Focus timer stopped");
     },
     onError: () => toast.error("Could not stop the timer"),
   });
+ 
 
+ 
   const startTimerMutation = useMutation({
+ 
     mutationFn: (taskId: string) => startTimer(taskId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["active-timer"] });
+      await queryClient.invalidateQueries({ queryKey: ["activeTimer"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["attendanceTasks"] });
       toast.success("Focus timer started");
     },
     onError: () => toast.error("Could not start the timer"),
   });
+ 
+  const markDoneMutation = useMutation({
+    mutationFn: (taskId: string) => updateTask(taskId, { is_finished: true }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Task marked as done");
+    },
+    onError: () => toast.error("Could not mark the task as done"),
+  });
+ 
+  const handlePatchTask = useCallback(
+    async (taskId: string | number, patch: Partial<Task>) => {
+      await updateTask(taskId, patch);
+      await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+    [queryClient],
+  );
+ 
+  const handleCloseTaskSheet = useCallback(() => {
+    setSelectedTaskId(null);
+  }, []);
 
   const displayName = user?.first_name || user?.username || "there";
   const dashboard = dashboardQuery.data;
@@ -128,6 +179,8 @@ const UserDashboardPage = () => {
               tasks={dashboard.upcoming_tasks}
               overdueTasks={dashboard.overdue_tasks}
               activeTaskId={dashboard.active_timer?.task_id}
+              onSelectTask={(id) => setSelectedTaskId(id)}
+              onMarkDone={(id) => markDoneMutation.mutate(id)}
               startingTaskId={startTimerMutation.isPending ? startTimerMutation.variables : null}
               onStart={(task) => startTimerMutation.mutate(task.id)}
             />
@@ -156,6 +209,14 @@ const UserDashboardPage = () => {
           setStandupOpen(false);
           queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
         }}
+      />
+      <TaskSheet
+        task={taskQuery.data ?? null}
+        onClose={handleCloseTaskSheet}
+        onPatch={handlePatchTask}
+        onPlayTimer={(taskId) => startTimerMutation.mutate(taskId.toString())}
+        onStopTimer={() => { if (dashboard?.active_timer) stopTimerMutation.mutate(dashboard.active_timer.id); }}
+        activeTimer={dashboard?.active_timer ?? null}
       />
     </motion.div>
   );
