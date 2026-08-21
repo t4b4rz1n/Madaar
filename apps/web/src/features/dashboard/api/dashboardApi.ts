@@ -1,10 +1,11 @@
 import ApiService from "../../../core/api/apiService";
 import type { EmployeeDashboard, ExecutiveDashboard, ManagerDashboard, ManagerMemberDetail } from "../types";
 
-export const getEmployeeDashboard = (timezone: string) => {
-  return ApiService.get<EmployeeDashboard>("reports/employee/dashboard/", {
+export const getEmployeeDashboard = async (timezone: string) => {
+  const response = await ApiService.get<EmployeeDashboard>("reports/employee/dashboard/", {
     params: { tz: timezone },
   });
+  return response.data;
 };
 
 export const getManagerDashboard = async (teamId: string | null, timezone: string) => {

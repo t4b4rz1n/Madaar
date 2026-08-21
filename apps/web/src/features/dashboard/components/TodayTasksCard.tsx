@@ -1,4 +1,4 @@
-import { ArrowRight, Calendar, Play, TaskSquare, Timer1 } from "iconsax-reactjs";
+import { ArrowRight, Calendar, Play, TaskSquare, TickCircle, Timer1 } from "iconsax-reactjs";
 import { Link } from "react-router-dom";
 import type { EmployeeTaskSummary } from "../types";
 import { TodayEmptyState } from "./TodayEmptyState";
@@ -7,6 +7,8 @@ interface TodayTasksCardProps {
   tasks: EmployeeTaskSummary[];
   overdueTasks: EmployeeTaskSummary[];
   activeTaskId?: string | null;
+  onSelectTask?: (taskId: string) => void;
+  onMarkDone?: (taskId: string) => void;
   startingTaskId?: string | null;
   onStart: (task: EmployeeTaskSummary) => void;
 }
@@ -24,7 +26,7 @@ const dueLabel = (dueDate: string | null, overdue: boolean) => {
   return `Due ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(dueDate))}`;
 };
 
-export const TodayTasksCard = ({ tasks, overdueTasks, activeTaskId, startingTaskId, onStart }: TodayTasksCardProps) => {
+export const TodayTasksCard = ({ tasks, overdueTasks, activeTaskId, onSelectTask, onMarkDone, startingTaskId, onStart }: TodayTasksCardProps) => {
   const taskRows = [
     ...overdueTasks.map((task) => ({ task, overdue: true })),
     ...tasks.map((task) => ({ task, overdue: false })),
@@ -54,10 +56,15 @@ export const TodayTasksCard = ({ tasks, overdueTasks, activeTaskId, startingTask
         <div className="divide-y divide-base-content/8">
           {taskRows.map(({ task, overdue }) => {
             const isActive = activeTaskId === task.id;
+            const isDone = task.status_code?.toLowerCase() === "done";
             const isStarting = startingTaskId === task.id;
             return (
-              <div key={`${task.id}-${overdue ? "overdue" : "today"}`} className="motion-surface flex items-center gap-3 px-5 py-4 hover:bg-base-200/45 sm:px-6">
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${overdue ? "bg-error" : task.status_code?.toLowerCase() === "done" ? "bg-success" : "bg-primary"}`} />
+              <div
+                key={`${task.id}-${overdue ? "overdue" : "today"}`}
+                onClick={() => onSelectTask?.(task.id)}
+                className="motion-surface group flex cursor-pointer items-center gap-3 px-5 py-4 hover:bg-base-200/45 sm:px-6"
+              >
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${overdue ? "bg-error" : isDone ? "bg-success" : "bg-primary"}`} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-base-content">{task.title}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.68rem] text-base-content/45">
@@ -66,13 +73,33 @@ export const TodayTasksCard = ({ tasks, overdueTasks, activeTaskId, startingTask
                     <span className={`rounded-full px-2 py-0.5 font-bold capitalize ${priorityClass[task.priority || "low"] || priorityClass.low}`}>{task.priority || "low"}</span>
                   </div>
                 </div>
-                {isActive ? (
-                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-2 text-xs font-bold text-primary"><Timer1 size={14} /> Running</span>
-                ) : (
-                  <button type="button" onClick={() => onStart(task)} disabled={Boolean(startingTaskId)} aria-label={`Start timer for ${task.title}`} className="motion-interactive inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-base-content/10 text-base-content/45 hover:border-primary/30 hover:bg-primary/10 hover:text-primary disabled:cursor-wait disabled:opacity-50">
-                    {isStarting ? <span className="loading loading-spinner loading-xs" /> : <Play size={16} variant="Bold" />}
-                  </button>
-                )}
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {onMarkDone && !isDone && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onMarkDone(task.id); }}
+                      aria-label={`Mark ${task.title} as done`}
+                      className="motion-interactive inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-base-content/10 text-base-content/30 opacity-0 transition-all duration-200 hover:border-success/30 hover:bg-success/10 hover:text-success group-hover:opacity-100 focus-visible:opacity-100"
+                    >
+                      <TickCircle size={16} variant="Bold" />
+                    </button>
+                  )}
+                  {isActive ? (
+                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-2 text-xs font-bold text-primary">
+                      <Timer1 size={14} /> Running
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onStart(task); }}
+                      disabled={Boolean(startingTaskId)}
+                      aria-label={`Start timer for ${task.title}`}
+                      className="motion-interactive inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-base-content/10 text-base-content/45 hover:border-primary/30 hover:bg-primary/10 hover:text-primary disabled:cursor-wait disabled:opacity-50"
+                    >
+                      {isStarting ? <span className="loading loading-spinner loading-xs" /> : <Play size={16} variant="Bold" />}
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}

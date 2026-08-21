@@ -157,7 +157,7 @@ const ManagerDashboardPage = () => {
       return { previousRequests };
     },
     onSuccess: (_data, variables) => toast.success(variables.action === "approve" ? "Request approved" : "Request declined"),
-    onError: (error: any, _variables, context) => { if (context?.previousRequests) queryClient.setQueryData(approvalsKey, context.previousRequests); toast.error(error.response?.data?.detail || error.message || "Could not update request"); },
+    onError: (error: Error & { detail?: string }, _variables, context) => { if (context?.previousRequests) queryClient.setQueryData(approvalsKey, context.previousRequests); toast.error(error.detail || error.message || "Could not update request"); },
     onSettled: () => queryClient.invalidateQueries({ queryKey: approvalsKey }),
   });
 

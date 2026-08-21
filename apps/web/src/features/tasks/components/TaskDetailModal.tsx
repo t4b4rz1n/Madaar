@@ -137,7 +137,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   });
 
   const toggleChecklistMutation = useMutation({
-    mutationFn: ({ id, completed }: { id: number, completed: boolean }) => toggleChecklistItem(id, completed),
+    mutationFn: ({ id, completed: _completed }: { id: number; completed: boolean }) => toggleChecklistItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taskChecklists', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });

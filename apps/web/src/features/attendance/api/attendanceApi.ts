@@ -14,12 +14,12 @@ export const getOrganizations = async (): Promise<Organization[]> => {
 
 // ================= Attendance =================
 export const checkIn = async (organizationId: string): Promise<Attendance> => {
-  const res = await ApiService.post<Attendance>('/attendance/attendances/check_in/', { organization: organizationId });
+  const res = await ApiService.post<Attendance>('/attendance/attendances/check-in/', { organization: organizationId });
   return res as unknown as Attendance;
 };
 
 export const checkOut = async (): Promise<Attendance> => {
-  const res = await ApiService.post<Attendance>('/attendance/attendances/check_out/');
+  const res = await ApiService.post<Attendance>('/attendance/attendances/check-out/');
   return res as unknown as Attendance;
 };
 
@@ -44,7 +44,7 @@ export const getActiveTimer = async (): Promise<TimeLog | null> => {
     const res = await ApiService.get<TimeLog>('/attendance/time-logs/active-timer/');
     return res.data as unknown as TimeLog;
   } catch (error: any) {
-    if (error.response?.status === 404 || error.message === 'No active timer.' || error.detail === 'No active timer.') return null;
+    if (error?.detail === 'Not found.' || /not found|no active timer/i.test(error?.message ?? '') || /not found|no active timer/i.test(error?.detail ?? '')) return null;
     throw error;
   }
 };
