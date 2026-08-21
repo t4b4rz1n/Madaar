@@ -1,14 +1,14 @@
 import datetime
 
-from django.utils import timezone
-from django.db import transaction
-from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.utils import timezone
 
-from organizations.models import Organization, Team, OrganizationMembership, TeamMembership
-from projects.models import Project, ProjectMember
-from tasks.models import Board, TaskStatus, Task, AsyncStandup
 from attendance.models import TimeLog
+from organizations.models import Organization, OrganizationMembership, Team, TeamMembership
+from projects.models import Project, ProjectMember
+from tasks.models import AsyncStandup, Board, Task, TaskStatus
 
 User = get_user_model()
 
