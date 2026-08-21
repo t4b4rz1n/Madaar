@@ -26,6 +26,10 @@ export const dashboardRoutes: RouteObject[] = [
   },
   {
     path: "manager",
-    element: <ManagerDashboardPage />,
+    element: (
+      <StaffRoute>
+        <ManagerDashboardPage />
+      </StaffRoute>
+    ),
   },
 ];

@@ -47,7 +47,7 @@ const UserDashboardPage = () => {
   const dashboardQuery = useQuery({
     queryKey: ["employee-dashboard", timezone],
  
-    queryFn: async () => (await getEmployeeDashboard(timezone)).data,
+    queryFn: () => getEmployeeDashboard(timezone),
  
     staleTime: 30_000,
  
@@ -69,9 +69,7 @@ const UserDashboardPage = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["active-timer"] });
-      await queryClient.invalidateQueries({ queryKey: ["activeTimer"] });
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      await queryClient.invalidateQueries({ queryKey: ["attendanceTasks"] });
       toast.success("Focus timer stopped");
     },
     onError: () => toast.error("Could not stop the timer"),
@@ -85,9 +83,7 @@ const UserDashboardPage = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["active-timer"] });
-      await queryClient.invalidateQueries({ queryKey: ["activeTimer"] });
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      await queryClient.invalidateQueries({ queryKey: ["attendanceTasks"] });
       toast.success("Focus timer started");
     },
     onError: () => toast.error("Could not start the timer"),
