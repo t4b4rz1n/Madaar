@@ -1,12 +1,9 @@
 import logging
 
-from decimal import Decimal
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import (
     FileExtensionValidator,
-    MaxValueValidator,
     MinValueValidator,
 )
 from django.db import models

@@ -599,14 +599,12 @@ class StandupService:
     def _parse_date(value):
         from datetime import date as date_cls
 
-        from django.utils import timezone
-
         if isinstance(value, date_cls):
             return value
         try:
             parsed = date_cls.fromisoformat(str(value))
-        except (TypeError, ValueError):
-            raise ValidationError(_("Invalid date format. Use YYYY-MM-DD."))
+        except (TypeError, ValueError) as err:
+            raise ValidationError(_("Invalid date format. Use YYYY-MM-DD.")) from err
         return parsed
 
     @staticmethod
