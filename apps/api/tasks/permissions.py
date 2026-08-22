@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from rest_framework import permissions
 
 
@@ -383,29 +384,71 @@ class IsTaskCommentPermission(BaseMadaarPermission):
         return False
 
 
-class IsAsyncStandupPermission(BaseMadaarPermission):
-    """Async Standup: Create for org members; View/Modify for Author, Owner, or Admin."""
+class IsAsyncStandupPermission(permissions.BasePermission):
+    """Project-based daily standups.
+
+    Standups are project-scoped: an active ProjectMember (even without an
+    organization membership) may log and manage their own entries.
+    Visibility: users see only their own standups; staff/superusers see
+    everything; organization owners/admins see all standups of their
+    organization's projects (enforced by the viewset queryset).
+    Writes: the target project must be one of the user's active projects, or
+    the user must be an owner/admin of the project's organization.
+    Object-level: users may only edit their own standups unless staff/superuser
+    or org owner/admin.
+    """
+
+    message = _("You do not have permission to perform this action on standups.")
 
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
+        user = request.user
+        if not user or not user.is_authenticated:
             return False
+
+        # Read access is scoped by the viewset queryset.
         if request.method in permissions.SAFE_METHODS:
             return True
-        org_id = extract_organization_id(request)
-        return get_user_org_role(request, org_id) is not None
+
+        if user.is_staff or user.is_superuser:
+            return True
+
+        # Updates/deletes are gated at object level (own standups / org owners).
+        if getattr(view, "action", None) in ("update", "partial_update", "destroy"):
+            return True
+
+        # Create: authorize against the target project from the payload.
+        data = getattr(request, "data", {})
+        project_id = None
+        if isinstance(data, dict):
+            project_id = data.get("project") or data.get("project_id")
+        if not project_id:
+            return False
+
+        if is_user_project_member(request, project_id):
+            return True
+
+        from projects.models import Project
+
+        org_id = (
+            Project.objects.filter(id=project_id)
+            .values_list("organization_id", flat=True)
+            .first()
+        )
+        role = get_user_org_role(request, org_id)
+        return role in ["owner", "admin"]
 
     def has_object_permission(self, request, view, obj):
-        return self.check_object_permission(request, view, obj)
+        user = request.user
 
-    def check_object_permission(self, request, view, obj):
-        if request.user.is_staff or request.user.is_superuser:
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_staff or user.is_superuser:
+            return True
+        if getattr(obj, "user_id", None) == user.id:
             return True
 
-        if hasattr(obj, "user") and obj.user == request.user:
-            return True
-
-        org_id = extract_organization_id(obj)
-        role = get_user_org_role(request, org_id)
+        project = getattr(obj, "project", None)
+        role = get_user_org_role(request, getattr(project, "organization_id", None))
         return role in ["owner", "admin"]
 
 

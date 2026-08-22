@@ -262,14 +262,15 @@ class EmployeeDashboardService:
             AsyncStandup.objects.filter(
                 user=user,
                 is_deleted=False,
-                created_at__gte=today_start,
-                created_at__lt=today_end,
+                date=today_start.date(),
             )
             .order_by("-created_at")
             .values(
                 "id",
-                "yesterday_work",
+                "date",
+                "hours_worked",
                 "today_work",
+                "tomorrow_plan",
                 "blockers",
                 "created_at",
             )

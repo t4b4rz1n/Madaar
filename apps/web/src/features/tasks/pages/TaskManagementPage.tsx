@@ -6,14 +6,12 @@ import { KanbanBoard } from '../components/KanbanBoard';
 import { DependencyGraph } from '../components/DependencyGraph';
 import { useTaskStore } from '../store/useTaskStore';
 import { getBoards } from '../api/tasksApi';
-import { StandupModal } from '../components/StandupModal';
-import { Calendar1, Edit2, Kanban, Graph } from 'iconsax-reactjs';
+import { Calendar1, Kanban, Graph } from 'iconsax-reactjs';
 
 const AttendancePage = lazy(() => import('../../attendance/pages/AttendancePage'));
 
 export const TaskManagementPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'kanban' | 'graph' | 'attendance'>('kanban');
-  const [isStandupModalOpen, setIsStandupModalOpen] = useState(false);
   const { activeProjectId, activeBoardId, setActiveBoard } = useTaskStore();
 
   const { data: boards } = useQuery({
@@ -62,14 +60,6 @@ export const TaskManagementPage: React.FC = () => {
 
         {/* Right side: View mode toggle & Actions */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsStandupModalOpen(true)}
-            className="motion-interactive inline-flex h-9 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/60 hover:border-primary/30 hover:text-primary"
-          >
-            <Edit2 size="15" />
-            <span className="hidden sm:inline">Daily Standup</span>
-          </button>
-
           {activeBoardId && (
             <div className="flex max-w-[calc(100vw-2rem)] overflow-x-auto rounded-xl bg-base-200 p-1 custom-scrollbar">
               <button
@@ -137,7 +127,6 @@ export const TaskManagementPage: React.FC = () => {
         )}
       </div>
 
-      <StandupModal isOpen={isStandupModalOpen} onClose={() => setIsStandupModalOpen(false)} />
     </div>
   );
 };

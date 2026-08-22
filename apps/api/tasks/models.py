@@ -1,10 +1,17 @@
 import logging
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import (
+    FileExtensionValidator,
+    MaxValueValidator,
+    MinValueValidator,
+)
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from common.models import BaseModel
@@ -70,6 +77,7 @@ class TaskStatus(BaseModel):
     code = models.SlugField(
         _("Code"),
         max_length=50,
+        allow_unicode=True,
         help_text=_("Identifier for the status (e.g., 'todo', 'doing', 'review')"),
     )
     name = models.CharField(
@@ -452,8 +460,9 @@ class TaskActivityLog(BaseModel):
 
 class AsyncStandup(BaseModel):
     """
-    Daily standup report by team members.
-    Includes yesterday's achievements, today's focus, and blockers.
+    Daily standup report by team members, tied to a Project.
+    One standup per user per project per date (see unique constraint).
+    The grid lives at the project level; organization-level reporting is gone.
     """
 
     user = models.ForeignKey(
@@ -464,23 +473,46 @@ class AsyncStandup(BaseModel):
         null=True,
         blank=True,
     )
-    organization = models.ForeignKey(
-        "organizations.Organization",
+    project = models.ForeignKey(
+        "projects.Project",
         on_delete=models.CASCADE,
         related_name="standups",
-        verbose_name=_("Organization"),
-        null=True,
-        blank=True,
+        verbose_name=_("Project"),
+        db_index=True,
     )
-    yesterday_work = models.TextField(_("Yesterday's Work"))
-    today_work = models.TextField(_("Today's Work"))
+    date = models.DateField(
+        _("Standup date"),
+        default=timezone.localdate,
+        db_index=True,
+        help_text=_("The working day this standup is reported for."),
+    )
+    hours_worked = models.DecimalField(
+        _("Hours worked"),
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text=_("Number of hours worked on this project for the day."),
+    )
+    today_work = models.TextField(_("What did you do today?"))
+    tomorrow_plan = models.TextField(_("What will you do tomorrow?"))
     blockers = models.TextField(_("Blockers"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("Async Standup")
         verbose_name_plural = _("Async Standups")
-        ordering = ["-created_at"]
+        ordering = ["-date", "-created_at"]
+        indexes = [
+            models.Index(fields=["project", "date"], name="standup_project_date_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "user", "date"],
+                condition=Q(is_deleted=False),
+                name="unique_active_standup_project_user_date",
+            ),
+        ]
 
     def __str__(self):
         user_info = f"User {self.user_id}" if self.user_id else "Unknown User"
-        return f"Standup by {user_info} on {self.created_at.date()}"
+        return f"Standup by {user_info} on {self.date}"

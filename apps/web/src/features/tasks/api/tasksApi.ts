@@ -1,5 +1,15 @@
 import ApiService from '../../../core/api/apiService';
-import type { Task, Board, TaskChecklistItem, TaskComment, TaskActivityLog, AsyncStandup, User, PaginatedResponse } from '../types';
+import type {
+  Task,
+  Board,
+  TaskChecklistItem,
+  TaskComment,
+  TaskActivityLog,
+  AsyncStandup,
+  StandupGridData,
+  User,
+  PaginatedResponse,
+} from '../types';
 
 // Helper to extract data from various response shapes (DRF vs Custom ApiResponse)
 const extractData = <T>(res: any): T[] => {
@@ -147,27 +157,77 @@ export const deleteComment = async (commentId: string | number): Promise<void> =
   await ApiService.delete(`/tasks/comments/${commentId}/`);
 };
 
-// Standups
-export const getStandups = async (organizationId?: string): Promise<AsyncStandup[]> => {
+// Standups (project-based daily reports)
+export interface StandupPayload {
+  projectId: string;
+  /** ISO date (YYYY-MM-DD) */
+  date: string;
+  hoursWorked: number;
+  todayWork: string;
+  tomorrowPlan: string;
+  blockers?: string;
+}
+
+export const getStandups = async (projectId?: string): Promise<AsyncStandup[]> => {
   const params: Record<string, any> = {};
-  if (organizationId) {
-    params.organization = organizationId;
+  if (projectId) {
+    params.project = projectId;
   }
-  const res = await ApiService.get<PaginatedResponse<AsyncStandup> | AsyncStandup[]>('/tasks/standups/', { params });
+  const res = await ApiService.get<PaginatedResponse<AsyncStandup> | AsyncStandup[]>(
+    '/tasks/standups/',
+    { params },
+  );
   return extractData<AsyncStandup>(res);
 };
 
-export const createStandup = async (
-  yesterdayWork: string,
-  todayWork: string,
-  blockers?: string,
-  organizationId?: string
-): Promise<AsyncStandup> => {
+export const createStandup = async (payload: StandupPayload): Promise<AsyncStandup> => {
   const data = await ApiService.post<AsyncStandup>('/tasks/standups/', {
-    yesterday_work: yesterdayWork,
-    today_work: todayWork,
-    blockers,
-    organization: organizationId,
+    project: payload.projectId,
+    date: payload.date,
+    hours_worked: payload.hoursWorked,
+    today_work: payload.todayWork,
+    tomorrow_plan: payload.tomorrowPlan,
+    blockers: payload.blockers?.trim() ? payload.blockers.trim() : null,
+  });
+  return (data as any).data ?? data;
+};
+
+export const updateStandup = async (
+  entryId: string,
+  payload: StandupPayload,
+): Promise<AsyncStandup> => {
+  const data = await ApiService.patch<AsyncStandup>(`/tasks/standups/${entryId}/`, {
+    date: payload.date,
+    hours_worked: payload.hoursWorked,
+    today_work: payload.todayWork,
+    tomorrow_plan: payload.tomorrowPlan,
+    blockers: payload.blockers?.trim() ? payload.blockers.trim() : null,
+  });
+  return (data as any).data ?? data;
+};
+
+/** Quick-save from the grid cell: updates only the worked hours (Enter key). */
+export const updateStandupHours = async (
+  entryId: string,
+  hoursWorked: number,
+): Promise<AsyncStandup> => {
+  const data = await ApiService.patch<AsyncStandup>(`/tasks/standups/${entryId}/`, {
+    hours_worked: hoursWorked,
+  });
+  return (data as any).data ?? data;
+};
+
+/**
+ * Monthly standup grid of a project (member rows × day columns).
+ * Regular members receive themselves only; owners/admins the full list.
+ */
+export const getStandupGrid = async (
+  projectId: string,
+  year: number,
+  month: number,
+): Promise<StandupGridData> => {
+  const data = await ApiService.get<StandupGridData>('/tasks/standups/grid/', {
+    params: { project: projectId, year, month },
   });
   return (data as any).data ?? data;
 };

@@ -1,6 +1,11 @@
+from calendar import monthrange
+from datetime import date, timedelta
+
+from django.contrib.auth import get_user_model
 from django.db.models import Count, Exists, OuterRef, Q
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -9,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from attendance.models import TimeLog
+from projects.models import Project, ProjectMember
 
 from .models import (
     AsyncStandup,
@@ -26,6 +32,7 @@ from .permissions import (
     IsTaskCommentPermission,
     IsTaskPermission,
     IsTaskStatusPermission,
+    get_user_org_role,
 )
 from .serializers import (
     AsyncStandupSerializer,
@@ -538,6 +545,14 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
 
 
 class AsyncStandupViewSet(viewsets.ModelViewSet):
+    """Project-based daily standups (Kanban team grid reports).
+
+    Visibility rules:
+    - Regular members only see their own standups.
+    - Organization owners/admins see every standup of their organization's projects.
+    - Staff/superusers see everything across all projects.
+    """
+
     serializer_class = AsyncStandupSerializer
     permission_classes = [IsAuthenticated, IsAsyncStandupPermission]
     pagination_class = PageNumberPagination
@@ -545,39 +560,225 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if not user or not user.is_authenticated:
-            return AsyncStandup.objects.none()
+        qs = (
+            AsyncStandup.objects.select_related("user", "project")
+            .filter(is_deleted=False)
+            .order_by("-date", "-created_at")
+        )
 
-        if user.is_staff or user.is_superuser:
-            qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
-        else:
-            memberships = user.org_memberships.all()
+        if not (user.is_staff or user.is_superuser):
             admin_org_ids = [
-                m.organization_id for m in memberships if m.role.lower() in ["owner", "admin"]
+                membership.organization_id
+                for membership in user.org_memberships.filter(is_deleted=False)
+                if (membership.role or "").lower() in ("owner", "admin")
             ]
+            qs = qs.filter(Q(user=user) | Q(project__organization_id__in=admin_org_ids))
 
-            qs = AsyncStandup.objects.select_related("user").filter(is_deleted=False)
+        params = self.request.query_params
 
-            from django.db.models import Q
+        project_id = params.get("project")
+        if project_id:
+            qs = qs.filter(project_id=project_id)
 
-            qs = qs.filter(Q(organization_id__in=admin_org_ids) | Q(user=user))
-
-        user_id = self.request.query_params.get("user")
+        user_id = params.get("user")
         if user_id:
             qs = qs.filter(user_id=user_id)
 
-        org_id = self.request.query_params.get("organization")
-        if org_id:
-            qs = qs.filter(organization_id=org_id)
+        year, month = params.get("year"), params.get("month")
+        if year:
+            qs = qs.filter(date__year=year)
+        if month:
+            qs = qs.filter(date__month=month)
 
         return qs.distinct()
 
     def perform_create(self, serializer):
         standup = StandupService.create_standup(
             user=self.request.user,
-            organization=serializer.validated_data.get("organization"),
-            yesterday_work=serializer.validated_data.get("yesterday_work"),
-            today_work=serializer.validated_data.get("today_work"),
+            project=serializer.validated_data["project"],
+            date=serializer.validated_data.get("date") or timezone.localdate(),
+            hours_worked=serializer.validated_data.get("hours_worked"),
+            today_work=serializer.validated_data["today_work"],
+            tomorrow_plan=serializer.validated_data["tomorrow_plan"],
             blockers=serializer.validated_data.get("blockers"),
         )
         serializer.instance = standup
+
+    # ── Monthly grid (member × day matrix) ────────────────────────────
+
+    @extend_schema(
+        description=(
+            "Monthly standup grid of a project: member rows × day columns. "
+            "Regular members see themselves only; organization owners/admins "
+            "see the full member list; staff/superusers see everything."
+        ),
+        parameters=[
+            OpenApiParameter("project", str, OpenApiParameter.QUERY, required=True),
+            OpenApiParameter("year", int, OpenApiParameter.QUERY),
+            OpenApiParameter("month", int, OpenApiParameter.QUERY),
+        ],
+        responses={200: dict},
+    )
+    @action(detail=False, methods=["get"], url_path="grid")
+    def grid(self, request):
+        user = request.user
+        today = timezone.localdate()
+
+        try:
+            year = int(request.query_params.get("year") or today.year)
+            month = int(request.query_params.get("month") or today.month)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": _("Invalid year or month.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not 1 <= month <= 12:
+            return Response(
+                {"detail": _("Month must be between 1 and 12.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        project_id = request.query_params.get("project")
+        if not project_id:
+            return Response(
+                {"detail": _("The 'project' query parameter is required.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        project = (
+            Project.objects.select_related("organization")
+            .filter(id=project_id, is_deleted=False)
+            .first()
+        )
+        if not project:
+            return Response(
+                {"detail": _("Project not found.")},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        is_super = user.is_staff or user.is_superuser
+        role = None if is_super else get_user_org_role(request, project.organization_id)
+        is_org_manager = role in ("owner", "admin")
+
+        is_project_member = (
+            True
+            if is_super
+            else ProjectMember.objects.filter(
+                project=project,
+                user=user,
+                is_active=True,
+                is_deleted=False,
+            ).exists()
+        )
+
+        if not (is_super or is_org_manager or is_project_member):
+            return Response(
+                {"detail": _("You do not have access to this project's standups.")},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        first_day = date(year, month, 1)
+        days_in_month = monthrange(year, month)[1]
+        last_day = first_day + timedelta(days=days_in_month - 1)
+
+        User = get_user_model()
+
+        entries = list(
+            AsyncStandup.objects.filter(
+                project=project,
+                is_deleted=False,
+                date__gte=first_day,
+                date__lte=last_day,
+            )
+            .select_related("user")
+            .only(
+                "id",
+                "date",
+                "hours_worked",
+                "today_work",
+                "tomorrow_plan",
+                "user_id",
+                "project_id",
+                "user__id",
+                "user__username",
+                "user__first_name",
+                "user__last_name",
+            )
+        )
+
+        if not (is_super or is_org_manager):
+            entries = [entry for entry in entries if entry.user_id == user.id]
+
+        if is_super or is_org_manager:
+            # Owners/admins see the complete list; superusers see project members.
+            if is_super:
+                member_users = User.objects.filter(
+                    project_memberships__project=project,
+                    project_memberships__is_active=True,
+                    project_memberships__is_deleted=False,
+                ).distinct()
+            else:
+                member_users = User.objects.filter(
+                    org_memberships__organization=project.organization,
+                    org_memberships__is_deleted=False,
+                ).distinct()
+        else:
+            member_users = User.objects.filter(id=user.id)
+
+        # Include users who logged standups this month but are no longer members.
+        extra_users = []
+        known_ids = set(member_users.values_list("id", flat=True))
+        missing_ids = {entry.user_id for entry in entries if entry.user_id} - known_ids
+        if missing_ids:
+            extra_users = list(User.objects.filter(id__in=missing_ids))
+
+        totals = {}
+        for entry in entries:
+            key = entry.user_id
+            if key is None:
+                continue
+            totals[key] = totals.get(key, 0) + entry.hours_worked
+
+        members_payload = [
+            {
+                "id": str(member.id),
+                "username": member.username,
+                "first_name": member.first_name,
+                "last_name": member.last_name,
+                "total_hours": str(totals.get(member.id) or 0),
+            }
+            for member in list(member_users) + extra_users
+        ]
+
+        entries_payload = [
+            {
+                "id": str(entry.id),
+                "user_id": str(entry.user_id),
+                "date": entry.date.isoformat(),
+                "hours_worked": str(entry.hours_worked),
+                "is_complete": bool((entry.today_work or "").strip())
+                and bool((entry.tomorrow_plan or "").strip()),
+                "today_work": entry.today_work,
+                "tomorrow_plan": entry.tomorrow_plan,
+                "blockers": entry.blockers,
+            }
+            for entry in entries
+        ]
+
+        return Response(
+            {
+                "project": {
+                    "id": str(project.id),
+                    "name": project.name,
+                    "prefix": project.prefix,
+                    "organization_id": str(project.organization_id),
+                },
+                "year": year,
+                "month": month,
+                "days_in_month": days_in_month,
+                "today": today.isoformat(),
+                "can_write": bool(is_super or is_project_member or is_org_manager),
+                "members": members_payload,
+                "entries": entries_payload,
+            }
+        )

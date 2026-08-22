@@ -102,9 +102,9 @@ class AutomationRuleProcessingTests(TestCase):
             },
         )
 
-        send_email.assert_called_once()
-        self.assertEqual(send_email.call_args.args[0], self.owner.email)
-        self.assertEqual(send_email.call_args.args[2], "Assigned: Implement workflow")
+        send_email.delay.assert_called_once()
+        self.assertEqual(send_email.delay.call_args.args[0], self.owner.email)
+        self.assertEqual(send_email.delay.call_args.args[2], "Assigned: Implement workflow")
 
     @patch("automations.rules.send_email_notification")
     def test_disabled_rule_suppresses_catalog_default(self, send_email):
@@ -126,4 +126,4 @@ class AutomationRuleProcessingTests(TestCase):
             },
         )
 
-        send_email.assert_not_called()
+        send_email.delay.assert_not_called()

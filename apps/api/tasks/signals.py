@@ -222,7 +222,7 @@ def handle_standup_submitted(sender, instance, created, **kwargs):
 
             # Target Organization Owners and Admins
             managers = []
-            org_id = getattr(instance, "organization_id", None)
+            org_id = instance.project.organization_id if instance.project else None
 
             if org_id:
                 from organizations.models import OrganizationMembership

@@ -27,14 +27,55 @@ export interface TaskActivityLog {
 }
 
 export interface AsyncStandup {
-  id: number;
-  user: number;
+  id: string;
+  user: string;
   user_detail?: User;
-  organization?: number;
-  yesterday_work: string;
+  project: string;
+  project_detail?: { id: string; name: string };
+  /** ISO date (YYYY-MM-DD) this standup is reported for */
+  date: string;
+  hours_worked: string;
   today_work: string;
-  blockers?: string;
+  tomorrow_plan: string;
+  blockers?: string | null;
   created_at: string;
+}
+
+export interface StandupGridMember {
+  id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  total_hours: string;
+}
+
+export interface StandupGridEntry {
+  id: string;
+  user_id: string;
+  /** ISO date (YYYY-MM-DD) */
+  date: string;
+  hours_worked: string;
+  is_complete: boolean;
+  today_work: string;
+  tomorrow_plan: string;
+  blockers?: string | null;
+}
+
+export interface StandupGridData {
+  project: {
+    id: string;
+    name: string;
+    prefix: string;
+    organization_id: string;
+  };
+  year: number;
+  month: number;
+  days_in_month: number;
+  /** Server-side today (ISO date) — days before this are locked */
+  today: string;
+  can_write: boolean;
+  members: StandupGridMember[];
+  entries: StandupGridEntry[];
 }
 
 export interface TaskStatus {

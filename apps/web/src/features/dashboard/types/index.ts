@@ -33,8 +33,10 @@ export interface EmployeeActiveTimer {
 
 export interface EmployeeStandup {
   id: string;
-  yesterday_work: string;
+  date: string;
+  hours_worked: string;
   today_work: string;
+  tomorrow_plan: string;
   blockers: string | null;
   created_at: string;
 }

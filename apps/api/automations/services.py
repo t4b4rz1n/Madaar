@@ -165,16 +165,16 @@ class TelegramBotService:
         """Returns the main interactive menu keyboard."""
         keyboard = [
             [
-                {"text": _("📂 My Projects"), "callback_data": "cmd_myprojects"},
-                {"text": _("📋 My Tasks"), "callback_data": "cmd_mytasks"},
+                {"text": _(" My Projects"), "callback_data": "cmd_myprojects"},
+                {"text": _(" My Tasks"), "callback_data": "cmd_mytasks"},
             ],
             [
-                {"text": _("🏢 My Organization"), "callback_data": "cmd_myorg"},
-                {"text": _("📊 Connection Status"), "callback_data": "cmd_status"},
+                {"text": _(" My Organization"), "callback_data": "cmd_myorg"},
+                {"text": _(" Connection Status"), "callback_data": "cmd_status"},
             ],
             [
-                {"text": _("❓ Help"), "callback_data": "cmd_help"},
-                {"text": _("🌐 Language"), "callback_data": "cmd_language"},
+                {"text": _(" Help"), "callback_data": "cmd_help"},
+                {"text": _(" Language"), "callback_data": "cmd_language"},
             ],
         ]
 
@@ -192,7 +192,7 @@ class TelegramBotService:
                 keyboard.append(
                     [
                         {
-                            "text": _("👑 Organization Admin Panel"),
+                            "text": _(" Organization Admin Panel"),
                             "callback_data": "cmd_org_admin_menu",
                         }
                     ]
@@ -200,7 +200,7 @@ class TelegramBotService:
 
             if user.is_superuser:
                 keyboard.append(
-                    [{"text": _("🛠 Superadmin Panel"), "callback_data": "cmd_superadmin_menu"}]
+                    [{"text": _(" Superadmin Panel"), "callback_data": "cmd_superadmin_menu"}]
                 )
 
         return {"inline_keyboard": keyboard}
@@ -211,14 +211,14 @@ class TelegramBotService:
         return {
             "inline_keyboard": [
                 [
-                    {"text": _("🏢 Overall Dashboard"), "callback_data": "cmd_org_dashboard"},
-                    {"text": _("📂 Organization Projects"), "callback_data": "cmd_org_projects"},
+                    {"text": _(" Overall Dashboard"), "callback_data": "cmd_org_dashboard"},
+                    {"text": _(" Organization Projects"), "callback_data": "cmd_org_projects"},
                 ],
                 [
-                    {"text": _("📋 Tasks Status"), "callback_data": "cmd_org_tasks"},
-                    {"text": _("👥 Organization Members"), "callback_data": "cmd_org_members"},
+                    {"text": _(" Tasks Status"), "callback_data": "cmd_org_tasks"},
+                    {"text": _(" Organization Members"), "callback_data": "cmd_org_members"},
                 ],
-                [{"text": _("🔙 Back to Main Menu"), "callback_data": "cmd_main_menu"}],
+                [{"text": _(" Back to Main Menu"), "callback_data": "cmd_main_menu"}],
             ]
         }
 
@@ -226,7 +226,7 @@ class TelegramBotService:
     def _back_to_menu_markup(cls):
         """Returns a simple 'back to menu' button."""
         return {
-            "inline_keyboard": [[{"text": _("🔙 Back to Menu"), "callback_data": "cmd_main_menu"}]]
+            "inline_keyboard": [[{"text": _(" Back to Menu"), "callback_data": "cmd_main_menu"}]]
         }
 
     @classmethod
@@ -234,7 +234,7 @@ class TelegramBotService:
         """Returns a 'back to admin menu' button."""
         return {
             "inline_keyboard": [
-                [{"text": _("🔙 Back to Admin Panel"), "callback_data": "cmd_org_admin_menu"}]
+                [{"text": _(" Back to Admin Panel"), "callback_data": "cmd_org_admin_menu"}]
             ]
         }
 
@@ -253,10 +253,10 @@ class TelegramBotService:
         if not token:
             msg = (
                 _(
-                    '❌ <b>Error:</b> Invalid connection link.\n\nPlease click on the "Connect to Telegram" button from your site dashboard to enter the bot.'
+                    ' <b>Error:</b> Invalid connection link.\n\nPlease click on the "Connect to Telegram" button from your site dashboard to enter the bot.'
                 )
                 if lang == "fa"
-                else "❌ <b>Error:</b> Invalid connection link.\n\nPlease click the 'Connect to Telegram' button from your website dashboard to enter the bot."
+                else " <b>Error:</b> Invalid connection link.\n\nPlease click the 'Connect to Telegram' button from your website dashboard to enter the bot."
             )
             send_telegram_notification.delay(chat_id, msg)
             return
@@ -269,10 +269,10 @@ class TelegramBotService:
         if not wsp:
             msg = (
                 _(
-                    "❌ <b>The link has expired or is invalid!</b>\n\nPlease generate a new connection link from the website."
+                    " <b>The link has expired or is invalid!</b>\n\nPlease generate a new connection link from the website."
                 )
                 if lang == "fa"
-                else "❌ <b>Link expired or invalid!</b>\n\nPlease generate a new connection link from the website."
+                else " <b>Link expired or invalid!</b>\n\nPlease generate a new connection link from the website."
             )
             send_telegram_notification.delay(chat_id, msg)
             return
@@ -283,10 +283,10 @@ class TelegramBotService:
         if existing_wsp and existing_wsp.id != wsp.id:
             msg = (
                 _(
-                    "❌ <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account in the Madaar system. Each Telegram account can only be connected to one site account."
+                    " <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account in the Madaar system. Each Telegram account can only be connected to one site account."
                 )
                 if lang == "fa"
-                else "❌ <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account. Each Telegram account can only be connected to one site account."
+                else " <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account. Each Telegram account can only be connected to one site account."
             )
             send_telegram_notification.delay(chat_id, msg)
             return
@@ -299,8 +299,8 @@ class TelegramBotService:
         )
 
         welcome_msg = _(
-            "🎉 <b>Hello dear {name}!</b>\n\n"
-            "✅ Your user account has been successfully connected to the <b>Madaar</b> bot.\n"
+            " <b>Hello dear {name}!</b>\n\n"
+            " Your user account has been successfully connected to the <b>Madaar</b> bot.\n"
             "From now on, your important work notifications will be sent here immediately.\n\n"
             "Use the menu below:"
         ).format(name=user.first_name or user.username)
@@ -316,7 +316,7 @@ class TelegramBotService:
         cls._update_user_language(user, lang)
 
         name = user.first_name if user else _("User")
-        msg = _("🏠 <b>Madaar Bot Main Menu</b>\n\n" "Hello {name}! Use the buttons below:").format(
+        msg = _(" <b>Madaar Bot Main Menu</b>\n\n" "Hello {name}! Use the buttons below:").format(
             name=name
         )
         cls._send_or_edit(
@@ -327,14 +327,14 @@ class TelegramBotService:
     def _handle_help(cls, chat_id: str, lang: str, edit_message_id: int = None):
         """Handles /help — shows available commands."""
         help_msg = _(
-            "🛠 <b>Madaar Bot Help</b>\n\n"
-            "🔹 /start — Connect user account\n"
-            "🔹 /status — Connection status\n"
-            "🔹 /myprojects — My projects list\n"
-            "🔹 /mytasks — My tasks list\n"
-            "🔹 /myorg — My organization info\n"
-            "🔹 /help — Show this help message\n\n"
-            "<i>💡 This bot automatically sends your work notifications.</i>"
+            " <b>Madaar Bot Help</b>\n\n"
+            " /start — Connect user account\n"
+            " /status — Connection status\n"
+            " /myprojects — My projects list\n"
+            " /mytasks — My tasks list\n"
+            " /myorg — My organization info\n"
+            " /help — Show this help message\n\n"
+            "<i> This bot automatically sends your work notifications.</i>"
         )
         cls._send_or_edit(
             chat_id,
@@ -346,14 +346,14 @@ class TelegramBotService:
     @classmethod
     def _handle_language_menu(cls, chat_id: str, lang: str, edit_message_id: int = None):
         """Shows language selection menu."""
-        msg = _("🌐 <b>Language Selection</b>\n\nPlease select your preferred language:")
+        msg = _(" <b>Language Selection</b>\n\nPlease select your preferred language:")
         keyboard = {
             "inline_keyboard": [
                 [
-                    {"text": "🇮🇷 Persian", "callback_data": "set_lang_fa"},
-                    {"text": "🇬🇧 English", "callback_data": "set_lang_en"},
+                    {"text": " Persian", "callback_data": "set_lang_fa"},
+                    {"text": " English", "callback_data": "set_lang_en"},
                 ],
-                [{"text": _("🔙 Back to Menu"), "callback_data": "cmd_main_menu"}],
+                [{"text": _(" Back to Menu"), "callback_data": "cmd_main_menu"}],
             ]
         }
         cls._send_or_edit(chat_id, msg, reply_markup=keyboard, edit_message_id=edit_message_id)
@@ -374,7 +374,7 @@ class TelegramBotService:
 
         if callback_query_id:
             answer_callback_query.delay(
-                callback_query_id, _("✅ Language successfully updated."), show_alert=False
+                callback_query_id, _(" Language successfully updated."), show_alert=False
             )
 
         cls._handle_main_menu(chat_id, new_lang, edit_message_id=edit_message_id)
@@ -388,12 +388,12 @@ class TelegramBotService:
         if user and hasattr(user, "work_style_profile"):
             wsp = user.work_style_profile
             if lang == "en":
-                tg_status = "✅ Active" if wsp.notify_via_telegram else "⏸ Inactive"
-                email_status = "✅ Active" if wsp.notify_via_email else "⏸ Inactive"
+                tg_status = " Active" if wsp.notify_via_telegram else " Inactive"
+                email_status = " Active" if wsp.notify_via_email else " Inactive"
                 msg = (
-                    "📊 <b>Account Status</b>\n\n"
-                    "👤 <b>Name:</b> {name}\n"
-                    "📧 <b>Email:</b> {email}\n\n"
+                    " <b>Account Status</b>\n\n"
+                    " <b>Name:</b> {name}\n"
+                    " <b>Email:</b> {email}\n\n"
                     "<b>Notification Channels:</b>\n"
                     "  Telegram: {tg_status}\n"
                     "  Email: {email_status}"
@@ -404,12 +404,12 @@ class TelegramBotService:
                     email_status=email_status,
                 )
             else:
-                tg_status = "✅ Active" if wsp.notify_via_telegram else "⏸ Inactive"
-                email_status = "✅ Active" if wsp.notify_via_email else "⏸ Inactive"
+                tg_status = " Active" if wsp.notify_via_telegram else " Inactive"
+                email_status = " Active" if wsp.notify_via_email else " Inactive"
                 msg = _(
-                    "📊 <b>User Account Status</b>\n\n"
-                    "👤 <b>Name:</b> {name}\n"
-                    "📧 <b>Email:</b> {email}\n\n"
+                    " <b>User Account Status</b>\n\n"
+                    " <b>Name:</b> {name}\n"
+                    " <b>Email:</b> {email}\n\n"
                     "<b>Notification Channels:</b>\n"
                     "  Telegram: {tg_status}\n"
                     "  Email: {email_status}"
@@ -422,13 +422,13 @@ class TelegramBotService:
         else:
             if lang == "en":
                 msg = (
-                    "❌ <b>Connection Status:</b> Disconnected\n\n"
+                    " <b>Connection Status:</b> Disconnected\n\n"
                     "You have not connected your account yet.\n"
                     "Send /start to connect."
                 )
             else:
                 msg = _(
-                    "❌ <b>Connection Status:</b> Disconnected\n\n"
+                    " <b>Connection Status:</b> Disconnected\n\n"
                     "You have not connected your user account yet.\n"
                     "To connect, send the /start command."
                 )
@@ -445,7 +445,7 @@ class TelegramBotService:
         if not user:
             cls._send_or_edit(
                 chat_id,
-                _("❌ Please connect your account with /start first."),
+                _(" Please connect your account with /start first."),
                 edit_message_id=edit_message_id,
             )
             return
@@ -462,18 +462,18 @@ class TelegramBotService:
 
         if not memberships:
             msg = _(
-                "📂 <b>My Projects</b>\n\nYou are currently not a member of any active project."
+                " <b>My Projects</b>\n\nYou are currently not a member of any active project."
             )
         else:
-            lines = [_("📂 <b>My Projects</b>\n")]
+            lines = [_(" <b>My Projects</b>\n")]
             for i, m in enumerate(memberships, 1):
                 p = m.project
                 status_emoji = {
-                    "active": "🟢",
-                    "draft": "📝",
-                    "on_hold": "🟡",
-                    "completed": "✅",
-                }.get(p.status, "⚪")
+                    "active": "",
+                    "draft": "",
+                    "on_hold": "",
+                    "completed": "",
+                }.get(p.status, "")
                 lines.append(f"{i}. {status_emoji} <b>{p.name}</b> — {p.get_status_display()}")
 
             lines.append(_("\n<i>Total: {count} projects</i>").format(count=len(memberships)))
@@ -492,7 +492,7 @@ class TelegramBotService:
         if not user:
             cls._send_or_edit(
                 chat_id,
-                _("❌ Please connect your account with /start first."),
+                _(" Please connect your account with /start first."),
                 edit_message_id=edit_message_id,
             )
             return
@@ -506,17 +506,17 @@ class TelegramBotService:
         )
 
         if not tasks:
-            msg = _("📋 <b>My Tasks</b>\n\n🎉 You have no open and unfinished tasks! Well done!")
+            msg = _(" <b>My Tasks</b>\n\n You have no open and unfinished tasks! Well done!")
         else:
-            priority_emoji = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢"}
-            lines = [_("📋 <b>My Tasks (Open)</b>\n")]
+            priority_emoji = {"critical": "", "high": "", "medium": "", "low": ""}
+            lines = [_(" <b>My Tasks (Open)</b>\n")]
             for i, t in enumerate(tasks, 1):
-                p_emoji = priority_emoji.get(t.priority, "⚪")
+                p_emoji = priority_emoji.get(t.priority, "")
                 status_name = t.status.name if t.status else "—"
                 project_name = t.project.name if t.project else "—"
                 lines.append(
                     f"{i}. {p_emoji} <b>{t.title}</b>\n"
-                    f"     📁 {project_name} | 📌 {status_name}"
+                    f"      {project_name} |  {status_name}"
                 )
 
             # Summary
@@ -541,7 +541,7 @@ class TelegramBotService:
         if not user:
             cls._send_or_edit(
                 chat_id,
-                _("❌ Please connect your account with /start first."),
+                _(" Please connect your account with /start first."),
                 edit_message_id=edit_message_id,
             )
             return
@@ -563,7 +563,7 @@ class TelegramBotService:
         for org in owned_orgs_direct:
             member_count = OrganizationMembership.objects.filter(organization=org).count()
             owner_orgs.append(
-                _("👑 You are the owner of organization <b>{org}</b> (👥 {count} members)").format(
+                _(" You are the owner of organization <b>{org}</b> ( {count} members)").format(
                     org=org.name, count=member_count
                 )
             )
@@ -581,21 +581,21 @@ class TelegramBotService:
             if m.role == OrganizationMembership.Role.OWNER:
                 owner_orgs.append(
                     _(
-                        "👑 You are the owner of organization <b>{org}</b> (👥 {count} members)"
+                        " You are the owner of organization <b>{org}</b> ( {count} members)"
                     ).format(org=org.name, count=member_count)
                 )
                 owner_org_ids.add(org.id)
             else:
                 member_orgs.append(
-                    _("💼 You are a member of organization <b>{org}</b> (🎖 Role: {role})").format(
+                    _(" You are a member of organization <b>{org}</b> ( Role: {role})").format(
                         org=org.name, role=role_display
                     )
                 )
 
         if not owner_orgs and not member_orgs:
-            msg = _("🏢 <b>My Organization</b>\n\nYou are not a member of any organization yet.")
+            msg = _(" <b>My Organization</b>\n\nYou are not a member of any organization yet.")
         else:
-            lines = [_("🏢 <b>Organizations related to me</b>\n")]
+            lines = [_(" <b>Organizations related to me</b>\n")]
             if owner_orgs:
                 lines.extend(owner_orgs)
                 lines.append("")
@@ -617,7 +617,7 @@ class TelegramBotService:
 
         if not user or not user.is_superuser:
             cls._send_or_edit(
-                chat_id, _("❌ Unauthorized access."), edit_message_id=edit_message_id
+                chat_id, _(" Unauthorized access."), edit_message_id=edit_message_id
             )
             return
 
@@ -630,11 +630,11 @@ class TelegramBotService:
         project_count = Project.objects.count()
 
         msg = _(
-            "🛠 <b>Superadmin Panel</b>\n\n"
-            "📊 <b>Overall System Statistics:</b>\n\n"
-            "🏢 <b>Number of Organizations:</b> {org_count}\n"
-            "👥 <b>Number of Users:</b> {user_count}\n"
-            "📂 <b>Number of Projects:</b> {project_count}\n\n"
+            " <b>Superadmin Panel</b>\n\n"
+            " <b>Overall System Statistics:</b>\n\n"
+            " <b>Number of Organizations:</b> {org_count}\n"
+            " <b>Number of Users:</b> {user_count}\n"
+            " <b>Number of Projects:</b> {project_count}\n\n"
             "<i>(Special Admin Access)</i>"
         ).format(org_count=org_count, user_count=user_count, project_count=project_count)
         cls._send_or_edit(
@@ -656,7 +656,7 @@ class TelegramBotService:
             return cls._handle_unknown(chat_id, lang)
 
         msg = _(
-            "👑 <b>Organization Admin Panel ({org})</b>\n\n"
+            " <b>Organization Admin Panel ({org})</b>\n\n"
             "Use the sections below to view the overall status of the organization:"
         ).format(org=org.name)
         cls._send_or_edit(
@@ -705,11 +705,11 @@ class TelegramBotService:
         task_count = Task.objects.filter(project__organization=org, is_finished=False).count()
 
         msg = _(
-            "👑 <b>Organization Overall Dashboard</b>\n\n"
-            "🏢 <b>Organization Name:</b> {org}\n\n"
-            "👥 <b>Number of Personnel:</b> {members} people\n"
-            "📂 <b>Projects:</b> {projects} (Active: {active})\n"
-            "📋 <b>Open Tasks:</b> {tasks} tasks"
+            " <b>Organization Overall Dashboard</b>\n\n"
+            " <b>Organization Name:</b> {org}\n\n"
+            " <b>Number of Personnel:</b> {members} people\n"
+            " <b>Projects:</b> {projects} (Active: {active})\n"
+            " <b>Open Tasks:</b> {tasks} tasks"
         ).format(
             org=org.name,
             members=member_count,
@@ -740,14 +740,14 @@ class TelegramBotService:
         if not projects:
             msg = _("No projects are registered in the organization.")
         else:
-            lines = [_("📂 <b>Organization Projects ({org})</b>\n").format(org=org.name)]
+            lines = [_(" <b>Organization Projects ({org})</b>\n").format(org=org.name)]
             for i, p in enumerate(projects, 1):
                 status_emoji = {
-                    "active": "🟢",
-                    "draft": "📝",
-                    "on_hold": "🟡",
-                    "completed": "✅",
-                }.get(p.status, "⚪")
+                    "active": "",
+                    "draft": "",
+                    "on_hold": "",
+                    "completed": "",
+                }.get(p.status, "")
                 lines.append(f"{i}. {status_emoji} <b>{p.name}</b> — {p.get_status_display()}")
 
             total_projects = Project.objects.filter(organization=org).count()
@@ -792,12 +792,12 @@ class TelegramBotService:
         )
 
         msg = _(
-            "📋 <b>Organization Tasks Status</b>\n\n"
-            "📊 <b>Total Tasks:</b> {total}\n\n"
-            "✅ <b>Done:</b> {done} tasks\n"
-            "🚀 <b>In Progress:</b> {in_progress} tasks\n"
-            "👀 <b>Waiting for Review:</b> {review} tasks\n"
-            "📝 <b>Not Started (Todo):</b> {todo} tasks"
+            " <b>Organization Tasks Status</b>\n\n"
+            " <b>Total Tasks:</b> {total}\n\n"
+            " <b>Done:</b> {done} tasks\n"
+            " <b>In Progress:</b> {in_progress} tasks\n"
+            " <b>Waiting for Review:</b> {review} tasks\n"
+            " <b>Not Started (Todo):</b> {todo} tasks"
         ).format(
             total=stats["total"],
             done=stats["done"],
@@ -829,7 +829,7 @@ class TelegramBotService:
             .order_by("role")[:20]
         )
 
-        lines = [_("👥 <b>Organization Members ({org})</b>\n").format(org=org.name)]
+        lines = [_(" <b>Organization Members ({org})</b>\n").format(org=org.name)]
         for i, m in enumerate(members, 1):
             name = m.user.get_full_name() or m.user.username if m.user else "—"
             role_display = m.get_role_display()
@@ -869,7 +869,7 @@ class TelegramBotService:
             send_telegram_notification.delay(
                 chat_id,
                 _(
-                    "🚫 <b>Your account is temporarily blocked!</b>\n\n"
+                    " <b>Your account is temporarily blocked!</b>\n\n"
                     "Due to sending consecutive invalid messages (spam), your access to the bot "
                     "is blocked for <b>5 minutes</b>.\n\n"
                     "Please only use bot menus and buttons after this time."
@@ -883,7 +883,7 @@ class TelegramBotService:
             cls._update_user_language(user, lang)
             error_msg = _(
                 _(
-                    "❓ <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:"
+                    " <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:"
                 )
             )
             send_telegram_notification.delay(
@@ -894,6 +894,6 @@ class TelegramBotService:
             send_telegram_notification.delay(
                 chat_id,
                 _(
-                    "❓ <b>Invalid command!</b>\n\nFirst, connect your account using the /start command."
+                    " <b>Invalid command!</b>\n\nFirst, connect your account using the /start command."
                 ),
             )

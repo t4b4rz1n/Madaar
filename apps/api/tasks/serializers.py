@@ -1,5 +1,7 @@
 import re
+from decimal import Decimal
 
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -360,6 +362,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
 
 class AsyncStandupSerializer(serializers.ModelSerializer):
     user_detail = UserMinimalSerializer(source="user", read_only=True)
+    project_detail = ProjectMinimalSerializer(source="project", read_only=True)
 
     class Meta:
         model = AsyncStandup
@@ -367,20 +370,45 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "user_detail",
-            "organization",
-            "yesterday_work",
+            "project",
+            "project_detail",
+            "date",
+            "hours_worked",
             "today_work",
+            "tomorrow_plan",
             "blockers",
             "created_at",
         )
         read_only_fields = ("id", "user", "created_at")
 
+    def validate_hours_worked(self, value):
+        if value is None:
+            return Decimal("0")
+        if value < 0:
+            raise serializers.ValidationError(_("Hours worked cannot be negative."))
+        return value
+
     def validate(self, attrs):
-        yw = attrs.get("yesterday_work", "").strip()
-        tw = attrs.get("today_work", "").strip()
-        if not yw or not tw:
+        # Partial updates (e.g. changing only hours from the grid) keep the
+        # stored descriptions instead of failing the required-texts check.
+        instance = self.instance
+        today_work = attrs.get(
+            "today_work",
+            instance.today_work if instance else None,
+        )
+        tomorrow_plan = attrs.get(
+            "tomorrow_plan",
+            instance.tomorrow_plan if instance else None,
+        )
+        if not (today_work or "").strip() or not (tomorrow_plan or "").strip():
             raise serializers.ValidationError(
-                _("Both yesterday's work and today's work fields are required.")
+                _("Both 'today' and 'tomorrow' descriptions are required.")
+            )
+
+        date = attrs.get("date") or (self.instance.date if self.instance else None)
+        if date and date > timezone.localdate():
+            raise serializers.ValidationError(
+                _("You cannot log standups for future days.")
             )
         return attrs
 

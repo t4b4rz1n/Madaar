@@ -414,15 +414,15 @@ class TasksRBACTestCase(APITestCase):
         """Employee role should only see their own standup reports when listing standups."""
         AsyncStandup.objects.create(
             user=self.admin,
-            yesterday_work="Admin Y",
+            project=self.project,
             today_work="Admin T",
-            organization=self.org,
+            tomorrow_plan="Admin P",
         )
         emp_standup = AsyncStandup.objects.create(
             user=self.employee,
-            yesterday_work="Emp Y",
+            project=self.project,
             today_work="Emp T",
-            organization=self.org,
+            tomorrow_plan="Emp P",
         )
 
         self.client.force_authenticate(user=self.employee)
@@ -459,9 +459,9 @@ class TasksRBACTestCase(APITestCase):
     def test_standup_retrieve(self):
         standup = AsyncStandup.objects.create(
             user=self.employee,
-            yesterday_work="Y",
+            project=self.project,
             today_work="T",
-            organization=self.org,
+            tomorrow_plan="P",
         )
         self.client.force_authenticate(user=self.employee)
         url = reverse("task-standup-detail", kwargs={"pk": standup.id})

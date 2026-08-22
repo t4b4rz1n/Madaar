@@ -355,40 +355,41 @@ class Command(BaseCommand):
     # ── standups ─────────────────────────────────────────────────────
 
     def _seed_standups(self):
-        today = self._now().date()
+        today = timezone.localdate()
 
         standups_data = [
             (
                 self._ali,
+                6,
                 "Completed CI/CD pipeline setup, reviewed PRs",
                 "Working on user authentication module",
                 "Waiting for design approval on auth pages",
             ),
             (
                 self._hamed,
+                5,
                 "Finished landing page mockups, started dashboard UI",
                 "Continue with reporting dashboard implementation",
                 "No blockers",
             ),
             (
                 self._manager,
+                4,
                 "Reviewed API docs, prepared weekly report",
                 "Deploy staging environment, unblock payment gateway task",
                 "Blocked by DevOps team for staging access",
             ),
         ]
 
-        for user, yesterday_work, today_work, blockers in standups_data:
-            standup_time = timezone.make_aware(
-                timezone.datetime.combine(today, datetime.time(hour=10))
-            )
+        for user, hours_worked, today_work, tomorrow_plan, blockers in standups_data:
             AsyncStandup.objects.get_or_create(
+                project=self._project,
                 user=user,
-                created_at=standup_time,
+                date=today,
                 defaults={
-                    "organization": self._org,
-                    "yesterday_work": yesterday_work,
+                    "hours_worked": hours_worked,
                     "today_work": today_work,
+                    "tomorrow_plan": tomorrow_plan,
                     "blockers": blockers,
                 },
             )

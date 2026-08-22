@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -592,19 +593,59 @@ class CommentService:
 
 
 class StandupService:
-    """Service layer for Async Standups."""
+    """Service layer for project-based Async Standups."""
+
+    @staticmethod
+    def _parse_date(value):
+        from datetime import date as date_cls
+
+        from django.utils import timezone
+
+        if isinstance(value, date_cls):
+            return value
+        try:
+            parsed = date_cls.fromisoformat(str(value))
+        except (TypeError, ValueError):
+            raise ValidationError(_("Invalid date format. Use YYYY-MM-DD."))
+        return parsed
 
     @staticmethod
     @transaction.atomic
-    def create_standup(user, organization, yesterday_work, today_work, blockers=None):
-        if not yesterday_work or not today_work:
-            raise ValidationError(_("Both yesterday's work and today's work fields are required."))
+    def create_standup(
+        user, project, date, hours_worked, today_work, tomorrow_plan, blockers=None
+    ):
+        """Creates the single standup row of a user for a project/day."""
         from .models import AsyncStandup
+
+        if not today_work or not tomorrow_plan:
+            raise ValidationError(_("Both 'today' and 'tomorrow' descriptions are required."))
+
+        date = StandupService._parse_date(date)
+        if date > timezone.localdate():
+            raise ValidationError(
+                _("You cannot log standups for future days.")
+            )
+
+        if (
+            AsyncStandup.objects.filter(
+                project=project, user=user, date=date, is_deleted=False
+            ).exists()
+        ):
+            raise ValidationError(
+                _("You have already logged a standup for this project on this day.")
+            )
+
+        if hours_worked is None:
+            hours_worked = 0
+        if hours_worked < 0:
+            raise ValidationError(_("Hours worked cannot be negative."))
 
         return AsyncStandup.objects.create(
             user=user,
-            organization=organization,
-            yesterday_work=yesterday_work,
+            project=project,
+            date=date,
+            hours_worked=hours_worked,
             today_work=today_work,
+            tomorrow_plan=tomorrow_plan,
             blockers=blockers,
         )

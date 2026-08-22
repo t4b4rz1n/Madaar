@@ -175,7 +175,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # --- Internationalization ---
 LANGUAGE_CODE = "fa-ir"
-TIME_ZONE = "UTC"
+# Business timezone for date boundaries (grid "today", standup locking).
+# DB keeps storing UTC thanks to USE_TZ = True.
+TIME_ZONE = "Asia/Tehran"
 USE_I18N = True
 USE_TZ = True
 LOCALE_PATHS = [BASE_DIR / "locale"]
