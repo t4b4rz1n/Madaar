@@ -8,6 +8,12 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/auth/", include("authentication.urls")),
     path("api/v1/accounts/", include("accounts.urls")),
+    path(
+        "api/v1/organizations/<uuid:organization_id>/users/",
+        include("accounts.organization_urls"),
+    ),
+    path("api/v1/organizations/", include("organizations.urls")),
+    path("api/v1/access-control/", include("access_control.urls")),
     path("api/v1/panel/", include("panel.urls")),
     path("api/v1/dashboard/", include("dashboard.urls")),
     path("api/v1/support/", include("dashboard.support_urls")),

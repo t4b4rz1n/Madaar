@@ -155,3 +155,45 @@ class WorkStyleProfile(BaseModel):
                 raise ValidationError(
                     {"user": "A Work Style Profile already exists for this user   "}
                 )
+
+
+class UserProfile(BaseModel):
+    """
+    Extensible employee profile information.
+    """
+
+    class EmploymentType(models.TextChoices):
+        FULL_TIME = "full_time", "Full Time"
+        PART_TIME = "part_time", "Part Time"
+        CONTRACT = "contract", "Contract"
+        INTERN = "intern", "Intern"
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    job_title = models.CharField(max_length=100, blank=True)
+    department = models.CharField(max_length=100, blank=True)
+    employee_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    employment_type = models.CharField(
+        max_length=20,
+        choices=EmploymentType.choices,
+        default=EmploymentType.FULL_TIME,
+    )
+    hire_date = models.DateField(null=True, blank=True)
+    bio = models.TextField(blank=True)
+
+    # Professional & Extensible information
+    skills = models.JSONField(default=list, blank=True)
+    experience_history = models.JSONField(default=list, blank=True)
+    github_url = models.URLField(blank=True)
+    linkedin_url = models.URLField(blank=True)
+
+    class Meta:
+        db_table = "user_profiles"
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+    def __str__(self):
+        return f"Profile({self.user.email})"

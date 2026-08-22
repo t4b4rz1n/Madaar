@@ -55,6 +55,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "accounts.apps.AccountsConfig",
+    "access_control.apps.AccessControlConfig",
     "authentication.apps.AuthenticationConfig",
     "billing.apps.BillingConfig",
     "common",

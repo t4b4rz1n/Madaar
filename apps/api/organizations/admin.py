@@ -22,10 +22,10 @@ class TeamAdmin(admin.ModelAdmin):
 
 @admin.register(OrganizationMembership)
 class OrganizationMembershipAdmin(admin.ModelAdmin):
-    list_display = ("user", "organization", "role", "invited_by", "created_at")
+    list_display = ("user", "organization", "role", "created_at")
     list_filter = ("role", "organization")
     search_fields = ("user__username", "user__email", "organization__name")
-    raw_id_fields = ("user", "organization", "invited_by")
+    raw_id_fields = ("user", "organization")
 
 
 @admin.register(TeamMembership)

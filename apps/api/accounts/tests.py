@@ -17,7 +17,7 @@ User = get_user_model()
 
 class UserProfileUpdateViewTestCase(TestCase):
     def setUp(self):
-        self.url = reverse("profile")
+        self.url = reverse("accounts:profile")
         self.user_password = "Strongpassword123"
         self.user = User.objects.create_user(
             username="testuser",
@@ -34,7 +34,7 @@ class UserProfileUpdateViewTestCase(TestCase):
 
     def test_authenticated_user_can_view_profile(self):
         self.client.force_authenticate(user=self.user)
-        response = self.client.get(reverse("profile"))
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["data"]["first_name"], self.user.first_name)
 

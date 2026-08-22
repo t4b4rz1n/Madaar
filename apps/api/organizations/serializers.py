@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from accounts.models import User
 
-from .models import Organization
+from .models import Organization, OrganizationMembership, Team, TeamMembership
 
 
 class OrganizationOwnerSerializer(serializers.ModelSerializer):
@@ -34,11 +34,12 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "slug",
             "description",
             "status",
-            "status_display",
             "owner",
+            "status_display",
             "member_count",
             "team_count",
             "project_count",
+            "is_deleted",
             "created_at",
             "updated_at",
         )
@@ -49,36 +50,82 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "member_count",
             "team_count",
             "project_count",
+            "is_deleted",
             "created_at",
             "updated_at",
         )
 
-    def validate_name(self, value):
-        value = value.strip()
-        if len(value) < 2:
-            raise serializers.ValidationError("Organization name must be at least 2 characters.")
-        return value
 
-    def validate(self, attrs):
-        name = attrs.get("name", getattr(self.instance, "name", ""))
-        supplied_slug = attrs.get("slug")
-        base_slug = slugify(supplied_slug or name)
-        if not base_slug:
-            raise serializers.ValidationError(
-                {"slug": "Provide a name that can be used as a URL slug."}
-            )
+class TeamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Team
+        fields = (
+            "id",
+            "name",
+            "organization",
+            "parent_team",
+            "description",
+            "is_deleted",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "organization", "is_deleted", "created_at", "updated_at")
 
-        candidate = base_slug
-        suffix = 2
-        queryset = Organization.all_objects.filter(slug=candidate)
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        while queryset.exists():
-            candidate = f"{base_slug}-{suffix}"
-            suffix += 1
-            queryset = Organization.all_objects.filter(slug=candidate)
-            if self.instance:
-                queryset = queryset.exclude(pk=self.instance.pk)
 
-        attrs["slug"] = candidate
-        return attrs
+class OrganizationMembershipSerializer(serializers.ModelSerializer):
+    role_code = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = OrganizationMembership
+        fields = (
+            "id",
+            "user",
+            "organization",
+            "role",
+            "role_code",
+            "is_deleted",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "organization",
+            "role",
+            "is_deleted",
+            "created_at",
+            "updated_at",
+        )
+
+
+class TeamMembershipSerializer(serializers.ModelSerializer):
+    role_code = serializers.CharField(write_only=True, required=False, default="member")
+    role_id = serializers.UUIDField(source="role.id", read_only=True)
+    role_name = serializers.CharField(source="role.name", read_only=True)
+    role_code_display = serializers.CharField(source="role.code", read_only=True)
+
+    class Meta:
+        model = TeamMembership
+        fields = (
+            "id",
+            "user",
+            "team",
+            "role",
+            "role_id",
+            "role_name",
+            "role_code",
+            "role_code_display",
+            "is_deleted",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "team",
+            "role",
+            "role_id",
+            "role_name",
+            "role_code_display",
+            "is_deleted",
+            "created_at",
+            "updated_at",
+        )
