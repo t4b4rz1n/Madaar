@@ -14,8 +14,8 @@ export const STANDUP_STRINGS = {
   legendCompleted: 'Standup completed',
   legendUnsaved: 'Unsaved hours (Press Enter to save)',
   legendIncomplete: 'Incomplete standup (Right-click to finish it)',
-  hintRightClick: 'Right-click on any cell to add/view standup. Past days are editable, future days are locked.',
-  hintRightClickShort: 'Right-click for details',
+  hintRightClick: 'Right-click on any cell to add/view standup.',
+  hintRightClickShort: 'Right-click to add standup',
   lockedCellTitle: 'Locked',
   viewerNotice:
     "You are viewing this project's standups. Only project members can log entries.",
@@ -42,6 +42,9 @@ export const STANDUP_STRINGS = {
 
   toastSavedSuccess: 'Standup saved successfully!',
   toastSaveFailed: 'Failed to save standup.',
+  toastDeleteSuccess: 'Standup deleted.',
+  toastDeleteFailed: 'Failed to delete standup.',
+  deleteConfirm: 'Are you sure you want to delete this standup entry? This action cannot be undone.',
   noProjectsTitle: 'No Projects Found',
   noProjectsHint: 'Create or join a project to start logging daily standups.',
   emptyGridTitle: 'No Members Found',

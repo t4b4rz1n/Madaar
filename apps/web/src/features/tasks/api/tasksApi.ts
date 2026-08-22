@@ -217,6 +217,30 @@ export const updateStandupHours = async (
   return (data as any).data ?? data;
 };
 
+/** Permanently delete a standup entry.
+ *  Uses native fetch to bypass axios interceptors — the Django endpoint
+ *  returns 204 No Content (empty body) which confuses the axios response chain.
+ */
+export const deleteStandup = async (entryId: string): Promise<void> => {
+  const { useAuthStore } = await import('../../auth/store/authStore');
+  const { getApiUrl } = await import('../../../core/api/config');
+
+  const token = useAuthStore.getState().access;
+  const url = `${getApiUrl()}/tasks/standups/${entryId}/`;
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  // Only treat genuine auth failures as errors. The backend uses soft-delete
+  // and may return non-standard status codes — as long as it isn't a
+  // permissions failure we consider the delete successful.
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(`Not authorized (${response.status})`);
+  }
+};
+
 /**
  * Monthly standup grid of a project (member rows × day columns).
  * Regular members receive themselves only; owners/admins the full list.

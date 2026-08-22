@@ -20,15 +20,6 @@ import type {
   StandupGridMember,
 } from '../types';
 
-const MEMBER_DOT_COLORS = [
-  'bg-primary',
-  'bg-secondary',
-  'bg-accent',
-  'bg-info',
-  'bg-success',
-  'bg-warning',
-];
-
 const pad2 = (value: number): string => String(value).padStart(2, '0');
 
 /** localStorage key so the selected project survives page refreshes. */
@@ -298,7 +289,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
     const showOrangeDot = isDirty || Boolean(entry && !entry.is_complete);
 
     return (
-      <div className="relative flex h-9 w-12 items-center justify-center">
+      <div className="relative flex h-9 w-20 items-center justify-center">
         {editable ? (
           <input
             type="number"
@@ -316,12 +307,16 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                 handleEnterOnCell(member, day);
               }
             }}
-            className="h-9 w-12 rounded-lg bg-transparent text-center text-sm font-semibold text-info placeholder:text-base-content/40 focus:border-primary/50 focus:bg-base-200/60 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+            className="h-9 w-16 rounded-lg bg-transparent text-center text-lg font-semibold text-primary placeholder:text-base-content/40 focus:border-primary/50 focus:bg-base-200/60 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
           />
         ) : (
           <span
-            className={`text-sm font-semibold ${
-              value ? 'text-info' : 'text-base-content/40'
+            className={`text-lg font-bold ${
+              value
+                ? isOwnRow(member)
+                  ? 'text-primary'
+                  : 'text-base-content/50'
+                : 'text-base-content/30'
             }`}
           >
             {value || '-'}
@@ -329,10 +324,10 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
         )}
         {showGreenCheck && (
           <span
-            className="absolute -top-1 end-0 z-10 flex h-4 w-4 translate-x-1/3 items-center justify-center rounded-full bg-success text-success-content shadow rtl:-translate-x-1/3"
+            className="absolute -top-1 end-0 z-10 flex h-2.5 w-2.5 translate-x-1/3 items-center justify-center rounded-full bg-success text-success-content shadow rtl:-translate-x-1/3"
             title={S.legendCompleted}
           >
-            <Check size={10} variant="Bold" />
+            <Check size={7} variant="Bold" />
           </span>
         )}
         {showOrangeDot && !showGreenCheck && (
@@ -426,20 +421,22 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
           </div>
 
           {/* Members × days matrix */}
-          <div className="overflow-x-auto pb-1">
+          <div className="custom-scrollbar overflow-x-auto pb-1">
             <table className="w-full min-w-max border-separate border-spacing-0">
               <thead>
                 <tr>
-                  <th className="sticky start-0 z-10 min-w-[150px] border-b border-base-content/10 bg-base-200/95 px-4 py-2.5 text-start text-[11px] font-bold uppercase tracking-wider text-base-content/55 backdrop-blur">
+                  {/* MEMBER header — same bg as member sticky column */}
+                  <th className="sticky start-0 z-20 min-w-[150px] border-b border-base-content/10 bg-base-200/60 px-4 py-2.5 text-start text-[11px] font-bold uppercase tracking-wider text-base-content/55 backdrop-blur">
                     {S.memberColumnLabel}
                   </th>
+                  {/* Day number headers — NO border-l between them, same bg zone */}
                   {days.map((day) => {
                     const isToday =
                       Boolean(grid?.today) && dayIso(day) === grid?.today;
                     return (
                       <th
                         key={day}
-                        className={`border-b border-base-content/10 px-1 py-2.5 text-center text-xs font-bold ${
+                        className={`border-b border-base-content/10 bg-base-200/30 px-1 py-2.5 text-center text-xs font-bold ${
                           isToday ? 'text-primary' : 'text-base-content/45'
                         }`}
                       >
@@ -450,25 +447,26 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {(grid?.members ?? []).map((member, memberIndex) => {
+                {(grid?.members ?? []).map((member) => {
                   const total = Number(member.total_hours) || 0;
                   const displayName =
                     [member.first_name, member.last_name].filter(Boolean).join(' ') ||
                     member.username;
                   return (
                     <tr key={member.id} className="group">
-                      <td className="sticky start-0 z-10 border-b border-base-content/5 bg-base-100/95 px-4 py-2 backdrop-blur group-hover:bg-base-200/70">
+                      {/* Member sticky column — slightly lighter than cell area */}
+                      <td className="sticky start-0 z-20 border-b border-base-content/8 bg-base-200/20 px-4 py-2 backdrop-blur group-hover:bg-base-200/50">
                         <div className="flex items-center gap-2.5">
                           <span
                             className={`h-2 w-2 shrink-0 rounded-full ${
-                              MEMBER_DOT_COLORS[memberIndex % MEMBER_DOT_COLORS.length]
+                              isOwnRow(member) ? 'bg-primary' : 'bg-base-content/40'
                             }`}
                           />
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-bold text-base-content">
+                            <p className="truncate text-xs font-semibold text-base-content">
                               {displayName}
                             </p>
-                            <p className="text-[11px] text-info">
+                            <p className="text-[11px] text-base-content/60">
                               {total > 0 ? `${total}${S.hoursTotalSuffix}` : ''}
                             </p>
                           </div>
@@ -481,10 +479,11 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                           Boolean(grid?.today) && isoDate === grid?.today;
                         const isFuture =
                           Boolean(grid?.today) && isoDate > (grid?.today ?? '');
+                        const hasEntry = entryIndex.has(cellKey(member.id, isoDate));
                         return (
                           <td
                             key={day}
-                            className={`border-b border-base-content/5 px-1 py-1 text-center ${
+                            className={`border-b border-l border-base-content/[0.07] px-1.5 py-1 text-center ${
                               isToday ? 'bg-primary/5' : ''
                             }`}
                             onClick={
@@ -497,7 +496,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                             title={
                               isFuture
                                 ? S.lockedCellTitle
-                                : editable
+                                : editable && !hasEntry
                                   ? S.hintRightClickShort
                                   : undefined
                             }
@@ -508,7 +507,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                                   ? 'cursor-text'
                                   : isFuture
                                     ? 'cursor-not-allowed'
-                                    : entryIndex.has(cellKey(member.id, isoDate))
+                                    : hasEntry
                                       ? 'cursor-pointer'
                                       : 'cursor-default'
                               }`}
@@ -539,8 +538,8 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
           <div className="flex flex-col justify-between gap-2 border-t border-base-content/10 px-4 py-3 md:flex-row md:items-center">
             <div className="flex flex-wrap items-center gap-4 text-xs text-base-content/55">
               <span className="flex items-center gap-1.5">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-success/15 text-success">
-                  <Check size={10} variant="Bold" />
+                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success text-success-content shadow-sm">
+                  <Check size={7} variant="Bold" />
                 </span>
                 {S.legendCompleted}
               </span>
@@ -549,7 +548,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                 {S.legendUnsaved}
               </span>
             </div>
-            <p className="text-xs text-base-content/40">{S.hintRightClick}</p>
+            <span className="text-xs text-base-content/35">{S.hintRightClick}</span>
           </div>
         </div>
       )}
@@ -568,6 +567,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
           hideHours={activeCell?.hideHours ?? false}
           initial={activeCell?.initial}
           onSaved={handleSaved}
+          onDeleted={handleSaved}
         />
       )}
     </motion.div>
