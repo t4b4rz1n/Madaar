@@ -1,168 +1,199 @@
-from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from accounts.validators import profile_picture_validator
 from common.models import BaseModel
 
+from .managers import UserManager
 
-class Organization(BaseModel):
-    class Status(models.TextChoices):
-        ACTIVE = "active", "Active"
-        SUSPENDED = "suspended", "Suspended"
-        ARCHIVED = "archived", "Archived"
 
-    name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True, db_index=True)
-    description = models.TextField(blank=True)
-    status = models.CharField(
+class User(AbstractUser, BaseModel):
+    email = models.EmailField(
+        unique=True,
+        db_index=True,
+    )
+
+    username = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+    )
+
+    first_name = models.CharField(
+        max_length=100,
+    )
+
+    last_name = models.CharField(
+        max_length=100,
+    )
+
+    phone_number = models.CharField(
         max_length=20,
-        choices=Status.choices,
-        default=Status.ACTIVE,
-    )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="owned_organizations",
-    )
-
-    class Meta:
-        db_table = "organizations"
-        verbose_name = "Organization"
-        verbose_name_plural = "Organizations"
-        ordering = ["name"]
-
-    def __str__(self):
-        return self.name
-
-
-class Team(BaseModel):
-    name = models.CharField(max_length=100)
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name="teams",
-    )
-    parent_team = models.ForeignKey(
-        "self",
-        on_delete=models.CASCADE,
+        unique=True,
         null=True,
         blank=True,
-        related_name="subteams",
-        verbose_name="Parent Team",
     )
-    description = models.TextField(blank=True)
+
+    avatar = models.ImageField(
+        upload_to="avatars/", null=True, blank=True, validators=[profile_picture_validator]
+    )
+
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
 
     class Meta:
-        db_table = "teams"
-        verbose_name = "Team"
-        verbose_name_plural = "Teams"
-        ordering = ["name"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["organization", "name"],
-                name="unique_team_org_name",
-            )
-        ]
+        db_table = "users"
+        verbose_name = "User"
+        verbose_name_plural = "Users"
 
     def __str__(self):
-        return self.name
+        full_name = self.get_full_name()
+        if full_name:
+            return f"{full_name} ({self.username})"
+        return self.username or self.email or f"User {self.id}"
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def get_short_name(self):
+        return self.first_name
 
 
-class OrganizationMembership(BaseModel):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+class WorkStyleProfile(BaseModel):
+    """
+    Work style preferences for a user.
+    Used to guide how team members interact with each other.
+    """
+
+    class CommunicationPreference(models.TextChoices):
+        TEXT = "text", "Text"
+        CALL = "call", "Call"
+        MEETING = "meeting", "Meeting"
+
+    user = models.OneToOneField(
+        User,
         on_delete=models.CASCADE,
-        related_name="org_memberships",
+        related_name="work_style_profile",
     )
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name="memberships",
+
+    communication_preference = models.CharField(
+        max_length=20,
+        choices=CommunicationPreference.choices,
+        default=CommunicationPreference.TEXT,
+        help_text="Preferred communication channel",
     )
-    role = models.ForeignKey(
-        "access_control.Role",
-        on_delete=models.PROTECT,
+
+    preferred_working_hours_start = models.TimeField(
         null=True,
         blank=True,
-        related_name="org_memberships",
-        help_text="RBAC Role assigned to this member within this organization.",
+        help_text="Preferred start time for working hours",
     )
+
+    preferred_working_hours_end = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Preferred end time for working hours",
+    )
+
+    disc_result = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="DISC personality assessment result",
+    )
+
+    neo_result = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="NEO personality assessment result",
+    )
+
+    notes = models.TextField(
+        blank=True,
+        help_text="Additional notes about work style preferences",
+    )
+
+    # Telegram Integration
+    telegram_chat_id = models.CharField(max_length=50, blank=True, null=True)
+    telegram_connect_token = models.CharField(max_length=64, blank=True, null=True)
+    telegram_language = models.CharField(
+        max_length=10,
+        default="en",
+        help_text="User's preferred language for Telegram bot (e.g. 'fa', 'en')",
+    )
+    has_set_language_manually = models.BooleanField(
+        default=False, help_text="True if user explicitly selected language in bot"
+    )
+
+    # Notification Preferences
+    notify_via_email = models.BooleanField(default=True)
+    notify_via_telegram = models.BooleanField(default=False)
 
     class Meta:
-        db_table = "organization_memberships"
-        verbose_name = "Organization Membership"
-        verbose_name_plural = "Organization Memberships"
-        ordering = ["-created_at"]  # BaseModel provides created_at
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "organization"],
-                name="unique_org_membership_user_org",
-            )
-        ]
+        db_table = "work_style_profiles"
+        verbose_name = "Work Style Profile"
+        verbose_name_plural = "Work Style Profiles"
 
     def __str__(self):
-        return f"{self.user_id} - {self.organization_id} ({self.role})"
+        return f"WorkStyle({self.user_id})"
 
     def clean(self):
-        if self.role_id and self.role.organization_id != self.organization_id:
-            raise ValidationError({"role": "Role must belong to the same organization."})
-        if (
-            self.role_id
-            and self.role.assignment_scope != self.role.AssignmentScope.ORGANIZATION
-        ):
-            raise ValidationError({"role": "Organization membership requires an organization role."})
+        super().clean()
+        # Ensure we catch duplicates even if they are soft-deleted
+        # to prevent IntegrityError in Django Admin
+        if self.user_id:
+            qs = WorkStyleProfile.all_objects.filter(user=self.user)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                from django.core.exceptions import ValidationError
 
-
-class TeamMembership(BaseModel):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="team_memberships",
-    )
-    team = models.ForeignKey(
-        Team,
-        on_delete=models.CASCADE,
-        related_name="memberships",
-    )
-    role = models.ForeignKey(
-        "access_control.Role",
-        on_delete=models.PROTECT,
-        related_name="team_memberships",
-        help_text="RBAC Role assigned to this member within this team.",
-    )
-
-    class Meta:
-        db_table = "team_memberships"
-        verbose_name = "Team Membership"
-        verbose_name_plural = "Team Memberships"
-        ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "team"],
-                name="unique_team_membership_user_team",
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.user_id} - {self.team_id} ({self.role})"
-
-    def clean(self):
-        if self.role_id:
-            if self.role.organization_id != self.team.organization_id:
-                raise ValidationError({"role": "Role must belong to the team's organization."})
-            if self.role.assignment_scope != self.role.AssignmentScope.TEAM:
-                raise ValidationError({"role": "Team membership requires a team role."})
-            if not self.role.is_active:
-                raise ValidationError({"role": "Team membership role must be active."})
-
-        if self.user_id and self.team_id:
-            has_active_org_membership = OrganizationMembership.objects.filter(
-                user_id=self.user_id,
-                organization_id=self.team.organization_id,
-                is_deleted=False,
-            ).exists()
-            if not has_active_org_membership:
                 raise ValidationError(
-                    {"user": "User must be an active organization member before joining a team."}
+                    {"user": "A Work Style Profile already exists for this user   "}
                 )
+
+
+class UserProfile(BaseModel):
+    """
+    Extensible employee profile information.
+    """
+
+    class EmploymentType(models.TextChoices):
+        FULL_TIME = "full_time", "Full Time"
+        PART_TIME = "part_time", "Part Time"
+        CONTRACT = "contract", "Contract"
+        INTERN = "intern", "Intern"
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    job_title = models.CharField(max_length=100, blank=True)
+    department = models.CharField(max_length=100, blank=True)
+    employee_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    employment_type = models.CharField(
+        max_length=20,
+        choices=EmploymentType.choices,
+        default=EmploymentType.FULL_TIME,
+    )
+    hire_date = models.DateField(null=True, blank=True)
+    bio = models.TextField(blank=True)
+
+    # Professional & Extensible information
+    skills = models.JSONField(default=list, blank=True)
+    experience_history = models.JSONField(default=list, blank=True)
+    github_url = models.URLField(blank=True)
+    linkedin_url = models.URLField(blank=True)
+
+    class Meta:
+        db_table = "user_profiles"
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+    def __str__(self):
+        return f"Profile({self.user.email})"
