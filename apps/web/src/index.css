@@ -1,42 +1,85 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* 🎨 MAIN THEME CONFIGURATION */
+/* Madaar design system — phase zero */
 @plugin "daisyui/theme" {
   name: "light";
-  prefersdark: false;
+  default: true;
   color-scheme: "light";
 
   /* Backgrounds */
-  --color-base-100: oklch(100% 0 0); /* #ffffff */
-  --color-base-200: oklch(98% 0 0); /* #fafafa */
-  --color-base-300: oklch(95% 0 0); /* #f3f3f3 */
-  --color-base-content: oklch(21% 0.006 285.885); /* #333333 */
+  --color-base-100: #ffffff;
+  --color-base-200: #f6f7f9;
+  --color-base-300: #e9edf2;
+  --color-base-content: #182230;
 
   /* Brand Colors */
-  --color-primary: #38b6ff; /* Main Brand Blue */
+  --color-primary: #0a84ff;
   --color-primary-content: #ffffff;
-  --color-secondary: #4a90a4; /* Teal/Slate */
+  --color-secondary: #5e6ad2;
   --color-secondary-content: #ffffff;
-  --color-accent: #00d1b2; /* Bright Teal */
+  --color-accent: #14b8a6;
   --color-accent-content: #ffffff;
-  --color-neutral: #1f2937; /* Dark Gray */
+  --color-neutral: #273142;
   --color-neutral-content: #ffffff;
 
   /* Functional Colors */
-  --color-info: #1da1f2;
+  --color-info: #0a84ff;
   --color-info-content: #ffffff;
-  --color-success: #22c55e;
+  --color-success: #34c759;
   --color-success-content: #ffffff;
-  --color-warning: #f59e0b;
+  --color-warning: #ff9f0a;
   --color-warning-content: #111111;
-  --color-error: #ef4444;
+  --color-error: #ff453a;
   --color-error-content: #ffffff;
 
   /* Shape Settings */
-  --radius-selector: 0.5rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
+  --radius-selector: 0.625rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Dark mode keeps the same hierarchy with darker surfaces, not pure black. */
+@plugin "daisyui/theme" {
+  name: "dark";
+  prefersdark: true;
+  color-scheme: "dark";
+
+  /* Backgrounds */
+  --color-base-100: #1c2028;
+  --color-base-200: #151922;
+  --color-base-300: #0f131a;
+  --color-base-content: #f5f7fa;
+
+  /* Brand Colors */
+  --color-primary: #64b5ff;
+  --color-primary-content: #ffffff;
+  --color-secondary: #a9b0ff;
+  --color-secondary-content: #082f49;
+  --color-accent: #63d7c8;
+  --color-accent-content: #052e16;
+  --color-neutral: #0f131a;
+  --color-neutral-content: #e2e8f0;
+
+  /* Functional Colors */
+  --color-info: #64b5ff;
+  --color-info-content: #082f49;
+  --color-success: #63d483;
+  --color-success-content: #052e16;
+  --color-warning: #ffb340;
+  --color-warning-content: #111827;
+  --color-error: #ff6961;
+  --color-error-content: #450a0a;
+
+  /* Shape Settings */
+  --radius-selector: 0.625rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -49,6 +92,43 @@
    (AuthLayout, Platforms, ContactCards) added here for reusability.
 */
 @theme {
+  /* Color */
+  --color-madaar-canvas: #f6f7f9;
+  --color-madaar-surface: #ffffff;
+  --color-madaar-surface-muted: #eef1f5;
+  --color-madaar-ink: #182230;
+  --color-madaar-ink-muted: #687385;
+  --color-madaar-border: #e1e6ed;
+  --color-madaar-brand: #0a84ff;
+  --color-madaar-brand-soft: #e8f3ff;
+
+  /* Spacing — 4px base scale */
+  --spacing-madaar-1: 0.25rem;
+  --spacing-madaar-2: 0.5rem;
+  --spacing-madaar-3: 0.75rem;
+  --spacing-madaar-4: 1rem;
+  --spacing-madaar-5: 1.25rem;
+  --spacing-madaar-6: 1.5rem;
+  --spacing-madaar-8: 2rem;
+  --spacing-madaar-10: 2.5rem;
+  --spacing-madaar-12: 3rem;
+  --spacing-madaar-16: 4rem;
+
+  /* Radius */
+  --radius-madaar-sm: 0.625rem;
+  --radius-madaar-md: 0.875rem;
+  --radius-madaar-lg: 1.25rem;
+  --radius-madaar-xl: 1.5rem;
+  --radius-madaar-pill: 9999px;
+
+  /* Shadows */
+  --shadow-madaar-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px rgb(15 23 42 / 0.04);
+  --shadow-madaar-raised: 0 8px 28px rgb(15 23 42 / 0.08);
+  --shadow-madaar-floating: 0 16px 48px rgb(15 23 42 / 0.14);
+
+  /* Typography */
+  --font-madaar-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+
   /* Social Media Brand Colors (found in platforms.tsx) */
   --color-telegram-bg: #d6eef9;
   --color-telegram-text: #34aadf;
@@ -57,7 +137,7 @@
   --color-whatsapp-text: #00d95f;
   --color-whatsapp-badge: #00d95f33;
 
-  --color-instagram-bg: #e4405f33; /* Low opacity bg */
+  --color-instagram-bg: #e4405f33;
   --color-instagram-text: #e4405f;
 
   --color-eitaa-bg: #fae4cc;
@@ -67,7 +147,7 @@
   --color-rubika-text: #4d3884;
 
   /* Specific UI Elements */
-  --color-border-subtle: #e2e2e2; /* Used in ContactCard borders */
+  --color-border-subtle: #e2e2e2;
 
   /* Auth Page Gradients (found in AuthLayout.tsx) */
   --color-auth-grad-1-start: #dff6ff;
@@ -76,9 +156,188 @@
   --color-auth-grad-2-end: #f7fbff;
 }
 
-/* Font Setting */
+/* Runtime tokens for components and motion */
+:root {
+  --madaar-font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+  --madaar-duration-fast: 120ms;
+  --madaar-duration-standard: 180ms;
+  --madaar-duration-slow: 280ms;
+  --madaar-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --madaar-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  --madaar-focus-ring: 0 0 0 3px rgb(10 132 255 / 0.28);
+  --madaar-sidebar-width: 16.5rem;
+  --madaar-sidebar-collapsed-width: 4.25rem;
+}
+
+[data-theme="dark"] {
+  --color-madaar-canvas: #151922;
+  --color-madaar-surface: #1c2028;
+  --color-madaar-surface-muted: #252b35;
+  --color-madaar-ink: #f5f7fa;
+  --color-madaar-ink-muted: #a5adba;
+  --color-madaar-border: #343b47;
+  --color-madaar-brand: #64b5ff;
+  --color-madaar-brand-soft: #1d3850;
+  --madaar-focus-ring: 0 0 0 3px rgb(100 181 255 / 0.34);
+}
+
+/* حل مشکل پس‌زمینه شفاف گزینه‌های select در مد دارک */
+select option {
+  background-color: #1e2330 !important;
+  /* پس‌زمینه تیره تِم Madaar */
+  color: #f3f4f6 !important;
+  /* رنگ متن روشن */
+  padding: 8px 12px;
+}
+
+select option:hover,
+select option:focus,
+select option:active {
+  background-color: #2b3245 !important;
+}
+
+/* Font setting */
 *,
 *::after,
 *::before {
-  font-family: "Vazirmatn", sans-serif;
+  font-family: var(--madaar-font-sans);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-madaar-canvas);
+  color: var(--color-madaar-ink);
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  box-shadow: var(--madaar-focus-ring);
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Opt-in motion prevents global transitions from fighting drag, scroll and focus. */
+.motion-interactive {
+  touch-action: manipulation;
+  transition:
+    color var(--madaar-duration-fast) var(--madaar-ease-standard),
+    background-color var(--madaar-duration-fast) var(--madaar-ease-standard),
+    border-color var(--madaar-duration-fast) var(--madaar-ease-standard),
+    box-shadow var(--madaar-duration-standard) var(--madaar-ease-standard),
+    transform var(--madaar-duration-standard) var(--madaar-ease-emphasized);
+}
+
+.motion-interactive:active {
+  transform: scale(0.985);
+  transition-duration: var(--madaar-duration-fast);
+}
+
+.motion-surface {
+  transition:
+    background-color var(--madaar-duration-standard) var(--madaar-ease-standard),
+    border-color var(--madaar-duration-standard) var(--madaar-ease-standard),
+    box-shadow var(--madaar-duration-standard) var(--madaar-ease-standard);
+}
+
+.madaar-surface {
+  background: var(--color-madaar-surface);
+  border: 1px solid var(--color-madaar-border);
+  border-radius: var(--radius-madaar-lg);
+  box-shadow: var(--shadow-madaar-card);
+  contain: layout paint;
+}
+
+.madaar-glass {
+  background: color-mix(in srgb, var(--color-madaar-surface) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-madaar-border) 76%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .madaar-glass {
+    background: var(--color-madaar-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+
+  .madaar-glass,
+  .madaar-surface {
+    border-color: var(--color-base-content);
+  }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-base-content) 18%, transparent);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-base-content) 28%, transparent);
 }

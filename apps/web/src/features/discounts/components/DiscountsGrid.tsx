@@ -76,7 +76,7 @@ export const DiscountsGrid = ({
             </div>
 
             {/* Body Skeleton */}
-            <div className="bg-base- content/5 rounded-xl h-16 mb-4 w-full" />
+            <div className="bg-base-content/5 rounded-xl h-16 mb-4 w-full" />
 
             {/* Footer Skeleton */}
             <div className="flex gap-2 pt-4 border-t border-base-content/10 mt-auto">

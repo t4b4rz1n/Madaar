@@ -22,6 +22,9 @@ env = environ.Env(
 
 environ.Env.read_env(BASE_DIR / ".env")
 
+# --- Cache Configuration is defined below after DB config ---
+REDIS_CACHE_URL = env("REDIS_CACHE_URL", default="redis://redis:6379/1")
+
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-CHANGE-ME-IN-PRODUCTION")
 DEBUG = env("DEBUG")
 ENABLE_FIELD_FILTER_PAGINATION = env("ENABLE_FIELD_FILTER_PAGINATION")
@@ -61,6 +64,9 @@ LOCAL_APPS = [
     "organizations.apps.OrganizationsConfig",
     "projects.apps.ProjectsConfig",
     "tasks.apps.TasksConfig",
+    "attendance.apps.AttendanceConfig",
+    "automations.apps.AutomationsConfig",
+    "reports.apps.ReportsConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -69,6 +75,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -123,6 +130,41 @@ else:
         }
     }
 
+# --- Cache Configuration ---
+import socket
+
+
+def _redis_available(url):
+    try:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 6379
+        s = socket.create_connection((host, port), timeout=1)
+        s.close()
+        return True
+    except Exception:
+        return False
+
+
+if _redis_available(REDIS_CACHE_URL):
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_CACHE_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
 # --- Password Validation ---
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -133,14 +175,33 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # --- Internationalization ---
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+LANGUAGE_CODE = "fa-ir"
+# Business timezone for date boundaries (grid "today", standup locking).
+# DB keeps storing UTC thanks to USE_TZ = True.
+TIME_ZONE = "Asia/Tehran"
 USE_I18N = True
 USE_TZ = True
+LOCALE_PATHS = [BASE_DIR / "locale"]
+LANGUAGES = [
+    ("en", "English"),
+    ("fa", "Persian"),
+]
 
 # --- CORS (Cross-Origin Resource Sharing) ---
-CORS_ALLOWED_ORIGINS = env("ALLOWED_CORS")
-CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOW_CREDENTIALS = True
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+else:
+    CORS_ALLOWED_ORIGINS = env("ALLOWED_CORS")
+    CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
 # --- Static and Media Files (with MinIO/S3) ---
 STATIC_URL = "/static/"
@@ -219,6 +280,14 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
     "EXCEPTION_HANDLER": "config.exception_handler.custom_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env("THROTTLE_RATE_ANON", default="60/minute"),
+        "user": env("THROTTLE_RATE_USER", default="300/minute"),
+    },
 }
 
 # --- SimpleJWT Settings ---
@@ -246,6 +315,8 @@ SPECTACULAR_SETTINGS = {
     "TAGS": [
         {"name": "auth", "description": "Authentication endpoints"},
         {"name": "accounts", "description": "User account management"},
+        {"name": "organizations", "description": "Organisation and team management"},
+        {"name": "projects", "description": "Project, member, milestone and activity management"},
         {"name": "panel", "description": "Panel management"},
         {"name": "dashboard", "description": "Dashboard endpoints"},
         {"name": "support", "description": "Support endpoints"},
@@ -261,6 +332,15 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
+
+# --- Email Settings ---
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.dummy.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Madaar <noreply@madaar.io>")
 
 # --- Payment Settings ---
 SANDBOX = env("SANDBOX")
@@ -338,6 +418,7 @@ LOGGING = {
 # --- Celery Settings ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=DEBUG)
 
 # --- Production Security ---
 SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
@@ -346,3 +427,10 @@ CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE")
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 X_FRAME_OPTIONS = "DENY"
+
+# Telegram Config
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default=None)
+TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")
+
+# GitHub Config
+GITHUB_WEBHOOK_SECRET = env("GITHUB_WEBHOOK_SECRET", default="")

@@ -1,10 +1,17 @@
 import { motion } from "framer-motion";
-import { ArrowRight2, HamburgerMenu } from "iconsax-reactjs";
+import { ArrowRight2, HamburgerMenu, SearchNormal1 } from "iconsax-reactjs";
 import { Link } from "react-router-dom";
+import ThemeToggle from "../../components/ThemeToggle";
+import { motionTokens } from "../../core/config/designTokens";
+import { NotificationCenter } from "./NotificationCenter";
 
 const headerVariants = {
   hidden: { y: -100, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { duration: 0.4 } },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: motionTokens.duration.slow },
+  },
 };
 
 export interface Breadcrumb {
@@ -14,38 +21,44 @@ export interface Breadcrumb {
 
 interface HeaderProps {
   onMenuClick: () => void;
+  onCommandMenuClick: () => void;
   breadcrumbs: Breadcrumb[];
 }
 
-export const Header = ({ onMenuClick, breadcrumbs }: HeaderProps) => {
+export const Header = ({
+  onMenuClick,
+  onCommandMenuClick,
+  breadcrumbs,
+}: HeaderProps) => {
   return (
     <motion.header
       variants={headerVariants}
       initial="hidden"
       animate="visible"
-      className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-[19.5px] bg-base-100/80 backdrop-blur-lg border-b border-base-content/10"
+      className="madaar-glass sticky top-0 z-30 flex min-h-[72px] items-center justify-between px-4 sm:px-8"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <motion.button
+          type="button"
           onClick={onMenuClick}
-          className="lg:hidden btn btn-ghost btn-circle text-base-content"
+          className="motion-interactive btn btn-ghost btn-circle text-base-content lg:hidden"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          aria-label="Open Menu"
+          aria-label="Open navigation"
         >
           <HamburgerMenu />
         </motion.button>
 
         <nav
-          className="flex items-center text-sm sm:text-base"
+          className="flex min-w-0 items-center overflow-hidden text-sm sm:text-base"
           aria-label="Breadcrumb"
         >
           {breadcrumbs.map((crumb, index) => (
-            <div key={index} className="flex items-center">
+            <div key={index} className="flex shrink-0 items-center">
               {index < breadcrumbs.length - 1 ? (
                 <Link
                   to={crumb.path}
-                  className="font-semibold text-base-content/60 hover:text-primary transition-colors"
+                  className="motion-interactive font-semibold text-base-content/55 hover:text-primary"
                 >
                   {crumb.title}
                 </Link>
@@ -56,14 +69,26 @@ export const Header = ({ onMenuClick, breadcrumbs }: HeaderProps) => {
               )}
 
               {index < breadcrumbs.length - 1 && (
-                <ArrowRight2
-                  size="16"
-                  className="text-base-content/40 mx-1 sm:mx-2"
-                />
+                <ArrowRight2 size="16" className="mx-1 text-base-content/35 sm:mx-2" />
               )}
             </div>
           ))}
         </nav>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onCommandMenuClick}
+          className="motion-interactive inline-flex h-10 w-10 items-center justify-center gap-2 rounded-xl border border-base-content/10 bg-base-100/70 text-sm text-base-content/50 shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-auto sm:px-3"
+          aria-label="Open command menu"
+        >
+          <SearchNormal1 size={18} />
+          <span className="hidden sm:inline">Search</span>
+          <kbd className="hidden rounded-md border border-base-content/10 bg-base-200 px-1.5 py-0.5 text-[0.65rem] sm:inline">⌘K</kbd>
+        </button>
+        <NotificationCenter />
+        <ThemeToggle />
       </div>
     </motion.header>
   );

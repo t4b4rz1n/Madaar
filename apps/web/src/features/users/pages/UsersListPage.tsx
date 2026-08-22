@@ -4,13 +4,14 @@ import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../../components/Pagination";
 import { ViewSwitcher } from "../../../components/ViewSwitcher";
-import { useAuthStore } from "../../auth/store/authStore";
+// import { useAuthStore } from "../../auth/store/authStore";
 import { CreateEditUserModal } from "../components/CreateEditUserModal";
 import { UsersGrid } from "../components/UsersGrid";
 import { UsersTable } from "../components/UsersTable";
 import { UsersToolbar } from "../components/UsersToolbar";
 import { useUsers } from "../hooks/useUsers";
 import type { User } from "../types";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 
 type ViewMode = "grid" | "table";
 
@@ -30,7 +31,10 @@ const itemVariants = {
 };
 
 export default function UsersListPage() {
-  const canManageUsers = useAuthStore((state) => state.user?.is_staff === true);
+  const { hasAllPermissions } = usePermissions();
+
+  const canManageUsers = hasAllPermissions(["users.manage"]);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [modalState, setModalState] = useState<{
     open: boolean;
@@ -40,7 +44,12 @@ export default function UsersListPage() {
   // Default to grid view, but check params
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  const { data: usersResponse, isLoading, isFetching, isError } = useUsers(searchParams);
+  const {
+    data: usersResponse,
+    isLoading,
+    isFetching,
+    isError,
+  } = useUsers(searchParams);
   const showLoading = isLoading || isFetching;
 
   const updateSearchParams = useCallback(
@@ -58,35 +67,54 @@ export default function UsersListPage() {
         return newParams;
       });
     },
-    [setSearchParams]
-  );
-
-  const handleSearch = useCallback(
-    (query: string) => updateSearchParams("search", query),
-    [updateSearchParams]
-  );
-
-  const handleSort = useCallback(
-    (sortKey: string) => updateSearchParams("ordering", sortKey),
-    [updateSearchParams]
+    [setSearchParams],
   );
 
   const handleFilter = useCallback(
     (filters: Record<string, string>) => {
       setSearchParams((prev) => {
         const newParams = new URLSearchParams(prev);
+        newParams.delete("is_active");
+        newParams.delete("role_id");
         Object.entries(filters).forEach(([key, value]) => {
-          if (value) {
+          if (value !== undefined && value !== null && value !== "") {
             newParams.set(key, value);
-          } else {
-            newParams.delete(key);
           }
         });
+
         newParams.set("page", "1");
         return newParams;
       });
     },
-    [setSearchParams]
+    [setSearchParams],
+  );
+
+  const handleSort = useCallback(
+    (sortKey: string) => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set("ordering", sortKey);
+        newParams.set("page", "1");
+        return newParams;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        if (query) {
+          newParams.set("search", query);
+        } else {
+          newParams.delete("search");
+        }
+        newParams.set("page", "1");
+        return newParams;
+      });
+    },
+    [setSearchParams],
   );
 
   const currentPage = usersResponse?.current_page || 1;
@@ -96,12 +124,12 @@ export default function UsersListPage() {
 
   const handlePageChange = useCallback(
     (page: number) => updateSearchParams("page", page.toString()),
-    [updateSearchParams]
+    [updateSearchParams],
   );
 
   const handlePageSizeChange = useCallback(
     (size: number) => updateSearchParams("page_size", size.toString()),
-    [updateSearchParams]
+    [updateSearchParams],
   );
 
   const handleCreateUser = () => {
@@ -118,9 +146,8 @@ export default function UsersListPage() {
 
   const users = useMemo(
     () => usersResponse?.results || [],
-    [usersResponse?.results]
+    [usersResponse?.results],
   );
-
   return (
     <>
       <motion.div

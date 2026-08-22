@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 
 const PageLoader: React.FC = () => {
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden bg-base-200/80 backdrop-blur-md">
+    <div role="status" aria-live="polite" aria-busy="true" className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden bg-base-200/80 backdrop-blur-md">
       <div className="relative flex items-center justify-center">
         {/* Outer glowing spinning ring */}
         <motion.div

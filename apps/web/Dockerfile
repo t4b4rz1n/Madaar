@@ -11,7 +11,10 @@ ENV VITE_API_TIMEOUT=$VITE_API_TIMEOUT
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm config set strict-ssl false && \
+    npm install --include=dev
 
 COPY . .
 RUN npm run build

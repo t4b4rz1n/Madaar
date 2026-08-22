@@ -1,20 +1,28 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft2, Logout, Setting2, User } from "iconsax-reactjs";
-import { Link, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowLeft2, Logout, Setting2, User, Add } from "iconsax-reactjs";
+import { useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useLogout } from "../auth/hooks/useAuth";
 import { useAuthStore } from "../auth/store/authStore";
-import { drawerItems } from "./DrawerItems";
+import { usePermissions } from "../auth/hooks/usePermissions";
+import { getVisibleDrawerItems } from "./DrawerItems";
 import { useLayoutStore } from "./store/layoutStore";
-import logoUrl from "/images/base-logo.svg";
+import { getProjects } from "../projects/api/projectsApi";
+import { useTaskStore } from "../tasks/store/useTaskStore";
+import logoUrl from "/images/base-logo1.png";
+import { motionTokens } from "../../core/config/designTokens";
+
+const PROJECT_COLORS = ['#ef4444', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#3b82f6', '#8b5cf6', '#14b8a6'];
 
 const sidebarVariants = {
   expanded: {
-    width: "16rem",
-    transition: { duration: 0.3 },
+    width: "var(--madaar-sidebar-width)",
+    transition: { duration: motionTokens.duration.slow },
   },
   collapsed: {
-    width: "4rem",
-    transition: { duration: 0.3 },
+    width: "var(--madaar-sidebar-collapsed-width)",
+    transition: { duration: motionTokens.duration.slow },
   },
 };
 
@@ -23,69 +31,35 @@ const navItemVariants = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: 0.1 + i * 0.05 },
+    transition: { delay: 0.05 + i * 0.03 },
   }),
 };
 
 const textVariants = {
-  collapsed: { opacity: 0, x: -10, transition: { duration: 0.2 } },
-  expanded: { opacity: 1, x: 0, transition: { duration: 0.2, delay: 0.1 } },
+  collapsed: { opacity: 0, x: -10, transition: { duration: 0.15 } },
+  expanded: { opacity: 1, x: 0, transition: { duration: 0.15, delay: 0.05 } },
 };
 
 export const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const isStaff = user?.is_staff === true;
-  const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen } =
-    useLayoutStore();
+  const { hasAllPermissions } = usePermissions();
+  const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen } = useLayoutStore();
+  const { activeProjectId, setActiveProject } = useTaskStore();
   const logout = useLogout();
 
-  const renderNavItems = () =>
-    drawerItems.filter((item) => !item.staffOnly || isStaff).map((item, index) => {
-      const isActive =
-        item.link === ""
-          ? location.pathname === "/"
-          : location.pathname === `/${item.link}` ||
-            location.pathname.startsWith(`/${item.link}/`);
+  const { data: projects } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => getProjects(),
+    staleTime: 60_000,
+  });
 
-      return (
-        <motion.li
-          key={item.link}
-          variants={navItemVariants}
-          custom={index}
-          initial="hidden"
-          animate="visible"
-        >
-          <Link
-            to={`/${item.link}`}
-            onClick={() => setSidebarOpen(false)}
-            className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-200 h-12 overflow-hidden ${
-              isActive
-                ? "bg-primary text-primary-content shadow-md shadow-primary/20"
-                : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
-            }`}
-            title={isCollapsed ? item.title : ""}
-          >
-            <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
-              {item.icon}
-            </div>
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.span
-                  variants={textVariants}
-                  initial="collapsed"
-                  animate="expanded"
-                  exit="collapsed"
-                  className="font-medium whitespace-nowrap"
-                >
-                  {item.title}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </Link>
-        </motion.li>
-      );
-    });
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname, setSidebarOpen]);
+
+  const primaryItems = getVisibleDrawerItems(user, hasAllPermissions, true);
 
   return (
     <>
@@ -96,34 +70,39 @@ export const Sidebar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm lg:hidden"
           />
         )}
       </AnimatePresence>
 
       <motion.aside
+        aria-label="Primary navigation"
         variants={sidebarVariants}
         animate={isCollapsed ? "collapsed" : "expanded"}
-        className={`fixed lg:relative top-0 left-0 h-full bg-base-100 shadow-xl z-50 flex flex-col ${
+        className={`fixed left-0 top-0 z-50 flex h-full flex-col border-r border-base-content/8 bg-base-100/95 shadow-xl backdrop-blur-xl lg:relative ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 transition-transform duration-300 ease-in-out border-r border-base-content/10`}
+        } transition-transform duration-300 ease-in-out lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between p-4 h-[63px] border-b border-base-content/10">
+        {/* Header Logo */}
+        <div className="flex h-[72px] items-center justify-between border-b border-base-content/8 px-4">
           <AnimatePresence>
             {!isCollapsed && (
               <motion.img
                 src={logoUrl}
                 alt="Logo"
-                className="h-8 object-contain"
+                className="h-8 object-contain cursor-pointer"
+                onClick={() => navigate('/dashboard')}
                 initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0, transition: { delay: 0.2 } }}
+                animate={{ opacity: 1, x: 0, transition: { delay: 0.1 } }}
                 exit={{ opacity: 0, x: -10 }}
               />
             )}
           </AnimatePresence>
           <button
+            type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex btn btn-ghost btn-sm btn-circle text-base-content/60 hover:text-primary"
+            className="motion-interactive btn btn-ghost btn-sm btn-circle hidden text-base-content/55 hover:bg-base-200 hover:text-primary lg:flex"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
             <ArrowLeft2
@@ -134,26 +113,194 @@ export const Sidebar = () => {
           </button>
         </div>
 
-        <nav className="flex-1 p-2 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-base-300">
-          <ul className="space-y-1">{renderNavItems()}</ul>
+        {/* Scrollable Navigation */}
+        <nav
+          aria-label="Primary navigation"
+          className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4 pt-2 scrollbar-thin scrollbar-thumb-base-300"
+        >
+          {/* Main Workspace items */}
+          <ul className="space-y-1">
+            <li className="px-3 pb-1 pt-2">
+              <span
+                className={
+                  isCollapsed
+                    ? "sr-only"
+                    : "text-[0.65rem] font-bold uppercase tracking-[0.12em] text-base-content/40"
+                }
+              >
+                Workspace
+              </span>
+            </li>
+            {primaryItems.map((item, index) => {
+              const isActive =
+                item.link === "dashboard"
+                  ? location.pathname === "/" || location.pathname === "/dashboard"
+                  : location.pathname === `/${item.link}` ||
+                    location.pathname.startsWith(`/${item.link}/`);
+
+              return (
+                <motion.li
+                  key={item.link}
+                  variants={navItemVariants}
+                  custom={index}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  <Link
+                    to={`/${item.link}`}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`motion-interactive flex h-11 items-center gap-3 overflow-hidden rounded-xl px-3 ${
+                      isActive
+                        ? "bg-primary/10 text-primary font-bold"
+                        : "text-base-content/65 hover:bg-base-200/80 hover:text-base-content font-medium"
+                    }`}
+                    title={isCollapsed ? item.title : ""}
+                  >
+                    <div
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center ${
+                        isActive ? "text-primary" : "text-base-content/60"
+                      }`}
+                    >
+                      {item.icon}
+                    </div>
+
+                    <AnimatePresence>
+                      {!isCollapsed && (
+                        <motion.span
+                          variants={textVariants}
+                          initial="collapsed"
+                          animate="expanded"
+                          exit="collapsed"
+                          className="whitespace-nowrap text-sm"
+                        >
+                          {item.title}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </Link>
+                </motion.li>
+              );
+            })}
+          </ul>
+
+          {/* Pinned Projects Section */}
+          <div className="mt-6 border-t border-base-content/8 pt-4">
+            <div className="flex items-center justify-between px-3 pb-2">
+              <span
+                className={
+                  isCollapsed
+                    ? "sr-only"
+                    : "text-[0.65rem] font-bold uppercase tracking-[0.12em] text-base-content/40"
+                }
+              >
+                My Projects
+              </span>
+              {!isCollapsed && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/projects")}
+                  className="text-base-content/40 hover:text-primary transition-colors"
+                  title="Create Project"
+                >
+                  <Add size="16" />
+                </button>
+              )}
+            </div>
+
+            <ul className="space-y-1">
+              {projects?.slice(0, 5).map((project, idx) => {
+                const color = PROJECT_COLORS[idx % PROJECT_COLORS.length];
+                const isSelected = activeProjectId === project.id;
+
+                return (
+                  <li key={project.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveProject(String(project.id));
+                        navigate("/tasks");
+                        setSidebarOpen(false);
+                      }}
+                      className={`flex w-full h-10 items-center gap-3 rounded-xl px-3 text-start transition-colors ${
+                        isSelected
+                          ? "bg-base-200 text-base-content font-semibold"
+                          : "text-base-content/60 hover:bg-base-200/50 hover:text-base-content"
+                      }`}
+                      title={isCollapsed ? project.name : ""}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <AnimatePresence>
+                        {!isCollapsed && (
+                          <motion.span
+                            variants={textVariants}
+                            initial="collapsed"
+                            animate="expanded"
+                            exit="collapsed"
+                            className="truncate text-xs"
+                          >
+                            {project.name}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </button>
+                  </li>
+                );
+              })}
+
+              {!isCollapsed && (!projects || projects.length === 0) && (
+                <li className="px-3 text-xs text-base-content/40">No active projects</li>
+              )}
+            </ul>
+          </div>
         </nav>
 
-        <div className="p-2 border-t border-base-content/10">
+        {/* Footer with Admin Settings button & Profile */}
+        <div className="space-y-1 border-t border-base-content/8 p-2">
+          {/* Workspace Settings Link */}
+          <Link
+            to="/settings"
+            onClick={() => setSidebarOpen(false)}
+            className={`motion-interactive flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold ${
+              location.pathname === "/settings" || location.pathname.startsWith("/settings")
+                ? "bg-primary/10 text-primary font-bold"
+                : "text-base-content/70 hover:bg-base-200 hover:text-primary"
+            } ${isCollapsed ? "justify-center" : ""}`}
+            title={isCollapsed ? "Workspace Settings" : ""}
+          >
+            <Setting2 size="18" className="shrink-0 text-base-content/60" />
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.span
+                  variants={textVariants}
+                  initial="collapsed"
+                  animate="expanded"
+                  exit="collapsed"
+                  className="whitespace-nowrap"
+                >
+                  Workspace Settings
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </Link>
+
+          {/* User Profile dropdown */}
           <div className="dropdown dropdown-top w-full">
-            <motion.div
-              tabIndex={0}
-              role="button"
-              className={`w-full flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-base-200 transition-colors ${
+            <motion.button
+              type="button"
+              className={`motion-interactive flex w-full cursor-pointer items-center gap-3 rounded-xl border-0 bg-transparent p-2 text-start hover:bg-base-200 ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
               <div className="avatar">
-                <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
+                <div className="w-9 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
                   {user?.profile_image_url ? (
                     <img src={user.profile_image_url} alt="Profile" />
                   ) : (
-                    <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                      <User size="20" className="text-primary" />
+                    <div className="flex h-full w-full items-center justify-center bg-primary/10">
+                      <User size="18" className="text-primary" />
                     </div>
                   )}
                 </div>
@@ -165,38 +312,35 @@ export const Sidebar = () => {
                     initial="collapsed"
                     animate="expanded"
                     exit="collapsed"
-                    className="flex-grow text-left overflow-hidden"
+                    className="flex-grow overflow-hidden text-start"
                   >
-                    <p className="font-semibold text-sm truncate text-base-content">
+                    <p className="truncate text-xs font-bold text-base-content">
                       {user?.username || "User"}
                     </p>
-                    <p className="text-xs text-base-content/60 truncate">
+                    <p className="truncate text-[0.65rem] text-base-content/55">
                       {user?.email || "No email"}
                     </p>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </motion.button>
 
             <ul
               tabIndex={0}
-              className="dropdown-content z-[1] menu p-2 shadow-xl bg-base-100 border border-base-200 rounded-box w-52 mb-2"
+              className="dropdown-content menu z-[1] mb-2 w-52 rounded-box border border-base-200 bg-base-100 p-2 shadow-xl"
             >
-              <li className="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase">
+              <li className="menu-title px-4 py-2 text-xs font-semibold uppercase text-base-content/50">
                 Account
               </li>
               <li>
                 <Link to="profile" className="text-base-content/80">
-                  <Setting2 className="w-4 h-4" /> Settings
+                  <User className="h-4 w-4" /> My Profile
                 </Link>
               </li>
               <div className="divider my-1"></div>
               <li>
-                <button
-                  onClick={logout}
-                  className="text-error hover:bg-error/10"
-                >
-                  <Logout className="w-4 h-4" />
+                <button onClick={logout} className="text-error hover:bg-error/10">
+                  <Logout className="h-4 w-4" />
                   Logout
                 </button>
               </li>

@@ -1,0 +1,501 @@
+# Madaar Persian (Farsi) translations
+# Copyright (C) 2026
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Madaar\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-13 16:00-0400\n"
+"PO-Revision-Date: 2026-08-13 16:00-0400\n"
+"Last-Translator: Auto\n"
+"Language-Team: Persian\n"
+"Language: fa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: automations/services.py - language change
+msgid " Language successfully updated."
+msgstr " زبان شما با موفقیت به روز شد."
+
+#: automations/rules.py - _fmt_project_created
+msgid "Added to project"
+msgstr "عضو جدید پروژه"
+
+msgid " <b>You have been added to a new project!</b>\n\nYou were added by {creator} to project <b>{project}</b>. Good luck!"
+msgstr " <b>پروژه جدید ایجاد شد!</b>\n\nشما توسط {creator} به پروژه <b>{project}</b> اضافه شدید. موفق باشید!"
+
+msgid "your colleague"
+msgstr "همکار شما"
+
+#: automations/rules.py - _fmt_project_member_removed
+msgid "Removed from project"
+msgstr "حذف از پروژه"
+
+msgid " <b>You have been removed from a project!</b>\n\nYour access to project <b>{project}</b> was revoked by {remover}."
+msgstr " <b>شما از پروژه حذف شدید!</b>\n\nتوسط {remover} دسترسی شما از پروژه <b>{project}</b> قطع شد."
+
+msgid "system admin"
+msgstr "مدیر سیستم"
+
+#: automations/rules.py - _fmt_project_over_budget
+msgid "Project budget warning"
+msgstr "هشدار بودجه پروژه"
+
+msgid " <b>Budget warning!</b>\n\nThe budget for project <b>{project}</b> is running low or has been exceeded.\nPlease review."
+msgstr " <b>هشدار بودجه!</b>\n\nبودجه پروژه <b>{project}</b> رو به اتمام است یا از حد مجاز عبور کرده.\nلطفاً بررسی کنید."
+
+#: automations/rules.py - _fmt_milestone_approaching
+msgid "Milestone deadline approaching"
+msgstr "نزدیک شدن به پایان فاز"
+
+msgid " <b>Deadline approaching!</b>\n\nLess than 48 hours remain until milestone <b>{milestone}</b> in project <b>{project}</b>."
+msgstr " <b>ددلاین نزدیک است!</b>\n\nکمتر از ۴۸ ساعت تا پایان فاز <b>{milestone}</b> در پروژه <b>{project}</b> باقی مانده."
+
+#: automations/rules.py - _fmt_milestone_completed
+msgid "Milestone completed"
+msgstr "فاز تکمیل شد"
+
+msgid " <b>Milestone completed!</b>\n\nMilestone <b>{milestone}</b> in project <b>{project}</b> has been successfully completed. Great job!"
+msgstr " <b>فاز تکمیل شد!</b>\n\nفاز <b>{milestone}</b> در پروژه <b>{project}</b> با موفقیت به پایان رسید. خسته نباشید!"
+
+#: automations/rules.py - _fmt_task_assigned
+msgid "New task assigned"
+msgstr "تسک جدید"
+
+msgid " <b>A new task has been assigned to you!</b>\n\n Task: <b>{task}</b>\n By: {assigner}"
+msgstr " <b>تسک جدید به شما محول شد!</b>\n\n تسک: <b>{task}</b>\n توسط: {assigner}"
+
+msgid "manager"
+msgstr "مدیر"
+
+#: automations/rules.py - _fmt_task_needs_review
+msgid "Task ready for review"
+msgstr "نیاز به بررسی"
+
+msgid " <b>Task is ready for review!</b>\n\n Task: <b>{task}</b>\n Submitted by: {assignee}"
+msgstr " <b>تسک آماده بررسی است!</b>\n\n تسک: <b>{task}</b>\n ارسال‌کننده: {assignee}"
+
+#: automations/rules.py - _fmt_task_completed
+msgid "Task completed"
+msgstr "تسک انجام شد"
+
+msgid " <b>Task completed!</b>\n\n Task <b>{task}</b> has been successfully completed."
+msgstr " <b>تسک انجام شد!</b>\n\n تسک <b>{task}</b> با موفقیت تکمیل شد."
+
+#: automations/rules.py - _fmt_task_deadline_approaching
+msgid "Task deadline warning"
+msgstr "هشدار ددلاین"
+
+msgid " <b>Deadline warning!</b>\n\nLess than 24 hours remain for task <b>{task}</b>."
+msgstr " <b>هشدار ددلاین!</b>\n\nکمتر از ۲۴ ساعت به مهلت تسک <b>{task}</b> باقی مانده."
+
+#: automations/rules.py - _fmt_user_mentioned
+msgid "Mentioned in comment"
+msgstr "منشن در کامنت"
+
+msgid " <b>You were mentioned!</b>\n\n{author} mentioned you in the comments of task <b>{task}</b>."
+msgstr " <b>شما منشن شدید!</b>\n\n{author} شما را در کامنت‌های تسک <b>{task}</b> تگ کرده است."
+
+msgid "someone"
+msgstr "کسی"
+
+#: automations/rules.py - _fmt_task_commented
+msgid "New comment"
+msgstr "کامنت جدید"
+
+msgid " <b>New comment!</b>\n\n{author} added a new comment on task <b>{task}</b>."
+msgstr " <b>کامنت جدید!</b>\n\n{author} یک نظر جدید برای تسک <b>{task}</b> ثبت کرده است."
+
+#: automations/rules.py - _fmt_standup_submitted
+msgid "Daily standup"
+msgstr "گزارش روزانه"
+
+msgid " <b>Daily Stand-up Report</b>\n\nYour colleague {user} has submitted their daily standup report."
+msgstr " <b>گزارش روزانه (Standup)</b>\n\nهمکار شما {user} گزارش استندآپ امروز خود را ثبت کرد."
+
+#: automations/rules.py - _fmt_leave_requested
+msgid "Leave requested"
+msgstr "درخواست مرخصی"
+
+msgid " <b>New leave request!</b>\n\n {user}\n Type: {leave_type}\n\nPlease review."
+msgstr " <b>درخواست مرخصی جدید!</b>\n\n {user}\n نوع: {leave_type}\n\nلطفاً بررسی کنید."
+
+msgid "leave"
+msgstr "مرخصی"
+
+#: automations/rules.py - _fmt_leave_resolved
+msgid "Leave status"
+msgstr "وضعیت مرخصی"
+
+msgid " <b>Leave request result</b>\n\nYour leave request has been reviewed.\n Status: <b>{status}</b>"
+msgstr " <b>نتیجه درخواست مرخصی</b>\n\nدرخواست مرخصی شما بررسی شد.\n وضعیت: <b>{status}</b>"
+
+#: automations/rules.py - _fmt_timer_started
+msgid "Timer started"
+msgstr "شروع تایمر"
+
+msgid " <b>Work timer started!</b>\n\n {user}\n Task: <b>{task}</b>"
+msgstr " <b>تایمر کاری روشن شد!</b>\n\n {user}\n تسک: <b>{task}</b>"
+
+#: automations/rules.py - _fmt_organization_created
+msgid "New organization"
+msgstr "سازمان جدید"
+
+msgid " <b>New organization created!</b>\n\n Name: <b>{org_name}</b>\n Owner: {owner_name}"
+msgstr " <b>سازمان جدید ایجاد شد!</b>\n\n نام: <b>{org_name}</b>\n مالک: {owner_name}"
+
+#: automations/rules.py - _fmt_project_actually_created
+msgid "New project"
+msgstr "پروژه جدید"
+
+msgid " <b>New project created!</b>\n\n Name: <b>{project_name}</b>\n Organization: {org_name}\n Creator: {creator_name}"
+msgstr " <b>پروژه جدید ایجاد شد!</b>\n\n نام: <b>{project_name}</b>\n سازمان: {org_name}\n سازنده: {creator_name}"
+
+#: automations/rules.py - _fmt_project_budget_set
+msgid "Project budget set"
+msgstr "تعیین بودجه پروژه"
+
+msgid " <b>Project budget set!</b>\n\n Project: <b>{project_name}</b>\n Budget: <b>{budget}</b>\n Organization: {org_name}"
+msgstr " <b>بودجه پروژه تعیین شد!</b>\n\n پروژه: <b>{project_name}</b>\n بودجه: <b>{budget}</b>\n سازمان: {org_name}"
+
+#: automations/rules.py - _fmt_member_added_to_project
+msgid "New project member"
+msgstr "عضو جدید در پروژه"
+
+msgid " <b>New member added to project!</b>\n\n Project: <b>{project_name}</b>\n New member: {member_name}\n Organization: {org_name}"
+msgstr " <b>عضو جدید به پروژه اضافه شد!</b>\n\n پروژه: <b>{project_name}</b>\n عضو جدید: {member_name}\n سازمان: {org_name}"
+
+#: automations/rules.py - _fmt_member_added_to_org
+msgid "New organization member"
+msgstr "عضو جدید در سازمان"
+
+msgid " <b>New member added to organization!</b>\n\n Organization: <b>{org_name}</b>\n New member: {member_name}\n Role: {role}"
+msgstr " <b>عضو جدید به سازمان اضافه شد!</b>\n\n سازمان: <b>{org_name}</b>\n عضو جدید: {member_name}\n نقش: {role}"
+
+msgid "New Board Created"
+msgstr "بورد جدید ساخته شد"
+
+msgid " <b>New Board Created!</b>\n\nBoard <b>{board_name}</b> has been added to project <b>{project_name}</b>."
+msgstr " <b>بورد جدید ساخته شد!</b>\n\nبورد <b>{board_name}</b> در پروژه <b>{project_name}</b> ایجاد گردید."
+
+msgid "New Milestone Created"
+msgstr "مایل‌استون جدید ایجاد شد"
+
+msgid " <b>New Milestone Created!</b>\n\nMilestone <b>{milestone_title}</b> has been created in project <b>{project_name}</b>."
+msgstr " <b>مایل‌استون جدید ایجاد شد!</b>\n\nمایل‌استون <b>{milestone_title}</b> در پروژه <b>{project_name}</b> تعریف گردید."
+
+msgid "High Priority Task Created"
+msgstr "تسک اولویت بالا ساخته شد"
+
+msgid " <b>High Priority Task Created!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr " <b>تسک با اولویت بالا ساخته شد!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "High Priority Task Completed"
+msgstr "تسک اولویت بالا انجام شد"
+
+msgid " <b>High Priority Task Completed!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr " <b>تسک با اولویت بالا انجام شد!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "Task Priority Increased to High"
+msgstr "افزایش اولویت تسک به بالا"
+
+msgid "⬆ <b>Task Priority Increased to High!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr "⬆ <b>اولویت تسک به بالا افزایش یافت!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "Task Moved to Testing"
+msgstr "انتقال تسک به مرحله تست"
+
+msgid " <b>Task Moved to Testing!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr " <b>تسک به مرحله تست منتقل شد!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "New Task Created"
+msgstr "تسک جدید ساخته شد"
+
+msgid " <b>New Task Created!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
+msgstr " <b>یک تسک جدید ساخته شد!</b>\n\nتسک: <b>{task_title}</b>\nپروژه: {project_name}"
+
+msgid "Madaar System Notification"
+msgstr "اعلان سیستم مدار"
+
+msgid " A new event has been logged in the system: <code>{event_type}</code>"
+msgstr " یک رویداد جدید در سیستم ثبت شد: <code>{event_type}</code>"
+
+msgid " My Projects"
+msgstr " پروژه‌های من"
+
+msgid " My Tasks"
+msgstr " تسک‌های من"
+
+msgid " My Organization"
+msgstr " سازمان من"
+
+msgid " Connection Status"
+msgstr " وضعیت اتصال"
+
+msgid " Help"
+msgstr " راهنما"
+
+msgid " Language"
+msgstr " زبان / Language"
+
+msgid " Organization Admin Panel"
+msgstr " پنل مدیریت سازمان"
+
+msgid " Superadmin Panel"
+msgstr " پنل ادمین کل سیستم"
+
+msgid " Overall Dashboard"
+msgstr " داشبورد کلان"
+
+msgid " Organization Projects"
+msgstr " پروژه‌های سازمان"
+
+msgid " Tasks Status"
+msgstr " وضعیت تسک‌ها"
+
+msgid " Organization Members"
+msgstr " اعضای سازمان"
+
+msgid " Back to Main Menu"
+msgstr " بازگشت به منوی اصلی"
+
+msgid " Back to Menu"
+msgstr " بازگشت به منو"
+
+msgid " Back to Admin Panel"
+msgstr " بازگشت به پنل مدیریت"
+
+msgid " <b>Error:</b> Invalid connection link.\n\nPlease click on the \"Connect to Telegram\" button from your site dashboard to enter the bot."
+msgstr " <b>خطا:</b> لینک اتصال نامعتبر است.\n\nلطفاً از طریق پنل کاربری سایت روی دکمه «اتصال به تلگرام» کلیک کنید تا وارد بات شوید."
+
+msgid " <b>The link has expired or is invalid!</b>\n\nPlease generate a new connection link from the website."
+msgstr " <b>لینک منقضی شده یا نامعتبر است!</b>\n\nلطفاً مجدداً از وب‌سایت اقدام به تولید لینک اتصال کنید."
+
+msgid " <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account in the Madaar system. Each Telegram account can only be connected to one site account."
+msgstr " <b>خطا در اتصال!</b>\n\nاین اکانت تلگرام شما قبلاً به یک حساب کاربری دیگر در سیستم مدار متصل شده است. هر حساب تلگرام فقط می‌تواند به یک اکانت سایت متصل باشد."
+
+msgid " <b>Hello dear {name}!</b>\n\n"
+msgstr " <b>سلام {name} عزیز!</b>\n\n"
+
+msgid " Your user account has been successfully connected to the <b>Madaar</b> bot.\n"
+msgstr " حساب کاربری شما با موفقیت به ربات <b>مدار</b> متصل شد.\n"
+
+msgid "From now on, your important work notifications will be sent here immediately.\n\n"
+msgstr "از این پس اعلان‌های مهم کاری شما بلافاصله اینجا ارسال خواهد شد.\n\n"
+
+msgid "Use the menu below:"
+msgstr "از منوی زیر استفاده کنید:"
+
+msgid "User"
+msgstr "کاربر"
+
+msgid " <b>Madaar Bot Main Menu</b>\n\n"
+msgstr " <b>منوی اصلی ربات مدار</b>\n\n"
+
+msgid "Hello {name}! Use the buttons below:"
+msgstr "سلام {name}! از دکمه‌های زیر استفاده کنید:"
+
+msgid " <b>Madaar Bot Help</b>\n\n"
+msgstr " <b>راهنمای ربات مدار</b>\n\n"
+
+msgid " /start — Connect user account\n"
+msgstr " /start — اتصال حساب کاربری\n"
+
+msgid " /status — Connection status\n"
+msgstr " /status — وضعیت اتصال\n"
+
+msgid " /myprojects — My projects list\n"
+msgstr " /myprojects — لیست پروژه‌های من\n"
+
+msgid " /mytasks — My tasks list\n"
+msgstr " /mytasks — لیست تسک‌های من\n"
+
+msgid " /myorg — My organization info\n"
+msgstr " /myorg — اطلاعات سازمان من\n"
+
+msgid " /help — Show this help message\n\n"
+msgstr " /help — نمایش همین راهنما\n\n"
+
+msgid "<i> This bot automatically sends your work notifications.</i>"
+msgstr "<i> این ربات به صورت خودکار اعلان‌های کاری شما را ارسال می‌کند.</i>"
+
+msgid " <b>Language Selection</b>\n\nPlease select your preferred language:"
+msgstr " <b>انتخاب زبان / Language Selection</b>\n\nلطفاً زبان مورد نظر خود را انتخاب کنید:"
+
+msgid " Active"
+msgstr " فعال"
+
+msgid " Inactive"
+msgstr " غیرفعال"
+
+msgid " <b>User Account Status</b>\n\n"
+msgstr " <b>وضعیت حساب کاربری</b>\n\n"
+
+msgid " <b>Name:</b> {name}\n"
+msgstr " <b>نام:</b> {name}\n"
+
+msgid " <b>Email:</b> {email}\n\n"
+msgstr " <b>ایمیل:</b> {email}\n\n"
+
+msgid "<b>Notification Channels:</b>\n"
+msgstr "<b>کانال‌های اعلان:</b>\n"
+
+msgid "  Telegram: {tg_status}\n"
+msgstr "  تلگرام: {tg_status}\n"
+
+msgid "  Email: {email_status}"
+msgstr "  ایمیل: {email_status}"
+
+msgid " <b>Connection Status:</b> Disconnected\n\n"
+msgstr " <b>وضعیت اتصال:</b> قطع\n\n"
+
+msgid "You have not connected your user account yet.\n"
+msgstr "شما هنوز حساب کاربری خود را متصل نکرده‌اید.\n"
+
+msgid "To connect, send the /start command."
+msgstr "برای اتصال، دستور /start را ارسال کنید."
+
+msgid " Please connect your account with /start first."
+msgstr " ابتدا حساب خود را با /start متصل کنید."
+
+msgid " <b>My Projects</b>\n\n"
+msgstr " <b>پروژه‌های من</b>\n\n"
+
+msgid "You are currently not a member of any active project."
+msgstr "شما در حال حاضر عضو هیچ پروژه فعالی نیستید."
+
+msgid "\n<i>Total: {count} projects</i>"
+msgstr "\n<i>مجموع: {count} پروژه</i>"
+
+msgid " <b>My Tasks</b>\n\n"
+msgstr " <b>تسک‌های من</b>\n\n"
+
+msgid " You have no open and unfinished tasks! Well done!"
+msgstr " هیچ تسک باز و ناتمامی ندارید! آفرین!"
+
+msgid " <b>My Tasks (Open)</b>\n"
+msgstr " <b>تسک‌های من (باز)</b>\n"
+
+msgid "\n<i>Showing {count} of {total} open tasks</i>"
+msgstr "\n<i>نمایش {count} از {total} تسک باز</i>"
+
+msgid " You are the owner of organization <b>{org}</b> ( {count} members)"
+msgstr " شما مالک سازمان <b>{org}</b> هستید ( {count} عضو)"
+
+msgid " You are a member of organization <b>{org}</b> ( Role: {role})"
+msgstr " شما عضو سازمان <b>{org}</b> هستید ( نقش: {role})"
+
+msgid " <b>My Organization</b>\n\n"
+msgstr " <b>سازمان من</b>\n\n"
+
+msgid "You are not a member of any organization yet."
+msgstr "شما هنوز عضو هیچ سازمانی نیستید."
+
+msgid " <b>Organizations related to me</b>\n"
+msgstr " <b>سازمان‌های مرتبط با من</b>\n"
+
+msgid " Unauthorized access."
+msgstr " دسترسی غیرمجاز."
+
+msgid " <b>Superadmin Panel</b>\n\n"
+msgstr " <b>پنل ادمین کل سیستم (Superadmin)</b>\n\n"
+
+msgid " <b>Overall System Statistics:</b>\n\n"
+msgstr " <b>آمار کل سیستم:</b>\n\n"
+
+msgid " <b>Number of Organizations:</b> {org_count}\n"
+msgstr " <b>تعداد سازمان‌ها:</b> {org_count}\n"
+
+msgid " <b>Number of Users:</b> {user_count}\n"
+msgstr " <b>تعداد کاربران:</b> {user_count}\n"
+
+msgid " <b>Number of Projects:</b> {project_count}\n\n"
+msgstr " <b>تعداد پروژه‌ها:</b> {project_count}\n\n"
+
+msgid "<i>(Special Admin Access)</i>"
+msgstr "<i>(دسترسی ویژه ادمین)</i>"
+
+msgid " <b>Organization Admin Panel ({org})</b>\n\n"
+msgstr " <b>پنل مدیریت سازمان ({org})</b>\n\n"
+
+msgid "Use the sections below to view the overall status of the organization:"
+msgstr "از بخش‌های زیر برای مشاهده وضعیت کلان سازمان استفاده کنید:"
+
+msgid " <b>Organization Overall Dashboard</b>\n\n"
+msgstr " <b>داشبورد کلان سازمان</b>\n\n"
+
+msgid " <b>Organization Name:</b> {org}\n\n"
+msgstr " <b>نام سازمان:</b> {org}\n\n"
+
+msgid " <b>Number of Personnel:</b> {members} people\n"
+msgstr " <b>تعداد پرسنل:</b> {members} نفر\n"
+
+msgid " <b>Projects:</b> {projects} (Active: {active})\n"
+msgstr " <b>پروژه‌ها:</b> {projects} (فعال: {active})\n"
+
+msgid " <b>Open Tasks:</b> {tasks} tasks"
+msgstr " <b>تسک‌های باز:</b> {tasks} تسک"
+
+msgid "No projects are registered in the organization."
+msgstr "هیچ پروژه‌ای در سازمان ثبت نشده است."
+
+msgid " <b>Organization Projects ({org})</b>\n"
+msgstr " <b>پروژه‌های سازمان ({org})</b>\n"
+
+msgid "\n<i>Showing {count} of {total} projects</i>"
+msgstr "\n<i>نمایش {count} از {total} پروژه</i>"
+
+msgid " <b>Organization Tasks Status</b>\n\n"
+msgstr " <b>وضعیت تسک‌های سازمان</b>\n\n"
+
+msgid " <b>Total Tasks:</b> {total}\n\n"
+msgstr " <b>مجموع کل تسک‌ها:</b> {total}\n\n"
+
+msgid " <b>Done:</b> {done} tasks\n"
+msgstr " <b>انجام شده:</b> {done} تسک\n"
+
+msgid " <b>In Progress:</b> {in_progress} tasks\n"
+msgstr " <b>در حال انجام:</b> {in_progress} تسک\n"
+
+msgid " <b>Waiting for Review:</b> {review} tasks\n"
+msgstr " <b>در انتظار بررسی:</b> {review} تسک\n"
+
+msgid " <b>Not Started (Todo):</b> {todo} tasks"
+msgstr " <b>شروع نشده (Todo):</b> {todo} تسک"
+
+msgid " <b>Organization Members ({org})</b>\n"
+msgstr " <b>اعضای سازمان ({org})</b>\n"
+
+msgid "\n<i>Showing {count} of {total} members</i>"
+msgstr "\n<i>نمایش {count} از {total} عضو</i>"
+
+msgid " <b>Your account is temporarily blocked!</b>\n\n"
+msgstr " <b>حساب شما موقتاً مسدود شد!</b>\n\n"
+
+msgid "Due to sending consecutive invalid messages (spam), your access to the bot "
+msgstr "به دلیل ارسال پیام‌های نامعتبر و پشت سر هم (اسپم)، دسترسی شما به ربات "
+
+msgid "is blocked for <b>5 minutes</b>.\n\n"
+msgstr "به مدت <b>۵ دقیقه</b> مسدود گردید.\n\n"
+
+msgid "Please only use bot menus and buttons after this time."
+msgstr "لطفاً پس از پایان این زمان، فقط از منوها و دکمه‌های ربات استفاده کنید."
+
+msgid " <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:"
+msgstr " <b>دستور نامعتبر!</b>\n\nمتوجه نشدم. لطفاً از دکمه‌های زیر استفاده کنید:"
+
+msgid "First, connect your account using the /start command."
+msgstr "ابتدا با دستور /start حساب خود را متصل کنید."
+
+msgid " <b>My Projects</b>\n\nYou are currently not a member of any active project."
+msgstr " <b>پروژه‌های من</b>\n\nشما در حال حاضر عضو هیچ پروژه فعالی نیستید."
+
+msgid " <b>My Tasks</b>\n\n You have no open and unfinished tasks! Well done!"
+msgstr " <b>تسک‌های من</b>\n\n هیچ تسک باز و ناتمامی ندارید! آفرین!"
+
+msgid " <b>My Organization</b>\n\nYou are not a member of any organization yet."
+msgstr " <b>سازمان من</b>\n\nشما هنوز عضو هیچ سازمانی نیستید."
+
+msgid " <b>Invalid command!</b>\n\nFirst, connect your account using the /start command."
+msgstr " <b>دستور نامعتبر!</b>\n\nابتدا با دستور /start حساب خود را متصل کنید."

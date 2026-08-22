@@ -15,9 +15,13 @@ def extract_detail_message(data, status_code):
         if not str(status_code).startswith("2"):
             try:
                 for field, errors in data.items():
-                    if field != "non_field_errors" and isinstance(errors, list):
+                    if field != "non_field_errors" and isinstance(errors, list) and errors:
                         return _("Field {field}: {error}").format(field=_(field), error=errors[0])
-                if "non_field_errors" in data:
+                if (
+                    "non_field_errors" in data
+                    and isinstance(data["non_field_errors"], list)
+                    and data["non_field_errors"]
+                ):
                     return data["non_field_errors"][0]
             except Exception:
                 pass
@@ -33,12 +37,24 @@ class ApiRenderer(JSONRenderer):
     charset = "utf-8"
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        response = {"status": True, "message": None, "data": data or []}
-
         if renderer_context:
-            status_code = renderer_context["response"].status_code
-            errors_data = None
-            if not str(status_code).startswith("2"):
+            response_obj = renderer_context.get("response")
+            status_code = response_obj.status_code if response_obj else 200
+
+            # Prevent double-wrapping if response is already formatted as an envelope
+            if isinstance(data, dict) and "status" in data and ("data" in data or "errors" in data):
+                return super().render(data, accepted_media_type, renderer_context)
+
+            is_success = str(status_code).startswith("2")
+            message = extract_detail_message(data, status_code)
+
+            if is_success:
+                response = {
+                    "status": True,
+                    "message": message,
+                    "data": data if data is not None else None,
+                }
+            else:
                 import copy
 
                 try:
@@ -46,12 +62,18 @@ class ApiRenderer(JSONRenderer):
                 except Exception:
                     errors_data = data
 
-            message = extract_detail_message(data, status_code)
-            response["message"] = message
+                response = {
+                    "status": False,
+                    "message": message,
+                    "errors": errors_data if isinstance(errors_data, (dict, list)) else None,
+                    "data": None,
+                }
 
-            if not str(status_code).startswith("2"):
-                response["status"] = False
-                response["errors"] = errors_data if isinstance(errors_data, (dict, list)) else None
-                response["data"] = []
+            return super().render(response, accepted_media_type, renderer_context)
 
+        response = {
+            "status": True,
+            "message": None,
+            "data": data if data is not None else None,
+        }
         return super().render(response, accepted_media_type, renderer_context)

@@ -84,7 +84,9 @@ class AuthenticationTestCase(APITestCase):
         response = self.client.post(
             self.login_url, {"username": "nonexistent", "password": "wrongpassword"}
         )
-        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_400_BAD_REQUEST])
+        self.assertIn(
+            response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_400_BAD_REQUEST]
+        )
 
         json_data = response.json()
         self.assertFalse(json_data["status"])
@@ -145,3 +147,31 @@ class AuthenticationTestCase(APITestCase):
         response = self.client.post(self.logout_url, {})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("refresh", response.json()["errors"])
+
+    def test_registration_returns_access_and_refresh_tokens(self):
+        response = self.client.post(self.register_url, self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        json_data = response.json()
+        self.assertIn("access", json_data["data"])
+        self.assertIn("refresh", json_data["data"])
+        self.assertTrue(len(json_data["data"]["access"]) > 0)
+        self.assertTrue(len(json_data["data"]["refresh"]) > 0)
+
+    def test_unauthenticated_logout_with_refresh_token(self):
+        User.objects.create_user(
+            username=self.user_data["username"],
+            email=self.user_data["email"],
+            password=self.user_data["password"],
+        )
+        login_response = self.client.post(
+            self.login_url,
+            {"username": self.user_data["username"], "password": self.user_data["password"]},
+        )
+        refresh_token = login_response.json()["data"]["refresh"]
+
+        # Post logout WITHOUT Authorization header (e.g. when access_token has expired)
+        self.client.credentials()
+        response = self.client.post(self.logout_url, {"refresh": refresh_token})
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertTrue(BlacklistedToken.objects.exists())

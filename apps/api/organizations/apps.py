@@ -11,3 +11,4 @@ class OrganizationsConfig(AppConfig):
         from .permissions.bootstrap import get_organization_resolver
 
         set_resolver(get_organization_resolver())
+        import organizations.signals  # noqa

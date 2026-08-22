@@ -1,3 +1,8 @@
+export interface Role {
+  id: number;
+  name: string;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -6,6 +11,7 @@ export interface User {
   last_name: string;
   is_active: boolean;
   is_staff: boolean;
+  role_id: number | null;
   profile_image: string | null;
 }
 
@@ -17,6 +23,7 @@ export interface UserFormData {
   last_name: string;
   is_active: boolean;
   is_staff: boolean;
+  role_id: number | null;
 }
 
 export interface UserUpdateData {
@@ -26,4 +33,5 @@ export interface UserUpdateData {
   last_name: string;
   is_active: boolean;
   is_staff: boolean;
+  role_id: number | null;
 }

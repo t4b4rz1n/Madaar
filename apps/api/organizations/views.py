@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -62,7 +63,23 @@ class OrganizationViewSet(PermissionedViewSetMixin, viewsets.ModelViewSet):
                 is_deleted=False,
             )
 
-        return Organization.objects.filter(is_deleted=False)
+        return (
+            Organization.objects.annotate(
+                member_count=Count(
+                    "memberships",
+                    filter=Q(memberships__is_deleted=False),
+                    distinct=True,
+                ),
+                team_count=Count("teams", filter=Q(teams__is_deleted=False), distinct=True),
+                project_count=Count(
+                    "projects",
+                    filter=Q(projects__is_deleted=False),
+                    distinct=True,
+                ),
+            )
+            .select_related("owner")
+            .filter(is_deleted=False)
+        )
 
     def get_permission_context(self, request):
         return {
@@ -70,12 +87,16 @@ class OrganizationViewSet(PermissionedViewSetMixin, viewsets.ModelViewSet):
         }
 
     def list(self, request, *args, **kwargs):
-        queryset = Organization.objects.filter(
-            memberships__user=request.user,
-            memberships__is_deleted=False,
-            is_deleted=False,
-            status=Organization.Status.ACTIVE,
-        ).distinct()
+        queryset = (
+            self.get_queryset()
+            .filter(
+                memberships__user=request.user,
+                memberships__is_deleted=False,
+                is_deleted=False,
+                status=Organization.Status.ACTIVE,
+            )
+            .distinct()
+        )
 
         serializer = self.get_serializer(queryset, many=True)
 

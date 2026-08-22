@@ -7,18 +7,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('projects', '0002_milestone_is_deleted_project_is_deleted_and_more'),
-        ('tasks', '0006_asyncstandup'),
+        ("projects", "0002_milestone_is_deleted_project_is_deleted_and_more"),
+        ("tasks", "0006_asyncstandup"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='board',
-            name='project_id',
+            model_name="board",
+            name="project_id",
         ),
         migrations.AddField(
-            model_name='board',
-            name='project',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='boards', to='projects.project', verbose_name='Project'),
+            model_name="board",
+            name="project",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="boards",
+                to="projects.project",
+                verbose_name="Project",
+            ),
         ),
     ]

@@ -3,6 +3,7 @@ import {
   type FieldValues,
   type UseFormRegister,
   type FieldErrors,
+  type UseFormHandleSubmit,
 } from "react-hook-form";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -25,9 +26,7 @@ interface AuthFormProps {
   footerLinkText?: string;
   isLoading?: boolean;
   register: UseFormRegister<FieldValues>;
-  handleSubmit: (
-    handler: SubmitHandler<FieldValues>
-  ) => (e?: React.BaseSyntheticEvent) => Promise<void>;
+  handleSubmit: UseFormHandleSubmit<any>;
   errors: FieldErrors<FieldValues>;
 }
 
@@ -57,9 +56,12 @@ export const AuthForm = ({
       transition={{ duration: 0.5 }}
       className="w-full max-w-md mx-auto"
     >
-      <header className="mb-8 text-center flex flex-col items-center gap-3">
-        {/* Ensure this path exists or import the logo */}
-        <img src="/images/base-logo.svg" className="w-20 h-20" alt="Logo" />
+      <header className="mb-8 flex flex-col items-center gap-4 text-center">
+        <img
+          src="/images/base-logo1.png"
+          alt="Base Admin Panel Logo"
+          className="h-20 w-auto object-contain"
+        />
         <h1 className="text-3xl font-bold text-base-content">{title}</h1>
       </header>
 

@@ -1,12 +1,23 @@
+export interface UserRole {
+  id: number;
+  name: string;
+  permissions: string[];
+}
+
 export interface User {
   id: number;
   username: string;
   email: string;
   first_name?: string;
   last_name?: string;
-  role?: string;
-  profile_image_url?: string | null;
   is_staff?: boolean;
+  role_id?: number | null;
+  role?: UserRole | null;
+  profile_image_url?: string | null;
+  telegram_connected?: boolean;
+  notify_via_email?: boolean;
+  notify_via_telegram?: boolean;
+  can_manage_automations?: boolean;
 }
 
 export interface AuthResponse {

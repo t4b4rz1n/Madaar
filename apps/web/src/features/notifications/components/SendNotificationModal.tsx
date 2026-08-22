@@ -20,6 +20,7 @@ const backdropVariants = {
   visible: { opacity: 1 },
 };
 
+
 const modalVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
   visible: {
@@ -90,7 +91,7 @@ export const SendNotificationModal = ({
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen &&  (
         <motion.div
           variants={backdropVariants}
           initial="hidden"

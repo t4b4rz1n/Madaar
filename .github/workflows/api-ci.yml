@@ -26,7 +26,7 @@ jobs:
           USE_SQLITE: "True"
           SECRET_KEY: ci-secret
           DEBUG: "True"
-      - run: python manage.py test
+      - run: pytest
         env:
           USE_SQLITE: "True"
           SECRET_KEY: ci-secret

@@ -1,10 +1,20 @@
 import type { User } from "../features/users/types";
 import type { Discount } from "../features/discounts/types";
-
+import type { Team, Squad } from "../features/teams/types";
 import type { Notification } from "../features/notifications/types";
 import type { UserProfile } from "../features/profile/types";
-import type { Ticket, TicketTypeItem, TicketMessage, TicketFormData } from "../features/tickets/types";
-
+import type {
+  Ticket,
+  TicketTypeItem,
+  TicketMessage,
+  TicketFormData,
+} from "../features/tickets/types";
+import type {
+  Project,
+  ProjectMember,
+  Milestone,
+  ProjectActivity,
+} from "../features/projects/types";
 // Stateful mock database held in memory
 export const mockProfile: UserProfile = {
   id: 1,
@@ -13,7 +23,7 @@ export const mockProfile: UserProfile = {
   last_name: "Doe",
   email: "admin@example.com",
   is_staff: true,
-  profile_image_url: null,
+  profile_image: null,
 };
 
 export let mockUsers: User[] = [
@@ -25,6 +35,7 @@ export let mockUsers: User[] = [
     last_name: "Doe",
     is_active: true,
     is_staff: true,
+    role_id: 1,
     profile_image: null,
   },
   {
@@ -35,6 +46,7 @@ export let mockUsers: User[] = [
     last_name: "Kerrigan",
     is_active: true,
     is_staff: false,
+    role_id: 2,
     profile_image: null,
   },
   {
@@ -45,6 +57,7 @@ export let mockUsers: User[] = [
     last_name: "Raynor",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -55,6 +68,7 @@ export let mockUsers: User[] = [
     last_name: "Protos",
     is_active: false,
     is_staff: false,
+    role_id: 5,
     profile_image: null,
   },
   {
@@ -64,7 +78,8 @@ export let mockUsers: User[] = [
     first_name: "Artanis",
     last_name: "Hierarch",
     is_active: true,
-    is_staff: true,
+    is_staff: false,
+    role_id: 6,
     profile_image: null,
   },
   {
@@ -75,6 +90,7 @@ export let mockUsers: User[] = [
     last_name: "Terra",
     is_active: true,
     is_staff: false,
+    role_id: 7,
     profile_image: null,
   },
   {
@@ -85,6 +101,7 @@ export let mockUsers: User[] = [
     last_name: "Templar",
     is_active: false,
     is_staff: true,
+    role_id: 8,
     profile_image: null,
   },
   {
@@ -95,6 +112,7 @@ export let mockUsers: User[] = [
     last_name: "Steward",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -105,6 +123,7 @@ export let mockUsers: User[] = [
     last_name: "Mengsk",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -115,6 +134,7 @@ export let mockUsers: User[] = [
     last_name: "Zerg",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -125,6 +145,7 @@ export let mockUsers: User[] = [
     last_name: "Primal",
     is_active: true,
     is_staff: false,
+    role_id: 3,
     profile_image: null,
   },
   {
@@ -135,6 +156,7 @@ export let mockUsers: User[] = [
     last_name: "Taldirim",
     is_active: true,
     is_staff: true,
+    role_id: 1,
     profile_image: null,
   },
 ];
@@ -207,7 +229,107 @@ export let mockDiscounts: Discount[] = [
   },
 ];
 
+export type MockRole = {
+  id: number;
+  name: string;
+  description: string;
+  is_active: boolean;
+  is_staff: boolean;
+  permissions: string[]; // تغییر از MockPermission[] به string[]
+};
 
+export let mockRoles: MockRole[] = [
+  {
+    id: 1,
+    name: "Super Admin",
+    description: "Full access to system management, users, tickets, and roles.",
+    is_active: true,
+    is_staff: true,
+    permissions: [
+      "users.manage",
+      "users.view",
+      "roles.manage",
+      "discounts.view",
+      "notifications.view",
+      "notifications.send",
+      "teams.view",
+      "teams.manage",
+      "tickets.view",
+      "tickets.manage",
+      "projects.view",
+      "projects.manage",
+    ],
+  },
+  {
+    id: 2,
+    name: "Frontend",
+    description: "Frontend developer for UI design and client-side features.",
+    is_active: true,
+    is_staff: false,
+    permissions: [
+      "notifications.view",
+      "notifications.send",
+      "tickets.view",
+      "tickets.manage",
+    ],
+  },
+  {
+    id: 3,
+    name: "Backend",
+    description: "Backend developer for API management and system core.",
+    is_active: true,
+    is_staff: false,
+    permissions: [
+      "notifications.view",
+      "notifications.send",
+      "tickets.view",
+      "tickets.manage",
+    ],
+  },
+  {
+    id: 4,
+    name: "Support",
+    description: "Technical system support and user ticket management.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["tickets.view", "tickets.manage", "users.manage"],
+  },
+  {
+    id: 5,
+    name: "Regular User",
+    description: "Regular user with minimum basic system permissions.",
+    is_active: true,
+    is_staff: false,
+    permissions: [],
+  },
+  // --- Adding business roles according to requirements document ---
+  {
+    id: 6,
+    name: "Team Lead",
+    description:
+      "Team lead; managing teams, coordinating members, and reviewing tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["teams.view", "teams.manage", "tickets.view", "users.view"],
+  },
+  {
+    id: 7,
+    name: "Accountant",
+    description: "Accountant; viewing discount codes and financial tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["discounts.view", "tickets.view"],
+  },
+  {
+    id: 8,
+    name: "HR",
+    description:
+      "Human Resources; managing personnel status, users, and reviewing internal tickets.",
+    is_active: true,
+    is_staff: false,
+    permissions: ["users.manage", "tickets.view"],
+  },
+];
 
 export const mockNotifications: Notification[] = [
   {
@@ -308,13 +430,152 @@ export const mockTicketMessages: Record<number, TicketMessage[]> = {
   ],
 };
 
+export let mockTeams: Team[] = [
+  {
+    id: 1,
+    name: "Technical & Development",
+    description: "Frontend and backend development team of the Modares system",
+    lead_id: 2, // Sara (currently can have developer or team lead role)
+    is_active: true,
+    created_at: "2026-01-01T12:00:00Z",
+  },
+  {
+    id: 2,
+    name: "Support & Operations",
+    description: "Technical user support and system monitoring",
+    lead_id: 3, // Jim Raynor
+    is_active: true,
+    created_at: "2026-02-15T09:30:00Z",
+  },
+];
+
+export let mockSquads: Squad[] = [
+  {
+    id: 1,
+    team_id: 1,
+    name: "Frontend Development",
+    description: "Implementing user interface with React and Tailwind CSS",
+    is_active: true,
+    created_at: "2026-01-02T10:00:00Z",
+  },
+  {
+    id: 2,
+    team_id: 1,
+    name: "Backend Development",
+    description: "Implementing services with Django and Docker",
+    is_active: true,
+    created_at: "2026-01-03T11:00:00Z",
+  },
+  {
+    id: 3,
+    team_id: 2,
+    name: "Level 1 Support",
+    description: "Initial response to user tickets",
+    is_active: true,
+    created_at: "2026-02-16T08:00:00Z",
+  },
+];
+
+export let mockProjects: Project[] = [
+  {
+    id: "1",
+    organization: "1",
+    name: "Modares (Internal Management System)",
+    description:
+      "Development of an integrated team OS with gamification and task management",
+    status: "active", // به جای in_progress
+    prefix: "MAD",
+    budget: 500000000,
+    budget_currency: "IRR",
+    start_date: "2026-01-01T00:00:00Z",
+    deadline: "2026-12-30T00:00:00Z",
+    members_count: 2,
+    progress_percentage: 35,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-06-20T10:00:00Z",
+  },
+];
+
+export const mockProjectMembers: ProjectMember[] = [
+  {
+    id: "1",
+    project: "1",
+    user: {
+      id: 1,
+      username: "johndoe",
+      first_name: "John",
+      last_name: "Doe",
+    },
+    specialty: "Project Manager",
+    allocation_percentage: 100,
+    is_active: true,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-01-01T10:00:00Z",
+  },
+  {
+    id: "2",
+    project: "1",
+    user: {
+      id: 2,
+      username: "sarahk",
+      first_name: "Sarah",
+      last_name: "Kerrigan",
+    },
+    specialty: "Frontend Lead",
+    allocation_percentage: 80,
+    is_active: true,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-01-01T10:00:00Z",
+  },
+];
+
+export const mockMilestones: Milestone[] = [
+  {
+    id: "1",
+    project: "1",
+    title: "Database Architecture Design",
+    status: "completed",
+    target_date: "2026-02-15T00:00:00Z",
+    sequence: 1,
+    weight: 20,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-02-15T10:00:00Z",
+  },
+  {
+    id: "2",
+    project: "1",
+    title: "Phase 1 Completion (MVP)",
+    status: "in_progress",
+    target_date: "2026-07-30T00:00:00Z",
+    sequence: 2,
+    weight: 80,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-01-01T10:00:00Z",
+  },
+];
+
+export const mockActivities: ProjectActivity[] = [
+  {
+    id: "1",
+    project: "1",
+    actor: {
+      id: 1,
+      username: "johndoe",
+    },
+    event_type: "project_created",
+    entity_type: "project",
+    entity_id: "1",
+    created_at: "2026-01-01T10:00:00Z",
+  },
+];
 // Mutators to simulate DB state mutations
 export const db = {
   users: {
     getAll: () => mockUsers,
     getById: (id: number) => mockUsers.find((u) => u.id === id),
     create: (user: Omit<User, "id">) => {
-      const nextId = mockUsers.length > 0 ? Math.max(...mockUsers.map((u) => u.id)) + 1 : 1;
+      const nextId =
+        mockUsers.length > 0 ? Math.max(...mockUsers.map((u) => u.id)) + 1 : 1;
       const newUser = { ...user, id: nextId };
       mockUsers.unshift(newUser); // Add to beginning of list
       return newUser;
@@ -336,7 +597,12 @@ export const db = {
   discounts: {
     getAll: () => mockDiscounts,
     getById: (id: string) => mockDiscounts.find((d) => d.id === id),
-    create: (discount: Omit<Discount, "id" | "current_usage" | "is_expired" | "is_fully_used" | "created_at">) => {
+    create: (
+      discount: Omit<
+        Discount,
+        "id" | "current_usage" | "is_expired" | "is_fully_used" | "created_at"
+      >,
+    ) => {
       const nextId = `d${mockDiscounts.length + 1}`;
       const now = new Date();
       const expDate = new Date(discount.expiration_date);
@@ -373,7 +639,9 @@ export const db = {
 
   notifications: {
     getAll: () => mockNotifications,
-    create: (notification: Omit<Notification, "id" | "seen" | "created_at">) => {
+    create: (
+      notification: Omit<Notification, "id" | "seen" | "created_at">,
+    ) => {
       const nextId = `n${mockNotifications.length + 1}`;
       const newNotification: Notification = {
         ...notification,
@@ -389,9 +657,12 @@ export const db = {
     getAll: () => mockTickets,
     getById: (id: number) => mockTickets.find((t) => t.id === id),
     create: (ticketData: TicketFormData) => {
-      const nextId = mockTickets.length > 0 ? Math.max(...mockTickets.map((t) => Number(t.id))) + 1 : 1;
+      const nextId =
+        mockTickets.length > 0
+          ? Math.max(...mockTickets.map((t) => Number(t.id))) + 1
+          : 1;
       const typeItem = mockTicketTypes.find(
-        (t) => String(t.id) === ticketData.ticket_type
+        (t) => String(t.id) === ticketData.ticket_type,
       );
       const newTicket: Ticket = {
         id: nextId,
@@ -423,7 +694,14 @@ export const db = {
         text: messageText,
         sender: { username: "admin", is_staff: true },
         attachments: mediaUrl
-          ? [{ id: Date.now(), file: mediaUrl, file_type: "file", created_at: new Date().toISOString() }]
+          ? [
+              {
+                id: Date.now(),
+                file: mediaUrl,
+                file_type: "file",
+                created_at: new Date().toISOString(),
+              },
+            ]
           : [],
         created_at: new Date().toISOString(),
       };
@@ -434,7 +712,10 @@ export const db = {
     ticketTypes: {
       getAll: () => mockTicketTypes,
       create: (name: string) => {
-        const nextId = mockTicketTypes.length > 0 ? Math.max(...mockTicketTypes.map((t) => Number(t.id))) + 1 : 1;
+        const nextId =
+          mockTicketTypes.length > 0
+            ? Math.max(...mockTicketTypes.map((t) => Number(t.id))) + 1
+            : 1;
         const newItem: TicketTypeItem = {
           id: nextId,
           name,
@@ -456,6 +737,223 @@ export const db = {
         mockTicketTypes = mockTicketTypes.filter((t) => t.id !== id);
         return mockTicketTypes.length < initialLength;
       },
+    },
+  },
+  roles: {
+    getAll: () => mockRoles,
+    getById: (id: number) => mockRoles.find((role) => role.id === id),
+    create: (role: Omit<MockRole, "id">) => {
+      const nextId =
+        mockRoles.length > 0
+          ? Math.max(...mockRoles.map((role) => role.id)) + 1
+          : 1;
+
+      const newRole: MockRole = {
+        ...role,
+        id: nextId,
+      };
+
+      mockRoles.unshift(newRole);
+      return newRole;
+    },
+    update: (id: number, updates: Partial<MockRole>) => {
+      const idx = mockRoles.findIndex((role) => role.id === id);
+
+      if (idx !== -1) {
+        mockRoles[idx] = { ...mockRoles[idx], ...updates };
+        return mockRoles[idx];
+      }
+
+      return null;
+    },
+    delete: (id: number) => {
+      const initialLength = mockRoles.length;
+      mockRoles = mockRoles.filter((role) => role.id !== id);
+      return mockRoles.length < initialLength;
+    },
+  },
+  teams: {
+    getAll: () => mockTeams,
+    getById: (id: number) => mockTeams.find((t) => t.id === id),
+    create: (team: Omit<Team, "id">) => {
+      const nextId =
+        mockTeams.length > 0 ? Math.max(...mockTeams.map((t) => t.id)) + 1 : 1;
+      const newTeam = {
+        ...team,
+        id: nextId,
+        created_at: new Date().toISOString(),
+      };
+      mockTeams.unshift(newTeam);
+      return newTeam;
+    },
+    update: (id: number, updates: Partial<Team>) => {
+      const idx = mockTeams.findIndex((t) => t.id === id);
+      if (idx !== -1) {
+        mockTeams[idx] = {
+          ...mockTeams[idx],
+          ...updates,
+          updated_at: new Date().toISOString(),
+        };
+        return mockTeams[idx];
+      }
+      return null;
+    },
+    delete: (id: number) => {
+      const initialLength = mockTeams.length;
+      mockTeams = mockTeams.filter((t) => t.id !== id);
+      mockSquads = mockSquads.filter((s) => s.team_id !== id);
+      return mockTeams.length < initialLength;
+    },
+  },
+  squads: {
+    getAll: () => mockSquads,
+    getByTeamId: (teamId: number) =>
+      mockSquads.filter((s) => s.team_id === teamId),
+    getById: (id: number) => mockSquads.find((s) => s.id === id),
+    create: (squad: Omit<Squad, "id">) => {
+      const nextId =
+        mockSquads.length > 0
+          ? Math.max(...mockSquads.map((s) => s.id)) + 1
+          : 1;
+      const newSquad = {
+        ...squad,
+        id: nextId,
+        created_at: new Date().toISOString(),
+      };
+      mockSquads.unshift(newSquad);
+      return newSquad;
+    },
+    update: (id: number, updates: Partial<Squad>) => {
+      const idx = mockSquads.findIndex((s) => s.id === id);
+      if (idx !== -1) {
+        mockSquads[idx] = {
+          ...mockSquads[idx],
+          ...updates,
+          updated_at: new Date().toISOString(),
+        };
+        return mockSquads[idx];
+      }
+      return null;
+    },
+    delete: (id: number) => {
+      const initialLength = mockSquads.length;
+      mockSquads = mockSquads.filter((s) => s.id !== id);
+      return mockSquads.length < initialLength;
+    },
+  },
+  // اضافه کردن این بخش به داخل شیء db
+  projects: {
+    getAll: () => mockProjects,
+    getById: (id: string | number) =>
+      mockProjects.find((p) => String(p.id) === String(id)),
+    create: (data: Partial<Project>) => {
+      const nextId = String(mockProjects.length + 1);
+      const newProject: Project = {
+        id: nextId,
+        organization: data.organization || "1",
+        name: data.name || "Untitled Project",
+        description: data.description || "",
+        prefix: data.prefix || "PRJ",
+        budget: data.budget,
+        budget_currency: data.budget_currency || "IRR",
+        start_date: data.start_date || new Date().toISOString().split("T")[0],
+        deadline: data.deadline,
+        status: "draft", // به جای planning
+        members_count: 1,
+        progress_percentage: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      mockProjects.unshift(newProject);
+      return newProject;
+    },
+    update: (id: string | number, updates: Partial<Project>) => {
+      const idx = mockProjects.findIndex((p) => String(p.id) === String(id));
+      if (idx !== -1) {
+        mockProjects[idx] = {
+          ...mockProjects[idx],
+          ...updates,
+          updated_at: new Date().toISOString(),
+        };
+        return mockProjects[idx];
+      }
+      return null;
+    },
+    delete: (id: string | number) => {
+      const initialLength = mockProjects.length;
+      mockProjects = mockProjects.filter((p) => String(p.id) !== String(id));
+      return mockProjects.length < initialLength;
+    },
+    archive: (id: string | number) => {
+      const idx = mockProjects.findIndex((p) => String(p.id) === String(id));
+      if (idx !== -1) {
+        mockProjects[idx].status = "archived";
+        mockProjects[idx].archived_at = new Date().toISOString();
+        mockProjects[idx].updated_at = new Date().toISOString();
+        return mockProjects[idx];
+      }
+      return null;
+    },
+    complete: (id: string | number) => {
+      const idx = mockProjects.findIndex((p) => String(p.id) === String(id));
+      if (idx !== -1) {
+        mockProjects[idx].status = "completed";
+        mockProjects[idx].completed_at = new Date().toISOString();
+        mockProjects[idx].progress_percentage = 100;
+        mockProjects[idx].updated_at = new Date().toISOString();
+        return mockProjects[idx];
+      }
+      return null;
+    },
+
+    members: {
+      getAll: (projectId: string | number) =>
+        mockProjectMembers.filter(
+          (m) => String(m.project) === String(projectId),
+        ),
+      add: (projectId: string | number, data: Partial<ProjectMember>) => {
+        const newMember: ProjectMember = {
+          id: String(Date.now()),
+          project: projectId,
+          user: data.user || {
+            id: Date.now(),
+            username: "newuser",
+            first_name: "New",
+            last_name: "User",
+          },
+          specialty: data.specialty || "General Contributor",
+          allocation_percentage: data.allocation_percentage || 100,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        mockProjectMembers.unshift(newMember);
+        return newMember;
+      },
+    },
+    milestones: {
+      getAll: (projectId: string | number) =>
+        mockMilestones.filter((m) => String(m.project) === String(projectId)),
+      create: (projectId: string | number, data: Partial<Milestone>) => {
+        const newMilestone: Milestone = {
+          id: String(Date.now()),
+          project: projectId,
+          title: data.title || "New Milestone",
+          description: data.description || "",
+          status: "pending",
+          target_date: data.target_date || new Date().toISOString(),
+          sequence: mockMilestones.length + 1,
+          weight: data.weight || 10,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        mockMilestones.unshift(newMilestone);
+        return newMilestone;
+      },
+    },
+    activities: {
+      getAll: (projectId: string | number) =>
+        mockActivities.filter((a) => String(a.project) === String(projectId)),
     },
   },
 };

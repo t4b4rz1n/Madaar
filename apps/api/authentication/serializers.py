@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -19,28 +19,39 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     )
 
     avatar = serializers.ImageField(required=False, allow_null=True)
+    access = serializers.SerializerMethodField(read_only=True)
+    refresh = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
         fields = (
+            "id",
             "username",
             "email",
-            "password",
-            "password_confirm",
             "first_name",
             "last_name",
             "avatar",
+            "password",
+            "password_confirm",
+            "access",
+            "refresh",
         )
+
+    def get_access(self, obj):
+        if not hasattr(obj, "_tokens"):
+            refresh = RefreshToken.for_user(obj)
+            obj._tokens = (str(refresh.access_token), str(refresh))
+        return obj._tokens[0]
+
+    def get_refresh(self, obj):
+        if not hasattr(obj, "_tokens"):
+            refresh = RefreshToken.for_user(obj)
+            obj._tokens = (str(refresh.access_token), str(refresh))
+        return obj._tokens[1]
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password_confirm"]:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
-
-        try:
-            validate_password(attrs["password"])
-        except DjangoValidationError as exc:
-            raise serializers.ValidationError({"password": exc.messages}) from exc
-
         return attrs
 
     def create(self, validated_data):
@@ -60,7 +71,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         email = attrs.get(self.username_field)
 
         if not email and not username:
-            raise serializers.ValidationError({"detail": "Must include 'email' or 'username' and 'password'."})
+            raise serializers.ValidationError(
+                {"detail": "Must include 'email' or 'username' and 'password'."}
+            )
 
         if not email and username:
             if "@" in username:
@@ -74,6 +87,35 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         data = super().validate(attrs)
 
+        telegram_connected = False
+        notify_via_email = True
+        notify_via_telegram = False
+
+        try:
+            wsp = self.user.work_style_profile
+            if wsp and not wsp.is_deleted:
+                if wsp.telegram_chat_id:
+                    telegram_connected = True
+                notify_via_email = wsp.notify_via_email
+                notify_via_telegram = wsp.notify_via_telegram
+        except Exception:
+            pass
+
+        can_manage_automations = False
+        if self.user.is_staff or self.user.is_superuser:
+            can_manage_automations = True
+        else:
+            from organizations.models import OrganizationMembership
+
+            can_manage_automations = OrganizationMembership.objects.filter(
+                user=self.user,
+                role__in=[
+                    OrganizationMembership.Role.OWNER,
+                    OrganizationMembership.Role.ADMIN,
+                ],
+                is_deleted=False,
+            ).exists()
+
         user_data = {
             "id": self.user.id,
             "username": self.user.username,
@@ -82,6 +124,10 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             "last_name": self.user.last_name,
             "is_staff": self.user.is_staff,
             "avatar_url": self.user.avatar.url if self.user.avatar else None,
+            "telegram_connected": telegram_connected,
+            "notify_via_email": notify_via_email,
+            "notify_via_telegram": notify_via_telegram,
+            "can_manage_automations": can_manage_automations,
         }
 
         data["user"] = user_data

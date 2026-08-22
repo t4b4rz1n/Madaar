@@ -6,6 +6,7 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media/
+mediafiles/
 
 staticfiles/
 
@@ -129,3 +130,5 @@ minio_data/
 
 pyrightconfig.json
 node_modules/
+.kilo/
+.local/
