@@ -91,10 +91,23 @@ class TaskStatusService:
     @staticmethod
     @transaction.atomic
     def create_status(board, code, name, order=None, actor=None):
+        from .models import Board
+        # Lock the board to serialize concurrent status creations and prevent race conditions
+        Board.objects.select_for_update().get(id=board.id)
+
+        if not code:
+            code = name.lower().replace(" ", "-")
+
+        base_code = code
+        counter = 1
+        existing_codes = set(TaskStatus.objects.filter(board=board, is_deleted=False).values_list("code", flat=True))
+
+        while code in existing_codes:
+            code = f"{base_code}-{counter}"
+            counter += 1
+
         if order is None:
-            existing_statuses = list(TaskStatus.objects.filter(board=board).select_for_update())
-            max_order = len(existing_statuses)
-            order = max_order + 1
+            order = len(existing_codes) + 1
 
         status_obj = TaskStatus.objects.create(
             board=board,
@@ -183,6 +196,7 @@ class TaskService:
         "due_date",
         "estimated_hours",
         "parent_task",
+        "is_finished",
         "is_blocked",
     }
 
@@ -203,6 +217,7 @@ class TaskService:
         spent_hours=0,
         order=0,
         is_blocked=False,
+        is_finished=False,
     ):
         # Validate that reporter is a project member (unless staff/superuser or org owner)
         if (
@@ -335,6 +350,16 @@ class TaskService:
             old_val = getattr(task, field)
             if old_val != value:
                 setattr(task, field, value)
+
+                if field == "is_finished" and value is True:
+                    # Stop active timers for this task
+                    from attendance.models import TimeLog
+                    from attendance.services import TimeLogService
+
+                    active_timers = TimeLog.objects.filter(task=task, is_active=True)
+                    for timer in active_timers:
+                        TimeLogService.stop_timer(timer.user, timer.id, auto_move=False)
+
                 if field not in skip_log_fields:
                     if field == "assignee":
                         if value:
@@ -406,6 +431,8 @@ class TaskService:
 
                 if code == "done":
                     task.is_finished = True
+                else:
+                    task.is_finished = False
 
         # Order Shifting Logic
         if new_status and old_status != new_status:
@@ -637,6 +664,9 @@ class StandupService:
             hours_worked = 0
         if hours_worked < 0:
             raise ValidationError(_("Hours worked cannot be negative."))
+        if float(hours_worked) > 24:
+            raise ValidationError(_("Hours worked cannot exceed 24 hours per day."))
+        hours_worked = round(float(hours_worked), 2)
 
         return AsyncStandup.objects.create(
             user=user,

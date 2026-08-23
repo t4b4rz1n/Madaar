@@ -42,6 +42,7 @@ class Attendance(BaseModel):
     check_out = models.DateTimeField(_("Check-out Time"), null=True, blank=True)
     is_remote = models.BooleanField(_("Is Remote Work"), default=False)
     overtime_minutes = models.PositiveIntegerField(_("Overtime Minutes"), default=0)
+    timezone = models.CharField(_("Timezone"), max_length=50, default="UTC")
 
     class Meta:
         verbose_name = _("Attendance")
@@ -106,11 +107,6 @@ class TimeLog(BaseModel):
             models.Index(fields=["task", "is_active"]),
         ]
         constraints = [
-            models.UniqueConstraint(
-                fields=["user"],
-                condition=Q(is_active=True, is_deleted=False),
-                name="unique_active_timer_per_user",
-            ),
             models.CheckConstraint(
                 check=Q(end_time__gte=F("start_time")) | Q(end_time__isnull=True),
                 name="end_time_after_start_time",
@@ -215,3 +211,29 @@ class Holiday(BaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.date})"
+
+
+class AttendanceSession(BaseModel):
+    """Individual time segments for a daily attendance."""
+
+    attendance = models.ForeignKey(
+        Attendance, on_delete=models.CASCADE, related_name="sessions"
+    )
+    start_time = models.DateTimeField(_("Start Time"), db_index=True)
+    end_time = models.DateTimeField(_("End Time"), null=True, blank=True)
+    duration_seconds = models.PositiveIntegerField(_("Duration in Seconds"), default=0)
+
+    class Meta:
+        verbose_name = _("Attendance Session")
+        verbose_name_plural = _("Attendance Sessions")
+        ordering = ["start_time"]
+        constraints = [
+            models.CheckConstraint(
+                check=Q(end_time__gte=F("start_time")) | Q(end_time__isnull=True),
+                name="attendance_session_end_after_start",
+            )
+        ]
+
+    def __str__(self):
+        return f"Session for {self.attendance} at {self.start_time}"
+

@@ -433,3 +433,7 @@ TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")
 
 # GitHub Config
 GITHUB_WEBHOOK_SECRET = env("GITHUB_WEBHOOK_SECRET", default="")
+
+# Celery Beat Schedule
+
+CELERY_BEAT_SCHEDULE = {}

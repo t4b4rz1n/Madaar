@@ -14,19 +14,20 @@ export const getOrganizations = async (): Promise<Organization[]> => {
 
 // ================= Attendance =================
 export const checkIn = async (organizationId: string): Promise<Attendance> => {
-  const res = await ApiService.post<Attendance>('/attendance/attendances/check-in/', { organization: organizationId });
-  return res as unknown as Attendance;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const res = await ApiService.post<Attendance>('/attendance/attendances/check-in/', { organization: organizationId, timezone });
+  return (res as any).data ?? res;
 };
 
 export const checkOut = async (): Promise<Attendance> => {
   const res = await ApiService.post<Attendance>('/attendance/attendances/check-out/');
-  return res as unknown as Attendance;
+  return (res as any).data ?? res;
 };
 
 export const getTodayAttendance = async (): Promise<Attendance | null> => {
   try {
-    const res = await ApiService.get<Attendance>('/attendance/attendances/my_today/');
-    return res as unknown as Attendance;
+    const res = await ApiService.get<Attendance>('/attendance/attendances/my-today/');
+    return (res as any).data ?? res;
   } catch (error: any) {
     if (error.response?.status === 404 || error.message === 'Not checked in today.' || error.detail === 'Not checked in today.') return null;
     throw error;
@@ -39,12 +40,12 @@ export const getAttendances = async (params: Record<string, any> = {}): Promise<
 };
 
 // ================= Time Logs =================
-export const getActiveTimer = async (): Promise<TimeLog | null> => {
+export const getActiveTimers = async (): Promise<TimeLog[]> => {
   try {
-    const res = await ApiService.get<TimeLog>('/attendance/time-logs/active-timer/');
-    return res.data as unknown as TimeLog;
+    const res = await ApiService.get<TimeLog[]>('/attendance/time-logs/active-timers/');
+    return Array.isArray(res.data) ? res.data as unknown as TimeLog[] : [];
   } catch (error: any) {
-    if (error?.detail === 'Not found.' || /not found|no active timer/i.test(error?.message ?? '') || /not found|no active timer/i.test(error?.detail ?? '')) return null;
+    if (error?.detail === 'Not found.' || /not found|no active timer/i.test(error?.message ?? '') || /not found|no active timer/i.test(error?.detail ?? '')) return [];
     throw error;
   }
 };
@@ -57,9 +58,9 @@ export const startTimer = async (taskId: string | number): Promise<TimeLog> => {
 export const stopTimer = async (timerId?: string | number): Promise<TimeLog | null> => {
   let id = timerId;
   if (!id) {
-    const active = await getActiveTimer();
-    if (!active) return null;
-    id = active.id;
+    const activeTimers = await getActiveTimers();
+    if (activeTimers.length === 0) return null;
+    id = activeTimers[0].id;
   }
   const res = await ApiService.post<TimeLog>(`/attendance/time-logs/${id}/stop-timer/`);
   return res.data as unknown as TimeLog;

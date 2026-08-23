@@ -113,7 +113,9 @@ const UserDashboardPage = () => {
   const handleCloseTaskSheet = useCallback(() => {
     setSelectedTaskId(null);
   }, []);
-  const toTimeLog = (timer: EmployeeActiveTimer | null | undefined): TimeLog | null => {
+  const toTimeLog = (timers: EmployeeActiveTimer[] | null | undefined, taskId: string | number | undefined): TimeLog | null => {
+    if (!timers || !taskId) return null;
+    const timer = timers.find(t => t.task_id === String(taskId));
     if (!timer) return null;
     return {
       id: timer.id,
@@ -179,11 +181,24 @@ const UserDashboardPage = () => {
       ) : (
         <>
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)]">
-            <TodayTimerCard
-              activeTimer={dashboard.active_timer}
-              isStopping={stopTimerMutation.isPending}
-              onStop={() => dashboard.active_timer && stopTimerMutation.mutate(dashboard.active_timer.id)}
-            />
+            <div className="flex flex-col gap-4">
+              {dashboard.active_timers && dashboard.active_timers.length > 0 ? (
+                dashboard.active_timers.map((timer) => (
+                  <TodayTimerCard
+                    key={timer.id}
+                    activeTimer={timer}
+                    isStopping={stopTimerMutation.isPending && stopTimerMutation.variables === timer.id}
+                    onStop={() => stopTimerMutation.mutate(timer.id)}
+                  />
+                ))
+              ) : (
+                <TodayTimerCard
+                  activeTimer={null}
+                  isStopping={false}
+                  onStop={() => {}}
+                />
+              )}
+            </div>
             <WeeklyPulse totalSeconds={dashboard.weekly_time.total_seconds} totalLogs={dashboard.weekly_time.total_logs} />
           </section>
 
@@ -191,7 +206,7 @@ const UserDashboardPage = () => {
             <TodayTasksCard
               tasks={dashboard.upcoming_tasks}
               overdueTasks={dashboard.overdue_tasks}
-              activeTaskId={dashboard.active_timer?.task_id}
+              activeTaskIds={dashboard.active_timers?.map(t => t.task_id).filter(Boolean) as string[]}
               onSelectTask={(id) => setSelectedTaskId(id)}
               onMarkDone={(id) => markDoneMutation.mutate(id)}
               startingTaskId={startTimerMutation.isPending ? startTimerMutation.variables : null}
@@ -228,8 +243,11 @@ const UserDashboardPage = () => {
         onClose={handleCloseTaskSheet}
         onPatch={handlePatchTask}
         onPlayTimer={(taskId) => startTimerMutation.mutate(taskId.toString())}
-        onStopTimer={() => { if (dashboard?.active_timer) stopTimerMutation.mutate(dashboard.active_timer.id); }}
-        activeTimer={toTimeLog(dashboard?.active_timer)}
+        onStopTimer={() => {
+          const timer = dashboard?.active_timers?.find(t => t.task_id === String(taskQuery.data?.id));
+          if (timer) stopTimerMutation.mutate(timer.id); 
+        }}
+        activeTimer={toTimeLog(dashboard?.active_timers, taskQuery.data?.id)}
       />
     </motion.div>
   );

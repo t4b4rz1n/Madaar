@@ -11,10 +11,11 @@ interface SortableTaskProps {
   onPlayTimer?: (taskId: string | number) => void;
   onStopTimer?: (taskId: string | number) => void;
   onMarkDone?: (taskId: string | number) => void;
+  onToggleDone?: (taskId: string | number) => void;
   activeTimer?: TimeLog | null;
 }
 
-export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone, activeTimer }) => {
+export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone, onToggleDone, activeTimer }) => {
   const {
     attributes,
     listeners,
@@ -38,7 +39,7 @@ export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPla
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onClick={onClick} onPlayTimer={onPlayTimer} onStopTimer={onStopTimer} onMarkDone={onMarkDone} activeTimer={activeTimer} />
+      <TaskCard task={task} onClick={onClick} onPlayTimer={onPlayTimer} onStopTimer={onStopTimer} onMarkDone={onMarkDone} onToggleDone={onToggleDone} activeTimer={activeTimer} />
     </div>
   );
 };

@@ -99,7 +99,7 @@ export const handlers = [
         },
       ],
       attendance_today: null,
-      active_timer: null,
+      active_timers: [],
       upcoming_milestones: [],
     };
 
