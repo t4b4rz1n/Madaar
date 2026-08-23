@@ -51,18 +51,19 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return AttendanceSerializer
 
     def get_queryset(self):
-        from django.db.models import Sum, Max, Exists, OuterRef
+        from django.db.models import Exists, Max, OuterRef, Sum
         from django.db.models.functions import Coalesce
+
         from .models import AttendanceSession
-        
+
         qs = Attendance.objects.select_related("user", "organization").prefetch_related("sessions").filter(is_deleted=False)
-        
+
         qs = qs.annotate(
             annotated_total_seconds=Coalesce(Sum('sessions__duration_seconds', filter=Q(sessions__is_deleted=False, sessions__duration_seconds__isnull=False)), 0),
             annotated_is_active=Exists(AttendanceSession.objects.filter(attendance=OuterRef('pk'), is_deleted=False, end_time__isnull=True)),
             annotated_active_start=Max('sessions__start_time', filter=Q(sessions__is_deleted=False, sessions__end_time__isnull=True))
         )
-        
+
         user = self.request.user
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             qs = qs.all()

@@ -94,14 +94,14 @@ class TaskStatusService:
         from .models import Board
         # Lock the board to serialize concurrent status creations and prevent race conditions
         Board.objects.select_for_update().get(id=board.id)
-        
+
         if not code:
             code = name.lower().replace(" ", "-")
 
         base_code = code
         counter = 1
         existing_codes = set(TaskStatus.objects.filter(board=board, is_deleted=False).values_list("code", flat=True))
-        
+
         while code in existing_codes:
             code = f"{base_code}-{counter}"
             counter += 1

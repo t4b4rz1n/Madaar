@@ -24,19 +24,19 @@ class AttendanceService:
             date=today,
             defaults={"organization": organization, "check_in": timezone.now(), "timezone": timezone_str},
         )
-        
+
         update_fields = []
         if not created and not attendance.check_in:
             attendance.check_in = timezone.now()
             update_fields.append("check_in")
-            
+
         if attendance.timezone != timezone_str:
             attendance.timezone = timezone_str
             update_fields.append("timezone")
-            
+
         if update_fields:
             attendance.save(update_fields=update_fields)
-            
+
         # Check if there is an active session
         active_session = attendance.sessions.filter(end_time__isnull=True).first()
         if not active_session:
@@ -45,27 +45,29 @@ class AttendanceService:
                 attendance=attendance,
                 start_time=timezone.now()
             )
-            
+
             # Schedule the rollover task for exactly midnight in the user's timezone
-            import pytz
             from datetime import time
+
+            import pytz
+
             from .tasks import process_midnight_attendance_rollover
-            
+
             try:
                 user_tz = pytz.timezone(timezone_str)
             except Exception:
                 user_tz = pytz.UTC
-                
+
             now_in_user_tz = timezone.now().astimezone(user_tz)
             # Find midnight of *today* in user's timezone
             midnight_local = user_tz.localize(timezone.datetime.combine(now_in_user_tz.date(), time(23, 59, 59)))
             midnight_utc = midnight_local.astimezone(pytz.UTC)
-            
+
             # Schedule task only if we haven't passed midnight yet and not in eager mode
             from django.conf import settings
             if timezone.now() < midnight_utc and not getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
                 process_midnight_attendance_rollover.apply_async(args=[attendance.id], eta=midnight_utc)
-                
+
         return attendance, created
 
     @staticmethod
@@ -75,7 +77,7 @@ class AttendanceService:
         attendance = Attendance.objects.filter(user=user, date=today).first()
         if not attendance:
             raise ValidationError(_("No check-in record found for today."))
-            
+
         active_session = attendance.sessions.filter(end_time__isnull=True).first()
         if not active_session:
             raise ValidationError(_("Already checked out or no active session."))
@@ -84,7 +86,7 @@ class AttendanceService:
         active_session.end_time = now
         active_session.duration_seconds = int((now - active_session.start_time).total_seconds())
         active_session.save(update_fields=["end_time", "duration_seconds"])
-        
+
         attendance.check_out = now
 
         # Stop any active timers
@@ -95,7 +97,7 @@ class AttendanceService:
         # Auto calculate overtime if setting exists
         setting = AttendanceSetting.objects.filter(organization=attendance.organization).first()
         if setting and attendance.check_in:
-            # Re-calculate based on total session durations? 
+            # Re-calculate based on total session durations?
             # Or just check_out - check_in? Actually we should use sum of session durations.
             total_duration_seconds = attendance.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
             duration_hours = total_duration_seconds / 3600.0
@@ -134,10 +136,10 @@ class AttendanceService:
                 total_duration_seconds = 0
                 if instance.pk:
                     total_duration_seconds = instance.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
-                
+
                 if total_duration_seconds == 0:
                     total_duration_seconds = (instance.check_out - instance.check_in).total_seconds()
-                    
+
                 duration_hours = total_duration_seconds / 3600.0
                 expected = float(setting.expected_daily_hours)
                 if duration_hours > expected:

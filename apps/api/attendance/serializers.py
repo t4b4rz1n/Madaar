@@ -76,7 +76,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
             total = obj.annotated_total_seconds or 0
         else:
             total = sum(s.duration_seconds for s in obj.sessions.all() if s.duration_seconds and not s.is_deleted)
-            
+
         if hasattr(obj, 'annotated_active_start') and obj.annotated_active_start:
             total += int((timezone.now() - obj.annotated_active_start).total_seconds())
         else:
