@@ -54,6 +54,25 @@ class TaskStatusSerializer(serializers.ModelSerializer):
         model = TaskStatus
         fields = ("id", "board", "board_detail", "code", "name", "order", "created_at")
         read_only_fields = ("id", "created_at")
+        extra_kwargs = {
+            "code": {"required": False},
+        }
+        validators = []
+
+    def validate(self, attrs):
+        board = attrs.get("board", getattr(self.instance, "board", None))
+        name = attrs.get("name", getattr(self.instance, "name", ""))
+        code = attrs.get("code") or name.lower().replace(" ", "-")
+
+        if board and not self.instance:
+            base_code = code
+            counter = 1
+            while TaskStatus.objects.filter(board=board, code=code, is_deleted=False).exists():
+                code = f"{base_code}-{counter}"
+                counter += 1
+            attrs["code"] = code
+
+        return attrs
 
 
 class ProjectMinimalSerializer(serializers.Serializer):
@@ -288,7 +307,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             "is_finished",
             "is_blocked",
         )
-        read_only_fields = ("id", "is_finished")
+        read_only_fields = ("id",)
 
     def validate_estimated_hours(self, value):
         if value is not None and value < 0:
@@ -386,7 +405,9 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             return Decimal("0")
         if value < 0:
             raise serializers.ValidationError(_("Hours worked cannot be negative."))
-        return value
+        if value > Decimal("24"):
+            raise serializers.ValidationError(_("Hours worked cannot exceed 24 hours per day."))
+        return round(value, 2)
 
     def validate(self, attrs):
         # Partial updates (e.g. changing only hours from the grid) keep the

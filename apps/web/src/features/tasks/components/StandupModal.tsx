@@ -127,7 +127,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
       const payload = {
         projectId: resolvedProjectId,
         date: targetDate,
-        hoursWorked: Number(hideHours ? initial?.hoursWorked ?? 0 : data.hoursWorked),
+        hoursWorked: Math.round(Number(hideHours ? initial?.hoursWorked ?? 0 : data.hoursWorked) * 100) / 100,
         todayWork: data.todayWork.trim(),
         tomorrowPlan: data.tomorrowPlan.trim(),
         blockers: data.blockers,
@@ -254,16 +254,18 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                 </label>
                 <input
                   type="number"
-                  step="0.5"
+                  step="0.01"
                   min="0"
+                  max="24"
                   inputMode="decimal"
-                  placeholder={S.hoursPlaceholder}
+                  placeholder="e.g. 22.22"
                   disabled={readOnly}
                   autoFocus
                   className={inputClass(!!errors.hoursWorked)}
                   {...register('hoursWorked', {
                     required: S.hoursRequired,
-                    min: { value: 0, message: S.hoursRange },
+                    min: { value: 0, message: 'Hours cannot be negative' },
+                    max: { value: 24, message: 'Hours worked cannot exceed 24 hours per day' },
                   })}
                 />
                  {errors.hoursWorked && (

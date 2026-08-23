@@ -132,3 +132,7 @@ pyrightconfig.json
 node_modules/
 .kilo/
 .local/
+.agents/
+skills/
+AGENTS.md
+SKILL.md

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getBoards, getTasks, moveTask, createTask, reorderTasks, createStatus } from '../api/tasksApi';
-import { getActiveTimer, startTimer, stopTimer } from '../../attendance/api/attendanceApi';
+import { getBoards, getTasks, moveTask, createTask, reorderTasks, createStatus, updateTask } from '../api/tasksApi';
+import { getActiveTimers, startTimer, stopTimer } from '../../attendance/api/attendanceApi';
 import type { TimeLog } from '../../attendance/types';
 import { useTaskStore } from '../store/useTaskStore';
 import { TaskCard } from './TaskCard';
@@ -61,10 +61,10 @@ export const KanbanBoard: React.FC = () => {
     enabled: !!activeProjectId && !!activeBoardId,
   });
 
-  const { data: activeTimer = null } = useQuery<TimeLog | null>({
-    queryKey: ['activeTimer'],
-    queryFn: getActiveTimer,
-    refetchInterval: 15_000,
+  const { data: activeTimers = [] } = useQuery<TimeLog[]>({
+    queryKey: ['activeTimers'],
+    queryFn: getActiveTimers,
+    refetchInterval: 15000,
   });
 
   const [localTasks, setLocalTasks] = useState<Task[]>([]);
@@ -83,18 +83,22 @@ export const KanbanBoard: React.FC = () => {
       const targetStatus = activeBoard?.statuses.find(s => sameId(s.id, statusId));
       const isDoing = targetStatus && (targetStatus.code === 'doing' || targetStatus.name.toLowerCase() === 'doing' || targetStatus.name.toLowerCase() === 'in progress');
       const isReviewOrDone = targetStatus && (targetStatus.code === 'review' || targetStatus.code === 'done' || targetStatus.name.toLowerCase() === 'review' || targetStatus.name.toLowerCase() === 'done');
+      const isDone = targetStatus && (targetStatus.code === 'done' || targetStatus.name.toLowerCase() === 'done');
 
-      if (isDoing || isReviewOrDone) {
-        setLocalTasks(tasks => tasks.map(t => {
-          if (sameId(t.id, taskId)) {
-            return { ...t, is_active_timer_running: isDoing ? true : false };
-          }
-          if (isDoing) {
-             return { ...t, is_active_timer_running: false };
-          }
-          return t;
-        }));
-      }
+      setLocalTasks(tasks => tasks.map(t => {
+        if (sameId(t.id, taskId)) {
+          return {
+            ...t,
+            is_finished: Boolean(isDone),
+            status_detail: targetStatus ? (targetStatus as any) : t.status_detail,
+            is_active_timer_running: isDoing ? true : (isReviewOrDone ? false : t.is_active_timer_running)
+          };
+        }
+        if (isDoing) {
+          return { ...t, is_active_timer_running: false };
+        }
+        return t;
+      }));
 
       return { previousTasks: serverTasks };
     },
@@ -110,7 +114,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
-      queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
+      queryClient.invalidateQueries({ queryKey: ['activeTimers'] });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
@@ -189,8 +193,7 @@ export const KanbanBoard: React.FC = () => {
 
       const previousTasks = [...localTasks];
 
-      // Stop all other timers optimistically first (only one can be active)
-      // And if there's a doing status, move this task to doing
+      // Optimistically start the timer and move task to doing if needed
       setLocalTasks(tasks => tasks.map(t => {
         if (sameId(t.id, taskId)) {
           const updatedTask = { ...t, is_active_timer_running: true };
@@ -200,14 +203,14 @@ export const KanbanBoard: React.FC = () => {
           }
           return updatedTask;
         }
-        return { ...t, is_active_timer_running: false };
+        return t;
       }));
 
       return { previousTasks };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
-      queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
+      queryClient.invalidateQueries({ queryKey: ['activeTimers'] });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
@@ -225,8 +228,13 @@ export const KanbanBoard: React.FC = () => {
   });
 
   const stopTimerMutation = useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    mutationFn: (_taskId: string | number) => stopTimer(),
+    mutationFn: async (taskId: string | number) => {
+      // Find the specific timer for this task
+      const queryClientTasks = queryClient.getQueryData<TimeLog[]>(['activeTimers']) || [];
+      const timer = queryClientTasks.find(t => sameId(t.task, taskId));
+      if (!timer) throw new Error("Active timer not found for this task");
+      return stopTimer(timer.id);
+    },
     onMutate: async (taskId) => {
       setLocalTasks(tasks => tasks.map(t => sameId(t.id, taskId) ? { ...t, is_active_timer_running: false } : t));
     },
@@ -242,7 +250,7 @@ export const KanbanBoard: React.FC = () => {
         }));
       }
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
-      queryClient.invalidateQueries({ queryKey: ['activeTimer'] });
+      queryClient.invalidateQueries({ queryKey: ['activeTimers'] });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
@@ -288,33 +296,40 @@ export const KanbanBoard: React.FC = () => {
     queryClient.setQueryData<Task[]>(['tasks', activeProjectId, activeBoardId], tasks => tasks?.map(task => task.id === taskId ? { ...task, ...patch } : task));
   };
 
-  const handleMarkDone = (taskId: string | number) => {
-    const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
-    const doneStatus = activeBoard?.statuses.find(s => s.code === 'done' || s.name.toLowerCase() === 'done');
-    if (!doneStatus) {
-      toast.error('Done status not found on this board.');
-      return;
-    }
+  const toggleFinishedMutation = useMutation({
+    mutationFn: ({ taskId, isFinished }: { taskId: string | number; isFinished: boolean }) =>
+      updateTask(taskId, { is_finished: isFinished }),
+    onMutate: async ({ taskId, isFinished }) => {
+      const queryKey = ['tasks', activeProjectId, activeBoardId];
+      await queryClient.cancelQueries({ queryKey });
+      const previousTasks = queryClient.getQueryData<Task[]>(queryKey) || localTasks;
 
+      const nextTasks = localTasks.map(t =>
+        sameId(t.id, taskId) ? { ...t, is_finished: isFinished } : t
+      );
+      setLocalTasks(nextTasks);
+      queryClient.setQueryData(queryKey, nextTasks);
+
+      return { previousTasks };
+    },
+    onError: (err: any, _vars, context: any) => {
+      if (context?.previousTasks) {
+        setLocalTasks(context.previousTasks);
+        queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
+      }
+      toast.error(err?.response?.data?.detail || 'Failed to update task completion');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+    }
+  });
+
+  const handleToggleDone = (taskId: string | number) => {
     const task = localTasks.find(t => sameId(t.id, taskId));
     if (!task) return;
-    if (sameId(task.status_detail?.id, doneStatus.id)) return;
 
-    // Optimistically move task to done
-    setLocalTasks(tasks => {
-      const newTasks = [...tasks];
-      const index = newTasks.findIndex(t => sameId(t.id, taskId));
-      if (index !== -1) {
-        newTasks[index] = { ...newTasks[index], status_detail: doneStatus as any };
-      }
-      return newTasks;
-    });
-
-    moveTaskMutation.mutate({
-      taskId,
-      statusId: doneStatus.id,
-      order: 0
-    });
+    const newFinished = !task.is_finished;
+    toggleFinishedMutation.mutate({ taskId, isFinished: newFinished });
   };
 
   const sensors = useSensors(
@@ -340,8 +355,16 @@ export const KanbanBoard: React.FC = () => {
       setNewStatusName('');
       toast.success('Status added successfully');
     },
-    onError: () => {
-      toast.error('Failed to add status');
+    onError: (err: any) => {
+      const errorData = err.response?.data;
+      const errorMessage =
+        errorData?.detail ||
+        errorData?.non_field_errors?.[0] ||
+        errorData?.code?.[0] ||
+        errorData?.name?.[0] ||
+        err.message ||
+        'Failed to add status';
+      toast.error(errorMessage);
     }
   });
 
@@ -550,7 +573,7 @@ export const KanbanBoard: React.FC = () => {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {[...board.statuses].sort((a, b) => a.order - b.order).map((status, index) => {
+          {[...board.statuses].sort((a, b) => a.order - b.order).map((status) => {
             const columnTasks = filteredTasks.filter(t => t.status_detail?.id?.toString() === status.id.toString()) || [];
 
             return (
@@ -580,8 +603,8 @@ export const KanbanBoard: React.FC = () => {
                         onClick={() => { setSelectedTaskForSheet(task); if (focusMode) setFocusedTaskId(task.id); }}
                         onPlayTimer={handlePlayTimer}
                         onStopTimer={handleStopTimer}
-                        onMarkDone={handleMarkDone}
-                        activeTimer={activeTimer}
+                        onToggleDone={handleToggleDone}
+                        activeTimer={activeTimers.find(t => t.task?.toString() === task.id?.toString()) || null}
                       />
                     ))}
                   </SortableContext>
@@ -648,10 +671,15 @@ export const KanbanBoard: React.FC = () => {
                   )}
                 </div>
 
-                {index === 0 && addingTaskToStatusId !== status.id && (
+                {addingTaskToStatusId !== status.id && (
                   <button
-                    onClick={() => setAddingTaskToStatusId(status.id)}
-                    className="motion-interactive mt-1 flex shrink-0 w-full items-center gap-2 rounded-lg px-1 py-1 text-[13px] text-base-content/45 transition-colors hover:bg-base-200 hover:text-base-content/90"
+                    type="button"
+                    onClick={() => {
+                      setAddingTaskToStatusId(status.id);
+                      setNewTaskTitle('');
+                      setNewTaskPriority('low');
+                    }}
+                    className="motion-interactive mt-1 flex shrink-0 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] font-medium text-base-content/50 transition-colors hover:bg-base-200 hover:text-base-content/90"
                   >
                     <span className="text-lg leading-none mb-0.5">+</span>
                     <span>Add card</span>
@@ -704,7 +732,7 @@ export const KanbanBoard: React.FC = () => {
             </button>
           )}
           <DragOverlay>
-            {activeTask ? <TaskCard task={activeTask} onClick={() => {}} activeTimer={activeTimer} /> : null}
+            {activeTask ? <TaskCard task={activeTask} onClick={() => {}} activeTimer={activeTimers.find(t => t.task?.toString() === activeTask.id?.toString()) || null} onToggleDone={handleToggleDone} /> : null}
           </DragOverlay>
         </DndContext>
       </div>
@@ -716,7 +744,7 @@ export const KanbanBoard: React.FC = () => {
         onPatch={patchLocalTask}
         onPlayTimer={handlePlayTimer}
         onStopTimer={handleStopTimer}
-        activeTimer={activeTimer}
+        activeTimer={activeTimers.find(t => t.task?.toString() === selectedTaskForSheet?.id?.toString()) || null}
         focusMode={focusMode}
       />
     </div>

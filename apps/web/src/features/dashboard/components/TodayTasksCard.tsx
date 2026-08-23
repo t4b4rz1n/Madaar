@@ -6,7 +6,7 @@ import { TodayEmptyState } from "./TodayEmptyState";
 interface TodayTasksCardProps {
   tasks: EmployeeTaskSummary[];
   overdueTasks: EmployeeTaskSummary[];
-  activeTaskId?: string | null;
+  activeTaskIds?: string[];
   onSelectTask?: (taskId: string) => void;
   onMarkDone?: (taskId: string) => void;
   startingTaskId?: string | null;
@@ -26,7 +26,7 @@ const dueLabel = (dueDate: string | null, overdue: boolean) => {
   return `Due ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(dueDate))}`;
 };
 
-export const TodayTasksCard = ({ tasks, overdueTasks, activeTaskId, onSelectTask, onMarkDone, startingTaskId, onStart }: TodayTasksCardProps) => {
+export const TodayTasksCard = ({ tasks, overdueTasks, activeTaskIds = [], onSelectTask, onMarkDone, startingTaskId, onStart }: TodayTasksCardProps) => {
   const taskRows = [
     ...overdueTasks.map((task) => ({ task, overdue: true })),
     ...tasks.map((task) => ({ task, overdue: false })),
@@ -55,7 +55,7 @@ export const TodayTasksCard = ({ tasks, overdueTasks, activeTaskId, onSelectTask
       ) : (
         <div className="divide-y divide-base-content/8">
           {taskRows.map(({ task, overdue }) => {
-            const isActive = activeTaskId === task.id;
+            const isActive = activeTaskIds.includes(task.id);
             const isDone = task.status_code?.toLowerCase() === "done";
             const isStarting = startingTaskId === task.id;
             return (

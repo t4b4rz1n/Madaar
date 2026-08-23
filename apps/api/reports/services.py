@@ -346,8 +346,8 @@ class EmployeeDashboardService:
         return attendance
 
     @staticmethod
-    def _get_active_timer(user):
-        timer = (
+    def _get_active_timers(user):
+        timers = (
             TimeLog.objects.filter(
                 user=user,
                 is_active=True,
@@ -366,9 +366,8 @@ class EmployeeDashboardService:
                 "task_title",
                 "project_name",
             )
-            .first()
         )
-        return timer
+        return timers
 
     @staticmethod
     def _get_upcoming_milestones(user):
@@ -423,7 +422,7 @@ class EmployeeDashboardService:
             "weekly_time": cls._get_weekly_time_summary(user, week_start, week_end),
             "active_projects": list(cls._get_active_projects(user)),
             "attendance_today": cls._get_attendance_status(user, today_start),
-            "active_timer": cls._get_active_timer(user),
+            "active_timers": list(cls._get_active_timers(user)),
             "upcoming_milestones": list(cls._get_upcoming_milestones(user)),
             # Stubs for future modules
             "points": None,  # Module 5 — Gamification (Phase 2)

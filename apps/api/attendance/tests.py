@@ -345,7 +345,7 @@ class TimeLogTests(AttendanceBaseTestCase):
         self.assertTrue(timer.is_active)
         self.assertEqual(timer.user, self.employee)
 
-        active = TimeLogService.get_active_timer(self.employee)
+        active = TimeLogService.get_active_timers(self.employee).first()
         self.assertEqual(active.id, timer.id)
 
         stopped = TimeLogService.stop_timer(self.employee, timer.id)
