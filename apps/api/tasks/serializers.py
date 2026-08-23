@@ -394,7 +394,6 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             "date",
             "hours_worked",
             "today_work",
-            "tomorrow_plan",
             "blockers",
             "created_at",
         )
@@ -417,13 +416,9 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             "today_work",
             instance.today_work if instance else None,
         )
-        tomorrow_plan = attrs.get(
-            "tomorrow_plan",
-            instance.tomorrow_plan if instance else None,
-        )
-        if not (today_work or "").strip() or not (tomorrow_plan or "").strip():
+        if not (today_work or "").strip():
             raise serializers.ValidationError(
-                _("Both 'today' and 'tomorrow' descriptions are required.")
+                _("The 'today/tomorrow' description is required.")
             )
 
         date = attrs.get("date") or (self.instance.date if self.instance else None)

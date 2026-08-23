@@ -176,7 +176,6 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
       initial: {
         hoursWorked: draft ?? saved ?? '',
         todayWork: entry?.today_work ?? '',
-        tomorrowPlan: entry?.tomorrow_plan ?? '',
         blockers: entry?.blockers ?? '',
       },
     };

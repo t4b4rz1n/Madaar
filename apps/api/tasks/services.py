@@ -637,13 +637,13 @@ class StandupService:
     @staticmethod
     @transaction.atomic
     def create_standup(
-        user, project, date, hours_worked, today_work, tomorrow_plan, blockers=None
+        user, project, date, hours_worked, today_work, blockers=None
     ):
         """Creates the single standup row of a user for a project/day."""
         from .models import AsyncStandup
 
-        if not today_work or not tomorrow_plan:
-            raise ValidationError(_("Both 'today' and 'tomorrow' descriptions are required."))
+        if not today_work:
+            raise ValidationError(_("The 'today/tomorrow' description is required."))
 
         date = StandupService._parse_date(date)
         if date > timezone.localdate():
@@ -674,6 +674,5 @@ class StandupService:
             date=date,
             hours_worked=hours_worked,
             today_work=today_work,
-            tomorrow_plan=tomorrow_plan,
             blockers=blockers,
         )

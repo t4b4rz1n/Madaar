@@ -164,7 +164,6 @@ export interface StandupPayload {
   date: string;
   hoursWorked: number;
   todayWork: string;
-  tomorrowPlan: string;
   blockers?: string;
 }
 
@@ -186,7 +185,6 @@ export const createStandup = async (payload: StandupPayload): Promise<AsyncStand
     date: payload.date,
     hours_worked: payload.hoursWorked,
     today_work: payload.todayWork,
-    tomorrow_plan: payload.tomorrowPlan,
     blockers: payload.blockers?.trim() ? payload.blockers.trim() : null,
   });
   return (data as any).data ?? data;
@@ -200,7 +198,6 @@ export const updateStandup = async (
     date: payload.date,
     hours_worked: payload.hoursWorked,
     today_work: payload.todayWork,
-    tomorrow_plan: payload.tomorrowPlan,
     blockers: payload.blockers?.trim() ? payload.blockers.trim() : null,
   });
   return (data as any).data ?? data;

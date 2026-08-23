@@ -491,9 +491,8 @@ class AsyncStandup(BaseModel):
         validators=[MinValueValidator(0)],
         help_text=_("Number of hours worked on this project for the day."),
     )
-    today_work = models.TextField(_("What did you do today?"))
-    tomorrow_plan = models.TextField(_("What will you do tomorrow?"))
-    blockers = models.TextField(_("Blockers"), blank=True, null=True)
+    today_work = models.TextField(_("What did you do today? / What will you do tomorrow?"))
+    blockers = models.TextField(_("Descriptions and Blockers"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("Async Standup")
