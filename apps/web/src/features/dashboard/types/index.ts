@@ -55,7 +55,7 @@ export interface EmployeeDashboard {
     allocation_percentage: number;
   }>;
   attendance_today: EmployeeAttendanceStatus | null;
-  active_timer: EmployeeActiveTimer | null;
+  active_timers: EmployeeActiveTimer[];
   upcoming_milestones: Array<{
     id: string;
     title: string;

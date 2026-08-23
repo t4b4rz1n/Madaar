@@ -14,6 +14,7 @@ interface TaskCardProps {
   onPlayTimer?: (taskId: string | number) => void;
   onStopTimer?: (taskId: string | number) => void;
   onMarkDone?: (taskId: string | number) => void;
+  onToggleDone?: (taskId: string | number) => void;
   activeTimer?: TimeLog | null;
 }
 
@@ -26,13 +27,13 @@ const priorityTone: Record<Task["priority"], string> = {
 
 const formatDate = (value?: string) => value ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value)) : null;
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone, activeTimer }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone, onToggleDone, activeTimer }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMembersMenu, setShowMembersMenu] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
-  const isActuallyDone = task.is_finished || task.status_detail?.code?.toLowerCase() === "done" || task.status_detail?.name?.toLowerCase() === "done";
+  const isActuallyDone = Boolean(task.is_finished);
   const isOverdue = Boolean(task.due_date && new Date(task.due_date).getTime() < Date.now() && !isActuallyDone);
 
   const deleteMutation = useMutation({
@@ -83,7 +84,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
     <article onClick={onClick} className={`group relative cursor-pointer rounded-2xl border bg-base-100 p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-base-content/5 ${isOverdue ? "border-error/30" : task.is_blocked ? "border-warning/35" : "border-base-content/10 hover:border-primary/25"}`} aria-label={`Open task ${task.key}: ${task.title}`}>
       {(updateMutation.isPending || deleteMutation.isPending) && <div className="absolute inset-0 z-20 grid place-items-center rounded-2xl bg-base-100/75 backdrop-blur-[2px]"><span className="loading loading-spinner loading-sm text-primary" /></div>}
       <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2"><button type="button" onClick={(event) => { event.stopPropagation(); if (!isActuallyDone) onMarkDone?.(task.id); }} className={`grid size-5 shrink-0 place-items-center rounded-full transition ${isActuallyDone ? "text-success" : "border border-base-content/20 text-transparent hover:border-success/50 hover:bg-success/10"}`} aria-label={isActuallyDone ? "Task completed" : `Mark ${task.title} as done`}>{isActuallyDone && <TickCircle size={17} variant="Bulk" />}</button><span className="truncate text-[11px] font-bold tracking-wide text-base-content/40">{task.key}</span></div>
+        <div className="flex min-w-0 items-center gap-2"><button type="button" onClick={(event) => { event.stopPropagation(); (onToggleDone || onMarkDone)?.(task.id); }} className={`grid size-5 shrink-0 place-items-center rounded-full transition ${isActuallyDone ? "text-success hover:opacity-80" : "border border-base-content/20 text-transparent hover:border-success/50 hover:bg-success/10"}`} aria-label={isActuallyDone ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as done`} title={isActuallyDone ? "Click to mark as incomplete" : "Click to mark as done"}>{isActuallyDone && <TickCircle size={17} variant="Bulk" />}</button><span className="truncate text-[11px] font-bold tracking-wide text-base-content/40">{task.key}</span></div>
         <button ref={menuTriggerRef} type="button" onClick={(event) => { event.stopPropagation(); setIsMenuOpen(true); }} className="rounded-lg p-1 text-base-content/35 opacity-100 transition hover:bg-base-200 hover:text-base-content sm:opacity-0 sm:group-hover:opacity-100" aria-label={`Actions for ${task.title}`}><More size={17} /></button>
       </div>
 

@@ -17,16 +17,55 @@ _start_timer_local = threading.local()
 class AttendanceService:
     @staticmethod
     @transaction.atomic
-    def check_in(user, organization):
+    def check_in(user, organization, timezone_str="UTC"):
         today = timezone.localdate()
         attendance, created = Attendance.objects.get_or_create(
             user=user,
             date=today,
-            defaults={"organization": organization, "check_in": timezone.now()},
+            defaults={"organization": organization, "check_in": timezone.now(), "timezone": timezone_str},
         )
+        
+        update_fields = []
         if not created and not attendance.check_in:
             attendance.check_in = timezone.now()
-            attendance.save(update_fields=["check_in"])
+            update_fields.append("check_in")
+            
+        if attendance.timezone != timezone_str:
+            attendance.timezone = timezone_str
+            update_fields.append("timezone")
+            
+        if update_fields:
+            attendance.save(update_fields=update_fields)
+            
+        # Check if there is an active session
+        active_session = attendance.sessions.filter(end_time__isnull=True).first()
+        if not active_session:
+            from .models import AttendanceSession
+            active_session = AttendanceSession.objects.create(
+                attendance=attendance,
+                start_time=timezone.now()
+            )
+            
+            # Schedule the rollover task for exactly midnight in the user's timezone
+            import pytz
+            from datetime import time
+            from .tasks import process_midnight_attendance_rollover
+            
+            try:
+                user_tz = pytz.timezone(timezone_str)
+            except Exception:
+                user_tz = pytz.UTC
+                
+            now_in_user_tz = timezone.now().astimezone(user_tz)
+            # Find midnight of *today* in user's timezone
+            midnight_local = user_tz.localize(timezone.datetime.combine(now_in_user_tz.date(), time(23, 59, 59)))
+            midnight_utc = midnight_local.astimezone(pytz.UTC)
+            
+            # Schedule task only if we haven't passed midnight yet and not in eager mode
+            from django.conf import settings
+            if timezone.now() < midnight_utc and not getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
+                process_midnight_attendance_rollover.apply_async(args=[attendance.id], eta=midnight_utc)
+                
         return attendance, created
 
     @staticmethod
@@ -36,23 +75,35 @@ class AttendanceService:
         attendance = Attendance.objects.filter(user=user, date=today).first()
         if not attendance:
             raise ValidationError(_("No check-in record found for today."))
-        if attendance.check_out:
-            raise ValidationError(_("Already checked out today."))
+            
+        active_session = attendance.sessions.filter(end_time__isnull=True).first()
+        if not active_session:
+            raise ValidationError(_("Already checked out or no active session."))
 
-        attendance.check_out = timezone.now()
+        now = timezone.now()
+        active_session.end_time = now
+        active_session.duration_seconds = int((now - active_session.start_time).total_seconds())
+        active_session.save(update_fields=["end_time", "duration_seconds"])
+        
+        attendance.check_out = now
 
         # Stop any active timers
-        active_timer = TimeLogService.get_active_timer(user)
-        if active_timer and active_timer.id:
+        active_timers = TimeLogService.get_active_timers(user)
+        for active_timer in active_timers:
             TimeLogService.stop_timer(user, active_timer.id, auto_move=False)
 
         # Auto calculate overtime if setting exists
         setting = AttendanceSetting.objects.filter(organization=attendance.organization).first()
         if setting and attendance.check_in:
-            duration = (attendance.check_out - attendance.check_in).total_seconds() / 3600.0
+            # Re-calculate based on total session durations? 
+            # Or just check_out - check_in? Actually we should use sum of session durations.
+            total_duration_seconds = attendance.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
+            duration_hours = total_duration_seconds / 3600.0
             expected = float(setting.expected_daily_hours)
-            if duration > expected:
-                attendance.overtime_minutes = int((duration - expected) * 60)
+            if duration_hours > expected:
+                attendance.overtime_minutes = int((duration_hours - expected) * 60)
+            else:
+                attendance.overtime_minutes = 0
 
         attendance.save(update_fields=["check_out", "overtime_minutes"])
         return attendance
@@ -80,10 +131,17 @@ class AttendanceService:
         if instance.check_in and instance.check_out:
             setting = AttendanceSetting.objects.filter(organization=instance.organization).first()
             if setting:
-                duration = (instance.check_out - instance.check_in).total_seconds() / 3600.0
+                total_duration_seconds = 0
+                if instance.pk:
+                    total_duration_seconds = instance.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
+                
+                if total_duration_seconds == 0:
+                    total_duration_seconds = (instance.check_out - instance.check_in).total_seconds()
+                    
+                duration_hours = total_duration_seconds / 3600.0
                 expected = float(setting.expected_daily_hours)
-                if duration > expected:
-                    instance.overtime_minutes = int((duration - expected) * 60)
+                if duration_hours > expected:
+                    instance.overtime_minutes = int((duration_hours - expected) * 60)
                 else:
                     instance.overtime_minutes = 0
 
@@ -140,14 +198,7 @@ class TimeLogService:
         if getattr(_start_timer_local, "in_start_timer", False):
             return None
 
-        # Stop existing active timer for this user
-        active = (
-            TimeLog.objects.select_for_update()
-            .filter(user=user, is_active=True, is_deleted=False)
-            .first()
-        )
-        if active and active.id:
-            TimeLogService.stop_timer(user, active.id, auto_move=False)
+
 
         now = timezone.now()
         timer = TimeLog.objects.create(
@@ -288,6 +339,10 @@ class TimeLogService:
     @staticmethod
     def get_active_timer(user):
         return TimeLog.objects.filter(user=user, is_active=True).first()
+
+    @staticmethod
+    def get_active_timers(user):
+        return TimeLog.objects.filter(user=user, is_active=True)
 
     @staticmethod
     @transaction.atomic

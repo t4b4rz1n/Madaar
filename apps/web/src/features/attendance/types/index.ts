@@ -14,6 +14,10 @@ export interface Attendance {
   check_in: string | null;
   check_out: string | null;
   overtime_minutes: number;
+  is_active?: boolean;
+  total_seconds?: number;
+  base_total_seconds?: number;
+  active_session_start?: string | null;
   created_at: string;
 }
 

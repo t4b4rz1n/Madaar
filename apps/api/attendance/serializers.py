@@ -42,6 +42,10 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 
 class AttendanceSerializer(serializers.ModelSerializer):
     user = UserMinimalSerializer(read_only=True)
+    is_active = serializers.SerializerMethodField()
+    total_seconds = serializers.SerializerMethodField()
+    base_total_seconds = serializers.SerializerMethodField()
+    active_session_start = serializers.SerializerMethodField()
 
     class Meta:
         model = Attendance
@@ -54,9 +58,43 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "check_out",
             "is_remote",
             "overtime_minutes",
+            "is_active",
+            "total_seconds",
+            "base_total_seconds",
+            "active_session_start",
             "created_at",
         )
-        read_only_fields = ("id", "overtime_minutes", "created_at")
+        read_only_fields = ("id", "overtime_minutes", "created_at", "is_active", "total_seconds", "base_total_seconds", "active_session_start")
+
+    def get_is_active(self, obj):
+        if hasattr(obj, 'annotated_is_active'):
+            return obj.annotated_is_active
+        return any(s.end_time is None for s in obj.sessions.all() if not s.is_deleted)
+
+    def get_total_seconds(self, obj):
+        if hasattr(obj, 'annotated_total_seconds'):
+            total = obj.annotated_total_seconds or 0
+        else:
+            total = sum(s.duration_seconds for s in obj.sessions.all() if s.duration_seconds and not s.is_deleted)
+            
+        if hasattr(obj, 'annotated_active_start') and obj.annotated_active_start:
+            total += int((timezone.now() - obj.annotated_active_start).total_seconds())
+        else:
+            active_session = next((s for s in obj.sessions.all() if s.end_time is None and not s.is_deleted), None)
+            if active_session:
+                total += int((timezone.now() - active_session.start_time).total_seconds())
+        return total
+
+    def get_active_session_start(self, obj):
+        if hasattr(obj, 'annotated_active_start') and obj.annotated_active_start:
+            return obj.annotated_active_start
+        active_session = next((s for s in obj.sessions.all() if s.end_time is None and not s.is_deleted), None)
+        return active_session.start_time if active_session else None
+
+    def get_base_total_seconds(self, obj):
+        if hasattr(obj, 'annotated_total_seconds'):
+            return obj.annotated_total_seconds or 0
+        return sum(s.duration_seconds for s in obj.sessions.all() if s.duration_seconds and not s.is_deleted)
 
 
 class AttendanceWriteSerializer(serializers.ModelSerializer):
@@ -81,6 +119,21 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
 
         if date and date > timezone.localdate():
             raise serializers.ValidationError({"date": _("Date cannot be in the future.")})
+
+        # Past date modification restriction: only managers and admins can create/edit past attendance
+        request = self.context.get("request")
+        if date and date < timezone.localdate():
+            if request and request.user and request.user.is_authenticated:
+                is_admin = request.user.is_staff or request.user.is_superuser
+                if not is_admin and organization:
+                    is_admin = request.user.org_memberships.filter(
+                        organization=organization,
+                        role__in=["owner", "admin"],
+                    ).exists()
+                if not is_admin:
+                    raise serializers.ValidationError(
+                        {"date": _("Only managers and admins can modify attendance records for past dates.")}
+                    )
 
         if check_in and check_out:
             if check_out <= check_in:

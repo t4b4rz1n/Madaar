@@ -51,7 +51,18 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return AttendanceSerializer
 
     def get_queryset(self):
-        qs = Attendance.objects.select_related("user", "organization").filter(is_deleted=False)
+        from django.db.models import Sum, Max, Exists, OuterRef
+        from django.db.models.functions import Coalesce
+        from .models import AttendanceSession
+        
+        qs = Attendance.objects.select_related("user", "organization").prefetch_related("sessions").filter(is_deleted=False)
+        
+        qs = qs.annotate(
+            annotated_total_seconds=Coalesce(Sum('sessions__duration_seconds', filter=Q(sessions__is_deleted=False, sessions__duration_seconds__isnull=False)), 0),
+            annotated_is_active=Exists(AttendanceSession.objects.filter(attendance=OuterRef('pk'), is_deleted=False, end_time__isnull=True)),
+            annotated_active_start=Max('sessions__start_time', filter=Q(sessions__is_deleted=False, sessions__end_time__isnull=True))
+        )
+        
         user = self.request.user
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             qs = qs.all()
@@ -100,7 +111,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 {"error": "You are not a member of this organization."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        attendance, created = AttendanceService.check_in(request.user, org)
+        timezone_str = request.data.get("timezone", "UTC")
+        attendance, created = AttendanceService.check_in(request.user, org, timezone_str=timezone_str)
         resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(AttendanceSerializer(attendance).data, status=resp_status)
 
@@ -219,12 +231,10 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         timer = TimeLogService.stop_timer(request.user, pk, auto_move=False)
         return Response(TimeLogSerializer(timer).data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["get"], url_path="active-timer")
-    def active_timer(self, request):
-        timer = TimeLogService.get_active_timer(request.user)
-        if not timer:
-            return Response({"detail": "No active timer."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(TimeLogSerializer(timer).data)
+    @action(detail=False, methods=["get"], url_path="active-timers")
+    def active_timers(self, request):
+        timers = TimeLogService.get_active_timers(request.user)
+        return Response(TimeLogSerializer(timers, many=True).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="cancel")
     def cancel_timer(self, request, pk=None):
