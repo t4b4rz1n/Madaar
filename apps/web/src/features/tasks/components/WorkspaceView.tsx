@@ -86,19 +86,19 @@ export const WorkspaceView: React.FC = () => {
             <button
               key={board.id}
               onClick={() => setActiveBoard(board.id.toString())}
-              className="group relative flex h-32 flex-col justify-between overflow-hidden rounded-2xl p-4 text-left border border-base-content/6 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              className="group relative flex h-40 flex-col justify-between overflow-hidden rounded-2xl p-4 text-center border border-base-content/6 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
               style={{ background: board.background_color || pastelFallback }}
             >
-              <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition duration-300" />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition duration-300" />
               
-              <div className="relative z-10">
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+              <div className="relative z-10 flex justify-end">
+                <span className="rounded-full bg-white/20 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
                   {board.statuses?.length || 0} Statuses
                 </span>
               </div>
               
-              <div className="relative z-10">
-                <h3 className="text-sm font-bold text-white tracking-tight leading-snug">
+              <div className="relative z-10 my-auto flex flex-1 items-center justify-center px-3">
+                <h3 dir="auto" className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight text-center drop-shadow-md">
                   {board.title}
                 </h3>
               </div>
@@ -109,10 +109,10 @@ export const WorkspaceView: React.FC = () => {
         {/* Add Board Card */}
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex h-32 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-base-content/15 bg-base-100/50 text-base-content/40 transition hover:border-base-content/25 hover:bg-base-100 hover:text-base-content"
+          className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-base-content/15 bg-base-100/50 text-base-content/40 transition hover:border-base-content/25 hover:bg-base-100 hover:text-base-content"
         >
-          <Add size={20} />
-          <span className="text-xs font-bold">Add Board</span>
+          <Add size={24} />
+          <span className="text-sm font-bold">Add Board</span>
         </button>
       </div>
 

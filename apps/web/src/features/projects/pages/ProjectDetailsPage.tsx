@@ -1,20 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
-  Briefcase,
   People,
   TaskSquare,
   Activity,
-  Calendar,
-  MoneyRecive,
   Add,
-  Clock,
   Trash,
   Crown,
   Flag,
-  TickCircle,
 } from "iconsax-reactjs";
 import {
   useProject,
@@ -35,28 +30,18 @@ type TabType = "overview" | "members" | "milestones" | "activity";
 const DEFAULT_COLOR = "#6366f1";
 
 const statusStyles: Record<string, string> = {
-  active:    "bg-emerald-500/12 text-emerald-600",
+  active:    "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   draft:     "bg-base-200 text-base-content/65",
-  on_hold:   "bg-amber-500/12 text-amber-600",
-  completed: "bg-blue-500/12 text-blue-600",
-  archived:  "bg-red-500/10 text-red-500",
+  on_hold:   "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  completed: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  archived:  "bg-red-500/15 text-red-500",
 };
 
 const milestoneStatusConfig: Record<string, { label: string; cls: string }> = {
   pending:     { label: "Pending",     cls: "bg-base-200 text-base-content/55" },
-  in_progress: { label: "In Progress", cls: "bg-blue-500/12 text-blue-600" },
-  completed:   { label: "Done",        cls: "bg-emerald-500/12 text-emerald-600" },
-  cancelled:   { label: "Cancelled",   cls: "bg-red-500/10 text-red-500" },
-};
-
-const eventTypeIcon: Record<string, { icon: string; color: string }> = {
-  created:    { icon: "✦", color: "#6366f1" },
-  updated:    { icon: "✎", color: "#3b82f6" },
-  deleted:    { icon: "✕", color: "#ef4444" },
-  completed:  { icon: "✓", color: "#10b981" },
-  archived:   { icon: "⌂", color: "#f59e0b" },
-  member_added:   { icon: "+", color: "#8b5cf6" },
-  member_removed: { icon: "−", color: "#ec4899" },
+  in_progress: { label: "In Progress", cls: "bg-blue-500/15 text-blue-600" },
+  completed:   { label: "Done",        cls: "bg-emerald-500/15 text-emerald-600" },
+  cancelled:   { label: "Cancelled",   cls: "bg-red-500/15 text-red-500" },
 };
 
 const getUserDisplayName = (member: ProjectMember) => {
@@ -78,10 +63,10 @@ const formatDate = (value?: string | null) => {
 };
 
 const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
-  { id: "overview",   label: "Overview",    icon: <Briefcase size={16} /> },
-  { id: "members",    label: "Members",     icon: <People size={16} /> },
-  { id: "milestones", label: "Milestones",  icon: <Flag size={16} /> },
-  { id: "activity",   label: "Activity",    icon: <Activity size={16} /> },
+  { id: "overview",   label: "Overview",    icon: <TaskSquare size={15} /> },
+  { id: "members",    label: "Members",     icon: <People size={15} /> },
+  { id: "milestones", label: "Milestones",  icon: <Flag size={15} /> },
+  { id: "activity",   label: "Activity",    icon: <Activity size={15} /> },
 ];
 
 export default function ProjectDetailsPage() {
@@ -89,7 +74,6 @@ export default function ProjectDetailsPage() {
   const navigate = useNavigate();
   const setActiveProject = useTaskStore((state) => state.setActiveProject);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
-  const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isCreateMilestoneOpen, setIsCreateMilestoneOpen] = useState(false);
@@ -135,9 +119,8 @@ export default function ProjectDetailsPage() {
           refetchMembers();
           refetchProject();
         },
-        onError: (err: any) => {
+        onError: () => {
           toast.error("Could not remove member.");
-          console.error(err);
         },
       });
     }
@@ -145,24 +128,28 @@ export default function ProjectDetailsPage() {
 
   if (isProjectLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+      <div className="flex min-h-[300px] items-center justify-center">
+        <span className="loading loading-spinner loading-md text-primary"></span>
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="rounded-[28px] border border-dashed border-base-content/15 bg-base-100 px-6 py-16 text-center">
-        <p className="text-lg font-semibold text-base-content">Project not found!</p>
-        <button onClick={() => navigate("/projects")} className="btn btn-primary mt-4 rounded-xl">
-          Back to Projects List
+      <div className="rounded-2xl border border-dashed border-base-content/15 bg-base-100 p-12 text-center">
+        <p className="text-base font-semibold text-base-content">Project not found</p>
+        <button
+          onClick={() => navigate("/projects")}
+          className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-content"
+        >
+          Back to Projects
         </button>
       </div>
     );
   }
 
-  const color = project.color || DEFAULT_COLOR;
+  const rawColor = project.color || DEFAULT_COLOR;
+  const themeColor = rawColor.startsWith("#") ? rawColor : DEFAULT_COLOR;
   const progress = project.progress_percentage || 0;
 
   const getProjectOwnerName = () => {
@@ -177,282 +164,162 @@ export default function ProjectDetailsPage() {
   };
 
   const ownerName = getProjectOwnerName();
-  const userMembers = members.filter((m) => m.user);
-  const teamMembers = members.filter((m) => m.team);
 
   return (
-    <div key={id} className="space-y-6 pb-10">
-      {/* Hero Header */}
-      <div
-        className="relative overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 shadow-sm"
-        style={{
-          background: `linear-gradient(135deg, ${color}14 0%, ${color}05 40%, transparent 70%)`,
-          borderColor: `${color}25`,
-        }}
-      >
-        {/* Decorative blobs */}
-        <div
-          className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full opacity-10 blur-3xl"
-          style={{ background: color }}
-        />
-        <div
-          className="pointer-events-none absolute -bottom-8 right-32 size-32 rounded-full opacity-8 blur-2xl"
-          style={{ background: color }}
-        />
-
-        <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-start sm:justify-between">
-          {/* Left: back + title */}
-          <div className="flex items-start gap-4">
-            <button
-              onClick={() => navigate("/projects")}
-              className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl border border-base-content/12 bg-base-100/60 text-base-content/60 backdrop-blur-sm transition hover:bg-base-100 hover:text-base-content"
-              aria-label="Back to projects"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                {project.prefix && (
-                  <span
-                    className="rounded-lg px-2.5 py-0.5 text-xs font-bold text-white"
-                    style={{ background: color }}
-                  >
-                    {project.prefix}
-                  </span>
-                )}
+    <div key={id} className="space-y-5 pb-10">
+      {/* Top Header */}
+      <div className="flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/projects")}
+            className="flex size-8.5 shrink-0 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-base-content/60 transition hover:bg-base-200 hover:text-base-content"
+            aria-label="Back to projects"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              {project.prefix && (
                 <span
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${
-                    statusStyles[project.status] || statusStyles.draft
-                  }`}
+                  className="rounded-lg px-2 py-0.5 text-[10px] font-bold text-white"
+                  style={{ background: themeColor }}
                 >
-                  {project.status.replace("_", " ")}
+                  {project.prefix}
                 </span>
-              </div>
-              <h1 className="mt-2 text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
+              )}
+              <h1 dir="auto" className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
                 {project.name}
               </h1>
-              <p className="mt-1 max-w-xl text-sm text-base-content/55">
-                {project.description || "No description provided."}
-              </p>
-
-              {/* Progress bar */}
-              <div className="mt-4 flex items-center gap-3">
-                <div className="h-2 w-48 max-w-full overflow-hidden rounded-full bg-base-200">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${progress}%`, background: color }}
-                  />
-                </div>
-                <span className="text-xs font-bold" style={{ color }}>
-                  {progress}%
-                </span>
-              </div>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold capitalize ${
+                  statusStyles[project.status] || statusStyles.draft
+                }`}
+              >
+                {project.status.replace("_", " ")}
+              </span>
             </div>
+            {project.description && (
+              <p dir="auto" className="mt-0.5 text-xs text-base-content/50 line-clamp-1">
+                {project.description}
+              </p>
+            )}
           </div>
-
-          {/* Right: CTA */}
-          <button
-            type="button"
-            onClick={handleOpenTasksBoard}
-            className="flex shrink-0 items-center gap-2 self-start rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-90 active:scale-95"
-            style={{ background: color, boxShadow: `0 4px 16px ${color}40` }}
-          >
-            <TaskSquare size={17} />
-            Open Tasks Board
-          </button>
         </div>
 
-        {/* Mini stats strip */}
-        <div
-          className="flex divide-x px-6 py-3 border-t divide-base-content/10"
-          style={{ borderColor: `${color}18` }}
+        <button
+          type="button"
+          onClick={handleOpenTasksBoard}
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all self-start sm:self-auto"
         >
-          {[
-            { label: "Tasks", value: project.task_count ?? 0 },
-            { label: "Members", value: (project.member_count ?? project.members_count) ?? 0 },
-            { label: "Milestones", value: project.milestone_count ?? milestones.length },
-            { label: "Deadline", value: formatDate(project.deadline) ?? "—" },
-          ].map((s) => (
-            <div key={s.label} className="flex-1 px-4 first:pl-0 last:pr-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-base-content/40">
-                {s.label}
-              </p>
-              <p className="mt-0.5 text-sm font-bold text-base-content">
-                {s.value}
-              </p>
-            </div>
-          ))}
-        </div>
+          <TaskSquare size={15} />
+          <span>Open Tasks Board</span>
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="relative border-b border-base-content/10">
-        <div className="flex gap-1 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              ref={(el) => { tabsRef.current[tab.id] = el; }}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-semibold transition-colors ${
-                activeTab === tab.id
-                  ? "text-base-content"
-                  : "text-base-content/50 hover:text-base-content/80"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-              {tab.id === "members" && members.length > 0 && (
-                <span className="rounded-full bg-base-200 px-1.5 py-0.5 text-[10px] font-bold text-base-content/55">
-                  {members.length}
-                </span>
-              )}
-              {tab.id === "milestones" && milestones.length > 0 && (
-                <span className="rounded-full bg-base-200 px-1.5 py-0.5 text-[10px] font-bold text-base-content/55">
-                  {milestones.length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-        {/* Animated underline */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            layoutId="tab-indicator"
-            className="absolute bottom-0 h-0.5 rounded-full"
-            style={{ background: color }}
-            initial={false}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            // Manually position under active tab
-            animate={{
-              width: tabsRef.current[activeTab]?.offsetWidth ?? 80,
-              x: tabsRef.current[activeTab]?.offsetLeft ?? 0,
-            }}
-          />
-        </AnimatePresence>
+      {/* Navigation Tabs */}
+      <div className="flex gap-1 overflow-x-auto rounded-xl border border-base-content/8 bg-base-100 p-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+              activeTab === tab.id
+                ? "bg-primary text-primary-content shadow-xs"
+                : "text-base-content/55 hover:bg-base-200 hover:text-base-content"
+            }`}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Panels */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.18 }}
+          transition={{ duration: 0.15 }}
         >
-          {/* ─── OVERVIEW ─── */}
+          {/* ── OVERVIEW TAB ── */}
           {activeTab === "overview" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {/* Budget */}
-                <div className="flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm">
-                  <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                    <MoneyRecive size={22} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-base-content/40">
-                      Budget
-                    </p>
-                    <p className="mt-1 truncate text-base font-bold text-base-content">
-                      {project.budget
-                        ? `${Number(project.budget).toLocaleString()} ${project.budget_currency || "IRR"}`
-                        : "Not specified"}
-                    </p>
-                  </div>
+            <div className="space-y-5">
+              {/* Quick Metrics Bar */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
+                    Budget
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-base-content truncate">
+                    {project.budget
+                      ? `${Number(project.budget).toLocaleString()} ${project.budget_currency || "IRR"}`
+                      : "—"}
+                  </p>
                 </div>
-
-                {/* Deadline */}
-                <div className="flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm">
-                  <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-500/10 text-blue-600">
-                    <Calendar size={22} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-base-content/40">
-                      Deadline
-                    </p>
-                    <p className="mt-1 truncate text-base font-bold text-base-content">
-                      {formatDate(project.deadline) ?? "No deadline"}
-                    </p>
-                  </div>
+                <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
+                    Deadline
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-base-content truncate">
+                    {formatDate(project.deadline) ?? "No deadline"}
+                  </p>
                 </div>
-
-                {/* Progress */}
-                <div className="flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm">
-                  <div
-                    className="relative grid size-11 shrink-0 place-items-center rounded-xl"
-                    style={{ background: `${color}15` }}
-                  >
-                    <TaskSquare size={22} style={{ color }} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-base-content/40">
-                        Progress
-                      </p>
-                      <span className="text-sm font-bold" style={{ color }}>{progress}%</span>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-base-200">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${progress}%`, background: color }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[11px] text-base-content/40">
-                      {project.task_count || 0} total tasks
-                    </p>
-                  </div>
+                <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
+                    Progress
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-primary">
+                    {progress}%
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
+                    Tasks
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-base-content">
+                    {project.task_count || 0}
+                  </p>
                 </div>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                {/* Upcoming milestones */}
-                <div className="space-y-4 rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm">
+              {/* Two Column Section: Milestones & Team */}
+              <div className="grid gap-4 lg:grid-cols-2">
+                {/* Milestones */}
+                <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-base-content">
-                      <Clock size={16} style={{ color }} /> Upcoming Milestones
+                    <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
+                      Upcoming Milestones
                     </h3>
                     <button
                       onClick={() => setActiveTab("milestones")}
-                      className="text-xs font-semibold hover:underline"
-                      style={{ color }}
+                      className="text-xs font-bold text-primary hover:underline"
                     >
                       View all ({milestones.length})
                     </button>
                   </div>
 
                   {milestones.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-base-content/10 py-6 text-center text-xs text-base-content/40">
+                    <p className="py-6 text-center text-xs text-base-content/40">
                       No milestones defined yet.
                     </p>
                   ) : (
-                    <div className="space-y-2.5">
+                    <div className="space-y-2">
                       {milestones.slice(0, 3).map((ms: Milestone) => {
                         const msCfg = milestoneStatusConfig[ms.status] ?? milestoneStatusConfig.pending;
                         return (
                           <div
                             key={ms.id}
-                            className="flex items-center gap-3 rounded-xl border border-base-content/5 bg-base-200/40 p-3"
+                            className="flex items-center justify-between rounded-xl border border-base-content/6 bg-base-200/40 px-3 py-2 text-xs"
                           >
-                            <div
-                              className="grid size-7 shrink-0 place-items-center rounded-lg"
-                              style={{ background: `${color}20` }}
-                            >
-                              {ms.status === "completed" ? (
-                                <TickCircle size={14} style={{ color }} />
-                              ) : (
-                                <Flag size={14} style={{ color }} />
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-semibold text-base-content">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Flag size={14} className="shrink-0 text-primary" />
+                              <span dir="auto" className="font-semibold text-base-content truncate">
                                 {ms.title}
-                              </p>
-                              <p className="mt-0.5 text-[11px] text-base-content/45">
-                                {formatDate(ms.target_date)}
-                              </p>
+                              </span>
                             </div>
-                            <span className={`shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-bold ${msCfg.cls}`}>
+                            <span className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold ${msCfg.cls}`}>
                               {msCfg.label}
                             </span>
                           </div>
@@ -462,67 +329,43 @@ export default function ProjectDetailsPage() {
                   )}
                 </div>
 
-                {/* Assigned members */}
-                <div className="space-y-4 rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm">
+                {/* Team */}
+                <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-base-content">
-                      <People size={16} style={{ color }} /> Team
+                    <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
+                      Team Members
                     </h3>
                     <button
                       onClick={() => setActiveTab("members")}
-                      className="text-xs font-semibold hover:underline"
-                      style={{ color }}
+                      className="text-xs font-bold text-primary hover:underline"
                     >
                       Manage ({members.length})
                     </button>
                   </div>
 
-                  {/* Owner */}
-                  <div
-                    className="flex items-center gap-3 rounded-xl p-3"
-                    style={{ background: `${color}10`, border: `1px solid ${color}20` }}
-                  >
-                    <div
-                      className="grid size-8 place-items-center rounded-lg font-bold text-white text-xs"
-                      style={{ background: color }}
-                    >
+                  <div className="flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-2.5">
+                    <div className="grid size-7 place-items-center rounded-lg bg-primary text-white text-xs font-bold">
                       <Crown size={14} />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-base-content">{ownerName}</p>
-                      <p className="text-[11px] font-medium" style={{ color }}>Project Owner</p>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-base-content truncate">{ownerName}</p>
+                      <p className="text-[10px] font-semibold text-primary">Project Owner</p>
                     </div>
                   </div>
 
-                  {members.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-base-content/10 py-4 text-center text-xs text-base-content/40">
-                      No additional members assigned yet.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      {members.slice(0, 6).map((m: ProjectMember) => (
+                  {members.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      {members.slice(0, 4).map((m: ProjectMember) => (
                         <div
                           key={m.id}
-                          className="flex items-center gap-2.5 rounded-xl border border-base-content/5 bg-base-200/40 p-2.5"
+                          className="flex items-center gap-2 rounded-xl border border-base-content/6 bg-base-200/40 p-2 text-xs"
                         >
-                          <div
-                            className="grid size-7 place-items-center rounded-lg text-[10px] font-bold text-white"
-                            style={{ background: color }}
-                          >
-                            {m.team ? (
-                              <People size={12} />
-                            ) : (
-                              getUserDisplayName(m)[0]?.toUpperCase() || "U"
-                            )}
+                          <div className="grid size-6 place-items-center rounded-md bg-primary/10 text-[10px] font-bold text-primary shrink-0">
+                            {getUserDisplayName(m)[0]?.toUpperCase() || "U"}
                           </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-[11px] font-semibold text-base-content">
-                              {getUserDisplayName(m)}
-                            </p>
-                            <p className="truncate text-[10px] text-base-content/45">
-                              {m.specialty || (m.team ? "Team" : "Member")}
-                            </p>
-                          </div>
+                          <span dir="auto" className="font-semibold text-base-content truncate text-[11px]">
+                            {getUserDisplayName(m)}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -532,230 +375,120 @@ export default function ProjectDetailsPage() {
             </div>
           )}
 
-          {/* ─── MEMBERS ─── */}
+          {/* ── MEMBERS TAB ── */}
           {activeTab === "members" && (
-            <div className="rounded-2xl border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-base-content/10 pb-4">
-                <div>
-                  <h3 className="text-base font-bold text-base-content">Project Members & Teams</h3>
-                  <p className="mt-0.5 text-xs text-base-content/45">
-                    Manage users and team squads assigned to this project.
-                  </p>
-                </div>
+            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
+              <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
+                <h3 className="text-sm font-bold text-base-content">
+                  Project Members &amp; Teams ({members.length})
+                </h3>
                 <button
                   type="button"
                   onClick={() => setIsAddMemberOpen(true)}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-md"
-                  style={{ background: color, boxShadow: `0 4px 12px ${color}35` }}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
                 >
-                  <Add size={15} /> Add Member / Team
+                  <Add size={14} /> Add Member
                 </button>
               </div>
 
-              {/* Owner */}
-              <div>
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                  Project Owner
-                </p>
-                <div
-                  className="flex items-center gap-4 rounded-xl p-4"
-                  style={{ background: `${color}10`, border: `1px solid ${color}25` }}
-                >
-                  <div
-                    className="grid size-10 place-items-center rounded-xl font-bold text-white"
-                    style={{ background: color }}
-                  >
-                    <Crown size={18} />
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Owner Card */}
+                <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="grid size-8 place-items-center rounded-lg bg-primary text-white text-xs font-bold shrink-0">
+                      <Crown size={15} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-base-content truncate">{ownerName}</p>
+                      <p className="text-[10px] font-semibold text-primary">Owner</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-base-content">{ownerName}</p>
-                    <p className="mt-0.5 text-xs font-medium" style={{ color }}>
-                      Owner & Project Creator
-                    </p>
-                  </div>
-                  <span
-                    className="ms-auto rounded-lg px-2.5 py-1 text-[11px] font-bold text-white"
-                    style={{ background: color }}
-                  >
-                    Owner
-                  </span>
                 </div>
-              </div>
 
-              {/* Individual users */}
-              <div>
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                  Assigned Users ({userMembers.length})
-                </p>
-                {userMembers.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-base-content/10 py-6 text-center text-xs text-base-content/40">
-                    No individual users assigned yet.
-                  </p>
-                ) : (
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {userMembers.map((m: ProjectMember) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center justify-between rounded-xl border border-base-content/5 bg-base-200/50 p-3.5"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="grid size-9 place-items-center rounded-xl font-bold text-white"
-                            style={{ background: color }}
-                          >
-                            {getUserDisplayName(m)[0]?.toUpperCase() || "U"}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-base-content">
-                              {getUserDisplayName(m)}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-base-content/50">
-                              {m.specialty || "General Member"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-lg bg-base-200 px-2 py-1 text-[11px] font-bold text-base-content/60">
-                            {m.allocation_percentage}%
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setDeleteModalState({
-                                open: true,
-                                memberId: m.id,
-                                memberName: getUserDisplayName(m),
-                              })
-                            }
-                            className="grid size-7 place-items-center rounded-lg text-red-500 hover:bg-red-50"
-                            aria-label="Remove member"
-                          >
-                            <Trash size={14} />
-                          </button>
-                        </div>
+                {/* Assigned Users & Teams */}
+                {members.map((m: ProjectMember) => (
+                  <div
+                    key={m.id}
+                    className="flex items-center justify-between rounded-xl border border-base-content/8 bg-base-200/40 p-3"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
+                        {m.team ? <People size={15} /> : getUserDisplayName(m)[0]?.toUpperCase() || "U"}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Teams */}
-              <div>
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                  Assigned Teams ({teamMembers.length})
-                </p>
-                {teamMembers.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-base-content/10 py-6 text-center text-xs text-base-content/40">
-                    No team squads assigned yet.
-                  </p>
-                ) : (
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {teamMembers.map((m: ProjectMember) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center justify-between rounded-xl border border-blue-500/12 bg-blue-500/5 p-3.5"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="grid size-9 place-items-center rounded-xl bg-blue-500/20 text-blue-600">
-                            <People size={18} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-base-content">
-                              {m.team?.name || "Team Squad"}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-blue-500">
-                              {m.specialty || "Full Squad Team"}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setDeleteModalState({
-                              open: true,
-                              memberId: m.id,
-                              memberName: m.team?.name || "Team Squad",
-                            })
-                          }
-                          className="grid size-7 place-items-center rounded-lg text-red-500 hover:bg-red-50"
-                          aria-label="Remove team"
-                        >
-                          <Trash size={14} />
-                        </button>
+                      <div className="min-w-0">
+                        <p dir="auto" className="text-xs font-bold text-base-content truncate">
+                          {getUserDisplayName(m)}
+                        </p>
+                        <p className="text-[10px] font-medium text-base-content/40 truncate">
+                          {m.specialty || (m.team ? "Team Squad" : "Member")}
+                        </p>
                       </div>
-                    ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDeleteModalState({
+                          open: true,
+                          memberId: m.id,
+                          memberName: getUserDisplayName(m),
+                        })
+                      }
+                      className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
+                      aria-label="Remove member"
+                    >
+                      <Trash size={13} />
+                    </button>
                   </div>
-                )}
+                ))}
               </div>
             </div>
           )}
 
-          {/* ─── MILESTONES ─── */}
+          {/* ── MILESTONES TAB ── */}
           {activeTab === "milestones" && (
-            <div className="rounded-2xl border border-base-content/10 bg-base-100 p-6 shadow-sm">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-base-content">Project Milestones</h3>
-                  <p className="mt-0.5 text-xs text-base-content/45">
-                    Key goals and delivery target dates.
-                  </p>
-                </div>
+            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
+              <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
+                <h3 className="text-sm font-bold text-base-content">
+                  Project Milestones ({milestones.length})
+                </h3>
                 <button
                   type="button"
                   onClick={() => setIsCreateMilestoneOpen(true)}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-md"
-                  style={{ background: color, boxShadow: `0 4px 12px ${color}35` }}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
                 >
-                  <Add size={15} /> Create Milestone
+                  <Add size={14} /> New Milestone
                 </button>
               </div>
 
               {milestones.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-base-content/10 py-10 text-center text-sm text-base-content/40">
+                <p className="py-8 text-center text-xs text-base-content/40">
                   No milestones added to this project yet.
                 </p>
               ) : (
-                <div className="relative space-y-0">
-                  {/* Timeline line */}
-                  <div className="absolute left-[19px] top-6 bottom-6 w-0.5 rounded-full bg-base-200" />
-                  {milestones.map((ms: Milestone, idx: number) => {
+                <div className="space-y-2">
+                  {milestones.map((ms: Milestone) => {
                     const msCfg = milestoneStatusConfig[ms.status] ?? milestoneStatusConfig.pending;
                     return (
-                      <div key={ms.id} className="relative flex gap-4 pb-4">
-                        {/* Timeline dot */}
-                        <div
-                          className={`relative z-10 mt-3 grid size-10 shrink-0 place-items-center rounded-xl border-2 border-base-100 ${
-                            ms.status === "completed"
-                              ? "bg-emerald-500 text-white"
-                              : ms.status === "in_progress"
-                              ? "text-white"
-                              : "bg-base-200 text-base-content/40"
-                          }`}
-                          style={
-                            ms.status === "in_progress"
-                              ? { background: color }
-                              : undefined
-                          }
-                        >
-                          <span className="text-xs font-bold">{idx + 1}</span>
-                        </div>
-                        <div className="flex-1 rounded-xl border border-base-content/5 bg-base-200/40 p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-bold text-base-content">{ms.title}</p>
-                              {ms.description && (
-                                <p className="mt-1 text-xs text-base-content/55">{ms.description}</p>
-                              )}
-                              <p className="mt-2 flex items-center gap-1.5 text-[11px] text-base-content/40">
-                                <Calendar size={12} />
+                      <div
+                        key={ms.id}
+                        className="flex items-center justify-between rounded-xl border border-base-content/6 bg-base-200/40 p-3 text-xs"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Flag size={15} className="shrink-0 text-primary" />
+                          <div className="min-w-0">
+                            <p dir="auto" className="font-bold text-base-content truncate">
+                              {ms.title}
+                            </p>
+                            {ms.target_date && (
+                              <p className="text-[10px] text-base-content/45 mt-0.5">
                                 Target: {formatDate(ms.target_date)}
                               </p>
-                            </div>
-                            <span className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold ${msCfg.cls}`}>
-                              {msCfg.label}
-                            </span>
+                            )}
                           </div>
                         </div>
+                        <span className={`shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold ${msCfg.cls}`}>
+                          {msCfg.label}
+                        </span>
                       </div>
                     );
                   })}
@@ -764,38 +497,32 @@ export default function ProjectDetailsPage() {
             </div>
           )}
 
-          {/* ─── ACTIVITY ─── */}
+          {/* ── ACTIVITY TAB ── */}
           {activeTab === "activity" && (
-            <div className="rounded-2xl border border-base-content/10 bg-base-100 p-6 shadow-sm">
-              <h3 className="mb-5 text-base font-bold text-base-content">Activity Feed</h3>
+            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
+              <h3 className="text-sm font-bold text-base-content border-b border-base-content/8 pb-3">
+                Activity Feed
+              </h3>
               {activities.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-base-content/10 py-10 text-center text-sm text-base-content/40">
+                <p className="py-8 text-center text-xs text-base-content/40">
                   No recent activity logged for this project.
                 </p>
               ) : (
                 <div className="space-y-2">
                   {activities.map((act: ProjectActivity) => {
-                    const evKey = act.event_type?.toLowerCase().replace(/\s/g, "_");
-                    const evConfig = eventTypeIcon[evKey] || { icon: "•", color };
                     const actorName =
                       act.actor?.full_name || act.actor?.username || "System";
                     return (
                       <div
                         key={act.id}
-                        className="flex items-center gap-3 rounded-xl border border-base-content/5 bg-base-200/40 p-3.5"
+                        className="flex items-center justify-between rounded-xl border border-base-content/5 bg-base-200/30 px-3.5 py-2.5 text-xs"
                       >
-                        <div
-                          className="grid size-8 shrink-0 place-items-center rounded-xl text-sm font-bold text-white"
-                          style={{ background: evConfig.color }}
-                        >
-                          {evConfig.icon}
-                        </div>
-                        <p className="flex-1 text-xs font-medium text-base-content">
+                        <p className="font-medium text-base-content/80 truncate">
                           <span className="font-bold text-primary">{actorName}</span>
                           {" "}
                           {(act as any).event_type_display || act.event_type}
                         </p>
-                        <span className="shrink-0 text-[11px] font-medium text-base-content/35">
+                        <span className="shrink-0 text-[10px] font-semibold text-base-content/40 ms-2">
                           {formatDate(act.created_at)}
                         </span>
                       </div>

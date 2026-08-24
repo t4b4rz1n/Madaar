@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { TimeLog } from "../../attendance/types";
 import { motion } from "framer-motion";
-import { ArrowRight, Calendar, Clock, Refresh2, Timer1, TickCircle } from "iconsax-reactjs";
+import { ArrowRight, Clock, Refresh2, Timer1, TickCircle } from "iconsax-reactjs";
 import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -144,26 +144,32 @@ const UserDashboardPage = () => {
       animate={{ opacity: 1 }}
       className="mx-auto max-w-[1440px] space-y-5 sm:space-y-7"
     >
-      <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary">
-            <Calendar size={15} />
-            {formatDay()}
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
+              Good morning, {displayName}
+            </h1>
           </div>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-base-content sm:text-4xl">
-            Good morning, {displayName}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/55 sm:text-base">
-            Here&apos;s your clear path through the day. Focus on what matters next.
+          <p className="mt-1 text-xs font-medium text-base-content/50">
+            {formatDay()} — Focus on what matters next today.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link to="/tasks" className="motion-interactive inline-flex h-11 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-4 text-sm font-bold text-base-content/70 shadow-sm hover:border-primary/30 hover:text-primary">
-            Open workspace <ArrowRight size={16} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/tasks"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-base-content/10 bg-base-100 px-3.5 text-xs font-bold text-base-content/75 shadow-xs hover:border-primary/40 hover:text-primary transition-all"
+          >
+            <span>Open Tasks</span>
+            <ArrowRight size={14} />
           </Link>
-          <button type="button" onClick={() => setStandupOpen(true)} className="motion-interactive inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-content shadow-lg shadow-primary/15 hover:bg-primary/90">
-            <TickCircle size={17} />
-            {dashboard?.today_standup ? "Update standup" : "Write standup"}
+          <button
+            type="button"
+            onClick={() => setStandupOpen(true)}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
+          >
+            <TickCircle size={15} />
+            <span>{dashboard?.today_standup ? "Update Standup" : "Write Standup"}</span>
           </button>
         </div>
       </section>

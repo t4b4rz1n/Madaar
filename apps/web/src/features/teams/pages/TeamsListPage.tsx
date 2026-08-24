@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Add, People } from "iconsax-reactjs";
+import { Add } from "iconsax-reactjs";
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../../components/Pagination";
@@ -159,17 +159,22 @@ export default function TeamsListPage() {
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
         >
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-base-content">
-              <People size={28} /> Teams Management
-            </h1>
-            <p className="text-base-content/70 mt-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
+                Teams
+              </h1>
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+                {totalResults}
+              </span>
+            </div>
+            <p className="mt-1 text-xs font-medium text-base-content/50">
               Manage and structure organizational teams and squads.
             </p>
           </div>
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+          <div className="flex items-center gap-2">
             <ViewSwitcher
               viewMode={viewMode}
               setViewMode={setViewMode}
@@ -177,11 +182,12 @@ export default function TeamsListPage() {
             />
             {canManageTeams && (
               <button
+                type="button"
                 onClick={handleCreateTeam}
-                className="btn btn-primary rounded-xl gap-2"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
               >
-                <Add size={20} />
-                <span>Create Team</span>
+                <Add size={16} />
+                <span>New Team</span>
               </button>
             )}
           </div>
