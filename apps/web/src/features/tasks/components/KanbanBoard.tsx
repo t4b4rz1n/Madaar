@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBoards, getTasks, moveTask, createTask, reorderTasks, createStatus, updateTask } from '../api/tasksApi';
 import { getActiveTimers, startTimer, stopTimer } from '../../attendance/api/attendanceApi';
@@ -7,6 +8,7 @@ import { useTaskStore } from '../store/useTaskStore';
 import { useAuthStore } from '../../auth/store/authStore';
 import { TaskCard } from './TaskCard';
 import { TaskSheet } from './TaskSheet';
+import { FocusModeView } from './FocusModeView';
 import { DroppableColumn } from './DroppableColumn';
 import type { Task } from '../types';
 
@@ -26,20 +28,23 @@ import type {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableTask } from './SortableTask';
-import { Add, More, SearchNormal1 } from 'iconsax-reactjs';
+import { Add, More, SearchNormal1, TickCircle, Category, Activity, User, Danger, Flash } from 'iconsax-reactjs';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export const KanbanBoard: React.FC = () => {
   const { activeProjectId, activeBoardId, selectedTaskId, setSelectedTaskId } = useTaskStore();
+  const currentUser = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const selectedTaskIdParam = selectedTaskId;
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'blocked' | 'priority'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'my-tasks' | 'blocked' | 'priority'>('all');
   const [focusMode, setFocusMode] = useState(false);
   const [focusedTaskId, setFocusedTaskId] = useState<string | number | null>(null);
+  const [columnSorts, setColumnSorts] = useState<Record<string, 'priority' | 'due_date' | 'title' | null>>({});
+  const [columnMenuAnchor, setColumnMenuAnchor] = useState<{ id: string | number; rect: DOMRect } | null>(null);
 
   const setSelectedTaskForSheet = (task: Task | null) => {
     setSelectedTaskId(task ? task.id.toString() : null);
@@ -515,7 +520,6 @@ export const KanbanBoard: React.FC = () => {
 
   const board = boards.find(b => b.id.toString() === activeBoardId) || boards[0];
   const normalizedSearch = searchQuery.trim().toLowerCase();
-  const currentUser = useAuthStore((state) => state.user);
   const filteredTasks = localTasks.filter(task => {
     const matchesSearch = !normalizedSearch || `${task.title} ${task.key}`.toLowerCase().includes(normalizedSearch);
     const matchesFilter = filter === 'all'
@@ -553,22 +557,30 @@ export const KanbanBoard: React.FC = () => {
                 const labels: Record<string, string> = {
                   all: 'All',
                   active: 'Active',
-                  'my-tasks': 'My Tasks 👤',
-                  blocked: 'Blocked ⚠️',
-                  priority: 'High Priority 🔥',
+                  'my-tasks': 'My Tasks',
+                  blocked: 'Blocked',
+                  priority: 'High Priority',
+                };
+                const icons: Record<string, React.ReactNode> = {
+                  all: <Category size={13} />,
+                  active: <Activity size={13} />,
+                  'my-tasks': <User size={13} />,
+                  blocked: <Danger size={13} className="text-red-500" />,
+                  priority: <Flash size={13} className="text-amber-500" />,
                 };
                 return (
                   <button
                     key={item}
                     type="button"
                     onClick={() => setFilter(item)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
                       filter === item
                         ? 'bg-base-100 text-primary shadow-xs'
                         : 'text-base-content/50 hover:text-base-content'
                     }`}
                   >
-                    {labels[item]}
+                    {icons[item]}
+                    <span>{labels[item]}</span>
                   </button>
                 );
               })}
@@ -637,17 +649,20 @@ export const KanbanBoard: React.FC = () => {
         </div>
       </div>
 
-      {focusMode && focusTask ? (
-        <div className="flex flex-1 items-center justify-center overflow-auto p-6 sm:p-10">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="madaar-surface w-full max-w-2xl p-6 sm:p-10">
-            <div className="mb-8 flex items-center justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Focus mode</p><p className="mt-2 text-sm text-base-content/45">One task, one clear next step.</p></div><button type="button" onClick={() => setFocusMode(false)} className="motion-interactive rounded-xl border border-base-content/10 px-3 py-2 text-xs font-bold text-base-content/55 hover:text-base-content">Back to board</button></div>
-            <span className="text-xs font-bold text-primary">{focusTask.key} · {focusTask.status_detail?.name || 'No status'}</span>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-base-content">{focusTask.title}</h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-base-content/55">{focusTask.description || 'Open the task sheet to add context and define the next step.'}</p>
-            <div className="mt-8 flex flex-wrap items-center gap-3"><button type="button" onClick={() => focusTask.is_active_timer_running ? handleStopTimer(focusTask.id) : handlePlayTimer(focusTask.id)} className={`motion-interactive rounded-xl px-5 py-3 text-sm font-bold ${focusTask.is_active_timer_running ? 'bg-error/10 text-error' : 'bg-primary text-primary-content'}`}>{focusTask.is_active_timer_running ? 'Stop timer' : 'Start timer'}</button><button type="button" onClick={() => setSelectedTaskForSheet(focusTask)} className="motion-interactive rounded-xl border border-base-content/10 px-5 py-3 text-sm font-bold text-base-content/65 hover:border-primary/30 hover:text-primary">Open task sheet</button></div>
-          </motion.div>
-        </div>
-      ) : <div className="flex-1 overflow-x-auto overflow-y-hidden">
+      {focusMode ? (
+        <FocusModeView
+          tasks={filteredTasks.length > 0 ? filteredTasks : localTasks}
+          focusedTaskId={focusedTaskId || focusTask?.id || null}
+          onSelectTask={(id) => setFocusedTaskId(id)}
+          onExit={() => setFocusMode(false)}
+          onOpenSheet={(t) => setSelectedTaskForSheet(t)}
+          onPlayTimer={handlePlayTimer}
+          onStopTimer={handleStopTimer}
+          onToggleDone={handleToggleDone}
+          activeTimer={activeTimers?.[0]}
+        />
+      ) : (
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
       <div className="flex h-full items-start gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
         <DndContext
           sensors={sensors}
@@ -661,12 +676,27 @@ export const KanbanBoard: React.FC = () => {
             const isDoneColumn = status.code === 'done' || status.name.toLowerCase() === 'done' || status.name.toLowerCase() === 'completed';
             const statusColor = getStatusColor(status.code, status.name);
 
+            const sortType = columnSorts[status.id.toString()];
+            let displayColumnTasks = [...columnTasks];
+            if (sortType === 'priority') {
+              const prioWeight: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+              displayColumnTasks.sort((a, b) => (prioWeight[b.priority] || 0) - (prioWeight[a.priority] || 0));
+            } else if (sortType === 'due_date') {
+              displayColumnTasks.sort((a, b) => {
+                if (!a.due_date) return 1;
+                if (!b.due_date) return -1;
+                return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+              });
+            } else if (sortType === 'title') {
+              displayColumnTasks.sort((a, b) => a.title.localeCompare(b.title));
+            }
+
             return (
               <DroppableColumn
                 key={status.id}
                 id={`col-${status.id}`}
-                className={`min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-full bg-base-100/80 border shadow-sm transition-opacity ${
-                  isDoneColumn ? 'opacity-70 hover:opacity-100 border-emerald-500/15' : 'border-base-content/8'
+                className={`min-w-[282px] w-[282px] flex flex-col h-fit max-h-full bg-transparent transition-opacity ${
+                  isDoneColumn ? 'opacity-70 hover:opacity-100' : ''
                 }`}
               >
                 <div className="mb-3 flex shrink-0 items-center justify-between px-1">
@@ -683,14 +713,135 @@ export const KanbanBoard: React.FC = () => {
                       {columnTasks.length}
                     </span>
                   </div>
-                  <span aria-hidden="true" className="rounded-lg p-1 text-base-content/25">
-                    <More size={16} />
-                  </span>
+
+                  {/* Interactive Column Actions Menu */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (columnMenuAnchor?.id === status.id) {
+                          setColumnMenuAnchor(null);
+                        } else {
+                          setColumnMenuAnchor({
+                            id: status.id,
+                            rect: e.currentTarget.getBoundingClientRect(),
+                          });
+                        }
+                      }}
+                      className="rounded-lg p-1 text-base-content/40 hover:bg-base-200 hover:text-base-content transition"
+                      title="Column options"
+                    >
+                      <More size={16} />
+                    </button>
+
+                    {columnMenuAnchor && columnMenuAnchor.id === status.id && createPortal(
+                      <>
+                        <div className="fixed inset-0 z-45" onClick={() => setColumnMenuAnchor(null)} />
+                        <div
+                          className="fixed z-50 w-52 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-xs font-semibold shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+                          style={{
+                            top: columnMenuAnchor.rect.bottom + 4,
+                            left: Math.max(10, columnMenuAnchor.rect.right - 208),
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setColumnMenuAnchor(null);
+                              setAddingTaskToStatusId(status.id);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-primary hover:bg-primary/10"
+                          >
+                            <Add size={14} /> Add task to column
+                          </button>
+
+                          <div className="my-1 h-px bg-base-content/8" />
+
+                          <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
+                            Sort Column
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: null }));
+                              setColumnMenuAnchor(null);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                              !sortType ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
+                            }`}
+                          >
+                            Default Order
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'priority' }));
+                              setColumnMenuAnchor(null);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                              sortType === 'priority' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
+                            }`}
+                          >
+                            By Priority (High → Low)
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'due_date' }));
+                              setColumnMenuAnchor(null);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                              sortType === 'due_date' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
+                            }`}
+                          >
+                            By Due Date
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'title' }));
+                              setColumnMenuAnchor(null);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                              sortType === 'title' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
+                            }`}
+                          >
+                            By Title (A - Z)
+                          </button>
+
+                          {columnTasks.length > 0 && (
+                            <>
+                              <div className="my-1 h-px bg-base-content/8" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColumnMenuAnchor(null);
+                                  columnTasks.forEach((t) => {
+                                    if (!t.is_finished) handleToggleDone(t.id);
+                                  });
+                                }}
+                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-emerald-600 hover:bg-emerald-500/10"
+                              >
+                                <TickCircle size={14} /> Mark all as done
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </>,
+                      document.body
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1">
-                  <SortableContext items={columnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
-                    {columnTasks.map(task => (
+                  <SortableContext items={displayColumnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
+                    {displayColumnTasks.map(task => (
                       <SortableTask
                         key={task.id}
                         task={task}
@@ -703,13 +854,10 @@ export const KanbanBoard: React.FC = () => {
                     ))}
                   </SortableContext>
 
-                  {columnTasks.length === 0 && addingTaskToStatusId !== status.id && (
-                    <div className="rounded-xl border border-dashed border-base-content/10 px-3 py-8 text-center text-[11px] font-semibold text-base-content/35">No tasks here</div>
-                  )}
 
                   {addingTaskToStatusId === status.id && (
                     <div
-                      className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-2.5"
+                      className="mt-2 rounded-2xl border border-primary/20 bg-base-100 p-3.5 shadow-md animate-in fade-in slide-in-from-top-2 duration-150"
                       tabIndex={-1}
                       onBlur={(e) => {
                         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -719,45 +867,71 @@ export const KanbanBoard: React.FC = () => {
                         }
                       }}
                     >
-                      <input
+                      <textarea
                         autoFocus
+                        rows={2}
                         value={newTaskTitle}
                         onChange={e => setNewTaskTitle(e.target.value)}
                         onKeyDown={e => {
-                          if (e.key === 'Enter') handleCreateTask(status.id);
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleCreateTask(status.id);
+                          }
                           if (e.key === 'Escape') {
                             setAddingTaskToStatusId(null);
                             setNewTaskTitle('');
                             setNewTaskPriority('low');
                           }
                         }}
-                        placeholder="Task title..."
-                        className="w-full bg-transparent text-[13px] font-medium text-base-content outline-none placeholder:text-base-content/40 placeholder:font-normal"
+                        dir="auto"
+                        placeholder="What needs to be done?"
+                        className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-base-content/30 resize-none leading-snug"
                       />
-                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                        <select
-                          value={newTaskPriority}
-                          onChange={(e) => setNewTaskPriority(e.target.value as any)}
-                          className="h-7 cursor-pointer rounded-md border border-base-content/15 bg-base-100 px-2 text-[11px] font-medium text-base-content/70 outline-none transition-colors hover:bg-base-200 focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
-                        >
-                          <option value="low">Low Priority</option>
-                          <option value="medium">Medium Priority</option>
-                          <option value="high">High Priority</option>
-                          <option value="critical">Critical Priority</option>
-                        </select>
-                        <div className="flex shrink-0 items-center gap-1.5">
+
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-base-content/6 pt-2">
+                        {/* Custom Priority Dot Buttons */}
+                        <div className="flex items-center gap-1.5">
+                          {(['low', 'medium', 'high', 'critical'] as const).map((p) => {
+                            const pColors: Record<string, string> = {
+                              low: 'bg-base-content/20 hover:bg-base-content/40 active:ring-base-content/10',
+                              medium: 'bg-blue-500 hover:bg-blue-600 active:ring-blue-500/20',
+                              high: 'bg-amber-500 hover:bg-amber-600 active:ring-amber-500/20',
+                              critical: 'bg-red-500 hover:bg-red-600 active:ring-red-500/20',
+                            };
+                            const isSelected = newTaskPriority === p;
+                            return (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => setNewTaskPriority(p)}
+                                className={`size-3.5 rounded-full transition-all active:ring-4 ${pColors[p]} ${
+                                  isSelected ? 'ring-2 ring-primary scale-125' : 'opacity-60 hover:opacity-100'
+                                }`}
+                                title={`${p.toUpperCase()} priority`}
+                              />
+                            );
+                          })}
+                          <span className="text-[10px] font-bold text-base-content/40 capitalize ml-1">
+                            {newTaskPriority}
+                          </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1">
                           <button
+                            type="button"
                             onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); setNewTaskPriority('low'); }}
-                            className="h-7 rounded-md px-2.5 text-[11px] font-medium text-base-content/60 transition-colors hover:bg-base-content/10 hover:text-base-content"
+                            className="rounded-lg px-2 py-1 text-[11px] font-semibold text-base-content/50 hover:bg-base-200 transition"
                           >
                             Cancel
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleCreateTask(status.id)}
                             disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
-                            className="h-7 rounded-md bg-primary px-3 text-[11px] font-bold text-primary-content shadow-sm transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
                           >
-                            {createTaskMutation.isPending ? 'Adding...' : 'Add'}
+                            {createTaskMutation.isPending ? '...' : 'Add'}
                           </button>
                         </div>
                       </div>
@@ -773,9 +947,9 @@ export const KanbanBoard: React.FC = () => {
                       setNewTaskTitle('');
                       setNewTaskPriority('low');
                     }}
-                    className="motion-interactive mt-1 flex shrink-0 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] font-medium text-base-content/50 transition-colors hover:bg-base-200 hover:text-base-content/90"
+                    className="mt-1.5 flex shrink-0 w-full items-center justify-center gap-1 rounded-xl border border-dashed border-base-content/10 py-2 text-xs font-bold text-base-content/35 transition hover:border-base-content/25 hover:text-base-content/65 hover:bg-base-100/50"
                   >
-                    <span className="text-lg leading-none mb-0.5">+</span>
+                    <span className="text-sm leading-none mb-0.5">+</span>
                     <span>Add card</span>
                   </button>
                 )}
@@ -785,7 +959,7 @@ export const KanbanBoard: React.FC = () => {
 
 
           {isAddingStatus ? (
-            <div className="madaar-surface min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-full bg-base-100/80">
+            <div className="min-w-[282px] w-[282px] rounded-2xl border border-base-content/10 bg-base-100 p-3.5 flex flex-col h-fit shadow-md animate-in fade-in slide-in-from-top-2 duration-150">
               <input
                 autoFocus
                 value={newStatusName}
@@ -798,19 +972,19 @@ export const KanbanBoard: React.FC = () => {
                   }
                 }}
                 placeholder="Status name..."
-                className="w-full bg-transparent text-[13px] text-base-content outline-none placeholder:text-base-content/35 px-2 py-1 mb-2 border border-base-content/10 rounded-lg"
+                className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-base-content/30 px-2 py-1 mb-2.5 border border-base-content/10 rounded-lg"
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleCreateStatus}
                   disabled={!newStatusName.trim() || createStatusMutation.isPending}
-                  className="rounded-lg bg-primary px-3 py-1.5 text-[12px] font-bold text-primary-content transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 flex-1"
+                  className="rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-content transition hover:bg-primary/95 disabled:cursor-not-allowed disabled:opacity-40 flex-1"
                 >
                   {createStatusMutation.isPending ? '...' : 'Add Status'}
                 </button>
                 <button
                   onClick={() => { setIsAddingStatus(false); setNewStatusName(''); }}
-                  className="px-3 py-1.5 text-[12px] text-base-content/45 transition-colors hover:text-base-content/80"
+                  className="px-3 py-1.5 text-[11px] font-semibold text-base-content/50 hover:bg-base-200 rounded-lg transition"
                 >
                   Cancel
                 </button>
@@ -819,9 +993,9 @@ export const KanbanBoard: React.FC = () => {
           ) : (
             <button
               onClick={() => setIsAddingStatus(true)}
-              className="min-w-[292px] w-[292px] rounded-[22px] p-3 flex items-center justify-center gap-2 border-2 border-dashed border-base-content/10 text-base-content/45 hover:border-base-content/20 hover:bg-base-200/50 hover:text-base-content/60 transition-all h-[56px] font-semibold text-sm"
+              className="min-w-[282px] w-[282px] rounded-2xl p-4 flex items-center justify-center gap-1.5 border border-dashed border-base-content/15 text-base-content/40 hover:border-base-content/25 hover:bg-base-100/50 hover:text-base-content/65 transition h-[56px] font-bold text-xs"
             >
-              <span className="text-lg leading-none mb-0.5">+</span>
+              <span className="text-sm leading-none mb-0.5">+</span>
               Add Status
             </button>
           )}
@@ -830,7 +1004,8 @@ export const KanbanBoard: React.FC = () => {
           </DragOverlay>
         </DndContext>
       </div>
-      </div>}
+    </div>
+  )}
 
       <TaskSheet
         task={selectedTaskIdParam ? localTasks.find(t => String(t.id) === selectedTaskIdParam) || null : null}

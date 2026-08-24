@@ -206,29 +206,29 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
 
         {/* ─── Title & Checkbox (Inline with dir="auto") ─── */}
-        <div className="mt-2 flex items-start gap-2.5" dir="auto">
+        <div className="mt-2.5 flex items-start gap-2" dir="auto">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               (onToggleDone || onMarkDone)?.(task.id);
             }}
-            className={`mt-0.5 grid size-4.5 shrink-0 place-items-center rounded-md transition ${
+            className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded transition ${
               isActuallyDone
                 ? "bg-emerald-500 text-white"
                 : "border border-base-content/25 hover:border-emerald-500 hover:bg-emerald-500/10"
             }`}
             title={isActuallyDone ? "Mark incomplete" : "Mark done"}
           >
-            {isActuallyDone && <TickCircle size={13} variant="Bold" />}
+            {isActuallyDone && <TickCircle size={11} variant="Bold" />}
           </button>
 
           <div className="min-w-0 flex-1">
             <h3
               dir="auto"
-              className={`text-[13px] font-semibold leading-snug ${
+              className={`text-[12.5px] font-semibold leading-snug tracking-tight ${
                 isActuallyDone
-                  ? "text-base-content/40 line-through"
+                  ? "text-base-content/35 line-through"
                   : "text-base-content"
               }`}
             >
@@ -238,7 +238,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {task.description && (
               <p
                 dir="auto"
-                className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-base-content/45"
+                className="mt-0.5 line-clamp-2 text-[10.5px] leading-normal text-base-content/40"
               >
                 {task.description}
               </p>
@@ -246,63 +246,45 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         </div>
 
-        {/* ─── Meta Info Row ─── */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-base-content/45">
-          {/* Priority Badge */}
-          <span
-            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${prio.bg} ${prio.text}`}
-          >
-            <span className={`size-1.5 rounded-full ${prio.dot}`} />
-            {prio.label}
-          </span>
+        {/* ─── Meta Info Row (Compact, No redundant priority pill or progress bar) ─── */}
+        {(task.due_date || checklist?.total || task.comments_count || task.is_blocked || isOverdue) ? (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-base-content/40">
+            {task.is_blocked && (
+              <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 font-bold text-amber-600">
+                Blocked
+              </span>
+            )}
 
-          {task.is_blocked && (
-            <span className="rounded-md bg-amber-500/12 px-2 py-0.5 text-[10px] font-bold text-amber-600">
-              Blocked
-            </span>
-          )}
+            {isOverdue && (
+              <span className="rounded-md bg-red-500/10 px-1.5 py-0.5 font-bold text-red-500">
+                Overdue
+              </span>
+            )}
 
-          {isOverdue && (
-            <span className="rounded-md bg-red-500/12 px-2 py-0.5 text-[10px] font-bold text-red-500">
-              Overdue
-            </span>
-          )}
+            {task.due_date && (
+              <span
+                className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold ${
+                  isOverdue ? "bg-red-500/10 text-red-500" : "bg-base-200/50"
+                }`}
+              >
+                <Calendar1 size={11} />
+                {formatDate(task.due_date)}
+              </span>
+            )}
 
-          {task.due_date && (
-            <span
-              className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium ${
-                isOverdue ? "bg-red-500/10 text-red-500 font-bold" : "bg-base-200/60"
-              }`}
-            >
-              <Calendar1 size={12} />
-              {formatDate(task.due_date)}
-            </span>
-          )}
+            {checklist?.total ? (
+              <span className="flex items-center gap-1 rounded-md bg-base-200/50 px-1.5 py-0.5 font-semibold">
+                <TaskSquare size={11} />
+                {checklist.done}/{checklist.total}
+              </span>
+            ) : null}
 
-          {checklist?.total ? (
-            <span className="flex items-center gap-1 rounded-md bg-base-200/60 px-1.5 py-0.5 font-medium">
-              <TaskSquare size={12} />
-              {checklist.done}/{checklist.total}
-            </span>
-          ) : null}
-
-          {Boolean(task.comments_count) && (
-            <span className="flex items-center gap-1 rounded-md bg-base-200/60 px-1.5 py-0.5 font-medium">
-              <Message size={12} />
-              {task.comments_count}
-            </span>
-          )}
-        </div>
-
-        {/* Checklist progress bar */}
-        {checklist?.total ? (
-          <div className="mt-2 h-1 overflow-hidden rounded-full bg-base-200">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                progress === 100 ? "bg-emerald-500" : "bg-primary"
-              }`}
-              style={{ width: `${Math.min(100, progress)}%` }}
-            />
+            {Boolean(task.comments_count) && (
+              <span className="flex items-center gap-1 rounded-md bg-base-200/50 px-1.5 py-0.5 font-semibold">
+                <Message size={11} />
+                {task.comments_count}
+              </span>
+            )}
           </div>
         ) : null}
 
