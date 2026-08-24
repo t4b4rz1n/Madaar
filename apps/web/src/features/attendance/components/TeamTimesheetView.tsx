@@ -8,7 +8,7 @@ import { People, ArrowLeft2, ArrowRight2 } from 'iconsax-reactjs';
 export const TeamTimesheetView: React.FC = () => {
   const { activeOrganizationId } = useAttendanceStore();
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 6 }));
-  
+
   const startDateStr = format(currentWeek, 'yyyy-MM-dd');
   const endDateStr = format(addDays(currentWeek, 6), 'yyyy-MM-dd');
 
@@ -29,7 +29,7 @@ export const TeamTimesheetView: React.FC = () => {
 
   // Group by user
   const userMap = new Map<string, { total: number, days: Record<string, number> }>();
-  
+
   timesheet.forEach(entry => {
     const username = entry.user__username || 'Unknown';
     if (!userMap.has(username)) {
@@ -41,7 +41,7 @@ export const TeamTimesheetView: React.FC = () => {
   });
 
   const users = Array.from(userMap.entries()).map(([name, data]) => ({ name, ...data }));
-  
+
   // Generate week dates for headers
   const weekDates = [...Array(7)].map((_, i) => addDays(currentWeek, i));
 
@@ -56,7 +56,7 @@ export const TeamTimesheetView: React.FC = () => {
           <div className="grid size-10 place-items-center rounded-xl bg-info/10 text-info"><People size={20} /></div>
           <div><h2 className="text-base font-semibold text-base-content">Team weekly timesheet</h2><p className="mt-1 text-xs text-base-content/45">Compare logged hours across the week.</p></div>
         </div>
-        
+
         <div className="flex items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 p-1">
           <button type="button" onClick={prevWeek} className="grid size-8 place-items-center rounded-lg text-base-content/45 transition-colors hover:bg-base-100 hover:text-base-content">
             <ArrowLeft2 size={18} />

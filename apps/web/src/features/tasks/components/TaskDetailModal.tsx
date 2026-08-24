@@ -520,7 +520,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                   className={`w-full bg-transparent text-[14px] text-white/90 outline-none resize-none px-4 py-3 transition-all duration-200 custom-scrollbar ${isCommentInputFocused || commentText.trim() || selectedFile ? 'min-h-[80px]' : 'min-h-[44px] m-0 overflow-hidden'}`}
                   placeholder="Write a comment... (Markdown supported)"
                 />
-                
+
                 {selectedFile && (
                   <div className="px-4 py-2 flex items-center justify-between bg-primary/10 border-t border-primary/20 rounded-b-xl mb-2 mx-2">
                     <span className="text-xs text-primary truncate flex-1">{selectedFile.name}</span>
@@ -530,10 +530,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                   </div>
                 )}
 
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  hidden 
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  hidden
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
@@ -550,10 +550,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                 {(isCommentInputFocused || commentText.trim().length > 0 || selectedFile) && (
                   <div className="flex justify-between items-center px-3 pb-3">
                     <div className="flex gap-1">
-                      <button 
+                      <button
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => fileInputRef.current?.click()} 
-                        className="p-2 text-white/50 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center" 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 text-white/50 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center"
                         title="Attach file (Max 5MB)"
                       >
                         <Paperclip2 size={18}/>
@@ -618,7 +618,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                                   <ReactMarkdown>
                                     {typeof item.content === 'string' ? item.content : '*No content*'}
                                   </ReactMarkdown>
-                                  
+
                                   {typeof item.attached_file_url === 'string' && (
                                     <div className="mt-4 pt-3 border-t border-white/10">
                                       {item.attached_file_url.match(/\.(jpeg|jpg|gif|png)$/i) != null ? (

@@ -461,9 +461,7 @@ class TelegramBotService:
         )
 
         if not memberships:
-            msg = _(
-                " <b>My Projects</b>\n\nYou are currently not a member of any active project."
-            )
+            msg = _(" <b>My Projects</b>\n\nYou are currently not a member of any active project.")
         else:
             lines = [_(" <b>My Projects</b>\n")]
             for i, m in enumerate(memberships, 1):
@@ -515,8 +513,7 @@ class TelegramBotService:
                 status_name = t.status.name if t.status else "—"
                 project_name = t.project.name if t.project else "—"
                 lines.append(
-                    f"{i}. {p_emoji} <b>{t.title}</b>\n"
-                    f"      {project_name} |  {status_name}"
+                    f"{i}. {p_emoji} <b>{t.title}</b>\n" f"      {project_name} |  {status_name}"
                 )
 
             # Summary
@@ -580,9 +577,9 @@ class TelegramBotService:
 
             if m.role == OrganizationMembership.Role.OWNER:
                 owner_orgs.append(
-                    _(
-                        " You are the owner of organization <b>{org}</b> ( {count} members)"
-                    ).format(org=org.name, count=member_count)
+                    _(" You are the owner of organization <b>{org}</b> ( {count} members)").format(
+                        org=org.name, count=member_count
+                    )
                 )
                 owner_org_ids.add(org.id)
             else:
@@ -616,9 +613,7 @@ class TelegramBotService:
         cls._update_user_language(user, lang)
 
         if not user or not user.is_superuser:
-            cls._send_or_edit(
-                chat_id, _(" Unauthorized access."), edit_message_id=edit_message_id
-            )
+            cls._send_or_edit(chat_id, _(" Unauthorized access."), edit_message_id=edit_message_id)
             return
 
         from accounts.models import User as AccountUser
@@ -882,9 +877,7 @@ class TelegramBotService:
         if user:
             cls._update_user_language(user, lang)
             error_msg = _(
-                _(
-                    " <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:"
-                )
+                _(" <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:")
             )
             send_telegram_notification.delay(
                 chat_id, error_msg, reply_markup=cls._main_menu_markup(user)

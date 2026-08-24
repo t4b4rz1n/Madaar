@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { CloseCircle } from "iconsax-reactjs";
+import { CloseCircle, FolderAdd, TickCircle } from "iconsax-reactjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { Project, CreateProjectDTO, ProjectStatus } from "../types";
 import { useCreateProject, useUpdateProject } from "../hooks/useProjects";
 import { getOrganizationsForProjects } from "../api/projectsApi";
@@ -10,6 +11,26 @@ interface CreateEditProjectModalProps {
   onClose: () => void;
   project: Project | null;
 }
+
+const PROJECT_COLORS = [
+  { label: "Lavender",    value: "#b39ddb" },
+  { label: "Sky Blue",    value: "#81d4fa" },
+  { label: "Sage",        value: "#a5d6a7" },
+  { label: "Peach",       value: "#ffcc80" },
+  { label: "Mauve",       value: "#ce93d8" },
+  { label: "Dusty Blue",  value: "#90caf9" },
+  { label: "Rose Quartz", value: "#ef9a9a" },
+  { label: "Clay",        value: "#bcaaa4" },
+  { label: "Indigo",      value: "#6366f1" },
+];
+
+const sanitizeColor = (colorStr?: string | null): string => {
+  if (!colorStr) return PROJECT_COLORS[0].value;
+  if (colorStr.length <= 20) return colorStr;
+  const hexMatch = colorStr.match(/#[0-9a-fA-F]{3,8}/);
+  if (hexMatch) return hexMatch[0];
+  return PROJECT_COLORS[0].value;
+};
 
 export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
   isOpen,
@@ -31,14 +52,14 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     organization_id: "",
     description: "",
     prefix: "",
+    color: PROJECT_COLORS[0].value,
     budget: "",
     budget_currency: "IRR",
     start_date: "",
     deadline: "",
-    status: "draft" as ProjectStatus,
+    status: "active" as ProjectStatus,
   });
 
-  // 💡 اصلاح جدی: فقط موقعی که مودال باز میشه یا پروژه تغییر میکنه فرم Reset بشه
   useEffect(() => {
     if (!isOpen) return;
 
@@ -51,11 +72,12 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             : String(project.organization || ""),
         description: project.description || "",
         prefix: project.prefix || "",
+        color: sanitizeColor(project.color),
         budget: project.budget ? String(project.budget) : "",
         budget_currency: project.budget_currency || "IRR",
         start_date: project.start_date ? project.start_date.split("T")[0] : "",
         deadline: project.deadline ? project.deadline.split("T")[0] : "",
-        status: project.status || "draft",
+        status: project.status || "active",
       });
     } else {
       setFormData({
@@ -63,16 +85,16 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         organization_id: "",
         description: "",
         prefix: "",
+        color: PROJECT_COLORS[0].value,
         budget: "",
         budget_currency: "IRR",
         start_date: new Date().toISOString().split("T")[0],
         deadline: "",
-        status: "draft",
+        status: "active",
       });
     }
-  }, [project, isOpen]); // 👈 'organizations' از اینجا حذف شد تا حلقه بی‌نهایت ایجاد نکند
+  }, [project, isOpen]);
 
-  // مقداردهی پیش‌فرض سازمان در صورتی که ساخت پروژه جدید باشد
   useEffect(() => {
     if (isOpen && !project && organizations.length > 0 && !formData.organization_id) {
       setFormData((prev) => ({
@@ -101,7 +123,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       (organizations[0]?.id ? String(organizations[0].id) : "");
 
     if (!project && !selectedOrgId) {
-      alert("Please select an organization first.");
+      toast.error("Please select an organization first.");
       return;
     }
 
@@ -110,14 +132,27 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       organization_id: selectedOrgId,
       description: formData.description || undefined,
       prefix: formData.prefix || undefined,
+      color: sanitizeColor(formData.color),
       budget: formData.budget ? Number(formData.budget) : undefined,
       budget_currency: formData.budget_currency,
-      start_date: formData.start_date
-        ? new Date(formData.start_date).toISOString().split("T")[0]
-        : undefined,
-      deadline: formData.deadline
-        ? new Date(formData.deadline).toISOString().split("T")[0]
-        : undefined,
+      start_date: formData.start_date || undefined,
+      deadline: formData.deadline || undefined,
+    };
+
+    const handleApiError = (err: any) => {
+      console.error("Project action error:", err);
+      const errorData = err?.response?.data;
+      let msg = "Could not save project.";
+      if (errorData) {
+        if (typeof errorData === "string") msg = errorData;
+        else if (errorData.detail) msg = errorData.detail;
+        else if (typeof errorData === "object") {
+          const firstKey = Object.keys(errorData)[0];
+          const firstVal = errorData[firstKey];
+          msg = `${firstKey}: ${Array.isArray(firstVal) ? firstVal.join(", ") : firstVal}`;
+        }
+      }
+      toast.error(msg);
     };
 
     if (project) {
@@ -129,16 +164,20 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["projects"] });
+            toast.success("Project updated successfully");
             onClose();
           },
+          onError: handleApiError,
         },
       );
     } else {
       createProjectMutation.mutate(payload, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["projects"] });
+          toast.success("Project created successfully");
           onClose();
         },
+        onError: handleApiError,
       });
     }
   };
@@ -148,40 +187,45 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs"
       onMouseDown={onClose}
     >
       <div
-        className="madaar-surface max-h-[min(760px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in duration-200"
+        className="w-full max-w-lg overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between border-b border-base-content/10 p-6 sm:p-7">
-          <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-primary">
-              Project Workspace
-            </p>
-            <h3 className="text-2xl font-semibold tracking-tight text-base-content">
-              {project ? "Edit Project" : "Create New Project"}
-            </h3>
-            <p className="mt-1 text-sm text-base-content/55">
-              {project
-                ? "Keep the plan, dates and lifecycle status up to date."
-                : "Give your team a clear container for work."}
-            </p>
+        {/* Header with live gradient preview */}
+        <div
+          className="relative flex items-center justify-between px-6 py-5 text-white"
+          style={{ background: formData.color }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-2xl bg-white/20 backdrop-blur-xs">
+              <FolderAdd size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold tracking-tight">
+                {project ? "Edit Project" : "New Project"}
+              </h3>
+              <p className="text-xs text-white/80 font-medium">
+                {project ? "Update project details and settings" : "Create a new project workspace"}
+              </p>
+            </div>
           </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-2 text-base-content/50 transition hover:bg-base-200 hover:text-base-content"
+            className="rounded-xl p-1.5 text-white/80 hover:bg-white/20 hover:text-white transition duration-150"
           >
             <CloseCircle size={22} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 p-6 sm:p-7">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
           {!project && (
             <div>
-              <label className="mb-2 block text-sm font-medium text-base-content">
+              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
                 Organization <span className="text-error">*</span>
               </label>
               <select
@@ -190,7 +234,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                 value={formData.organization_id}
                 onChange={handleChange}
                 disabled={isLoadingOrgs || organizations.length === 0}
-                className="select select-bordered w-full rounded-xl bg-base-200/60"
+                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
               >
                 {organizations.length === 0 ? (
                   <option value="">No Organizations Found</option>
@@ -202,152 +246,103 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   ))
                 )}
               </select>
-              {organizations.length === 0 && !isLoadingOrgs && (
-                <p className="text-error text-xs mt-2">
-                  You must create or belong to an organization first.
-                </p>
-              )}
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <div className="sm:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-base-content">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
                 Project Name <span className="text-error">*</span>
               </label>
               <input
                 type="text"
                 name="name"
+                dir="auto"
                 required
-                placeholder="e.g. Modares Internal System"
+                placeholder="e.g. Madaar System"
                 value={formData.name}
                 onChange={handleChange}
-                className="input input-bordered w-full rounded-xl bg-base-200/60"
+                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-base-content">
-                Prefix (Key)
+              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                Key Prefix
               </label>
               <input
                 type="text"
                 name="prefix"
                 maxLength={10}
-                placeholder="e.g. MAD"
+                placeholder="MAD"
                 value={formData.prefix}
                 onChange={handleChange}
-                className="input input-bordered w-full rounded-xl bg-base-200/60 uppercase"
+                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all uppercase placeholder:text-base-content/35"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-base-content">
+            <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
               Description
             </label>
             <textarea
               name="description"
-              rows={3}
-              placeholder="Brief overview of the project objectives..."
+              dir="auto"
+              rows={2}
+              placeholder="Brief project summary..."
               value={formData.description}
               onChange={handleChange}
-              className="textarea textarea-bordered w-full min-h-24 rounded-xl bg-base-200/60"
+              className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35 resize-none"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-base-content">
-                Budget
-              </label>
-              <div className="join w-full">
-                <input
-                  type="number"
-                  name="budget"
-                  placeholder="e.g. 500000000"
-                  value={formData.budget}
-                  onChange={handleChange}
-                  className="input input-bordered join-item w-full rounded-l-xl bg-base-200/60"
-                />
-                <input
-                  type="text"
-                  name="budget_currency"
-                  value={formData.budget_currency}
-                  onChange={handleChange}
-                  className="input input-bordered join-item w-20 rounded-r-xl bg-base-200/60 px-2 text-center text-xs font-semibold"
-                />
-              </div>
-            </div>
-
-            {project && (
-              <div>
-                <label className="mb-2 block text-sm font-medium text-base-content">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="select select-bordered w-full rounded-xl bg-base-200/60 capitalize"
+          {/* Color Theme Selector */}
+          <div>
+            <label className="block font-bold text-base-content/60 mb-2 uppercase tracking-wider text-[11px]">
+              Theme Color
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {PROJECT_COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  title={c.label}
+                  onClick={() => setFormData((prev) => ({ ...prev, color: c.value }))}
+                  className={`h-8 w-8 rounded-xl transition-all duration-150 relative flex items-center justify-center ${
+                    formData.color === c.value
+                      ? "ring-2 ring-primary ring-offset-2 scale-105"
+                      : "opacity-80 hover:opacity-100"
+                  }`}
+                  style={{ background: c.value }}
                 >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="on_hold">On Hold</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-base-content">
-                Start Date
-              </label>
-              <input
-                type="date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleChange}
-                className="input input-bordered w-full rounded-xl bg-base-200/60"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-base-content">
-                Deadline
-              </label>
-              <input
-                type="date"
-                name="deadline"
-                value={formData.deadline}
-                onChange={handleChange}
-                className="input input-bordered w-full rounded-xl bg-base-200/60"
-              />
+                  {formData.color === c.value && (
+                    <TickCircle size={14} className="text-white" />
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-base-content/10 pt-5 sm:flex-row sm:justify-end">
+          <div className="pt-3 flex items-center justify-end gap-2 border-t border-base-content/8">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="btn btn-ghost rounded-xl"
+              className="h-9 px-4 rounded-xl border border-base-content/10 text-xs font-bold text-base-content/70 hover:bg-base-200 transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading || (!project && organizations.length === 0)}
-              className="btn btn-primary rounded-xl px-6"
+              className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5"
             >
               {isLoading ? (
-                <span className="loading loading-spinner loading-sm"></span>
+                <span>Saving...</span>
               ) : project ? (
-                "Save changes"
+                <span>Save Changes</span>
               ) : (
-                "Create project"
+                <span>Create Project</span>
               )}
             </button>
           </div>

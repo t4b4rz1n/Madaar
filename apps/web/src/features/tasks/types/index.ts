@@ -36,7 +36,6 @@ export interface AsyncStandup {
   date: string;
   hours_worked: string;
   today_work: string;
-  tomorrow_plan: string;
   blockers?: string | null;
   created_at: string;
 }
@@ -57,7 +56,6 @@ export interface StandupGridEntry {
   hours_worked: string;
   is_complete: boolean;
   today_work: string;
-  tomorrow_plan: string;
   blockers?: string | null;
 }
 

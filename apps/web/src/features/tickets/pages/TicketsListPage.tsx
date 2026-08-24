@@ -265,21 +265,21 @@ export default function TicketsListPage() {
         animate="visible"
         className="bg-base-100 min-h-[calc(100vh-121px)] backdrop-blur-lg border border-base-content/10 rounded-2xl p-4 sm:p-6 flex flex-col"
       >
-        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
         >
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-base-content">
-              {activeTab === "tickets" ? (
-                <Messages size={28} />
-              ) : (
-                <Category size={28} />
-              )}
-              {activeTab === "tickets" ? "Tickets" : "Categories"}
-            </h1>
-            <p className="text-base-content/70 mt-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
+                {activeTab === "tickets" ? "Tickets" : "Categories"}
+              </h1>
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+                {activeTab === "tickets" ? totalResults : catTotalResults}
+              </span>
+            </div>
+            <p className="mt-1 text-xs font-medium text-base-content/50">
               {activeTab === "tickets"
                 ? isStaff
                   ? "Manage and respond to support tickets submitted by users."
@@ -287,63 +287,53 @@ export default function TicketsListPage() {
                 : "Manage ticket types and departments."}
             </p>
           </div>
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 self-start md:self-auto">
+          <div className="flex items-center gap-2">
             {activeTab === "tickets" ? (
               <PermissionGuard permissions={["tickets.manage"]}>
                 <button
+                  type="button"
                   onClick={() => setModalOpen(true)}
-                  className="btn btn-primary rounded-xl gap-2 font-semibold h-[44px] px-6"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
                 >
-                  <Add size={20} className="shrink-0" />
+                  <Add size={16} />
                   <span>Create Ticket</span>
                 </button>
               </PermissionGuard>
             ) : isStaff ? (
               <button
-                onClick={() =>
-                  setModalState({ open: true, item: null, name: "" })
-                }
-                className="btn btn-primary rounded-xl gap-2 font-semibold h-[44px] px-6"
+                type="button"
+                onClick={() => setModalState({ open: true, item: null, name: "" })}
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
               >
-                <Add size={20} className="shrink-0" />
+                <Add size={16} />
                 <span>Create Category</span>
               </button>
             ) : null}
           </div>
         </motion.div>
 
-        {/* ── Tabs ───────────────────────────────────────────────────────────── */}
+        {/* Tabs */}
         {isStaff && (
-          <motion.div variants={itemVariants} className="mt-6">
-            <div className="flex gap-1 p-1 bg-base-200 border border-base-content/10 rounded-xl w-fit">
+          <motion.div variants={itemVariants} className="mt-4">
+            <div className="flex gap-1 p-1 bg-base-100 border border-base-content/8 rounded-xl w-fit">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     activeTab === tab.id
-                      ? "bg-primary text-primary-content shadow-md shadow-primary/20"
-                      : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
+                      ? "bg-primary text-primary-content shadow-xs"
+                      : "text-base-content/55 hover:bg-base-200 hover:text-base-content"
                   }`}
                 >
                   {tab.icon}
-                  {tab.label}
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        activeTab === tab.id
-                          ? "bg-primary-content/20 text-primary-content"
-                          : "bg-base-content/10 text-base-content/60"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
+                  <span>{tab.label}</span>
                 </button>
               ))}
             </div>
           </motion.div>
         )}
+
 
         {/* ── Tab Content ────────────────────────────────────────────────────── */}
         <AnimatePresence mode="wait">

@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Calendar, CloseSquare, Trash } from 'iconsax-reactjs';
+import { Calendar, CloseCircle, Trash, Clock, TaskSquare, Danger } from 'iconsax-reactjs';
 import { createStandup, updateStandup, deleteStandup } from '../api/tasksApi';
 import { getProjects } from '../../projects/api/projectsApi';
 import { STANDUP_STRINGS as S } from '../constants/standupStrings';
@@ -12,24 +11,18 @@ import { STANDUP_STRINGS as S } from '../constants/standupStrings';
 interface StandupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** When omitted the modal renders a project selector (generic entry points). */
   projectId?: string;
-  /** ISO date (YYYY-MM-DD); defaults to today. */
   date?: string;
   memberName?: string;
   readOnly?: boolean;
-  /** Existing entry id → PATCH instead of POST. */
   entryId?: string;
-  /** Hours already entered in the grid cell → the form focuses on descriptions */
   hideHours?: boolean;
   initial?: {
     hoursWorked?: string;
     todayWork?: string;
-    tomorrowPlan?: string;
     blockers?: string;
   };
   onSaved?: () => void;
-  /** Called after the entry is successfully deleted. */
   onDeleted?: () => void;
 }
 
@@ -37,7 +30,6 @@ interface StandupFormData {
   projectId: string;
   hoursWorked: string;
   todayWork: string;
-  tomorrowPlan: string;
   blockers: string;
 }
 
@@ -70,31 +62,29 @@ export const StandupModal: React.FC<StandupModalProps> = ({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<StandupFormData>({
     defaultValues: {
       projectId: projectId ?? '',
       hoursWorked: initial?.hoursWorked ?? '',
       todayWork: initial?.todayWork ?? '',
-      tomorrowPlan: initial?.tomorrowPlan ?? '',
       blockers: initial?.blockers ?? '',
     },
   });
 
-  // Reset the form each time the modal opens with fresh context.
   useEffect(() => {
     if (isOpen) {
       reset({
         projectId: projectId ?? '',
         hoursWorked: initial?.hoursWorked ?? '',
         todayWork: initial?.todayWork ?? '',
-        tomorrowPlan: initial?.tomorrowPlan ?? '',
         blockers: initial?.blockers ?? '',
       });
+      setConfirmDelete(false);
     }
   }, [isOpen, projectId, initial, reset]);
 
-  // Close on Escape — cleanup prevents listener leaks (see standards doc §3).
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -129,7 +119,6 @@ export const StandupModal: React.FC<StandupModalProps> = ({
         date: targetDate,
         hoursWorked: Math.round(Number(hideHours ? initial?.hoursWorked ?? 0 : data.hoursWorked) * 100) / 100,
         todayWork: data.todayWork.trim(),
-        tomorrowPlan: data.tomorrowPlan.trim(),
         blockers: data.blockers,
       };
       if (entryId) {
@@ -146,38 +135,26 @@ export const StandupModal: React.FC<StandupModalProps> = ({
     }
   };
 
-  const inputClass = (hasError?: boolean) =>
-    `w-full rounded-xl border bg-base-200/40 px-4 py-2.5 text-sm text-base-content placeholder:text-base-content/35 focus:outline-none focus:border-primary/60 transition-colors disabled:opacity-60 ${
-      hasError ? 'border-error/60' : 'border-base-content/15'
-    }`;
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.18 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0F172A]/80 p-4 backdrop-blur-sm"
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs"
       onClick={readOnly ? undefined : onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={S.modalTitle}
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.94, y: 14 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 340, damping: 28 }}
-        className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 shadow-2xl"
+      <div
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-base-content/10 px-5 py-4">
+        <div className="relative flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary/90 to-primary text-primary-content">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-primary/15 p-2 text-primary">
-              <Calendar size="20" variant="Bulk" />
+            <div className="grid size-9 place-items-center rounded-2xl bg-white/20 backdrop-blur-xs">
+              <Calendar size={18} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-base-content">{S.modalTitle}</h2>
-              <p className="text-xs text-base-content/55">
+              <h2 className="text-base font-bold tracking-tight">{S.modalTitle}</h2>
+              <p className="text-[11px] text-primary-content/80 font-medium">
                 {memberName ? `${memberName} · ` : ''}
                 {dateLabel}
               </p>
@@ -185,34 +162,35 @@ export const StandupModal: React.FC<StandupModalProps> = ({
           </div>
           <div className="flex items-center gap-2">
             {readOnly && (
-              <span className="rounded-lg bg-base-200 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-base-content/60">
+              <span className="rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                 {S.viewOnlyBadge}
               </span>
             )}
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
-              className="text-base-content/45 transition-colors hover:text-base-content"
+              className="rounded-xl p-1 text-primary-content/80 hover:bg-white/20 hover:text-primary-content transition"
             >
-              <CloseSquare size="22" variant="Outline" />
+              <CloseCircle size={20} />
             </button>
           </div>
         </div>
 
-        {/* Body */}
+        {/* Body Form */}
         <form
           id="standup-modal-form"
           onSubmit={handleSubmit(onSubmit)}
-          className="flex-1 space-y-4 overflow-y-auto p-5"
+          className="p-6 space-y-4 text-xs"
         >
           {needsProjectPicker && (
             <div>
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-                {S.projectLabel} *
+              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                {S.projectLabel} <span className="text-error">*</span>
               </label>
               <select
-                className={`select w-full rounded-xl border bg-base-200/40 text-sm [&>option]:bg-base-100 [&>option]:text-base-content ${errors.projectId ? 'select-error border-error/60' : 'border-base-content/15'}`}
+                className={`w-full h-9.5 rounded-xl border bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 transition-all ${
+                  errors.projectId ? 'border-error' : 'border-base-content/10'
+                }`}
                 disabled={readOnly || projectsQuery.isLoading}
                 {...register('projectId', { required: S.projectRequired })}
               >
@@ -226,186 +204,210 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                 ))}
               </select>
               {errors.projectId && (
-                <p className="mt-1 text-xs text-error">{errors.projectId.message}</p>
+                <p className="mt-1 text-[11px] text-error font-medium">{errors.projectId.message}</p>
               )}
             </div>
           )}
 
           {readOnly ? (
-            // View mode: show the logged hours as a read-only summary
-            <div>
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-                {S.hoursWorkedToday.replace(' *', '')}
-              </label>
-              <div className="rounded-xl border border-base-content/15 bg-base-200/40 px-4 py-2.5">
-                <span className="text-sm font-semibold text-base-content/70">
-                  {initial?.hoursWorked || 0}h
-                </span>
+            <div className="space-y-3">
+              <div className="rounded-xl border border-base-content/8 bg-base-200/40 p-3">
+                <div className="flex items-center gap-2 text-primary font-bold mb-1">
+                  <Clock size={15} />
+                  <span>{S.hoursWorkedToday.replace(' *', '')}</span>
+                </div>
+                <p className="text-sm font-extrabold text-base-content ms-6">
+                  {initial?.hoursWorked || 0} Hours
+                </p>
               </div>
+
+              {initial?.todayWork && (
+                <div className="rounded-xl border border-base-content/8 bg-base-200/40 p-3">
+                  <div className="flex items-center gap-2 text-primary font-bold mb-1">
+                    <TaskSquare size={15} />
+                    <span>{S.whatDidYouDoToday.replace(' *', '')}</span>
+                  </div>
+                  <p dir="auto" className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6">
+                    {initial.todayWork}
+                  </p>
+                </div>
+              )}
+
+              {initial?.blockers && (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                  <div className="flex items-center gap-2 text-amber-600 font-bold mb-1">
+                    <Danger size={15} />
+                    <span>{S.blockers}</span>
+                  </div>
+                  <p dir="auto" className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6">
+                    {initial.blockers}
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
-            !hideHours && (
-              // Own cell without hours yet → let the user enter them here.
-              // When hours were already typed in the cell, this whole section
-              // is omitted and the draft value is kept in the form state.
+            <>
+              {!hideHours && (
+                <div>
+                  <div className="flex items-center justify-between font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                    <span>{S.hoursWorkedToday}</span>
+                  </div>
+
+                  {/* Preset hour buttons */}
+                  <div className="flex items-center gap-1.5 mb-2">
+                    {[2, 4, 6, 8].map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => setValue('hoursWorked', String(h))}
+                        className="flex-1 rounded-lg py-1 text-[10px] font-bold bg-base-200/50 text-base-content/60 hover:bg-primary/15 hover:text-primary transition-all border border-transparent hover:border-primary/20"
+                      >
+                        {h} Hours
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="24"
+                    inputMode="decimal"
+                    placeholder="e.g. 8.0"
+                    disabled={readOnly}
+                    autoFocus
+                    className={`w-full h-9.5 rounded-xl border bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 transition-all ${
+                      errors.hoursWorked ? 'border-error' : 'border-base-content/10'
+                    }`}
+                    {...register('hoursWorked', {
+                      required: S.hoursRequired,
+                      min: { value: 0, message: 'Hours cannot be negative' },
+                      max: { value: 24, message: 'Hours cannot exceed 24 per day' },
+                    })}
+                  />
+                  {errors.hoursWorked && (
+                    <p className="mt-1 text-[11px] text-error font-medium">{errors.hoursWorked.message}</p>
+                  )}
+                </div>
+              )}
+
               <div>
-                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-                  {S.hoursWorkedToday}
+                <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                  {S.whatDidYouDoToday} <span className="text-error">*</span>
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="24"
-                  inputMode="decimal"
-                  placeholder="e.g. 22.22"
+                <textarea
+                  rows={3}
+                  dir="auto"
+                  placeholder={S.whatDidYouDoTodayPlaceholder}
                   disabled={readOnly}
-                  autoFocus
-                  className={inputClass(!!errors.hoursWorked)}
-                  {...register('hoursWorked', {
-                    required: S.hoursRequired,
-                    min: { value: 0, message: 'Hours cannot be negative' },
-                    max: { value: 24, message: 'Hours worked cannot exceed 24 hours per day' },
-                  })}
+                  className={`w-full rounded-xl border bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-base-content/35 ${
+                    errors.todayWork ? 'border-error' : 'border-base-content/10'
+                  }`}
+                  {...register('todayWork', { required: S.todayWorkRequired })}
                 />
-                 {errors.hoursWorked && (
-                   <p className="mt-1 text-xs text-error">{errors.hoursWorked.message}</p>
-                 )}
-               </div>
-             )
-           )}
-
-           <div>
-             <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-               {S.whatDidYouDoToday} *
-             </label>
-            <textarea
-              rows={3}
-              placeholder={S.whatDidYouDoTodayPlaceholder}
-              disabled={readOnly}
-              className={`${inputClass(!!errors.todayWork)} resize-none`}
-              {...register('todayWork', { required: S.todayWorkRequired })}
-            />
-            {errors.todayWork && (
-              <p className="mt-1 text-xs text-error">{errors.todayWork.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-              {S.whatWillYouDoTomorrow} *
-            </label>
-            <textarea
-              rows={3}
-              placeholder={S.whatWillYouDoTomorrowPlaceholder}
-              disabled={readOnly}
-              className={`${inputClass(!!errors.tomorrowPlan)} resize-none`}
-              {...register('tomorrowPlan', { required: S.tomorrowPlanRequired })}
-            />
-            {errors.tomorrowPlan && (
-              <p className="mt-1 text-xs text-error">{errors.tomorrowPlan.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-              {S.blockers}
-            </label>
-            <textarea
-              rows={2}
-              placeholder={S.blockersPlaceholder}
-              disabled={readOnly}
-              className={`${inputClass()} resize-none`}
-              {...register('blockers')}
-            />
-          </div>
-        </form>
-
-        {/* Footer */}
-        {!readOnly && (
-          <div className="border-t border-base-content/10 px-5 py-4">
-            {!confirmDelete ? (
-              <div className="flex items-center justify-between">
-                {/* Delete button — only when editing an existing entry */}
-                {entryId ? (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(true)}
-                    disabled={isDeleting || isSubmitting}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error/70 transition-colors hover:bg-error/8 hover:text-error disabled:opacity-40"
-                  >
-                    <Trash size={14} variant="Outline" />
-                    Delete standup
-                  </button>
-                ) : (
-                  <span />
+                {errors.todayWork && (
+                  <p className="mt-1 text-[11px] text-error font-medium">{errors.todayWork.message}</p>
                 )}
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
-                    {S.cancel}
-                  </button>
-                  <button
-                    type="submit"
-                    form="standup-modal-form"
-                    className="btn btn-primary btn-sm px-6"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <span className="loading loading-spinner loading-xs" />
-                    ) : (
-                      S.save
-                    )}
-                  </button>
-                </div>
               </div>
-            ) : (
-              /* Confirmation panel */
-              <div className="flex flex-col gap-3">
-                <p className="text-sm text-base-content/70">
-                  Are you sure you want to permanently delete this standup entry?
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isDeleting}
-                    onClick={async () => {
-                      setIsDeleting(true);
-                      try {
-                        await deleteStandup(entryId!);
-                        toast.success(S.toastDeleteSuccess);
-                        onDeleted?.();
-                        onClose();
-                      } catch {
-                        toast.error(S.toastDeleteFailed);
-                        setConfirmDelete(false);
-                      } finally {
-                        setIsDeleting(false);
-                      }
-                    }}
-                    className="btn btn-error btn-sm gap-2 px-5"
-                  >
-                    {isDeleting ? (
-                      <span className="loading loading-spinner loading-xs" />
-                    ) : (
-                      <Trash size={14} variant="Bold" />
-                    )}
-                    {isDeleting ? 'Deleting…' : 'Yes, delete'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    disabled={isDeleting}
-                    className="btn btn-ghost btn-sm"
-                  >
-                    Keep it
-                  </button>
-                </div>
+
+              <div>
+                <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                  {S.blockers}
+                </label>
+                <textarea
+                  rows={2}
+                  dir="auto"
+                  placeholder={S.blockersPlaceholder}
+                  disabled={readOnly}
+                  className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-base-content/35"
+                  {...register('blockers')}
+                />
               </div>
-            )}
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
+            </>
+          )}
+
+          {/* Footer Controls */}
+          {!readOnly && (
+            <div className="pt-3 border-t border-base-content/8">
+              {!confirmDelete ? (
+                <div className="flex items-center justify-between">
+                  {entryId ? (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(true)}
+                      disabled={isDeleting || isSubmitting}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-600 transition"
+                    >
+                      <Trash size={14} />
+                      <span>Delete</span>
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="h-9 px-4 rounded-xl border border-base-content/10 text-xs font-bold text-base-content/70 hover:bg-base-200 transition-all"
+                    >
+                      {S.cancel}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5"
+                    >
+                      {isSubmitting ? (
+                        <span>Saving...</span>
+                      ) : (
+                        <span>{S.save}</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl">
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400">
+                    Delete this standup?
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={async () => {
+                        setIsDeleting(true);
+                        try {
+                          await deleteStandup(entryId!);
+                          toast.success(S.toastDeleteSuccess);
+                          onDeleted?.();
+                          onClose();
+                        } catch {
+                          toast.error(S.toastDeleteFailed);
+                          setConfirmDelete(false);
+                        } finally {
+                          setIsDeleting(false);
+                        }
+                      }}
+                      className="h-7 px-3 rounded-lg bg-red-500 text-xs font-bold text-white shadow-xs hover:bg-red-600 transition-all"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(false)}
+                      className="h-7 px-2.5 rounded-lg border border-base-content/10 text-xs font-bold text-base-content/70 hover:bg-base-200 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
   );
 };
 

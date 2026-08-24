@@ -31,4 +31,3 @@ export const AppRouter: React.FC<{ children?: React.ReactNode }> = ({
 };
 
 export default AppRouter;
-

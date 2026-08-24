@@ -599,7 +599,6 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             date=serializer.validated_data.get("date") or timezone.localdate(),
             hours_worked=serializer.validated_data.get("hours_worked"),
             today_work=serializer.validated_data["today_work"],
-            tomorrow_plan=serializer.validated_data["tomorrow_plan"],
             blockers=serializer.validated_data.get("blockers"),
         )
         serializer.instance = standup
@@ -696,7 +695,6 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
                 "date",
                 "hours_worked",
                 "today_work",
-                "tomorrow_plan",
                 "user_id",
                 "project_id",
                 "user__id",
@@ -756,10 +754,8 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
                 "user_id": str(entry.user_id),
                 "date": entry.date.isoformat(),
                 "hours_worked": str(entry.hours_worked),
-                "is_complete": bool((entry.today_work or "").strip())
-                and bool((entry.tomorrow_plan or "").strip()),
+                "is_complete": bool((entry.today_work or "").strip()),
                 "today_work": entry.today_work,
-                "tomorrow_plan": entry.tomorrow_plan,
                 "blockers": entry.blockers,
             }
             for entry in entries

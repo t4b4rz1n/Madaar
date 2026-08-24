@@ -47,5 +47,3 @@ export interface TeamWithDetails extends Team {
   leader_details?: UserBasicInfo | null;
   squads_count?: number;
 }
-
-

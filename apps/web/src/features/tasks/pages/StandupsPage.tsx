@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -8,6 +8,11 @@ import {
   ArrowRight2,
   Check,
   NoteText,
+  Calendar,
+  Add,
+  ArrowDown2,
+  TickCircle,
+  Folder,
 } from 'iconsax-reactjs';
 import { getStandupGrid, updateStandupHours } from '../api/tasksApi';
 import { getProjects } from '../../projects/api/projectsApi';
@@ -20,12 +25,22 @@ import type {
   StandupGridMember,
 } from '../types';
 
+const PASTEL_COLORS = ['#b39ddb', '#9fa8da', '#81d4fa', '#80cbc4', '#a5d6a7', '#ffcc80', '#f48fb1', '#ce93d8'];
+
+function formatDecimalHours(decimalValue: number | string | null | undefined): string {
+  const num = Number(decimalValue);
+  if (!num || isNaN(num) || num <= 0) return '00:00';
+  const h = Math.floor(num);
+  const m = Math.round((num - h) * 60);
+  const hh = String(h).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
 const pad2 = (value: number): string => String(value).padStart(2, '0');
 
-/** localStorage key so the selected project survives page refreshes. */
 const SELECTED_PROJECT_STORAGE_KEY = 'madar:standups:selectedProjectId';
 
-/** `${userId}:${isoDate}` key used by the entries lookup and hour drafts. */
 const cellKey = (userId: string, isoDate: string): string => `${userId}:${isoDate}`;
 
 interface CellModalState {
@@ -57,18 +72,39 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
   const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() + 1 });
   const [modalState, setModalState] = useState<CellModalState | null>(null);
   const [hourDrafts, setHourDrafts] = useState<HourDrafts>({});
+  const [isProjDropdownOpen, setIsProjDropdownOpen] = useState(false);
+  const projDropdownRef = useRef<HTMLDivElement>(null);
 
   const projectsQuery = useQuery({ queryKey: ['projects'], queryFn: () => getProjects() });
   const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
 
-  // Persist the selection so a refresh keeps the same project.
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (projDropdownRef.current && !projDropdownRef.current.contains(e.target as Node)) {
+        setIsProjDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedProject = useMemo(
+    () => projects.find((p) => String(p.id) === String(selectedProjectId)) || projects[0],
+    [projects, selectedProjectId]
+  );
+  const selectedProjectIndex = useMemo(
+    () => projects.findIndex((p) => String(p.id) === String(selectedProject?.id)),
+    [projects, selectedProject]
+  );
+  const selectedProjectColor =
+    selectedProject?.color || PASTEL_COLORS[selectedProjectIndex % PASTEL_COLORS.length];
+
   React.useEffect(() => {
     if (selectedProjectId) {
       localStorage.setItem(SELECTED_PROJECT_STORAGE_KEY, selectedProjectId);
     }
   }, [selectedProjectId]);
 
-  // Fall back to the first project when nothing (valid) is stored yet.
   React.useEffect(() => {
     if (!projectsQuery.isSuccess || projects.length === 0) return;
     if (!projects.some((project) => String(project.id) === selectedProjectId)) {
@@ -93,7 +129,6 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
     [cursor.year, cursor.month],
   );
 
-  /** Entries indexed by `${userId}:${isoDate}` for O(1) cell rendering. */
   const entryIndex = useMemo(() => {
     const index = new Map<string, StandupGridEntry>();
     (grid?.entries ?? []).forEach((entry) => {
@@ -144,7 +179,6 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
       const editable = canEditCell(member, isoDate);
       const entry = entryIndex.get(cellKey(member.id, isoDate));
 
-      // Read-only cells need content to be worth opening.
       if (!editable && !entry) return;
 
       const name =
@@ -171,12 +205,10 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
     return {
       entryId: entry?.id,
       readOnly: member ? !canEditCell(member, modalState.isoDate) : true,
-      /** Hours were already entered in the grid cell → modal focuses on descriptions */
       hideHours: hasHours,
       initial: {
         hoursWorked: draft ?? saved ?? '',
         todayWork: entry?.today_work ?? '',
-        tomorrowPlan: entry?.tomorrow_plan ?? '',
         blockers: entry?.blockers ?? '',
       },
     };
@@ -197,20 +229,15 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
     });
   }, [modalState, queryClient, selectedProjectId, cursor.year, cursor.month]);
 
-  /** Cells with an in-flight quick-save (Enter) request. */
   const [savingCellKeys, setSavingCellKeys] = useState<Set<string>>(() => new Set());
+  const [focusedCellKey, setFocusedCellKey] = useState<string | null>(null);
 
-  /**
-   * Enter on an editable cell saves the typed hours directly when a standup
-   * entry already exists; otherwise it opens the full standup modal.
-   */
   const handleEnterOnCell = useCallback(
     async (member: StandupGridMember, day: number) => {
       const isoDate = dayIso(day);
       const key = cellKey(member.id, isoDate);
       const entry = entryIndex.get(key);
 
-      // No report for this day yet → descriptions are required, use the modal.
       if (!entry) {
         handleOpenCell(member, day);
         return;
@@ -294,60 +321,73 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
     const value = editable ? draft ?? saved ?? '' : saved ?? '';
     const isDirty =
       editable && draft !== undefined && Number(draft) !== Number(saved ?? 0);
-    // Green check: standup fully reported. Orange dot: hours present but the
-    // report is not saved/complete yet.
     const showGreenCheck = Boolean(entry?.is_complete);
     const showOrangeDot = isDirty || Boolean(entry && !entry.is_complete);
 
     return (
-      <div className="relative flex h-8 w-full min-w-[24px] max-w-[34px] items-center justify-center mx-auto">
+      <div className="relative flex h-8 w-full min-w-[28px] max-w-[36px] items-center justify-center mx-auto">
         {editable ? (
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            max="24"
-            value={value}
-            placeholder="-"
-            aria-label={`${member.username} ${isoDate}`}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === '' || (Number(val) >= 0 && Number(val) <= 24)) {
-                setHourDrafts((prev) => ({ ...prev, [key]: val }));
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleEnterOnCell(member, day);
-              }
-            }}
-            className="h-7 w-full rounded-md bg-transparent text-center text-xs font-semibold text-primary placeholder:text-base-content/30 focus:border-primary/50 focus:bg-base-200/80 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none p-0 transition-colors"
-          />
+          focusedCellKey === key ? (
+            <input
+              autoFocus
+              type="number"
+              step="0.01"
+              min="0"
+              max="24"
+              value={value}
+              placeholder="-"
+              aria-label={`${member.username} ${isoDate}`}
+              onBlur={() => setFocusedCellKey(null)}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || (Number(val) >= 0 && Number(val) <= 24)) {
+                  setHourDrafts((prev) => ({ ...prev, [key]: val }));
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleEnterOnCell(member, day);
+                  setFocusedCellKey(null);
+                }
+              }}
+              className="h-7 w-full rounded-lg bg-primary/10 text-center text-xs font-bold text-primary placeholder:text-base-content/30 focus:border-primary/50 focus:bg-primary/15 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none p-0 transition-all"
+            />
+          ) : (
+            <div
+              tabIndex={0}
+              onFocus={() => setFocusedCellKey(key)}
+              onClick={() => setFocusedCellKey(key)}
+              className="flex h-7 w-full cursor-text items-center justify-center rounded-lg bg-transparent text-center text-xs font-bold text-primary transition-all hover:bg-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/50"
+            >
+              {value ? formatDecimalHours(value) : '-'}
+            </div>
+          )
         ) : (
           <span
+            title={value ? formatDecimalHours(value) : undefined}
             className={`text-xs font-bold ${
               value
                 ? isOwnRow(member)
-                  ? 'text-primary'
-                  : 'text-base-content/60'
-                : 'text-base-content/25'
+                  ? 'text-primary font-black'
+                  : 'text-base-content/75'
+                : 'text-base-content/20'
             }`}
           >
-            {value || '-'}
+            {value ? formatDecimalHours(value) : '-'}
           </span>
         )}
         {showGreenCheck && (
           <span
-            className="absolute -top-0.5 -end-0.5 z-10 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success text-success-content shadow-sm"
+            className="absolute -top-0.5 -end-0.5 z-10 flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xs"
             title={S.legendCompleted}
           >
-            <Check size={6} variant="Bold" />
+            <Check size={8} variant="Bold" />
           </span>
         )}
         {showOrangeDot && !showGreenCheck && (
           <span
-            className="absolute -top-0.5 -end-0.5 z-10 h-1.5 w-1.5 rounded-full bg-warning shadow-sm"
+            className="absolute -top-0.5 -end-0.5 z-10 h-2 w-2 rounded-full bg-amber-500 shadow-xs"
             title={isDirty ? S.legendUnsaved : S.legendIncomplete}
           />
         )}
@@ -357,102 +397,199 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto w-full max-w-[1600px] p-3 sm:p-5 lg:p-6"
+      className="space-y-5 pb-10"
     >
-      {/* Header */}
-      <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+      {/* Header Bar */}
+      <div className="flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-            <NoteText variant="Bulk" size={30} />
+          <div className="grid size-10 place-items-center rounded-2xl bg-primary/10 text-primary shrink-0">
+            <NoteText variant="Bulk" size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-base-content md:text-3xl">{title}</h1>
-            <p className="mt-1 text-sm text-base-content/60">{subtitle}</p>
+            <h1 className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
+              {title}
+            </h1>
+            <p className="text-xs text-base-content/50">
+              {subtitle}
+            </p>
           </div>
         </div>
 
-        {projects.length > 0 && (
-          <label className="form-control w-full md:w-64">
-            <span className="sr-only">{S.projectLabel}</span>
-            <select
-              className="select select-bordered w-full rounded-xl bg-base-200/50 font-medium focus:outline-none [&>option]:bg-base-100 [&>option]:text-base-content"
-              value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          {projects.length > 0 && (
+            <div className="relative z-[50]" ref={projDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsProjDropdownOpen((prev) => !prev)}
+                className="flex h-9.5 items-center gap-2.5 rounded-xl border border-base-content/10 bg-base-100 px-3.5 text-xs font-bold text-base-content shadow-xs transition-all hover:border-primary/40 hover:bg-base-200/50"
+              >
+                <span
+                  className="size-3.5 rounded-full shrink-0 shadow-xs"
+                  style={{
+                    background: selectedProjectColor,
+                    boxShadow: `0 0 8px ${selectedProjectColor}60`,
+                  }}
+                />
+                {selectedProject?.prefix && (
+                  <span
+                    className="rounded-md px-1.5 py-0.5 text-[10px] font-extrabold text-white shrink-0"
+                    style={{ background: selectedProjectColor }}
+                  >
+                    {selectedProject.prefix}
+                  </span>
+                )}
+                <span dir="auto" className="truncate max-w-[150px] text-xs font-bold">
+                  {selectedProject?.name || 'Select Project'}
+                </span>
+                <ArrowDown2
+                  size={14}
+                  className={`shrink-0 text-base-content/50 transition-transform duration-200 ${
+                    isProjDropdownOpen ? 'rotate-180 text-primary' : ''
+                  }`}
+                />
+              </button>
+
+              {isProjDropdownOpen && (
+                <div className="absolute right-0 sm:left-0 sm:right-auto mt-1.5 w-64 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in duration-100 z-[101]">
+                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-base-content/40 border-b border-base-content/8 mb-1">
+                    <Folder size={13} className="text-primary" />
+                    <span>Select Project</span>
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto space-y-0.5 custom-scrollbar">
+                    {projects.map((p, index) => {
+                      const color = p.color || PASTEL_COLORS[index % PASTEL_COLORS.length];
+                      const isSelected = String(p.id) === String(selectedProjectId);
+
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedProjectId(String(p.id));
+                            setIsProjDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left transition-all ${
+                            isSelected
+                              ? 'bg-primary/10 text-primary font-bold'
+                              : 'text-base-content/80 hover:bg-base-200/60 hover:text-base-content font-medium'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span
+                              className="size-3.5 rounded-full shrink-0 shadow-xs"
+                              style={{ background: color }}
+                            />
+                            {p.prefix && (
+                              <span
+                                className="rounded-md px-1.5 py-0.5 text-[9px] font-extrabold text-white shrink-0"
+                                style={{ background: color }}
+                              >
+                                {p.prefix}
+                              </span>
+                            )}
+                            <span dir="auto" className="truncate text-xs">
+                              {p.name}
+                            </span>
+                          </div>
+
+                          {isSelected && (
+                            <TickCircle size={15} className="shrink-0 text-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {grid?.can_write && grid?.today && (
+            <button
+              type="button"
+              onClick={() => {
+                const me = grid.members.find((m) => isOwnRow(m));
+                if (me) {
+                  const todayNum = Number(grid.today.split('-')[2]);
+                  handleOpenCell(me, todayNum);
+                }
+              }}
+              className="inline-flex h-9.5 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
             >
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
+              <Add size={16} />
+              <span>Log Today's Standup</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <span className="loading loading-spinner loading-lg text-primary" />
+        <div className="flex min-h-[300px] items-center justify-center">
+          <span className="loading loading-spinner loading-md text-primary" />
         </div>
       ) : !selectedProjectId || projects.length === 0 ? (
-        <div className="rounded-2xl border border-base-content/10 bg-base-200/30 p-12 text-center">
-          <NoteText size={48} className="mx-auto mb-4 text-base-content/20" />
-          <h3 className="mb-2 text-lg font-semibold text-base-content">{S.noProjectsTitle}</h3>
-          <p className="text-base-content/60">{S.noProjectsHint}</p>
+        <div className="rounded-2xl border border-dashed border-base-content/15 bg-base-100 p-12 text-center">
+          <NoteText size={40} className="mx-auto mb-3 text-base-content/25" />
+          <h3 className="text-base font-bold text-base-content">{S.noProjectsTitle}</h3>
+          <p className="mt-1 text-xs text-base-content/50">{S.noProjectsHint}</p>
         </div>
       ) : (
-        /* Grid card */
-        <div className="overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 shadow-sm">
-          {/* Viewer notice: grid visible but writing is member-only */}
+        /* Standup Grid Card */
+        <div className="overflow-hidden rounded-2xl border border-base-content/8 bg-base-100 shadow-sm">
+          {/* Viewer notice */}
           {grid && !grid.can_write && (
-            <div className="border-b border-warning/20 bg-warning/10 px-4 py-2.5 text-xs font-medium text-warning">
+            <div className="border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-600 dark:text-amber-400">
               {S.viewerNotice}
             </div>
           )}
 
-          {/* Month navigation */}
-          <div className="relative flex items-center px-3 py-3 md:px-4">
+          {/* Month Navigator Header */}
+          <div className="flex items-center justify-between border-b border-base-content/8 px-4 py-3 bg-base-200/30">
             <button
               type="button"
               onClick={() => shiftMonth(-1)}
               aria-label="Previous month"
-              className="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-primary"
+              className="flex size-8 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-base-content/60 hover:bg-base-200 hover:text-base-content transition-all"
             >
-              <ArrowLeft2 size={18} />
+              <ArrowLeft2 size={16} />
             </button>
-            <div className="absolute start-1/2 -translate-x-1/2 text-center rtl:translate-x-1/2">
-              <p className="text-base font-bold text-base-content md:text-lg">{monthLabel}</p>
-              <p className="text-[11px] text-base-content/45">{S.gridTitle}</p>
+
+            <div className="flex items-center gap-2">
+              <Calendar size={16} className="text-primary" />
+              <span className="text-sm font-bold text-base-content">{monthLabel}</span>
             </div>
+
             <button
               type="button"
               onClick={() => shiftMonth(1)}
               aria-label="Next month"
-              className="btn btn-ghost btn-circle btn-sm ms-auto text-base-content/60 hover:text-primary"
+              className="flex size-8 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-base-content/60 hover:bg-base-200 hover:text-base-content transition-all"
             >
-              <ArrowRight2 size={18} />
+              <ArrowRight2 size={16} />
             </button>
           </div>
 
-          {/* Members × days matrix */}
-          <div className="custom-scrollbar overflow-x-auto pb-1">
-            <table className="w-full min-w-max border-separate border-spacing-0 table-fixed sm:table-auto lg:table-fixed">
+          {/* Matrix Table */}
+          <div className="custom-scrollbar overflow-x-auto">
+            <table className="w-full min-w-max border-separate border-spacing-0 table-fixed">
               <thead>
                 <tr>
-                  {/* MEMBER header — same bg as member sticky column */}
-                  <th className="sticky start-0 z-20 w-32 min-w-[110px] max-w-[130px] border-b border-base-content/10 bg-base-200/80 px-3 py-2 text-start text-[11px] font-bold uppercase tracking-wider text-base-content/60 backdrop-blur">
+                  <th className="sticky start-0 z-20 w-44 border-b border-base-content/8 bg-base-100 px-4 py-2.5 text-start text-[11px] font-bold uppercase tracking-wider text-base-content/50">
                     {S.memberColumnLabel}
                   </th>
-                  {/* Day number headers — NO border-l between them, same bg zone */}
                   {days.map((day) => {
                     const isToday =
                       Boolean(grid?.today) && dayIso(day) === grid?.today;
                     return (
                       <th
                         key={day}
-                        className={`border-b border-base-content/10 bg-base-200/30 px-0.5 py-2 text-center text-[11px] font-bold ${
-                          isToday ? 'bg-primary/10 text-primary' : 'text-base-content/50'
+                        className={`border-b border-base-content/8 px-1 py-2 text-center text-[11px] font-bold transition-all ${
+                          isToday
+                            ? 'bg-primary/10 text-primary border-b-primary/40'
+                            : 'bg-base-200/20 text-base-content/50'
                         }`}
                       >
                         {day}
@@ -467,26 +604,38 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                   const displayName =
                     [member.first_name, member.last_name].filter(Boolean).join(' ') ||
                     member.username;
+                  const isCurrent = isOwnRow(member);
+
                   return (
                     <tr key={member.id} className="group">
-                      {/* Member sticky column — slightly lighter than cell area */}
-                      <td className="sticky start-0 z-20 w-32 min-w-[110px] max-w-[130px] border-b border-base-content/8 bg-base-200/40 px-3 py-1.5 backdrop-blur group-hover:bg-base-200/70">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                              isOwnRow(member) ? 'bg-primary' : 'bg-base-content/40'
+                      <td className="sticky start-0 z-20 border-b border-base-content/6 bg-base-100 px-4 py-2 backdrop-blur group-hover:bg-base-200/50 transition-all">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`grid size-7 place-items-center rounded-lg text-[10px] font-bold shrink-0 ${
+                              isCurrent
+                                ? 'bg-primary text-primary-content'
+                                : 'bg-base-200 text-base-content/60'
                             }`}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-semibold text-base-content" title={displayName}>
+                          >
+                            {displayName[0]?.toUpperCase() || 'U'}
+                          </div>
+                          <div className="min-w-0">
+                            <p
+                              dir="auto"
+                              className={`truncate text-xs font-bold ${
+                                isCurrent ? 'text-primary' : 'text-base-content'
+                              }`}
+                              title={displayName}
+                            >
                               {displayName}
                             </p>
-                            <p className="text-[10px] font-medium text-base-content/50">
-                              {total > 0 ? `${total}${S.hoursTotalSuffix}` : ''}
+                            <p className="text-[10px] font-medium text-base-content/40">
+                              {formatDecimalHours(total)}
                             </p>
                           </div>
                         </div>
                       </td>
+
                       {days.map((day) => {
                         const isoDate = dayIso(day);
                         const editable = canEditCell(member, isoDate);
@@ -495,10 +644,11 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                         const isFuture =
                           Boolean(grid?.today) && isoDate > (grid?.today ?? '');
                         const hasEntry = entryIndex.has(cellKey(member.id, isoDate));
+
                         return (
                           <td
                             key={day}
-                            className={`border-b border-l border-base-content/[0.07] p-0.5 text-center ${
+                            className={`border-b border-l border-base-content/5 p-1 text-center transition-all ${
                               isToday ? 'bg-primary/5' : ''
                             }`}
                             onClick={
@@ -521,7 +671,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                                 editable
                                   ? 'cursor-text'
                                   : isFuture
-                                    ? 'cursor-not-allowed'
+                                    ? 'cursor-not-allowed opacity-40'
                                     : hasEntry
                                       ? 'cursor-pointer'
                                       : 'cursor-default'
@@ -535,13 +685,14 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                     </tr>
                   );
                 })}
+
                 {(grid?.members.length ?? 0) === 0 && (
                   <tr>
                     <td colSpan={(grid?.days_in_month ?? 0) + 1} className="py-12 text-center">
-                      <h3 className="text-base font-semibold text-base-content">
+                      <h3 className="text-sm font-bold text-base-content">
                         {S.emptyGridTitle}
                       </h3>
-                      <p className="mt-1 text-sm text-base-content/60">{S.emptyGridHint}</p>
+                      <p className="mt-1 text-xs text-base-content/50">{S.emptyGridHint}</p>
                     </td>
                   </tr>
                 )}
@@ -549,26 +700,26 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
             </table>
           </div>
 
-          {/* Footer legend */}
-          <div className="flex flex-col justify-between gap-2 border-t border-base-content/10 px-4 py-3 md:flex-row md:items-center">
-            <div className="flex flex-wrap items-center gap-4 text-xs text-base-content/55">
+          {/* Footer Legend */}
+          <div className="flex flex-col justify-between gap-2 border-t border-base-content/8 px-4 py-3 bg-base-200/20 md:flex-row md:items-center text-xs">
+            <div className="flex flex-wrap items-center gap-4 text-base-content/60">
               <span className="flex items-center gap-1.5">
-                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success text-success-content shadow-sm">
-                  <Check size={7} variant="Bold" />
+                <span className="flex size-3 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <Check size={8} variant="Bold" />
                 </span>
-                {S.legendCompleted}
+                <span className="text-[11px] font-medium">{S.legendCompleted}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-warning" />
-                {S.legendUnsaved}
+                <span className="size-2 rounded-full bg-amber-500" />
+                <span className="text-[11px] font-medium">{S.legendUnsaved}</span>
               </span>
             </div>
-            <span className="text-xs text-base-content/35">{S.hintRightClick}</span>
+            <span className="text-[11px] text-base-content/40">{S.hintRightClick}</span>
           </div>
         </div>
       )}
 
-      {/* Right-click standup modal — keyed per cell so the form state is always fresh */}
+      {/* Standup Modal */}
       {modalState && (
         <StandupModal
           key={`${modalState.memberId}:${modalState.isoDate}`}

@@ -284,7 +284,16 @@ class Command(BaseCommand):
             ),
         ]
 
-        for idx, (title, status_code, priority, assignee, due_date, is_blocked, is_finished, estimated_hours) in enumerate(tasks_data):
+        for idx, (
+            title,
+            status_code,
+            priority,
+            assignee,
+            due_date,
+            is_blocked,
+            is_finished,
+            estimated_hours,
+        ) in enumerate(tasks_data):
             status = self._status_map[status_code]
             Task.objects.get_or_create(
                 title=title,
@@ -382,14 +391,14 @@ class Command(BaseCommand):
         ]
 
         for user, hours_worked, today_work, tomorrow_plan, blockers in standups_data:
+            combined_today = f"{today_work}\n\nTomorrow:\n{tomorrow_plan}"
             AsyncStandup.objects.get_or_create(
                 project=self._project,
                 user=user,
                 date=today,
                 defaults={
                     "hours_worked": hours_worked,
-                    "today_work": today_work,
-                    "tomorrow_plan": tomorrow_plan,
+                    "today_work": combined_today,
                     "blockers": blockers,
                 },
             )

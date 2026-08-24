@@ -33,9 +33,7 @@ def process_midnight_attendance_rollover(attendance_id):
         active_session.save(update_fields=["end_time", "duration_seconds"])
 
         att.check_out = now
-        total_duration_seconds = (
-            att.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
-        )
+        total_duration_seconds = att.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
 
         setting = AttendanceSetting.objects.filter(organization=att.organization).first()
         expected_hours = float(setting.expected_daily_hours) if setting else 8.0

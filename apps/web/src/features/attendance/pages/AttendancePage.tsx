@@ -43,8 +43,11 @@ export const AttendancePage: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!activeOrganizationId && organizations.length > 0) {
-      setActiveOrganization(organizations[0].id);
+    if (organizations.length > 0) {
+      const isValid = organizations.some(org => org.id === activeOrganizationId);
+      if (!activeOrganizationId || !isValid) {
+        setActiveOrganization(organizations[0].id);
+      }
     }
   }, [organizations, activeOrganizationId, setActiveOrganization]);
 
@@ -53,29 +56,85 @@ export const AttendancePage: React.FC = () => {
   const activeTabMeta = visibleTabs.find((tab) => tab.id === activeTab) || visibleTabs[0];
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-base-200 text-base-content custom-scrollbar">
-      <div className="mx-auto w-full max-w-[1480px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-        <header className="mb-6 flex flex-col gap-5 border-b border-base-content/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-primary"><Timer1 size={15} /> Work hours</div>
-            <h1 className="text-3xl font-semibold tracking-[-0.03em] text-base-content sm:text-4xl">Time &amp; Attendance</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/55">Start your work timer, keep attendance accurate, and review every hour in one calm workspace.</p>
+    <div className="flex h-full flex-col overflow-y-auto bg-base-100 text-base-content custom-scrollbar">
+      <div className="mx-auto w-full max-w-[1480px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+        {/* Top Header */}
+        <header className="mb-5 flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
+                Time &amp; Attendance
+              </h1>
+            </div>
+            <p className="mt-1 text-xs font-medium text-base-content/50">
+              Track work hours, manage timesheets and time off requests.
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            {organizations.length > 1 ? <label className="flex items-center gap-3"><span className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">Organization</span><select value={activeOrganizationId || ''} onChange={(event) => setActiveOrganization(event.target.value)} className="h-10 min-w-40 rounded-xl border border-base-content/10 bg-base-100 px-3 text-sm font-semibold text-base-content outline-none focus:border-primary/40"><option value="" disabled>Select organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label> : <span className="rounded-xl border border-base-content/10 bg-base-100 px-3 py-2 text-xs font-semibold text-base-content/55">{organizations[0]?.name || 'Your organization'}</span>}
+            {organizations.length > 1 ? (
+              <label className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-wider">
+                  Org
+                </span>
+                <select
+                  value={activeOrganizationId || ''}
+                  onChange={(event) => setActiveOrganization(event.target.value)}
+                  className="h-8.5 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-semibold text-base-content outline-none focus:border-primary/40"
+                >
+                  <option value="" disabled>
+                    Select org
+                  </option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <span className="rounded-xl border border-base-content/10 bg-base-100 px-3 py-1.5 text-xs font-semibold text-base-content/55">
+                {organizations[0]?.name || 'Your organization'}
+              </span>
+            )}
           </div>
         </header>
 
-        <nav role="tablist" aria-label="Time and attendance sections" className="mb-6 overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-sm custom-scrollbar">
-          <div className="flex min-w-max gap-1">
-            {visibleTabs.map(({ id, label, helper, icon: Icon }) => {
-              const isActive = activeTab === id;
-              return <button key={id} id={`attendance-tab-${id}`} type="button" role="tab" aria-selected={isActive} aria-controls={`attendance-panel-${id}`} onClick={() => setActiveTab(id)} className={`motion-interactive flex min-w-[9.5rem] items-center gap-3 rounded-xl px-3.5 py-2.5 text-left transition-colors sm:min-w-[12rem] ${isActive ? 'bg-base-content text-base-100 shadow-sm' : 'text-base-content/50 hover:bg-base-200 hover:text-base-content'}`}><span className={`grid size-8 shrink-0 place-items-center rounded-lg ${isActive ? 'bg-base-100/15 text-base-100' : 'bg-base-200 text-base-content/45'}`}><Icon size={16} /></span><span><span className="block text-xs font-bold">{label}</span><span className={`mt-0.5 block text-[10px] font-medium ${isActive ? 'text-base-100/65' : 'text-base-content/35'}`}>{helper}</span></span></button>;
-            })}
-          </div>
+        {/* Minimal Tab Navigation */}
+        <nav
+          role="tablist"
+          aria-label="Time and attendance sections"
+          className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-base-content/8 bg-base-100 p-1"
+        >
+          {visibleTabs.map(({ id, label, icon: Icon }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                id={`attendance-tab-${id}`}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`attendance-panel-${id}`}
+                onClick={() => setActiveTab(id)}
+                className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-primary text-primary-content shadow-xs'
+                    : 'text-base-content/55 hover:bg-base-200 hover:text-base-content'
+                }`}
+              >
+                <Icon size={15} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
         </nav>
 
-        <div id={`attendance-panel-${activeTab}`} role="tabpanel" aria-labelledby={`attendance-tab-${activeTab}`} className="min-h-0">
+        <div
+          id={`attendance-panel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`attendance-tab-${activeTab}`}
+          className="min-h-0"
+        >
           <div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{activeTabMeta.label}</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-base-content">{activeTabMeta.helper}</h2></div><span className="hidden text-xs font-medium text-base-content/35 sm:block">All times are shown in your local timezone</span></div>
 
           {activeTab === 'overview' && <div className="space-y-5"><div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]"><LiveTimer tasks={tasks} /><CheckInOut /></div><div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]"><TimesheetTable /><ManualTimeLogForm tasks={tasks} /></div></div>}

@@ -4,6 +4,7 @@ import { getBoards, createBoard } from '../api/tasksApi';
 import { useTaskStore } from '../store/useTaskStore';
 import { Add, FolderAdd } from 'iconsax-reactjs';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export const WorkspaceView: React.FC = () => {
   const { activeProjectId, setActiveBoard } = useTaskStore();
@@ -11,7 +12,7 @@ export const WorkspaceView: React.FC = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [boardTitle, setBoardTitle] = useState('');
-  const [boardColor, setBoardColor] = useState('#6366f1');
+  const [boardColor, setBoardColor] = useState('linear-gradient(135deg, #b39ddb, #9fa8da)');
 
   const { data: boards } = useQuery({
     queryKey: ['boards', activeProjectId],
@@ -25,113 +26,126 @@ export const WorkspaceView: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['boards', activeProjectId] });
       setIsModalOpen(false);
       setBoardTitle('');
+      toast.success("Board created successfully");
     },
     onError: (err: any) => {
       console.error(err);
-      alert('Error creating board: ' + JSON.stringify(err?.response?.data || err.message));
+      toast.error(err?.response?.data?.detail || err?.response?.data?.error || "Failed to create board");
     }
   });
 
   if (!activeProjectId) {
     return (
-      <div className="madaar-surface mx-auto my-8 max-w-xl rounded-[28px] border border-dashed border-base-content/15 bg-base-100 px-6 py-14 text-center">
-        <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><FolderAdd size={28} /></div>
-        <h2 className="text-xl font-semibold text-base-content">Choose a project to get started</h2>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-base-content/55">Tasks live inside projects. Create your first project or choose one from the selector above.</p>
-        <button type="button" onClick={() => navigate('/projects')} className="btn btn-primary mt-6 rounded-xl"><Add size={18} /> Manage projects</button>
+      <div className="flex h-full items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-3xl border border-base-content/8 bg-base-100 p-8 text-center shadow-xl">
+          <div className="mx-auto mb-5 grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <FolderAdd size={24} />
+          </div>
+          <h2 className="text-lg font-bold text-base-content">Choose a Project</h2>
+          <p className="mt-2 text-xs leading-relaxed text-base-content/50">
+            Workspaces live inside projects. Select an active project from the top selector or manage your projects here.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/projects')}
+            className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-content transition hover:bg-primary/95 shadow-sm"
+          >
+            <Add size={16} />
+            <span>Manage Projects</span>
+          </button>
+        </div>
       </div>
     );
   }
 
   const presetColors = [
-    // Gradients
-    'linear-gradient(135deg, #a855f7, #6366f1)',
-    'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-    'linear-gradient(135deg, #1e293b, #0f172a)',
-    'linear-gradient(135deg, #2563eb, #1e40af)',
-    'linear-gradient(135deg, #3b82f6, #60a5fa)',
-    'linear-gradient(135deg, #4f46e5, #4338ca)',
-    'linear-gradient(135deg, #991b1b, #ef4444)',
-    'linear-gradient(135deg, #475569, #1e293b)',
-    'linear-gradient(135deg, #10b981, #047857)',
-    'linear-gradient(135deg, #ec4899, #be185d)',
-    'linear-gradient(135deg, #f59e0b, #b45309)',
-    // Solids
-    '#e11d48', // rose
-    '#7c3aed', // purple
-    '#b91c1c', // red
-    '#059669', // green
-    '#c2410c', // rust
-    '#2563eb', // blue
-    '#475569', // slate
-    '#0284c7', // light blue
-    '#65a30d', // olive
+    'linear-gradient(135deg, #b39ddb, #9fa8da)', // Lavender -> Periwinkle
+    'linear-gradient(135deg, #81d4fa, #80cbc4)', // Sky -> Mint
+    'linear-gradient(135deg, #a5d6a7, #c5e1a5)', // Sage -> Pistachio
+    'linear-gradient(135deg, #ffcc80, #f48fb1)', // Peach -> Blush
+    'linear-gradient(135deg, #ce93d8, #e1bee7)', // Mauve -> Lilac
+    'linear-gradient(135deg, #90caf9, #b2dfdb)', // Dusty Blue -> Seafoam
+    'linear-gradient(135deg, #ef9a9a, #ffcc80)', // Rose Quartz -> Peach
+    'linear-gradient(135deg, #bcaaa4, #ffe0b2)', // Clay -> Sand
   ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
+    <div className="h-full overflow-y-auto p-6 sm:p-8">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-base-content">Workspaces</h2>
-          <p className="text-sm text-base-content/70 mt-1">Manage boards for this project</p>
+          <h2 className="text-lg font-bold text-base-content">Workspace Boards</h2>
+          <p className="text-xs text-base-content/40 mt-0.5">Manage and navigate boards for this project</p>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-stretch">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {/* Existing Boards */}
-        {boards?.map(board => (
-          <button
-            key={board.id}
-            onClick={() => setActiveBoard(board.id)}
-            className="w-64 h-32 rounded-xl p-4 flex flex-col justify-between text-right border border-white/10 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 group relative overflow-hidden"
-            style={{ background: board.background_color || '#334155' }}
-          >
-            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300"></div>
-            <div className="relative z-10 w-full flex justify-between items-start">
-              <span className="text-white/80 text-xs font-semibold uppercase tracking-wider">{board.statuses?.length || 0} Statuses</span>
-            </div>
-            <div className="relative z-10 w-full text-left">
-              <h3 className="text-white font-bold text-lg">{board.title}</h3>
-            </div>
-          </button>
-        ))}
+        {boards?.map((board, idx) => {
+          const pastelFallback = presetColors[idx % presetColors.length];
+          return (
+            <button
+              key={board.id}
+              onClick={() => setActiveBoard(board.id.toString())}
+              className="group relative flex h-40 flex-col justify-between overflow-hidden rounded-2xl p-4 text-center border border-base-content/6 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+              style={{ background: board.background_color || pastelFallback }}
+            >
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition duration-300" />
+              
+              <div className="relative z-10 flex justify-end">
+                <span className="rounded-full bg-white/20 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                  {board.statuses?.length || 0} Statuses
+                </span>
+              </div>
+              
+              <div className="relative z-10 my-auto flex flex-1 items-center justify-center px-3">
+                <h3 dir="auto" className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight text-center drop-shadow-md">
+                  {board.title}
+                </h3>
+              </div>
+            </button>
+          );
+        })}
 
-        {/* Add Board Button */}
+        {/* Add Board Card */}
         <button
           onClick={() => setIsModalOpen(true)}
-          className="w-64 h-32 rounded-xl p-4 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-base-300 text-base-content/60 hover:text-base-content hover:border-base-content/40 transition-colors bg-transparent"
+          className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-base-content/15 bg-base-100/50 text-base-content/40 transition hover:border-base-content/25 hover:bg-base-100 hover:text-base-content"
         >
           <Add size={24} />
-          <span className="font-semibold text-sm">Add Board</span>
+          <span className="text-sm font-bold">Add Board</span>
         </button>
       </div>
 
       {/* Create Board Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-base-100 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-base-300">
-            <h3 className="text-lg font-bold text-base-content mb-4">Create New Board</h3>
-            
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-base-100 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-base-content/10 animate-in fade-in zoom-in-95 duration-150">
+            <h3 className="text-base font-bold text-base-content mb-4">Create New Board</h3>
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-base-content/80 mb-1">Board Title</label>
-                <input 
-                  type="text" 
+                <label className="block text-xs font-bold text-base-content/40 mb-1 uppercase tracking-wider">Board Title</label>
+                <input
+                  type="text"
                   value={boardTitle}
                   onChange={(e) => setBoardTitle(e.target.value)}
-                  className="w-full bg-base-200 border border-base-300 rounded-lg px-4 py-2 text-base-content outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="e.g. Development Sprint"
+                  className="w-full bg-base-200 rounded-xl px-3 py-2 text-xs font-semibold text-base-content outline-none focus:ring-2 focus:ring-primary/20 border border-transparent focus:border-primary/30 focus:bg-base-100 transition-all"
+                  placeholder="e.g. Sprint Backlog"
+                  autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content/80 mb-2">Color Theme</label>
-                <div className="flex flex-wrap gap-2">
-                  {presetColors.map(color => (
+                <label className="block text-xs font-bold text-base-content/40 mb-2 uppercase tracking-wider">Color Theme</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {presetColors.map((color) => (
                     <button
                       key={color}
+                      type="button"
                       onClick={() => setBoardColor(color)}
-                      className={`w-12 h-8 rounded-lg border-2 transition-all ${boardColor === color ? 'border-white ring-2 ring-indigo-500 scale-110' : 'border-transparent'}`}
+                      className={`h-9 rounded-xl border-2 transition-all ${
+                        boardColor === color ? 'border-primary ring-2 ring-primary/20 scale-105' : 'border-transparent opacity-80 hover:opacity-100'
+                      }`}
                       style={{ background: color }}
                     />
                   ))}
@@ -139,23 +153,25 @@ export const WorkspaceView: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button 
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
                 onClick={() => {
                   setIsModalOpen(false);
                   setBoardTitle('');
-                  setBoardColor('#6366f1');
+                  setBoardColor(presetColors[0]);
                 }}
-                className="px-4 py-2 text-sm font-medium text-base-content/60 hover:text-base-content"
+                className="rounded-xl px-4 py-2 text-xs font-bold text-base-content/50 hover:bg-base-200 transition"
               >
                 Cancel
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={() => createBoardMutation.mutate()}
-                disabled={!boardTitle || createBoardMutation.isPending}
-                className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+                disabled={!boardTitle.trim() || createBoardMutation.isPending}
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {createBoardMutation.isPending ? 'Creating...' : 'Create'}
+                {createBoardMutation.isPending ? 'Creating...' : 'Create Board'}
               </button>
             </div>
           </div>

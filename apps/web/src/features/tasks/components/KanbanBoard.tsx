@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getBoards, getTasks, moveTask, createTask, reorderTasks, createStatus, updateTask } from '../api/tasksApi';
+import { getBoards, getTasks, moveTask, createTask, reorderTasks, createStatus, updateTask, reorderStatuses } from '../api/tasksApi';
 import { getActiveTimers, startTimer, stopTimer } from '../../attendance/api/attendanceApi';
 import type { TimeLog } from '../../attendance/types';
 import { useTaskStore } from '../store/useTaskStore';
+import { useAuthStore } from '../../auth/store/authStore';
 import { TaskCard } from './TaskCard';
 import { TaskSheet } from './TaskSheet';
+import { FocusModeView } from './FocusModeView';
 import { DroppableColumn } from './DroppableColumn';
-import type { Task } from '../types';
+import type { Task, Board } from '../types';
 
 import {
   DndContext,
@@ -23,21 +26,29 @@ import type {
   DragEndEvent,
   DragOverEvent,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableTask } from './SortableTask';
-import { Add, More, SearchNormal1 } from 'iconsax-reactjs';
+import { Add, More, SearchNormal1, TickCircle, Category, Activity, User, Danger, Flash } from 'iconsax-reactjs';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 
 export const KanbanBoard: React.FC = () => {
-  const { activeProjectId, activeBoardId } = useTaskStore();
+  const { activeProjectId, activeBoardId, selectedTaskId, setSelectedTaskId } = useTaskStore();
+  const currentUser = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [selectedTaskForSheet, setSelectedTaskForSheet] = useState<Task | null>(null);
+  const [activeColumn, setActiveColumn] = useState<any | null>(null);
+
+  const selectedTaskIdParam = selectedTaskId;
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'blocked' | 'priority'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'my-tasks' | 'blocked' | 'priority'>('all');
   const [focusMode, setFocusMode] = useState(false);
   const [focusedTaskId, setFocusedTaskId] = useState<string | number | null>(null);
+  const [columnSorts, setColumnSorts] = useState<Record<string, 'priority' | 'due_date' | 'title' | null>>({});
+  const [columnMenuAnchor, setColumnMenuAnchor] = useState<{ id: string | number; rect: DOMRect } | null>(null);
+
+  const setSelectedTaskForSheet = (task: Task | null) => {
+    setSelectedTaskId(task ? task.id.toString() : null);
+  };
 
   // Add task state
 
@@ -214,6 +225,7 @@ export const KanbanBoard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
+      queryClient.invalidateQueries({ queryKey: ['live-activity'] });
     },
     onError: (err: any, taskId, context: any) => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to start timer';
@@ -253,7 +265,9 @@ export const KanbanBoard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['activeTimers'] });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
+      queryClient.invalidateQueries({ queryKey: ['standup-grid'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
+      queryClient.invalidateQueries({ queryKey: ['live-activity'] });
     },
     onError: (err: any, taskId) => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to stop timer';
@@ -373,11 +387,69 @@ export const KanbanBoard: React.FC = () => {
     createStatusMutation.mutate(newStatusName);
   };
 
+  const reorderStatusesMutation = useMutation({
+    mutationFn: ({ boardId, orders }: { boardId: string | number; orders: { id: string | number; order: number }[] }) =>
+      reorderStatuses(boardId, orders),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boards', activeProjectId] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || err?.response?.data?.error || "Failed to reorder columns");
+      queryClient.invalidateQueries({ queryKey: ['boards', activeProjectId] });
+    }
+  });
+
+  const handleMoveStatus = (statusId: string | number, direction: 'left' | 'right') => {
+    const board = boards?.find(b => b.id.toString() === activeBoardId);
+    if (!board) return;
+    const sortedStatuses = [...board.statuses].sort((a, b) => a.order - b.order);
+    const idx = sortedStatuses.findIndex(s => s.id.toString() === statusId.toString());
+    if (idx === -1) return;
+
+    if (direction === 'left' && idx > 0) {
+      const temp = sortedStatuses[idx];
+      sortedStatuses[idx] = sortedStatuses[idx - 1];
+      sortedStatuses[idx - 1] = temp;
+    } else if (direction === 'right' && idx < sortedStatuses.length - 1) {
+      const temp = sortedStatuses[idx];
+      sortedStatuses[idx] = sortedStatuses[idx + 1];
+      sortedStatuses[idx + 1] = temp;
+    } else {
+      return;
+    }
+
+    const newOrders = sortedStatuses.map((s, orderIdx) => ({ id: s.id, order: orderIdx }));
+
+    queryClient.setQueryData(['boards', activeProjectId], (oldBoards: Board[] | undefined) => {
+      if (!oldBoards) return oldBoards;
+      return oldBoards.map(b => {
+        if (b.id.toString() === activeBoardId) {
+          const updatedStatuses = b.statuses.map((s: any) => {
+            const match = newOrders.find(o => o.id.toString() === s.id.toString());
+            return match ? { ...s, order: match.order } : s;
+          });
+          return { ...b, statuses: updatedStatuses.sort((a: any, b: any) => a.order - b.order) };
+        }
+        return b;
+      });
+    });
+
+    reorderStatusesMutation.mutate({ boardId: activeBoardId!, orders: newOrders });
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     isDraggingRef.current = true;
     const { active } = event;
-    const task = localTasks.find(t => t.id.toString() === active.id);
-    if (task) setActiveTask(task);
+    const activeId = active.id.toString();
+
+    if (activeId.startsWith('col-')) {
+      const statusId = activeId.replace('col-', '');
+      const status = boards?.flatMap(b => b.statuses).find(s => s.id.toString() === statusId);
+      if (status) setActiveColumn(status);
+    } else {
+      const task = localTasks.find(t => t.id.toString() === activeId);
+      if (task) setActiveTask(task);
+    }
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -388,6 +460,9 @@ export const KanbanBoard: React.FC = () => {
     const overId = over.id.toString();
 
     if (activeId === overId) return;
+
+    // If dragging a column, we do not perform task transition logic
+    if (activeId.startsWith('col-') || overId.startsWith('col-') && activeId.startsWith('col-')) return;
 
     const activeStatusId = findStatusId(activeId);
     const overStatusId = findStatusId(overId);
@@ -423,6 +498,11 @@ export const KanbanBoard: React.FC = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     isDraggingRef.current = false;
     const { active, over } = event;
+    
+    if (activeColumn) {
+      setActiveColumn(null);
+    }
+
     if (!over) {
       // Snap back
       setLocalTasks(serverTasks || []);
@@ -433,6 +513,45 @@ export const KanbanBoard: React.FC = () => {
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
+    // ─── Column Drag End Logic ───
+    if (activeId.startsWith('col-')) {
+      if (activeId !== overId) {
+        const activeStatusId = activeId.replace('col-', '');
+        const overStatusId = overId.replace('col-', '');
+
+        const board = boards?.find(b => b.id.toString() === activeBoardId);
+        if (board) {
+          const sortedStatuses = [...board.statuses].sort((a, b) => a.order - b.order);
+          const activeIndex = sortedStatuses.findIndex(s => s.id.toString() === activeStatusId);
+          const overIndex = sortedStatuses.findIndex(s => s.id.toString() === overStatusId);
+
+          if (activeIndex !== -1 && overIndex !== -1) {
+            const reordered = arrayMove(sortedStatuses, activeIndex, overIndex);
+            const newOrders = reordered.map((s, idx) => ({ id: s.id, order: idx }));
+
+            // Optimistic update
+            queryClient.setQueryData(['boards', activeProjectId], (oldBoards: Board[] | undefined) => {
+              if (!oldBoards) return oldBoards;
+              return oldBoards.map(b => {
+                if (b.id.toString() === activeBoardId) {
+                  const updatedStatuses = b.statuses.map(s => {
+                    const match = newOrders.find(o => o.id.toString() === s.id.toString());
+                    return match ? { ...s, order: match.order } : s;
+                  });
+                  return { ...b, statuses: updatedStatuses.sort((a, b) => a.order - b.order) };
+                }
+                return b;
+              });
+            });
+
+            reorderStatusesMutation.mutate({ boardId: activeBoardId!, orders: newOrders });
+          }
+        }
+      }
+      return;
+    }
+
+    // ─── Task Drag End Logic ───
     const movedTask = localTasks.find(t => t.id.toString() === activeId) || activeTask;
     if (!movedTask) {
       setActiveTask(null);
@@ -502,7 +621,7 @@ export const KanbanBoard: React.FC = () => {
   };
 
   if (!activeProjectId || !activeBoardId) return null;
-  if (!boards || boards.length === 0) return <div className="p-8 text-center text-slate-500">No boards found for this project.</div>;
+  if (!boards || boards.length === 0) return <div className="p-8 text-center text-base-content/45">No boards found for this project.</div>;
 
   const board = boards.find(b => b.id.toString() === activeBoardId) || boards[0];
   const normalizedSearch = searchQuery.trim().toLowerCase();
@@ -510,188 +629,472 @@ export const KanbanBoard: React.FC = () => {
     const matchesSearch = !normalizedSearch || `${task.title} ${task.key}`.toLowerCase().includes(normalizedSearch);
     const matchesFilter = filter === 'all'
       || (filter === 'active' && !task.is_finished && task.status_detail?.code !== 'done')
+      || (filter === 'my-tasks' && Boolean(currentUser?.id) && (task.assignee_detail?.id === currentUser?.id || task.assignee === currentUser?.id))
       || (filter === 'blocked' && task.is_blocked)
       || (filter === 'priority' && ['high', 'critical'].includes(task.priority));
     return matchesSearch && matchesFilter;
   });
-  const focusTask = filteredTasks.find(task => task.id === focusedTaskId)
-    || filteredTasks.find(task => task.is_active_timer_running)
-    || filteredTasks.find(task => !task.is_finished)
-    || filteredTasks[0];
+  const focusTask = filteredTasks.find(task => task.id === focusedTaskId) || filteredTasks[0];
   const completedCount = localTasks.filter(task => task.is_finished || task.status_detail?.code?.toLowerCase() === 'done').length;
-  const blockedCount = localTasks.filter(task => task.is_blocked).length;
-  const activeCount = Math.max(0, localTasks.length - completedCount);
+  const boardProgress = localTasks.length > 0 ? Math.round((completedCount / localTasks.length) * 100) : 0;
+
+  const getStatusColor = (statusName: string, boardBg?: string) => {
+    if (boardBg && boardBg.startsWith('#')) return boardBg;
+    const lc = statusName.toLowerCase();
+    if (lc.includes('todo') || lc.includes('backlog')) return '#94a3b8';
+    if (lc.includes('doing') || lc.includes('progress')) return '#3b82f6';
+    if (lc.includes('review')) return '#a855f7';
+    if (lc.includes('done') || lc.includes('complete')) return '#10b981';
+    if (lc.includes('block')) return '#ef4444';
+    return '#6366f1';
+  };
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-base-200">
-      <div className="shrink-0 border-b border-base-content/10 bg-base-100/80 px-4 py-4 backdrop-blur-xl sm:px-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Task workspace</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-base-content">Work in flow</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] font-semibold text-base-content/45"><span>{localTasks.length} tasks</span><span className="text-primary">{activeCount} active</span><span className="text-success">{completedCount} done</span>{blockedCount > 0 && <span className="text-warning">{blockedCount} blocked</span>}</div>
+      {/* ─── Streamlined Linear-Style Toolbar ─── */}
+      <div className="shrink-0 border-b border-base-content/10 bg-base-100/90 px-4 py-3 backdrop-blur-xl sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Quick Filters & Board Progress */}
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            {/* Quick Filter Pills */}
+            <div className="flex items-center gap-1 rounded-xl bg-base-200/80 p-1">
+              {(['all', 'active', 'my-tasks', 'blocked', 'priority'] as const).map((item) => {
+                const labels: Record<string, string> = {
+                  all: 'All',
+                  active: 'Active',
+                  'my-tasks': 'My Tasks',
+                  blocked: 'Blocked',
+                  priority: 'High Priority',
+                };
+                const icons: Record<string, React.ReactNode> = {
+                  all: <Category size={13} />,
+                  active: <Activity size={13} />,
+                  'my-tasks': <User size={13} />,
+                  blocked: <Danger size={13} className="text-red-500" />,
+                  priority: <Flash size={13} className="text-amber-500" />,
+                };
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setFilter(item)}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                      filter === item
+                        ? 'bg-base-100 text-primary shadow-xs'
+                        : 'text-base-content/50 hover:text-base-content'
+                    }`}
+                  >
+                    {icons[item]}
+                    <span>{labels[item]}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Progress Bar & Stats */}
+            {localTasks.length > 0 && (
+              <div className="hidden items-center gap-2 rounded-xl bg-base-200/50 px-3 py-1 md:flex">
+                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-base-200">
+                  <div
+                    className="h-full rounded-full bg-emerald-500 transition-all duration-700"
+                    style={{ width: `${boardProgress}%` }}
+                  />
+                </div>
+                <span className="text-[11px] font-bold text-emerald-600">{boardProgress}%</span>
+                <span className="text-[11px] font-semibold text-base-content/40">
+                  ({completedCount}/{localTasks.length} done)
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex h-10 w-full items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-3 text-base-content/45 focus-within:border-primary/40 sm:w-64">
-              <SearchNormal1 size={16} />
-              <input aria-label="Search tasks" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search tasks" className="w-full bg-transparent text-xs font-semibold text-base-content outline-none placeholder:text-base-content/35" />
+
+          {/* Right: Search + Focus + Quick Add */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Compact Search Box */}
+            <label className="flex h-8.5 items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-2.5 text-base-content/45 focus-within:border-primary/40 focus-within:bg-base-100 w-36 sm:w-52 transition-all">
+              <SearchNormal1 size={14} />
+              <input
+                aria-label="Search tasks"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search tasks..."
+                className="w-full bg-transparent text-xs font-medium text-base-content outline-none placeholder:text-base-content/35"
+              />
             </label>
-            <button type="button" onClick={() => { const next = !focusMode; setFocusMode(next); if (next && !focusedTaskId) setFocusedTaskId(focusTask?.id || null); }} className={`motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold ${focusMode ? 'border-primary/30 bg-primary/10 text-primary' : 'border-base-content/10 text-base-content/55 hover:border-primary/30 hover:text-primary'}`}>
-              <span className="text-sm">◉</span>{focusMode ? 'Exit focus' : 'Focus mode'}
+
+            {/* Focus Mode Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                const next = !focusMode;
+                setFocusMode(next);
+                if (next && !focusedTaskId) setFocusedTaskId(focusTask?.id || null);
+              }}
+              className={`inline-flex h-8.5 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition-all ${
+                focusMode
+                  ? 'border-primary/30 bg-primary/10 text-primary'
+                  : 'border-base-content/10 text-base-content/55 hover:border-primary/30 hover:text-primary'
+              }`}
+              title="Focus Mode"
+            >
+              <span className="text-sm">◉</span>
+              <span className="hidden sm:inline">{focusMode ? 'Exit Focus' : 'Focus'}</span>
             </button>
-            <button type="button" onClick={() => setAddingTaskToStatusId(board.statuses[0]?.id || null)} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-lg shadow-primary/15 hover:bg-primary/90">
-              <Add size={16} /> Quick add
+
+            {/* Quick Add Button */}
+            <button
+              type="button"
+              onClick={() => setAddingTaskToStatusId(board.statuses[0]?.id || null)}
+              className="inline-flex h-8.5 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
+            >
+              <Add size={15} />
+              <span>New Task</span>
             </button>
           </div>
-        </div>
-        <div className="mt-4 flex items-center gap-1 overflow-x-auto pb-0.5">
-          {(['all', 'active', 'blocked', 'priority'] as const).map(item => (
-            <button key={item} type="button" onClick={() => setFilter(item)} className={`motion-interactive rounded-lg px-3 py-1.5 text-[11px] font-bold capitalize ${filter === item ? 'bg-base-content text-base-100' : 'text-base-content/45 hover:bg-base-200 hover:text-base-content'}`}>
-              {item === 'priority' ? 'High priority' : item}
-            </button>
-          ))}
-          <span className="ms-auto hidden text-[11px] font-semibold text-base-content/35 sm:block">{filteredTasks.length} visible</span>
         </div>
       </div>
 
-      {focusMode && focusTask ? (
-        <div className="flex flex-1 items-center justify-center overflow-auto p-6 sm:p-10">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="madaar-surface w-full max-w-2xl p-6 sm:p-10">
-            <div className="mb-8 flex items-center justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Focus mode</p><p className="mt-2 text-sm text-base-content/45">One task, one clear next step.</p></div><button type="button" onClick={() => setFocusMode(false)} className="motion-interactive rounded-xl border border-base-content/10 px-3 py-2 text-xs font-bold text-base-content/55 hover:text-base-content">Back to board</button></div>
-            <span className="text-xs font-bold text-primary">{focusTask.key} · {focusTask.status_detail?.name || 'No status'}</span>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-base-content">{focusTask.title}</h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-base-content/55">{focusTask.description || 'Open the task sheet to add context and define the next step.'}</p>
-            <div className="mt-8 flex flex-wrap items-center gap-3"><button type="button" onClick={() => focusTask.is_active_timer_running ? handleStopTimer(focusTask.id) : handlePlayTimer(focusTask.id)} className={`motion-interactive rounded-xl px-5 py-3 text-sm font-bold ${focusTask.is_active_timer_running ? 'bg-error/10 text-error' : 'bg-primary text-primary-content'}`}>{focusTask.is_active_timer_running ? 'Stop timer' : 'Start timer'}</button><button type="button" onClick={() => setSelectedTaskForSheet(focusTask)} className="motion-interactive rounded-xl border border-base-content/10 px-5 py-3 text-sm font-bold text-base-content/65 hover:border-primary/30 hover:text-primary">Open task sheet</button></div>
-          </motion.div>
-        </div>
-      ) : <div className="flex-1 overflow-x-auto overflow-y-hidden">
-      <div className="flex h-full items-start gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
-        <DndContext
+      {focusMode ? (
+        <FocusModeView
+          tasks={filteredTasks.length > 0 ? filteredTasks : localTasks}
+          focusedTaskId={focusedTaskId || focusTask?.id || null}
+          onSelectTask={(id) => setFocusedTaskId(id)}
+          onExit={() => setFocusMode(false)}
+          onOpenSheet={(t) => setSelectedTaskForSheet(t)}
+          onPlayTimer={handlePlayTimer}
+          onStopTimer={handleStopTimer}
+          onToggleDone={handleToggleDone}
+          activeTimer={activeTimers?.[0]}
+        />
+      ) : (
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex h-full items-start gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
+            <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {[...board.statuses].sort((a, b) => a.order - b.order).map((status) => {
-            const columnTasks = filteredTasks.filter(t => t.status_detail?.id?.toString() === status.id.toString()) || [];
+          <SortableContext items={board.statuses.map(s => `col-${s.id}`)} strategy={horizontalListSortingStrategy}>
+            {[...board.statuses].sort((a, b) => a.order - b.order).map((status) => {
+              const columnTasks = filteredTasks.filter(t => t.status_detail?.id?.toString() === status.id.toString()) || [];
+              const isDoneColumn = status.code === 'done' || status.name.toLowerCase() === 'done' || status.name.toLowerCase() === 'completed';
+              const statusColor = getStatusColor(status.code, status.name);
 
-            return (
-              <DroppableColumn
-                key={status.id}
-                id={`col-${status.id}`}
-                className="madaar-surface min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-full bg-base-100/80"
-              >
-                <div className="mb-3 flex shrink-0 items-center justify-between px-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-base-content">{status.name}</h3>
-                    <span className="rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-bold text-base-content/45">
-                      {columnTasks.length}
-                    </span>
-                  </div>
-                  <span aria-hidden="true" className="rounded-lg p-1 text-base-content/25">
-                    <More size={16} />
-                  </span>
-                </div>
+              const sortType = columnSorts[status.id.toString()];
+              const displayColumnTasks = [...columnTasks];
+              if (sortType === 'priority') {
+                const prioWeight: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+                displayColumnTasks.sort((a, b) => (prioWeight[b.priority] || 0) - (prioWeight[a.priority] || 0));
+              } else if (sortType === 'due_date') {
+                displayColumnTasks.sort((a, b) => {
+                  if (!a.due_date) return 1;
+                  if (!b.due_date) return -1;
+                  return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+                });
+              } else if (sortType === 'title') {
+                displayColumnTasks.sort((a, b) => a.title.localeCompare(b.title));
+              }
 
-                <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1">
-                  <SortableContext items={columnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
-                    {columnTasks.map(task => (
-                      <SortableTask
-                        key={task.id}
-                        task={task}
-                        onClick={() => { setSelectedTaskForSheet(task); if (focusMode) setFocusedTaskId(task.id); }}
-                        onPlayTimer={handlePlayTimer}
-                        onStopTimer={handleStopTimer}
-                        onToggleDone={handleToggleDone}
-                        activeTimer={activeTimers.find(t => t.task?.toString() === task.id?.toString()) || null}
-                      />
-                    ))}
-                  </SortableContext>
+              return (
+                <DroppableColumn
+                  key={status.id}
+                  id={`col-${status.id}`}
+                  className={`min-w-[282px] w-[282px] flex flex-col h-fit max-h-full bg-transparent transition-opacity ${
+                    isDoneColumn ? 'opacity-70 hover:opacity-100' : ''
+                  }`}
+                  header={
+                    <div className="mb-3 flex shrink-0 items-center justify-between px-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="size-2.5 rounded-full"
+                          style={{ background: statusColor }}
+                        />
+                        <h3 className="text-sm font-semibold text-base-content">{status.name}</h3>
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                          style={{ background: `${statusColor}25`, color: statusColor }}
+                        >
+                          {columnTasks.length}
+                        </span>
+                      </div>
 
-                  {columnTasks.length === 0 && addingTaskToStatusId !== status.id && (
-                    <div className="rounded-xl border border-dashed border-base-content/10 px-3 py-8 text-center text-[11px] font-semibold text-base-content/35">No tasks here</div>
-                  )}
+                      {/* Interactive Column Actions Menu */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (columnMenuAnchor?.id === status.id) {
+                              setColumnMenuAnchor(null);
+                            } else {
+                              setColumnMenuAnchor({
+                                id: status.id,
+                                rect: e.currentTarget.getBoundingClientRect(),
+                              });
+                            }
+                          }}
+                          className="rounded-lg p-1 text-base-content/40 hover:bg-base-200 hover:text-base-content transition"
+                          title="Column options"
+                        >
+                          <More size={16} />
+                        </button>
 
-                  {addingTaskToStatusId === status.id && (
-                    <div
-                      className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-2.5"
-                      tabIndex={-1}
-                      onBlur={(e) => {
-                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                          setAddingTaskToStatusId(null);
-                          setNewTaskTitle('');
-                          setNewTaskPriority('low');
-                        }
-                      }}
-                    >
-                      <input
-                        autoFocus
-                        value={newTaskTitle}
-                        onChange={e => setNewTaskTitle(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') handleCreateTask(status.id);
-                          if (e.key === 'Escape') {
+                        {columnMenuAnchor && columnMenuAnchor.id === status.id && createPortal(
+                          <>
+                            <div className="fixed inset-0 z-45" onClick={() => setColumnMenuAnchor(null)} />
+                            <div
+                              className="fixed z-50 w-52 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-xs font-semibold shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+                              style={{
+                                top: columnMenuAnchor.rect.bottom + 4,
+                                left: Math.max(10, columnMenuAnchor.rect.right - 208),
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColumnMenuAnchor(null);
+                                  setAddingTaskToStatusId(status.id);
+                                }}
+                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-primary hover:bg-primary/10"
+                              >
+                                <Add size={14} /> Add task to column
+                              </button>
+
+                              <div className="my-1 h-px bg-base-content/8" />
+
+                              <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
+                                Sort Column
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: null }));
+                                  setColumnMenuAnchor(null);
+                                }}
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                                  !sortType ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
+                                }`}
+                              >
+                                Default Order
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'priority' }));
+                                  setColumnMenuAnchor(null);
+                                }}
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                                  sortType === 'priority' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
+                                }`}
+                              >
+                                By Priority (High → Low)
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'due_date' }));
+                                  setColumnMenuAnchor(null);
+                                }}
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                                  sortType === 'due_date' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
+                                }`}
+                              >
+                                By Due Date
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'title' }));
+                                  setColumnMenuAnchor(null);
+                                }}
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                                  sortType === 'title' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
+                                }`}
+                              >
+                                By Title (A - Z)
+                              </button>
+
+                              <div className="my-1 h-px bg-base-content/8" />
+
+                              <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
+                                Move Column
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColumnMenuAnchor(null);
+                                  handleMoveStatus(status.id, 'left');
+                                }}
+                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-base-content/70 hover:bg-base-200"
+                              >
+                                Move Left
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setColumnMenuAnchor(null);
+                                  handleMoveStatus(status.id, 'right');
+                                }}
+                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-base-content/70 hover:bg-base-200"
+                              >
+                                Move Right
+                              </button>
+
+                              {columnTasks.length > 0 && (
+                                <>
+                                  <div className="my-1 h-px bg-base-content/8" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setColumnMenuAnchor(null);
+                                      columnTasks.forEach((t) => {
+                                        if (!t.is_finished) handleToggleDone(t.id);
+                                      });
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-emerald-600 hover:bg-emerald-500/10"
+                                  >
+                                    <TickCircle size={14} /> Mark all as done
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </>,
+                          document.body
+                        )}
+                      </div>
+                    </div>
+                  }
+                >
+                  <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1">
+                    <SortableContext items={displayColumnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
+                      {displayColumnTasks.map(task => (
+                        <SortableTask
+                          key={task.id}
+                          task={task}
+                          onClick={() => { setSelectedTaskForSheet(task); if (focusMode) setFocusedTaskId(task.id); }}
+                          onPlayTimer={handlePlayTimer}
+                          onStopTimer={handleStopTimer}
+                          onToggleDone={handleToggleDone}
+                          activeTimer={activeTimers.find(t => t.task?.toString() === task.id?.toString()) || null}
+                        />
+                      ))}
+                    </SortableContext>
+
+
+                    {addingTaskToStatusId === status.id && (
+                      <div
+                        className="mt-2 rounded-2xl border border-primary/20 bg-base-100 p-3.5 shadow-md animate-in fade-in slide-in-from-top-2 duration-150"
+                        tabIndex={-1}
+                        onBlur={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                             setAddingTaskToStatusId(null);
                             setNewTaskTitle('');
                             setNewTaskPriority('low');
                           }
                         }}
-                        placeholder="Task title..."
-                        className="w-full bg-transparent text-[13px] font-medium text-base-content outline-none placeholder:text-base-content/40 placeholder:font-normal"
-                      />
-                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                        <select
-                          value={newTaskPriority}
-                          onChange={(e) => setNewTaskPriority(e.target.value as any)}
-                          className="h-7 cursor-pointer rounded-md border border-base-content/15 bg-base-100 px-2 text-[11px] font-medium text-base-content/70 outline-none transition-colors hover:bg-base-200 focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
-                        >
-                          <option value="low">Low Priority</option>
-                          <option value="medium">Medium Priority</option>
-                          <option value="high">High Priority</option>
-                          <option value="critical">Critical Priority</option>
-                        </select>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          <button
-                            onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); setNewTaskPriority('low'); }}
-                            className="h-7 rounded-md px-2.5 text-[11px] font-medium text-base-content/60 transition-colors hover:bg-base-content/10 hover:text-base-content"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => handleCreateTask(status.id)}
-                            disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
-                            className="h-7 rounded-md bg-primary px-3 text-[11px] font-bold text-primary-content shadow-sm transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {createTaskMutation.isPending ? 'Adding...' : 'Add'}
-                          </button>
+                      >
+                        <textarea
+                          autoFocus
+                          rows={2}
+                          value={newTaskTitle}
+                          onChange={e => setNewTaskTitle(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleCreateTask(status.id);
+                            }
+                            if (e.key === 'Escape') {
+                              setAddingTaskToStatusId(null);
+                              setNewTaskTitle('');
+                              setNewTaskPriority('low');
+                            }
+                          }}
+                          dir="auto"
+                          placeholder="What needs to be done?"
+                          className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-base-content/30 resize-none leading-snug"
+                        />
+
+                        <div className="mt-3 flex items-center justify-between gap-2 border-t border-base-content/6 pt-2">
+                          {/* Custom Priority Dot Buttons */}
+                          <div className="flex items-center gap-1.5">
+                            {(['low', 'medium', 'high', 'critical'] as const).map((p) => {
+                              const pColors: Record<string, string> = {
+                                low: 'bg-base-content/20 hover:bg-base-content/40 active:ring-base-content/10',
+                                medium: 'bg-blue-500 hover:bg-blue-600 active:ring-blue-500/20',
+                                high: 'bg-amber-500 hover:bg-amber-600 active:ring-amber-500/20',
+                                critical: 'bg-red-500 hover:bg-red-600 active:ring-red-500/20',
+                              };
+                              const isSelected = newTaskPriority === p;
+                              return (
+                                <button
+                                  key={p}
+                                  type="button"
+                                  onClick={() => setNewTaskPriority(p)}
+                                  className={`size-3.5 rounded-full transition-all active:ring-4 ${pColors[p]} ${
+                                    isSelected ? 'ring-2 ring-primary scale-125' : 'opacity-60 hover:opacity-100'
+                                  }`}
+                                  title={`${p.toUpperCase()} priority`}
+                                />
+                              );
+                            })}
+                            <span className="text-[10px] font-bold text-base-content/40 capitalize ml-1">
+                              {newTaskPriority}
+                            </span>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); setNewTaskPriority('low'); }}
+                              className="rounded-lg px-2 py-1 text-[11px] font-semibold text-base-content/50 hover:bg-base-200 transition"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCreateTask(status.id)}
+                              disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
+                              className="rounded-lg bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {createTaskMutation.isPending ? '...' : 'Add'}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
+
+                  {addingTaskToStatusId !== status.id && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddingTaskToStatusId(status.id);
+                        setNewTaskTitle('');
+                        setNewTaskPriority('low');
+                      }}
+                      className="mt-1.5 flex shrink-0 w-full items-center justify-center gap-1 rounded-xl border border-dashed border-base-content/10 py-2 text-xs font-bold text-base-content/35 transition hover:border-base-content/25 hover:text-base-content/65 hover:bg-base-100/50"
+                    >
+                      <span className="text-sm leading-none mb-0.5">+</span>
+                      <span>Add card</span>
+                    </button>
                   )}
-                </div>
-
-                {addingTaskToStatusId !== status.id && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAddingTaskToStatusId(status.id);
-                      setNewTaskTitle('');
-                      setNewTaskPriority('low');
-                    }}
-                    className="motion-interactive mt-1 flex shrink-0 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] font-medium text-base-content/50 transition-colors hover:bg-base-200 hover:text-base-content/90"
-                  >
-                    <span className="text-lg leading-none mb-0.5">+</span>
-                    <span>Add card</span>
-                  </button>
-                )}
-              </DroppableColumn>
-            );
-          })}
-
+                </DroppableColumn>
+              );
+            })}
+          </SortableContext>
 
           {isAddingStatus ? (
-            <div className="madaar-surface min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-full bg-base-100/80">
+            <div className="min-w-[282px] w-[282px] rounded-2xl border border-primary/20 bg-base-100 p-3.5 flex flex-col h-fit shadow-md animate-in fade-in slide-in-from-top-2 duration-150">
               <input
                 autoFocus
                 value={newStatusName}
@@ -703,48 +1106,61 @@ export const KanbanBoard: React.FC = () => {
                     setNewStatusName('');
                   }
                 }}
-                placeholder="Status name..."
-                className="w-full bg-transparent text-[13px] text-base-content outline-none placeholder:text-base-content/35 px-2 py-1 mb-2 border border-base-content/10 rounded-lg"
+                dir="auto"
+                placeholder="New column name..."
+                className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-base-content/30 px-2 py-1 mb-3.5 border-b border-base-content/10"
               />
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 justify-end">
                 <button
-                  onClick={handleCreateStatus}
-                  disabled={!newStatusName.trim() || createStatusMutation.isPending}
-                  className="rounded-lg bg-primary px-3 py-1.5 text-[12px] font-bold text-primary-content transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 flex-1"
-                >
-                  {createStatusMutation.isPending ? '...' : 'Add Status'}
-                </button>
-                <button
+                  type="button"
                   onClick={() => { setIsAddingStatus(false); setNewStatusName(''); }}
-                  className="px-3 py-1.5 text-[12px] text-base-content/45 transition-colors hover:text-base-content/80"
+                  className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-base-content/50 hover:bg-base-200 transition"
                 >
                   Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateStatus}
+                  disabled={!newStatusName.trim() || createStatusMutation.isPending}
+                  className="rounded-lg bg-primary px-3 py-1 text-[11px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {createStatusMutation.isPending ? '...' : 'Add Column'}
                 </button>
               </div>
             </div>
           ) : (
             <button
               onClick={() => setIsAddingStatus(true)}
-              className="min-w-[292px] w-[292px] rounded-[22px] p-3 flex items-center justify-center gap-2 border-2 border-dashed border-base-content/10 text-base-content/45 hover:border-base-content/20 hover:bg-base-200/50 hover:text-base-content/60 transition-all h-[56px] font-semibold text-sm"
+              className="min-w-[282px] w-[282px] rounded-2xl p-4 flex items-center justify-center gap-1.5 border border-dashed border-base-content/15 text-base-content/40 hover:border-base-content/25 hover:bg-base-100/50 hover:text-base-content/65 transition h-[56px] font-bold text-xs"
             >
-              <span className="text-lg leading-none mb-0.5">+</span>
-              Add Status
+              <span className="text-sm leading-none mb-0.5">+</span>
+              Add Column
             </button>
           )}
           <DragOverlay>
-            {activeTask ? <TaskCard task={activeTask} onClick={() => {}} activeTimer={activeTimers.find(t => t.task?.toString() === activeTask.id?.toString()) || null} onToggleDone={handleToggleDone} /> : null}
+            {activeColumn ? (
+              <div className="min-w-[282px] w-[282px] rounded-2xl border border-primary/20 bg-base-100 p-4 shadow-xl opacity-85">
+                <div className="flex items-center gap-2">
+                  <span className="size-2.5 rounded-full bg-primary" />
+                  <h3 className="text-sm font-semibold text-base-content">{activeColumn.name}</h3>
+                </div>
+              </div>
+            ) : activeTask ? (
+              <TaskCard task={activeTask} onClick={() => {}} activeTimer={activeTimers.find(t => t.task?.toString() === activeTask.id?.toString()) || null} onToggleDone={handleToggleDone} />
+            ) : null}
           </DragOverlay>
         </DndContext>
       </div>
-      </div>}
+    </div>
+  )}
 
       <TaskSheet
-        task={selectedTaskForSheet ? localTasks.find(t => t.id === selectedTaskForSheet.id) || selectedTaskForSheet : null}
+        task={selectedTaskIdParam ? localTasks.find(t => String(t.id) === selectedTaskIdParam) || null : null}
         onClose={() => setSelectedTaskForSheet(null)}
         onPatch={patchLocalTask}
         onPlayTimer={handlePlayTimer}
         onStopTimer={handleStopTimer}
-        activeTimer={activeTimers.find(t => t.task?.toString() === selectedTaskForSheet?.id?.toString()) || null}
+        activeTimer={activeTimers.find(t => String(t.task) === selectedTaskIdParam) || null}
         focusMode={focusMode}
       />
     </div>
