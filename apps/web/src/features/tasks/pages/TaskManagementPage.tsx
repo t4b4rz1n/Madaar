@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { GlobalProjectSelector } from '../components/GlobalProjectSelector';
 import { WorkspaceView } from '../components/WorkspaceView';
 import { KanbanBoard } from '../components/KanbanBoard';
-import { DependencyGraph } from '../components/DependencyGraph';
 import { useTaskStore } from '../store/useTaskStore';
 import { getBoards } from '../api/tasksApi';
-import { Calendar1, Kanban, Graph } from 'iconsax-reactjs';
+import { Calendar1, Kanban } from 'iconsax-reactjs';
 
 const AttendancePage = lazy(() => import('../../attendance/pages/AttendancePage'));
 
@@ -19,14 +18,15 @@ export const TaskManagementPage: React.FC = () => {
     enabled: !!activeProjectId,
   });
 
-
   return (
     <div className="flex h-[calc(100vh-5rem)] -mx-4 -my-5 flex-col bg-base-200 sm:-mx-8 sm:-my-7">
       {/* Top Navigation Bar */}
       <div className="relative z-50 flex flex-wrap items-center justify-between gap-3 border-b border-base-content/10 bg-base-100/90 px-4 py-3 backdrop-blur-xl sm:px-6">
         {/* Left side: Project selector + Board tabs */}
         <div className="flex min-w-0 items-center gap-3">
-          <div className="hidden items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-base-content/40 lg:flex"><Kanban size={15} className="text-primary" /> Workspace</div>
+          <div className="hidden items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-base-content/40 lg:flex">
+            <Kanban size={15} className="text-primary" /> Workspace
+          </div>
           <div className="h-5 w-px bg-base-content/10" />
           <GlobalProjectSelector />
 
@@ -49,7 +49,7 @@ export const TaskManagementPage: React.FC = () => {
                     }`}
                   >
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ background: board.background_color || pastelFallback }}
                     ></span>
                     {board.title}
@@ -73,22 +73,9 @@ export const TaskManagementPage: React.FC = () => {
                     ? 'bg-base-100 text-primary shadow-sm'
                     : 'text-base-content/50 hover:text-base-content'
                 }`}
-                >
-                  <Kanban size={13} />
-                  Kanban
-              </button>
-              <button
-                type="button"
-                aria-pressed={viewMode === 'graph'}
-                onClick={() => setViewMode('graph')}
-                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${
-                  viewMode === 'graph'
-                    ? 'bg-base-100 text-primary shadow-sm'
-                    : 'text-base-content/50 hover:text-base-content'
-                }`}
-                >
-                  <Graph size={13} />
-                  Graph
+              >
+                <Kanban size={13} />
+                Kanban
               </button>
               <button
                 type="button"
@@ -99,9 +86,9 @@ export const TaskManagementPage: React.FC = () => {
                     ? 'bg-base-100 text-primary shadow-sm'
                     : 'text-base-content/50 hover:text-base-content'
                 }`}
-                >
-                  <Calendar1 size={13} />
-                  Time & Attendance
+              >
+                <Calendar1 size={13} />
+                Time & Attendance
               </button>
             </div>
           )}
@@ -109,26 +96,17 @@ export const TaskManagementPage: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div
-        className="relative flex-1 overflow-hidden bg-base-200 transition-colors duration-300"
-      >
+      <div className="relative flex-1 overflow-hidden bg-base-200 transition-colors duration-300">
         {!activeBoardId ? (
           <WorkspaceView />
+        ) : viewMode === 'kanban' ? (
+          <KanbanBoard />
         ) : (
-          viewMode === 'kanban' ? (
-            <KanbanBoard />
-          ) : viewMode === 'graph' ? (
-            <div className="p-4 h-full">
-              <DependencyGraph />
-            </div>
-          ) : (
-            <div className="h-full overflow-hidden bg-base-100">
-              <AttendancePage />
-            </div>
-          )
+          <div className="h-full overflow-hidden bg-base-100">
+            <AttendancePage />
+          </div>
         )}
       </div>
-
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { getBoards, getTasks, moveTask, createTask, reorderTasks, createStatus, 
 import { getActiveTimers, startTimer, stopTimer } from '../../attendance/api/attendanceApi';
 import type { TimeLog } from '../../attendance/types';
 import { useTaskStore } from '../store/useTaskStore';
+import { useAuthStore } from '../../auth/store/authStore';
 import { TaskCard } from './TaskCard';
 import { TaskSheet } from './TaskSheet';
 import { DroppableColumn } from './DroppableColumn';
@@ -514,79 +515,125 @@ export const KanbanBoard: React.FC = () => {
 
   const board = boards.find(b => b.id.toString() === activeBoardId) || boards[0];
   const normalizedSearch = searchQuery.trim().toLowerCase();
+  const currentUser = useAuthStore((state) => state.user);
   const filteredTasks = localTasks.filter(task => {
     const matchesSearch = !normalizedSearch || `${task.title} ${task.key}`.toLowerCase().includes(normalizedSearch);
     const matchesFilter = filter === 'all'
       || (filter === 'active' && !task.is_finished && task.status_detail?.code !== 'done')
+      || (filter === 'my-tasks' && Boolean(currentUser?.id) && (task.assignee_detail?.id === currentUser?.id || task.assignee === currentUser?.id))
       || (filter === 'blocked' && task.is_blocked)
       || (filter === 'priority' && ['high', 'critical'].includes(task.priority));
     return matchesSearch && matchesFilter;
   });
-  const focusTask = filteredTasks.find(task => task.id === focusedTaskId)
-    || filteredTasks.find(task => task.is_active_timer_running)
-    || filteredTasks.find(task => !task.is_finished)
-    || filteredTasks[0];
+  const focusTask = filteredTasks.find(task => task.id === focusedTaskId) || filteredTasks[0];
   const completedCount = localTasks.filter(task => task.is_finished || task.status_detail?.code?.toLowerCase() === 'done').length;
-  const blockedCount = localTasks.filter(task => task.is_blocked).length;
-  const activeCount = Math.max(0, localTasks.length - completedCount);
   const boardProgress = localTasks.length > 0 ? Math.round((completedCount / localTasks.length) * 100) : 0;
 
-  // Status-aware column colors
-  const getStatusColor = (code: string, name: string): string => {
-    const lc = (code || name || '').toLowerCase();
+  const getStatusColor = (statusName: string, boardBg?: string) => {
+    if (boardBg && boardBg.startsWith('#')) return boardBg;
+    const lc = statusName.toLowerCase();
+    if (lc.includes('todo') || lc.includes('backlog')) return '#94a3b8';
+    if (lc.includes('doing') || lc.includes('progress')) return '#3b82f6';
+    if (lc.includes('review')) return '#a855f7';
     if (lc.includes('done') || lc.includes('complete')) return '#10b981';
-    if (lc.includes('doing') || lc.includes('progress') || lc.includes('active')) return '#3b82f6';
-    if (lc.includes('review')) return '#f59e0b';
     if (lc.includes('block')) return '#ef4444';
     return '#6366f1';
   };
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-base-200">
-      <div className="shrink-0 border-b border-base-content/10 bg-base-100/80 px-4 py-4 backdrop-blur-xl sm:px-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Task workspace</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-base-content">Work in flow</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] font-semibold text-base-content/45">
-              <span>{localTasks.length} tasks</span>
-              <span className="text-primary">{activeCount} active</span>
-              <span className="text-emerald-600">{completedCount} done</span>
-              {blockedCount > 0 && <span className="text-amber-500">{blockedCount} blocked</span>}
+      {/* ─── Streamlined Linear-Style Toolbar ─── */}
+      <div className="shrink-0 border-b border-base-content/10 bg-base-100/90 px-4 py-3 backdrop-blur-xl sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Quick Filters & Board Progress */}
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            {/* Quick Filter Pills */}
+            <div className="flex items-center gap-1 rounded-xl bg-base-200/80 p-1">
+              {(['all', 'active', 'my-tasks', 'blocked', 'priority'] as const).map((item) => {
+                const labels: Record<string, string> = {
+                  all: 'All',
+                  active: 'Active',
+                  'my-tasks': 'My Tasks 👤',
+                  blocked: 'Blocked ⚠️',
+                  priority: 'High Priority 🔥',
+                };
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setFilter(item)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                      filter === item
+                        ? 'bg-base-100 text-primary shadow-xs'
+                        : 'text-base-content/50 hover:text-base-content'
+                    }`}
+                  >
+                    {labels[item]}
+                  </button>
+                );
+              })}
             </div>
-            {/* Board progress bar */}
+
+            {/* Progress Bar & Stats */}
             {localTasks.length > 0 && (
-              <div className="mt-2.5 flex items-center gap-2">
-                <div className="h-1.5 w-40 overflow-hidden rounded-full bg-base-200">
+              <div className="hidden items-center gap-2 rounded-xl bg-base-200/50 px-3 py-1 md:flex">
+                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-base-200">
                   <div
                     className="h-full rounded-full bg-emerald-500 transition-all duration-700"
                     style={{ width: `${boardProgress}%` }}
                   />
                 </div>
                 <span className="text-[11px] font-bold text-emerald-600">{boardProgress}%</span>
+                <span className="text-[11px] font-semibold text-base-content/40">
+                  ({completedCount}/{localTasks.length} done)
+                </span>
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex h-10 w-full items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-3 text-base-content/45 focus-within:border-primary/40 sm:w-64">
-              <SearchNormal1 size={16} />
-              <input aria-label="Search tasks" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search tasks" className="w-full bg-transparent text-xs font-semibold text-base-content outline-none placeholder:text-base-content/35" />
+
+          {/* Right: Search + Focus + Quick Add */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Compact Search Box */}
+            <label className="flex h-8.5 items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-2.5 text-base-content/45 focus-within:border-primary/40 focus-within:bg-base-100 w-36 sm:w-52 transition-all">
+              <SearchNormal1 size={14} />
+              <input
+                aria-label="Search tasks"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search tasks..."
+                className="w-full bg-transparent text-xs font-medium text-base-content outline-none placeholder:text-base-content/35"
+              />
             </label>
-            <button type="button" onClick={() => { const next = !focusMode; setFocusMode(next); if (next && !focusedTaskId) setFocusedTaskId(focusTask?.id || null); }} className={`motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold ${focusMode ? 'border-primary/30 bg-primary/10 text-primary' : 'border-base-content/10 text-base-content/55 hover:border-primary/30 hover:text-primary'}`}>
-              <span className="text-sm">◉</span>{focusMode ? 'Exit focus' : 'Focus mode'}
+
+            {/* Focus Mode Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                const next = !focusMode;
+                setFocusMode(next);
+                if (next && !focusedTaskId) setFocusedTaskId(focusTask?.id || null);
+              }}
+              className={`inline-flex h-8.5 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition-all ${
+                focusMode
+                  ? 'border-primary/30 bg-primary/10 text-primary'
+                  : 'border-base-content/10 text-base-content/55 hover:border-primary/30 hover:text-primary'
+              }`}
+              title="Focus Mode"
+            >
+              <span className="text-sm">◉</span>
+              <span className="hidden sm:inline">{focusMode ? 'Exit Focus' : 'Focus'}</span>
             </button>
-            <button type="button" onClick={() => setAddingTaskToStatusId(board.statuses[0]?.id || null)} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-lg shadow-primary/15 hover:bg-primary/90">
-              <Add size={16} /> Quick add
+
+            {/* Quick Add Button */}
+            <button
+              type="button"
+              onClick={() => setAddingTaskToStatusId(board.statuses[0]?.id || null)}
+              className="inline-flex h-8.5 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
+            >
+              <Add size={15} />
+              <span>New Task</span>
             </button>
           </div>
-        </div>
-        <div className="mt-4 flex items-center gap-1 overflow-x-auto pb-0.5">
-          {(['all', 'active', 'blocked', 'priority'] as const).map(item => (
-            <button key={item} type="button" onClick={() => setFilter(item)} className={`motion-interactive rounded-lg px-3 py-1.5 text-[11px] font-bold capitalize ${filter === item ? 'bg-base-content text-base-100' : 'text-base-content/45 hover:bg-base-200 hover:text-base-content'}`}>
-              {item === 'priority' ? 'High priority' : item}
-            </button>
-          ))}
-          <span className="ms-auto hidden text-[11px] font-semibold text-base-content/35 sm:block">{filteredTasks.length} visible</span>
         </div>
       </div>
 

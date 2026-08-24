@@ -5,11 +5,11 @@ interface TaskStore {
   activeProjectId: string | null;
   activeBoardId: string | null;
   selectedTaskId: string | null;
-  viewMode: 'kanban' | 'graph' | 'attendance';
+  viewMode: 'kanban' | 'attendance';
   setActiveProject: (id: string | null) => void;
   setActiveBoard: (id: string | null) => void;
   setSelectedTaskId: (id: string | null) => void;
-  setViewMode: (mode: 'kanban' | 'graph' | 'attendance') => void;
+  setViewMode: (mode: 'kanban' | 'attendance') => void;
   reset: () => void;
 }
 
