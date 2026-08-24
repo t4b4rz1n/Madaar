@@ -22,7 +22,11 @@ class AttendanceService:
         attendance, created = Attendance.objects.get_or_create(
             user=user,
             date=today,
-            defaults={"organization": organization, "check_in": timezone.now(), "timezone": timezone_str},
+            defaults={
+                "organization": organization,
+                "check_in": timezone.now(),
+                "timezone": timezone_str,
+            },
         )
 
         update_fields = []
@@ -41,9 +45,9 @@ class AttendanceService:
         active_session = attendance.sessions.filter(end_time__isnull=True).first()
         if not active_session:
             from .models import AttendanceSession
+
             active_session = AttendanceSession.objects.create(
-                attendance=attendance,
-                start_time=timezone.now()
+                attendance=attendance, start_time=timezone.now()
             )
 
             # Schedule the rollover task for exactly midnight in the user's timezone
@@ -60,13 +64,20 @@ class AttendanceService:
 
             now_in_user_tz = timezone.now().astimezone(user_tz)
             # Find midnight of *today* in user's timezone
-            midnight_local = user_tz.localize(timezone.datetime.combine(now_in_user_tz.date(), time(23, 59, 59)))
+            midnight_local = user_tz.localize(
+                timezone.datetime.combine(now_in_user_tz.date(), time(23, 59, 59))
+            )
             midnight_utc = midnight_local.astimezone(pytz.UTC)
 
             # Schedule task only if we haven't passed midnight yet and not in eager mode
             from django.conf import settings
-            if timezone.now() < midnight_utc and not getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
-                process_midnight_attendance_rollover.apply_async(args=[attendance.id], eta=midnight_utc)
+
+            if timezone.now() < midnight_utc and not getattr(
+                settings, "CELERY_TASK_ALWAYS_EAGER", False
+            ):
+                process_midnight_attendance_rollover.apply_async(
+                    args=[attendance.id], eta=midnight_utc
+                )
 
         return attendance, created
 
@@ -99,7 +110,9 @@ class AttendanceService:
         if setting and attendance.check_in:
             # Re-calculate based on total session durations?
             # Or just check_out - check_in? Actually we should use sum of session durations.
-            total_duration_seconds = attendance.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
+            total_duration_seconds = (
+                attendance.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
+            )
             duration_hours = total_duration_seconds / 3600.0
             expected = float(setting.expected_daily_hours)
             if duration_hours > expected:
@@ -135,10 +148,14 @@ class AttendanceService:
             if setting:
                 total_duration_seconds = 0
                 if instance.pk:
-                    total_duration_seconds = instance.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
+                    total_duration_seconds = (
+                        instance.sessions.aggregate(total=Sum("duration_seconds"))["total"] or 0
+                    )
 
                 if total_duration_seconds == 0:
-                    total_duration_seconds = (instance.check_out - instance.check_in).total_seconds()
+                    total_duration_seconds = (
+                        instance.check_out - instance.check_in
+                    ).total_seconds()
 
                 duration_hours = total_duration_seconds / 3600.0
                 expected = float(setting.expected_daily_hours)
@@ -200,8 +217,6 @@ class TimeLogService:
         if getattr(_start_timer_local, "in_start_timer", False):
             return None
 
-
-
         now = timezone.now()
         timer = TimeLog.objects.create(
             user=user,
@@ -241,10 +256,126 @@ class TimeLogService:
         return timer
 
     @staticmethod
+    def _inject_to_standup(timer, is_manual=False):
+        """
+        Inject non-overlapping duration of stopped timer into the user's AsyncStandup.
+        Splits by midnight to handle cross-day work safely.
+        For manual timers, it entirely applies to the date of the timer's end_time.
+        """
+        if not timer.task or not timer.task.project:
+            return
+
+        import decimal
+        from datetime import timedelta
+
+        from tasks.models import AsyncStandup
+
+        if is_manual:
+            target_date = (
+                timezone.localtime(timer.end_time).date()
+                if timer.end_time
+                else timezone.localdate()
+            )
+            hours = decimal.Decimal(str(round(timer.duration_seconds / 3600.0, 2)))
+            if hours > 0:
+                standup, _ = AsyncStandup.objects.get_or_create(
+                    user=timer.user,
+                    project=timer.task.project,
+                    date=target_date,
+                )
+                new_hours = min(decimal.Decimal("24.00"), standup.hours_worked + hours)
+                standup.hours_worked = new_hours
+                standup.is_complete = False
+                standup.save(update_fields=["hours_worked", "is_complete"])
+            return
+
+        start_time = timer.start_time
+        end_time = timer.end_time or timezone.now()
+
+        # 1. Split into daily chunks based on local timezone midnights
+        chunks = []
+        current = timezone.localtime(start_time)
+        end_local = timezone.localtime(end_time)
+
+        while current < end_local:
+            next_midnight = (current + timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            chunk_end = min(end_local, next_midnight)
+            chunks.append((current, chunk_end))
+            current = next_midnight
+
+        for chunk_start, chunk_end in chunks:
+            chunk_date = chunk_start.date()
+
+            # 2. Find all OTHER timelogs for this user/project overlapping with chunk
+            from attendance.models import TimeLog
+
+            other_logs = TimeLog.objects.filter(
+                user=timer.user,
+                task__project=timer.task.project,
+                start_time__lt=chunk_end,
+                is_deleted=False,
+            ).exclude(id=timer.id)
+
+            other_intervals = []
+            for log in other_logs:
+                log_start = timezone.localtime(log.start_time)
+                # Active timers effectively end now()
+                log_end = (
+                    timezone.localtime(log.end_time)
+                    if log.end_time
+                    else timezone.localtime(timezone.now())
+                )
+
+                if log_start < chunk_end and log_end > chunk_start:
+                    other_intervals.append((log_start, log_end))
+
+            # 3. Calculate interval union to find non-overlapping duration
+            clipped = []
+            for s, e in other_intervals:
+                s_clip = max(s, chunk_start)
+                e_clip = min(e, chunk_end)
+                if s_clip < e_clip:
+                    clipped.append((s_clip, e_clip))
+
+            if not clipped:
+                non_overlap_duration = (chunk_end - chunk_start).total_seconds()
+            else:
+                clipped.sort(key=lambda x: x[0])
+                merged = []
+                for s, e in clipped:
+                    if not merged:
+                        merged.append([s, e])
+                    else:
+                        last_s, last_e = merged[-1]
+                        if s <= last_e:
+                            merged[-1][1] = max(last_e, e)
+                        else:
+                            merged.append([s, e])
+
+                covered_duration = sum((e - s).total_seconds() for s, e in merged)
+                non_overlap_duration = (chunk_end - chunk_start).total_seconds() - covered_duration
+
+            # 4. Inject into AsyncStandup
+            if non_overlap_duration > 0:
+                hours = decimal.Decimal(str(round(non_overlap_duration / 3600.0, 2)))
+                if hours > 0:
+                    standup, created = AsyncStandup.objects.get_or_create(
+                        user=timer.user,
+                        project=timer.task.project,
+                        date=chunk_date,
+                    )
+                    new_hours = min(decimal.Decimal("24.00"), standup.hours_worked + hours)
+                    standup.hours_worked = new_hours
+                    standup.is_complete = False
+                    standup.save(update_fields=["hours_worked", "is_complete"])
+
+    @staticmethod
     @transaction.atomic
     def stop_timer(user, log_id, auto_move=True):
         timer = (
-            TimeLog.objects.select_related("task", "task__status")
+            TimeLog.objects.select_related("task", "task__status", "task__project")
             .filter(id=log_id, user=user, is_active=True)
             .first()
         )
@@ -287,6 +418,9 @@ class TimeLogService:
                 timer.task.refresh_from_db()
                 TaskService.move_task(timer.task, user, new_status=review_status)
 
+        # Auto-inject into Standup
+        TimeLogService._inject_to_standup(timer)
+
         return timer
 
     @staticmethod
@@ -325,16 +459,8 @@ class TimeLogService:
             spent_hours=F("spent_hours") + duration_seconds / 3600.0
         )
 
-        # Auto-move task to Doing if it's in Todo
-        if task.status and task.status.code.lower() == "todo":
-            from tasks.models import TaskStatus
-            from tasks.services import TaskService
-
-            doing_status = TaskStatus.objects.filter(
-                board=task.status.board, code__iexact="doing"
-            ).first()
-            if doing_status:
-                TaskService.move_task(task, user, new_status=doing_status)
+        # Auto-inject manual time logs into AsyncStandup
+        TimeLogService._inject_to_standup(log, is_manual=True)
 
         return log
 

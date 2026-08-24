@@ -3,6 +3,7 @@ import datetime
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -25,6 +26,7 @@ from .serializers import (
     AttendanceSerializer,
     AttendanceWriteSerializer,
     HolidaySerializer,
+    LiveActivitySerializer,
     TimeLogSerializer,
     TimeLogWriteSerializer,
     TimeOffRequestSerializer,
@@ -56,12 +58,29 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
         from .models import AttendanceSession
 
-        qs = Attendance.objects.select_related("user", "organization").prefetch_related("sessions").filter(is_deleted=False)
+        qs = (
+            Attendance.objects.select_related("user", "organization")
+            .prefetch_related("sessions")
+            .filter(is_deleted=False)
+        )
 
         qs = qs.annotate(
-            annotated_total_seconds=Coalesce(Sum('sessions__duration_seconds', filter=Q(sessions__is_deleted=False, sessions__duration_seconds__isnull=False)), 0),
-            annotated_is_active=Exists(AttendanceSession.objects.filter(attendance=OuterRef('pk'), is_deleted=False, end_time__isnull=True)),
-            annotated_active_start=Max('sessions__start_time', filter=Q(sessions__is_deleted=False, sessions__end_time__isnull=True))
+            annotated_total_seconds=Coalesce(
+                Sum(
+                    "sessions__duration_seconds",
+                    filter=Q(sessions__is_deleted=False, sessions__duration_seconds__isnull=False),
+                ),
+                0,
+            ),
+            annotated_is_active=Exists(
+                AttendanceSession.objects.filter(
+                    attendance=OuterRef("pk"), is_deleted=False, end_time__isnull=True
+                )
+            ),
+            annotated_active_start=Max(
+                "sessions__start_time",
+                filter=Q(sessions__is_deleted=False, sessions__end_time__isnull=True),
+            ),
         )
 
         user = self.request.user
@@ -113,7 +132,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
         timezone_str = request.data.get("timezone", "UTC")
-        attendance, created = AttendanceService.check_in(request.user, org, timezone_str=timezone_str)
+        attendance, created = AttendanceService.check_in(
+            request.user, org, timezone_str=timezone_str
+        )
         resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(AttendanceSerializer(attendance).data, status=resp_status)
 
@@ -410,3 +431,58 @@ class TimesheetViewSet(viewsets.GenericViewSet):
 
         data = TimesheetService.get_project_timesheet(project_id, start_date, end_date)
         return self.paginate_and_respond(data, TimesheetTeamSerializer)
+
+
+class LiveActivityView(viewsets.GenericViewSet):
+    """
+    Read-only endpoint returning all active (running) timers for a given project.
+    Used by the frontend to render a live pulse/indicator on tasks.
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = LiveActivitySerializer
+
+    def list(self, request, project_id=None):
+        if not project_id:
+            return Response(
+                {"detail": _("Project ID is required.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = request.user
+
+        # Check if user is staff or belongs to the project/organization
+        if not user.is_staff and not user.is_superuser:
+            project = get_object_or_404(
+                Task.objects.model.project.field.related_model, id=project_id, is_deleted=False
+            )
+            is_member = project.members.filter(user=user, is_active=True, is_deleted=False).exists()
+            if not is_member:
+                is_admin = OrganizationMembership.objects.filter(
+                    organization=project.organization,
+                    user=user,
+                    role__in=["owner", "admin", "team_lead"],
+                ).exists()
+                if not is_admin:
+                    return Response(
+                        {
+                            "detail": _(
+                                "You do not have permission to view this project's activity."
+                            )
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+        # Retrieve all running timers for the project
+        active_logs = (
+            TimeLog.objects.select_related("user", "task", "project")
+            .filter(
+                project_id=project_id,
+                is_active=True,
+                is_deleted=False,
+            )
+            .order_by("-start_time")
+        )
+
+        serializer = self.get_serializer(active_logs, many=True, context={"request": request})
+        return Response(serializer.data)

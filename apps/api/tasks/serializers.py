@@ -395,9 +395,10 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
             "hours_worked",
             "today_work",
             "blockers",
+            "is_complete",
             "created_at",
         )
-        read_only_fields = ("id", "user", "created_at")
+        read_only_fields = ("id", "user", "created_at", "is_complete")
 
     def validate_hours_worked(self, value):
         if value is None:
@@ -411,22 +412,29 @@ class AsyncStandupSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         # Partial updates (e.g. changing only hours from the grid) keep the
         # stored descriptions instead of failing the required-texts check.
-        instance = self.instance
-        today_work = attrs.get(
-            "today_work",
-            instance.today_work if instance else None,
-        )
-        if not (today_work or "").strip():
-            raise serializers.ValidationError(
-                _("The 'today/tomorrow' description is required.")
-            )
+
+        # If the user is submitting text, mark it complete and validate.
+        if "today_work" in attrs:
+            today_work = attrs.get("today_work", "")
+            if not (today_work or "").strip():
+                raise serializers.ValidationError(
+                    _("The 'today/tomorrow' description is required.")
+                )
 
         date = attrs.get("date") or (self.instance.date if self.instance else None)
         if date and date > timezone.localdate():
-            raise serializers.ValidationError(
-                _("You cannot log standups for future days.")
-            )
+            raise serializers.ValidationError(_("You cannot log standups for future days."))
         return attrs
+
+    def update(self, instance, validated_data):
+        if "today_work" in validated_data and validated_data.get("today_work", "").strip():
+            validated_data["is_complete"] = True
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        if "today_work" in validated_data and validated_data.get("today_work", "").strip():
+            validated_data["is_complete"] = True
+        return super().create(validated_data)
 
 
 class OrderItemSerializer(serializers.Serializer):

@@ -92,6 +92,7 @@ class TaskStatusService:
     @transaction.atomic
     def create_status(board, code, name, order=None, actor=None):
         from .models import Board
+
         # Lock the board to serialize concurrent status creations and prevent race conditions
         Board.objects.select_for_update().get(id=board.id)
 
@@ -100,7 +101,9 @@ class TaskStatusService:
 
         base_code = code
         counter = 1
-        existing_codes = set(TaskStatus.objects.filter(board=board, is_deleted=False).values_list("code", flat=True))
+        existing_codes = set(
+            TaskStatus.objects.filter(board=board, is_deleted=False).values_list("code", flat=True)
+        )
 
         while code in existing_codes:
             code = f"{base_code}-{counter}"
@@ -636,9 +639,7 @@ class StandupService:
 
     @staticmethod
     @transaction.atomic
-    def create_standup(
-        user, project, date, hours_worked, today_work, blockers=None
-    ):
+    def create_standup(user, project, date, hours_worked, today_work, blockers=None):
         """Creates the single standup row of a user for a project/day."""
         from .models import AsyncStandup
 
@@ -647,15 +648,11 @@ class StandupService:
 
         date = StandupService._parse_date(date)
         if date > timezone.localdate():
-            raise ValidationError(
-                _("You cannot log standups for future days.")
-            )
+            raise ValidationError(_("You cannot log standups for future days."))
 
-        if (
-            AsyncStandup.objects.filter(
-                project=project, user=user, date=date, is_deleted=False
-            ).exists()
-        ):
+        if AsyncStandup.objects.filter(
+            project=project, user=user, date=date, is_deleted=False
+        ).exists():
             raise ValidationError(
                 _("You have already logged a standup for this project on this day.")
             )
