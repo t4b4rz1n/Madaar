@@ -38,6 +38,7 @@ export interface Project {
   name: string;
   description: string;
   prefix?: string;
+  color?: string;
   status: ProjectStatus;
   status_display?: string;
   budget?: number | string | null;
@@ -60,6 +61,7 @@ export interface Project {
 export interface ProjectPayload {
   name: string;
   description?: string;
+  color?: string;
   organization_id?: string | number;
   prefix?: string;
   budget?: number | string | null;

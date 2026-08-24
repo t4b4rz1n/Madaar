@@ -2,15 +2,18 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Add,
   Archive,
-  ArrowRight2,
   Calendar1,
   Edit2,
   FolderOpen,
   SearchNormal1,
   TickCircle,
   Trash,
+  ArrowRight2,
+  People,
+  TaskSquare,
+  CloseCircle,
 } from "iconsax-reactjs";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -33,24 +36,21 @@ const statuses: Array<{ value: ProjectStatus | ""; label: string }> = [
   { value: "archived", label: "Archived" },
 ];
 
-const statusStyles: Record<ProjectStatus, string> = {
-  active: "bg-success/12 text-success",
-  draft: "bg-base-200 text-base-content/65",
-  on_hold: "bg-warning/15 text-warning",
-  completed: "bg-info/12 text-info",
-  archived: "bg-error/10 text-error",
+const statusConfig: Record<
+  ProjectStatus,
+  { label: string; bgClass: string; textClass: string; dot: string }
+> = {
+  active:    { label: "Active",     bgClass: "bg-emerald-500/12",  textClass: "text-emerald-600",  dot: "bg-emerald-500" },
+  draft:     { label: "Draft",      bgClass: "bg-base-200",        textClass: "text-base-content/55", dot: "bg-base-content/30" },
+  on_hold:   { label: "On Hold",    bgClass: "bg-amber-500/12",    textClass: "text-amber-600",    dot: "bg-amber-500" },
+  completed: { label: "Completed",  bgClass: "bg-blue-500/12",     textClass: "text-blue-600",     dot: "bg-blue-500" },
+  archived:  { label: "Archived",   bgClass: "bg-red-500/10",      textClass: "text-red-500",      dot: "bg-red-400" },
 };
 
-const statusLabels: Record<ProjectStatus, string> = {
-  active: "Active",
-  draft: "Draft",
-  on_hold: "On hold",
-  completed: "Completed",
-  archived: "Archived",
-};
+const DEFAULT_COLOR = "#6366f1";
 
 const formatDate = (value?: string | null) => {
-  if (!value) return "No deadline";
+  if (!value) return null;
   return new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -62,6 +62,87 @@ const getOrganizationName = (
   organization: ProjectOrganization | string | number,
 ) => (typeof organization === "object" ? organization.name : "Organization");
 
+// Dropdown menu for project card actions
+function ProjectActionMenu({
+  project,
+  onEdit,
+  onDelete,
+  onComplete,
+  onArchive,
+}: {
+  project: Project;
+  onEdit: () => void;
+  onDelete: () => void;
+  onComplete: () => void;
+  onArchive: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  return (
+    <div className="relative" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="grid size-7 place-items-center rounded-lg text-base-content/35 opacity-0 transition group-hover:opacity-100 hover:bg-base-200 hover:text-base-content"
+        aria-label={`Actions for ${project.name}`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+        </svg>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -4 }}
+              transition={{ duration: 0.12 }}
+              className="absolute right-0 top-8 z-50 min-w-[168px] rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-2xl"
+            >
+              <button
+                type="button"
+                onClick={() => { setOpen(false); onEdit(); }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-base-content/70 hover:bg-base-200 hover:text-base-content"
+              >
+                <Edit2 size={14} /> Edit project
+              </button>
+              {project.status !== "completed" && project.status !== "archived" && (
+                <button
+                  type="button"
+                  onClick={() => { setOpen(false); onComplete(); }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-emerald-600 hover:bg-emerald-50"
+                >
+                  <TickCircle size={14} /> Mark complete
+                </button>
+              )}
+              {project.status !== "archived" && (
+                <button
+                  type="button"
+                  onClick={() => { setOpen(false); onArchive(); }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-base-content/50 hover:bg-base-200"
+                >
+                  <Archive size={14} /> Archive
+                </button>
+              )}
+              <div className="my-1 h-px bg-base-content/8" />
+              <button
+                type="button"
+                onClick={() => { setOpen(false); onDelete(); }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-50"
+              >
+                <Trash size={14} /> Delete
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function ProjectsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -70,7 +151,6 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<ProjectStatus | "">("");
 
-  // Modals States
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
@@ -111,9 +191,11 @@ export default function ProjectsPage() {
   );
   const summary = useMemo(
     () => ({
-      active: projects.filter((project) => project.status === "active").length,
+      total: projects.length,
+      active: projects.filter((p) => p.status === "active").length,
+      completed: projects.filter((p) => p.status === "completed").length,
       openTasks: projects.reduce(
-        (total, project) => total + (project.task_count || 0),
+        (total, p) => total + (p.task_count || 0),
         0,
       ),
     }),
@@ -148,11 +230,7 @@ export default function ProjectsPage() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["projects"] });
           toast.success("Project deleted successfully");
-          setDeleteModalState({
-            open: false,
-            projectId: null,
-            projectTitle: "",
-          });
+          setDeleteModalState({ open: false, projectId: null, projectTitle: "" });
         },
         onError: () => toast.error("Could not delete project."),
       });
@@ -171,8 +249,7 @@ export default function ProjectsPage() {
             Projects
           </h1>
           <p className="mt-2 max-w-2xl text-base-content/60">
-            One calm place to organize delivery, teams and the work behind every
-            outcome.
+            One calm place to organize delivery, teams and the work behind every outcome.
           </p>
         </div>
         <button
@@ -185,31 +262,25 @@ export default function ProjectsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-base-content/45">
-            Total projects
-          </p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight">
-            {projects.length}
-          </p>
-        </div>
-        <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-base-content/45">
-            Active now
-          </p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-success">
-            {summary.active}
-          </p>
-        </div>
-        <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-base-content/45">
-            Tracked tasks
-          </p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-primary">
-            {summary.openTasks}
-          </p>
-        </div>
+      <div className="grid gap-3 sm:grid-cols-4">
+        {[
+          { label: "Total", value: summary.total, color: "text-base-content" },
+          { label: "Active", value: summary.active, color: "text-emerald-600" },
+          { label: "Completed", value: summary.completed, color: "text-blue-600" },
+          { label: "Open tasks", value: summary.openTasks, color: "text-primary" },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-base-content/45">
+              {stat.label}
+            </p>
+            <p className={`mt-2 text-3xl font-semibold tracking-tight ${stat.color}`}>
+              {stat.value}
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Toolbar */}
@@ -221,43 +292,49 @@ export default function ProjectsPage() {
           />
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search projects..."
             className="input input-bordered w-full rounded-xl bg-base-100 pl-11"
             aria-label="Search projects"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+            >
+              <CloseCircle size={18} />
+            </button>
+          )}
         </label>
-        <select
-          value={status}
-          onChange={(event) =>
-            setStatus(event.target.value as ProjectStatus | "")
-          }
-          className="select select-bordered rounded-xl bg-base-100 sm:w-48"
-          aria-label="Filter projects by status"
-        >
+        <div className="flex gap-2 overflow-x-auto rounded-xl border border-base-content/10 bg-base-100 p-1 sm:w-auto">
           {statuses.map((item) => (
-            <option key={item.value} value={item.value}>
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => setStatus(item.value)}
+              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                status === item.value
+                  ? "bg-primary text-primary-content"
+                  : "text-base-content/55 hover:bg-base-200 hover:text-base-content"
+              }`}
+            >
               {item.label}
-            </option>
+            </button>
           ))}
-        </select>
+        </div>
       </div>
 
       {/* Grid */}
       {projectsQuery.isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="h-64 animate-pulse rounded-2xl bg-base-200/70"
-            />
+            <div key={item} className="h-64 animate-pulse rounded-2xl bg-base-200/70" />
           ))}
         </div>
       ) : projectsQuery.isError ? (
-        <div className="madaar-surface rounded-2xl border border-error/20 bg-error/5 p-8 text-center">
-          <p className="font-semibold text-error">
-            Projects could not be loaded.
-          </p>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
+          <p className="font-semibold text-red-600">Projects could not be loaded.</p>
           <button
             type="button"
             onClick={() => projectsQuery.refetch()}
@@ -267,167 +344,176 @@ export default function ProjectsPage() {
           </button>
         </div>
       ) : projects.length === 0 ? (
-        <div className="madaar-surface rounded-[28px] border border-dashed border-base-content/15 bg-base-100 px-6 py-16 text-center">
+        <div className="rounded-[28px] border border-dashed border-base-content/15 bg-base-100 px-6 py-16 text-center">
           <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
             <FolderOpen size={28} />
           </div>
           <h2 className="text-xl font-semibold">No projects yet</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-base-content/55">
-            Create the first project to get started.
+            {search
+              ? `No projects matching "${search}"`
+              : "Create the first project to get started."}
           </p>
-          <button
-            type="button"
-            onClick={handleCreateProject}
-            className="btn btn-primary mt-6 rounded-xl"
-          >
-            <Add size={18} /> Create your first project
-          </button>
+          {!search && (
+            <button
+              type="button"
+              onClick={handleCreateProject}
+              className="btn btn-primary mt-6 rounded-xl"
+            >
+              <Add size={18} /> Create your first project
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence mode="popLayout">
-            {projects.map((project) => (
-              <motion.article
-                layout
-                key={project.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                onClick={() => openDetailsPage(project.id)}
-                className="madaar-surface group cursor-pointer rounded-2xl border border-base-content/10 bg-base-100 p-5 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 items-center gap-3 text-left">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                      <FolderOpen size={21} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-lg font-semibold text-base-content group-hover:text-primary transition-colors">
-                        {project.name}
-                      </span>
-                      <span className="mt-0.5 block truncate text-xs text-base-content/45">
-                        {getOrganizationName(project.organization)}
-                      </span>
-                    </span>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${statusStyles[project.status]}`}
-                  >
-                    {statusLabels[project.status]}
-                  </span>
-                </div>
-                <p className="mt-5 min-h-10 line-clamp-2 text-sm leading-6 text-base-content/60">
-                  {project.description || "No description added yet."}
-                </p>
+            {projects.map((project) => {
+              const color = project.color || DEFAULT_COLOR;
+              const cfg = statusConfig[project.status];
+              const progress = project.progress_percentage ?? 0;
 
-                {/* بخش آمار ۳ تایی: Tasks, Members, Teams */}
-                <div className="mt-5 grid grid-cols-3 gap-2 border-y border-base-content/10 py-4 text-sm text-center">
-                  <div>
-                    <p className="text-xs text-base-content/45">Tasks</p>
-                    <p className="mt-1 font-semibold">
-                      {project.task_count || 0}
-                    </p>
-                  </div>
-                  <div className="border-x border-base-content/10">
-                    <p className="text-xs text-base-content/45">Members</p>
-                    <p className="mt-1 font-semibold">
-                      {project.member_count ?? project.members_count ?? 0}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-base-content/45">Teams</p>
-                    <p className="mt-1 font-semibold text-primary">
-                      {project.teams_count ?? 0}
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  className="mt-4 flex items-center justify-between gap-3"
-                  onClick={(e) => e.stopPropagation()}
+              return (
+                <motion.article
+                  layout
+                  key={project.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  onClick={() => openDetailsPage(project.id)}
+                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-base-content/8 bg-base-100 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
+                  style={{
+                    boxShadow: `0 0 0 1px ${color}18`,
+                  }}
                 >
-                  <span className="flex items-center gap-1.5 text-xs text-base-content/50">
-                    <Calendar1 size={14} /> {formatDate(project.deadline)}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => openDetailsPage(project.id)}
-                      className="btn btn-ghost btn-sm rounded-lg text-primary"
-                    >
-                      Open <ArrowRight2 size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleEditProject(project)}
-                      className="btn btn-ghost btn-square btn-sm rounded-lg"
-                      aria-label={`Edit ${project.name}`}
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    {project.status !== "completed" &&
-                      project.status !== "archived" && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            lifecycleMutation.mutate({
-                              id: project.id,
-                              action: "complete",
-                            })
-                          }
-                          className="btn btn-ghost btn-square btn-sm rounded-lg text-success"
-                          aria-label={`Complete ${project.name}`}
+                  {/* Color top bar */}
+                  <div
+                    className="h-1 w-full shrink-0"
+                    style={{ background: color }}
+                  />
+
+                  <div className="flex flex-1 flex-col p-5">
+                    {/* Top row: icon + title + status badge + menu */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div
+                          className="grid size-10 shrink-0 place-items-center rounded-xl text-white shadow-sm"
+                          style={{ background: color }}
                         >
-                          <TickCircle size={16} />
-                        </button>
-                      )}
-                    {project.status !== "archived" && (
+                          <FolderOpen size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-semibold text-base-content transition-colors group-hover:text-primary">
+                            {project.name}
+                          </p>
+                          <p className="mt-0.5 truncate text-[11px] text-base-content/45">
+                            {getOrganizationName(project.organization)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <span
+                          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${cfg.bgClass} ${cfg.textClass}`}
+                        >
+                          <span className={`size-1.5 rounded-full ${cfg.dot}`} />
+                          {cfg.label}
+                        </span>
+                        <ProjectActionMenu
+                          project={project}
+                          onEdit={() => handleEditProject(project)}
+                          onDelete={() => handleDeleteClick(project)}
+                          onComplete={() =>
+                            lifecycleMutation.mutate({ id: project.id, action: "complete" })
+                          }
+                          onArchive={() =>
+                            lifecycleMutation.mutate({ id: project.id, action: "archive" })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p className="mt-3.5 line-clamp-2 min-h-[2.8em] text-sm leading-relaxed text-base-content/55">
+                      {project.description || "No description added yet."}
+                    </p>
+
+                    {/* Stats row */}
+                    <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-base-200/50 px-3 py-2.5 text-center text-sm">
+                      <div>
+                        <p className="flex items-center justify-center gap-1 text-[10px] font-medium uppercase tracking-wide text-base-content/40">
+                          <TaskSquare size={10} /> Tasks
+                        </p>
+                        <p className="mt-0.5 text-sm font-bold text-base-content">
+                          {project.task_count || 0}
+                        </p>
+                      </div>
+                      <div className="border-x border-base-content/8">
+                        <p className="flex items-center justify-center gap-1 text-[10px] font-medium uppercase tracking-wide text-base-content/40">
+                          <People size={10} /> Members
+                        </p>
+                        <p className="mt-0.5 text-sm font-bold text-base-content">
+                          {project.member_count ?? project.members_count ?? 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-base-content/40">
+                          Progress
+                        </p>
+                        <p
+                          className="mt-0.5 text-sm font-bold"
+                          style={{ color }}
+                        >
+                          {progress}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-base-200">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${Math.min(100, progress)}%`,
+                          background: color,
+                        }}
+                      />
+                    </div>
+
+                    {/* Footer */}
+                    <div
+                      className="mt-4 flex items-center justify-between gap-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span className="flex items-center gap-1.5 text-xs text-base-content/45">
+                        <Calendar1 size={13} />
+                        {formatDate(project.deadline) ?? "No deadline"}
+                      </span>
                       <button
                         type="button"
-                        onClick={() =>
-                          lifecycleMutation.mutate({
-                            id: project.id,
-                            action: "archive",
-                          })
-                        }
-                        className="btn btn-ghost btn-square btn-sm rounded-lg text-base-content/45"
-                        aria-label={`Archive ${project.name}`}
+                        onClick={() => openDetailsPage(project.id)}
+                        className="flex items-center gap-1 text-xs font-bold transition-colors"
+                        style={{ color }}
                       >
-                        <Archive size={16} />
+                        Open <ArrowRight2 size={13} />
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClick(project)}
-                      className="btn btn-ghost btn-square btn-sm rounded-lg text-error"
-                      aria-label={`Delete ${project.name}`}
-                    >
-                      <Trash size={16} />
-                    </button>
+                    </div>
                   </div>
-                </div>
-              </motion.article>
-            ))}
+                </motion.article>
+              );
+            })}
           </AnimatePresence>
         </div>
       )}
 
-      {/* Create / Edit Modal Component */}
       <CreateEditProjectModal
         isOpen={isProjectModalOpen}
         onClose={() => setIsProjectModalOpen(false)}
         project={selectedProject}
       />
 
-      {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={deleteModalState.open}
         onClose={() =>
-          setDeleteModalState({
-            open: false,
-            projectId: null,
-            projectTitle: "",
-          })
+          setDeleteModalState({ open: false, projectId: null, projectTitle: "" })
         }
         onConfirm={handleConfirmDelete}
         isLoading={deleteProjectMutation.isPending}

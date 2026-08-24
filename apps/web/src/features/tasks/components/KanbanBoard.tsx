@@ -510,7 +510,7 @@ export const KanbanBoard: React.FC = () => {
   };
 
   if (!activeProjectId || !activeBoardId) return null;
-  if (!boards || boards.length === 0) return <div className="p-8 text-center text-slate-500">No boards found for this project.</div>;
+  if (!boards || boards.length === 0) return <div className="p-8 text-center text-base-content/45">No boards found for this project.</div>;
 
   const board = boards.find(b => b.id.toString() === activeBoardId) || boards[0];
   const normalizedSearch = searchQuery.trim().toLowerCase();
@@ -529,6 +529,17 @@ export const KanbanBoard: React.FC = () => {
   const completedCount = localTasks.filter(task => task.is_finished || task.status_detail?.code?.toLowerCase() === 'done').length;
   const blockedCount = localTasks.filter(task => task.is_blocked).length;
   const activeCount = Math.max(0, localTasks.length - completedCount);
+  const boardProgress = localTasks.length > 0 ? Math.round((completedCount / localTasks.length) * 100) : 0;
+
+  // Status-aware column colors
+  const getStatusColor = (code: string, name: string): string => {
+    const lc = (code || name || '').toLowerCase();
+    if (lc.includes('done') || lc.includes('complete')) return '#10b981';
+    if (lc.includes('doing') || lc.includes('progress') || lc.includes('active')) return '#3b82f6';
+    if (lc.includes('review')) return '#f59e0b';
+    if (lc.includes('block')) return '#ef4444';
+    return '#6366f1';
+  };
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-base-200">
@@ -537,7 +548,24 @@ export const KanbanBoard: React.FC = () => {
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Task workspace</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-base-content">Work in flow</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] font-semibold text-base-content/45"><span>{localTasks.length} tasks</span><span className="text-primary">{activeCount} active</span><span className="text-success">{completedCount} done</span>{blockedCount > 0 && <span className="text-warning">{blockedCount} blocked</span>}</div>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] font-semibold text-base-content/45">
+              <span>{localTasks.length} tasks</span>
+              <span className="text-primary">{activeCount} active</span>
+              <span className="text-emerald-600">{completedCount} done</span>
+              {blockedCount > 0 && <span className="text-amber-500">{blockedCount} blocked</span>}
+            </div>
+            {/* Board progress bar */}
+            {localTasks.length > 0 && (
+              <div className="mt-2.5 flex items-center gap-2">
+                <div className="h-1.5 w-40 overflow-hidden rounded-full bg-base-200">
+                  <div
+                    className="h-full rounded-full bg-emerald-500 transition-all duration-700"
+                    style={{ width: `${boardProgress}%` }}
+                  />
+                </div>
+                <span className="text-[11px] font-bold text-emerald-600">{boardProgress}%</span>
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex h-10 w-full items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-3 text-base-content/45 focus-within:border-primary/40 sm:w-64">
@@ -583,17 +611,28 @@ export const KanbanBoard: React.FC = () => {
         >
           {[...board.statuses].sort((a, b) => a.order - b.order).map((status) => {
             const columnTasks = filteredTasks.filter(t => t.status_detail?.id?.toString() === status.id.toString()) || [];
+            const isDoneColumn = status.code === 'done' || status.name.toLowerCase() === 'done' || status.name.toLowerCase() === 'completed';
+            const statusColor = getStatusColor(status.code, status.name);
 
             return (
               <DroppableColumn
                 key={status.id}
                 id={`col-${status.id}`}
-                className="madaar-surface min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-full bg-base-100/80"
+                className={`min-w-[292px] w-[292px] rounded-[22px] p-3 flex flex-col h-fit max-h-full bg-base-100/80 border shadow-sm transition-opacity ${
+                  isDoneColumn ? 'opacity-70 hover:opacity-100 border-emerald-500/15' : 'border-base-content/8'
+                }`}
               >
                 <div className="mb-3 flex shrink-0 items-center justify-between px-1">
                   <div className="flex items-center gap-2">
+                    <span
+                      className="size-2.5 rounded-full"
+                      style={{ background: statusColor }}
+                    />
                     <h3 className="text-sm font-semibold text-base-content">{status.name}</h3>
-                    <span className="rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-bold text-base-content/45">
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                      style={{ background: `${statusColor}25`, color: statusColor }}
+                    >
                       {columnTasks.length}
                     </span>
                   </div>

@@ -74,6 +74,13 @@ class Project(BaseModel):
     )
     completed_at = models.DateTimeField(_("Completed at"), null=True, blank=True)
     archived_at = models.DateTimeField(_("Archived at"), null=True, blank=True)
+    color = models.CharField(
+        _("Color"),
+        max_length=20,
+        blank=True,
+        default="",
+        help_text=_("Hex color code for project accent (e.g., #6366f1)"),
+    )
 
     class Meta:
         verbose_name = _("Project")

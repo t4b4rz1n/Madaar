@@ -11,6 +11,21 @@ interface CreateEditProjectModalProps {
   project: Project | null;
 }
 
+const PROJECT_COLORS = [
+  { label: "Indigo",    value: "#6366f1" },
+  { label: "Blue",      value: "#3b82f6" },
+  { label: "Cyan",      value: "#06b6d4" },
+  { label: "Emerald",   value: "#10b981" },
+  { label: "Teal",      value: "#14b8a6" },
+  { label: "Lime",      value: "#84cc16" },
+  { label: "Amber",     value: "#f59e0b" },
+  { label: "Orange",    value: "#f97316" },
+  { label: "Rose",      value: "#f43f5e" },
+  { label: "Pink",      value: "#ec4899" },
+  { label: "Purple",    value: "#a855f7" },
+  { label: "Violet",    value: "#8b5cf6" },
+];
+
 export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
   isOpen,
   onClose,
@@ -31,6 +46,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     organization_id: "",
     description: "",
     prefix: "",
+    color: PROJECT_COLORS[0].value,
     budget: "",
     budget_currency: "IRR",
     start_date: "",
@@ -38,7 +54,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     status: "draft" as ProjectStatus,
   });
 
-  // 💡 اصلاح جدی: فقط موقعی که مودال باز میشه یا پروژه تغییر میکنه فرم Reset بشه
   useEffect(() => {
     if (!isOpen) return;
 
@@ -51,6 +66,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             : String(project.organization || ""),
         description: project.description || "",
         prefix: project.prefix || "",
+        color: project.color || PROJECT_COLORS[0].value,
         budget: project.budget ? String(project.budget) : "",
         budget_currency: project.budget_currency || "IRR",
         start_date: project.start_date ? project.start_date.split("T")[0] : "",
@@ -63,6 +79,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         organization_id: "",
         description: "",
         prefix: "",
+        color: PROJECT_COLORS[0].value,
         budget: "",
         budget_currency: "IRR",
         start_date: new Date().toISOString().split("T")[0],
@@ -70,9 +87,8 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         status: "draft",
       });
     }
-  }, [project, isOpen]); // 👈 'organizations' از اینجا حذف شد تا حلقه بی‌نهایت ایجاد نکند
+  }, [project, isOpen]);
 
-  // مقداردهی پیش‌فرض سازمان در صورتی که ساخت پروژه جدید باشد
   useEffect(() => {
     if (isOpen && !project && organizations.length > 0 && !formData.organization_id) {
       setFormData((prev) => ({
@@ -110,6 +126,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       organization_id: selectedOrgId,
       description: formData.description || undefined,
       prefix: formData.prefix || undefined,
+      color: formData.color || undefined,
       budget: formData.budget ? Number(formData.budget) : undefined,
       budget_currency: formData.budget_currency,
       start_date: formData.start_date
@@ -152,22 +169,34 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       onMouseDown={onClose}
     >
       <div
-        className="madaar-surface max-h-[min(760px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in duration-200"
+        className="madaar-surface max-h-[min(800px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in duration-200"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between border-b border-base-content/10 p-6 sm:p-7">
-          <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-primary">
-              Project Workspace
-            </p>
-            <h3 className="text-2xl font-semibold tracking-tight text-base-content">
-              {project ? "Edit Project" : "Create New Project"}
-            </h3>
-            <p className="mt-1 text-sm text-base-content/55">
-              {project
-                ? "Keep the plan, dates and lifecycle status up to date."
-                : "Give your team a clear container for work."}
-            </p>
+        {/* Header with color accent */}
+        <div
+          className="flex items-start justify-between p-6 sm:p-7"
+          style={{
+            background: `linear-gradient(135deg, ${formData.color}18 0%, transparent 60%)`,
+            borderBottom: `3px solid ${formData.color}30`,
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className="grid size-12 shrink-0 place-items-center rounded-2xl text-white shadow-lg"
+              style={{ background: formData.color }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="mb-0.5 text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                Project Workspace
+              </p>
+              <h3 className="text-xl font-semibold tracking-tight text-base-content">
+                {project ? "Edit Project" : "Create New Project"}
+              </h3>
+            </div>
           </div>
           <button
             type="button"
@@ -253,6 +282,48 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
               onChange={handleChange}
               className="textarea textarea-bordered w-full min-h-24 rounded-xl bg-base-200/60"
             />
+          </div>
+
+          {/* Color Picker */}
+          <div>
+            <label className="mb-3 block text-sm font-medium text-base-content">
+              Project Color
+              <span className="ms-2 rounded-md px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: formData.color }}>
+                {PROJECT_COLORS.find(c => c.value === formData.color)?.label || "Custom"}
+              </span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {PROJECT_COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  title={c.label}
+                  onClick={() => setFormData(prev => ({ ...prev, color: c.value }))}
+                  className="group relative size-8 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                  style={{
+                    background: c.value,
+                    boxShadow: formData.color === c.value ? `0 0 0 3px white, 0 0 0 5px ${c.value}` : "none",
+                    transform: formData.color === c.value ? "scale(1.15)" : "scale(1)",
+                  }}
+                >
+                  {formData.color === c.value && (
+                    <svg className="absolute inset-0 m-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+              {/* Custom color */}
+              <label className="relative size-8 cursor-pointer overflow-hidden rounded-full border-2 border-dashed border-base-content/30 transition hover:border-base-content/60" title="Custom color">
+                <span className="absolute inset-0 grid place-items-center text-base-content/50 text-xs">+</span>
+                <input
+                  type="color"
+                  value={formData.color}
+                  onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+              </label>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -341,6 +412,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
               type="submit"
               disabled={isLoading || (!project && organizations.length === 0)}
               className="btn btn-primary rounded-xl px-6"
+              style={{ background: formData.color, borderColor: formData.color }}
             >
               {isLoading ? (
                 <span className="loading loading-spinner loading-sm"></span>

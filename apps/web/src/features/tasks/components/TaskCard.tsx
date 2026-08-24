@@ -81,8 +81,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onPlayTimer, 
   const formattedElapsed = [Math.floor(elapsedSeconds / 3600), Math.floor((elapsedSeconds % 3600) / 60), elapsedSeconds % 60]
     .map((part) => part.toString().padStart(2, "0")).join(":");
 
+  const priorityBorderColor: Record<Task["priority"], string> = {
+    low:      "#e5e7eb",
+    medium:   "#60a5fa",
+    high:     "#f59e0b",
+    critical: "#ef4444",
+  };
+
   return <>
-    <article onClick={onClick} className={`group relative cursor-pointer rounded-2xl border bg-base-100 p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-base-content/5 ${isOverdue ? "border-error/30" : task.is_blocked ? "border-warning/35" : "border-base-content/10 hover:border-primary/25"}`} aria-label={`Open task ${task.key}: ${task.title}`}>
+    <article
+      onClick={onClick}
+      className={`group relative cursor-pointer rounded-2xl border-y border-r bg-base-100 p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-base-content/5 ${isOverdue ? "border-error/30" : task.is_blocked ? "border-warning/35" : "border-base-content/10 hover:border-primary/15"}`}
+      style={{ borderLeftWidth: "3px", borderLeftColor: priorityBorderColor[task.priority] }}
+      aria-label={`Open task ${task.key}: ${task.title}`}
+    >
       {(updateMutation.isPending || deleteMutation.isPending) && <div className="absolute inset-0 z-20 grid place-items-center rounded-2xl bg-base-100/75 backdrop-blur-[2px]"><span className="loading loading-spinner loading-sm text-primary" /></div>}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2"><button type="button" onClick={(event) => { event.stopPropagation(); (onToggleDone || onMarkDone)?.(task.id); }} className={`grid size-5 shrink-0 place-items-center rounded-full transition ${isActuallyDone ? "text-success hover:opacity-80" : "border border-base-content/20 text-transparent hover:border-success/50 hover:bg-success/10"}`} aria-label={isActuallyDone ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as done`} title={isActuallyDone ? "Click to mark as incomplete" : "Click to mark as done"}>{isActuallyDone && <TickCircle size={17} variant="Bulk" />}</button><span className="truncate text-[11px] font-bold tracking-wide text-base-content/40">{task.key}</span></div>

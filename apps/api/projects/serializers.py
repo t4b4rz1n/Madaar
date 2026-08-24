@@ -79,6 +79,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "color",
             "organization",
             "owner",
             "status",
@@ -159,6 +160,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         fields = (
             "name",
             "description",
+            "color",
             "organization_id",
             "owner_id",
             "status",
