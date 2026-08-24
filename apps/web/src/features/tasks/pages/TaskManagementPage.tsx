@@ -21,7 +21,7 @@ export const TaskManagementPage: React.FC = () => {
   return (
     <div className="flex h-[calc(100vh-5rem)] -mx-4 -my-5 flex-col bg-base-200 sm:-mx-8 sm:-my-7">
       {/* Top Navigation Bar */}
-      <div className="relative z-50 flex flex-wrap items-center justify-between gap-4 border-b border-base-content/5 bg-base-100 px-5 py-2 shrink-0">
+      <div className="relative z-20 flex flex-wrap items-center justify-between gap-4 border-b border-base-content/5 bg-base-100 px-5 py-2 shrink-0">
         {/* Left side: Project selector + Board tabs */}
         <div className="flex min-w-0 flex-1 items-center gap-4">
           <GlobalProjectSelector />
