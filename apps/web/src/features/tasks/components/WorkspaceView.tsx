@@ -11,7 +11,7 @@ export const WorkspaceView: React.FC = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [boardTitle, setBoardTitle] = useState('');
-  const [boardColor, setBoardColor] = useState('#6366f1');
+  const [boardColor, setBoardColor] = useState('linear-gradient(135deg, #b39ddb, #9fa8da)');
 
   const { data: boards } = useQuery({
     queryKey: ['boards', activeProjectId],
@@ -44,28 +44,24 @@ export const WorkspaceView: React.FC = () => {
   }
 
   const presetColors = [
-    // Gradients
-    'linear-gradient(135deg, #a855f7, #6366f1)',
-    'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-    'linear-gradient(135deg, #1e293b, #0f172a)',
-    'linear-gradient(135deg, #2563eb, #1e40af)',
-    'linear-gradient(135deg, #3b82f6, #60a5fa)',
-    'linear-gradient(135deg, #4f46e5, #4338ca)',
-    'linear-gradient(135deg, #991b1b, #ef4444)',
-    'linear-gradient(135deg, #475569, #1e293b)',
-    'linear-gradient(135deg, #10b981, #047857)',
-    'linear-gradient(135deg, #ec4899, #be185d)',
-    'linear-gradient(135deg, #f59e0b, #b45309)',
-    // Solids
-    '#e11d48', // rose
-    '#7c3aed', // purple
-    '#b91c1c', // red
-    '#059669', // green
-    '#c2410c', // rust
-    '#2563eb', // blue
-    '#475569', // slate
-    '#0284c7', // light blue
-    '#65a30d', // olive
+    // Pastel Gradients
+    'linear-gradient(135deg, #b39ddb, #9fa8da)', // Lavender -> Periwinkle
+    'linear-gradient(135deg, #81d4fa, #80cbc4)', // Sky -> Mint
+    'linear-gradient(135deg, #a5d6a7, #c5e1a5)', // Sage -> Pistachio
+    'linear-gradient(135deg, #ffcc80, #f48fb1)', // Peach -> Blush
+    'linear-gradient(135deg, #ce93d8, #e1bee7)', // Mauve -> Lilac
+    'linear-gradient(135deg, #90caf9, #b2dfdb)', // Dusty Blue -> Seafoam
+    'linear-gradient(135deg, #ef9a9a, #ffcc80)', // Rose Quartz -> Peach
+    'linear-gradient(135deg, #bcaaa4, #ffe0b2)', // Clay -> Sand
+    // Pastel Solids
+    '#b39ddb', // Lavender
+    '#81d4fa', // Sky Blue
+    '#80cbc4', // Mint
+    '#a5d6a7', // Sage
+    '#ffcc80', // Peach
+    '#f48fb1', // Blush
+    '#ce93d8', // Mauve
+    '#bcaaa4', // Clay
   ];
 
   return (

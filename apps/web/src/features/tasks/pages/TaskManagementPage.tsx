@@ -33,26 +33,29 @@ export const TaskManagementPage: React.FC = () => {
           {/* Board tabs */}
           {activeProjectId && boards && boards.length > 0 && (
             <div className="ml-1 flex min-w-0 max-w-[48vw] items-center gap-1 overflow-x-auto rounded-xl bg-base-200/70 p-1">
-              {boards.map(board => (
-                <button
-                  key={board.id}
-                  onClick={() => {
-                    setActiveBoard(board.id.toString());
-                    setViewMode('kanban');
-                  }}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-                    activeBoardId === board.id.toString()
-                      ? 'bg-base-300 text-base-content'
-                      : 'text-base-content/50 hover:text-base-content hover:bg-base-200'
-                  }`}
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ background: board.background_color || '#6366f1' }}
-                  ></span>
-                  {board.title}
-                </button>
-              ))}
+              {boards.map((board, idx) => {
+                const pastelFallback = ['#b39ddb', '#81d4fa', '#80cbc4', '#a5d6a7', '#ffcc80', '#f48fb1'][idx % 6];
+                return (
+                  <button
+                    key={board.id}
+                    onClick={() => {
+                      setActiveBoard(board.id.toString());
+                      setViewMode('kanban');
+                    }}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                      activeBoardId === board.id.toString()
+                        ? 'bg-base-300 text-base-content'
+                        : 'text-base-content/50 hover:text-base-content hover:bg-base-200'
+                    }`}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: board.background_color || pastelFallback }}
+                    ></span>
+                    {board.title}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
