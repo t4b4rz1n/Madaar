@@ -263,3 +263,7 @@ export const createStatus = async (boardId: string | number, name: string, code?
   });
   return (data as any).data ?? data;
 };
+
+export const reorderStatuses = async (boardId: string | number, orders: { id: string | number; order: number }[]): Promise<any> => {
+  return await ApiService.post('/tasks/statuses/reorder/', { board_id: boardId, orders });
+};

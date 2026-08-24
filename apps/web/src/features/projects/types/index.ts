@@ -134,6 +134,7 @@ export interface ProjectActivity {
 export interface CreateProjectDTO {
   name: string;
   description?: string;
+  color?: string;
   organization_id?: string | number;
   prefix?: string;
   budget?: number | string | null;

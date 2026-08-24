@@ -5,7 +5,6 @@ import { WorkspaceView } from '../components/WorkspaceView';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { useTaskStore } from '../store/useTaskStore';
 import { getBoards } from '../api/tasksApi';
-import { Calendar1, Kanban } from 'iconsax-reactjs';
 
 const AttendancePage = lazy(() => import('../../attendance/pages/AttendancePage'));
 

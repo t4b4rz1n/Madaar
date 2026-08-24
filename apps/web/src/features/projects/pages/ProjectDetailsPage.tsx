@@ -264,8 +264,8 @@ export default function ProjectDetailsPage() {
 
         {/* Mini stats strip */}
         <div
-          className="flex divide-x border-t px-6 py-3"
-          style={{ borderColor: `${color}18`, divideBorderColor: `${color}18` }}
+          className="flex divide-x px-6 py-3 border-t divide-base-content/10"
+          style={{ borderColor: `${color}18` }}
         >
           {[
             { label: "Tasks", value: project.task_count ?? 0 },

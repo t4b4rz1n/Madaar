@@ -53,14 +53,7 @@ const formatTime = (seconds?: number) => {
   return [hours, minutes, secs].map((part) => part.toString().padStart(2, "0")).join(":");
 };
 
-const formatDate = (value?: string) =>
-  value
-    ? new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }).format(new Date(value))
-    : "No due date";
+
 
 const formatRelativeDate = (value: string) => {
   const date = new Date(value);

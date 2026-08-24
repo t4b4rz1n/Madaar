@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Calendar1,
   CloseCircle,
-  Message,
   More,
   Play,
   Profile2User,
@@ -31,12 +30,6 @@ interface TaskCardProps {
   activeTimer?: TimeLog | null;
 }
 
-const priorityPill: Record<Task["priority"], { label: string; bg: string; text: string; dot: string }> = {
-  low:      { label: "Low",      bg: "bg-base-200/70",        text: "text-base-content/50", dot: "bg-base-content/30" },
-  medium:   { label: "Medium",   bg: "bg-blue-500/10",        text: "text-blue-600",        dot: "bg-blue-500" },
-  high:     { label: "High",     bg: "bg-amber-500/10",       text: "text-amber-600",       dot: "bg-amber-500" },
-  critical: { label: "Critical", bg: "bg-red-500/10",         text: "text-red-500",         dot: "bg-red-500" },
-};
 
 const priorityLeftBorder: Record<Task["priority"], string> = {
   low:      "#e2e8f0",
@@ -45,10 +38,7 @@ const priorityLeftBorder: Record<Task["priority"], string> = {
   critical: "#fca5a5",
 };
 
-const formatDate = (value?: string) => {
-  if (!value) return null;
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value));
-};
+
 
 export const TaskCard: React.FC<TaskCardProps> = ({
   task,
@@ -119,10 +109,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       task.assignee_detail.username?.[0]?.toUpperCase()
     : "";
 
-  const checklist = task.checklist_stats;
-  const progress = checklist?.total
-    ? checklist.percent ?? Math.round((checklist.done / checklist.total) * 100)
-    : task.progress_percent || 0;
 
   const timerBelongsToTask = Boolean(
     activeTimer && activeTimer.task.toString() === task.id.toString()
@@ -159,7 +145,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     .map((part) => part.toString().padStart(2, "0"))
     .join(":");
 
-  const prio = priorityPill[task.priority];
 
   return (
     <>
@@ -185,28 +170,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         )}
 
-        {/* ─── Top Header: Key + Actions ─── */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-[11px] font-bold text-base-content/40 tracking-wider">
-            {task.key}
-          </span>
-
-          <button
-            ref={menuTriggerRef}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMenuOpen(true);
-            }}
-            className="grid size-6 place-items-center rounded-lg text-base-content/35 opacity-100 transition hover:bg-base-200 hover:text-base-content sm:opacity-0 sm:group-hover:opacity-100"
-            aria-label={`Actions for ${task.title}`}
-          >
-            <More size={15} />
-          </button>
-        </div>
+        {/* ─── Top Hover Options Menu ─── */}
+        <button
+          ref={menuTriggerRef}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMenuOpen(true);
+          }}
+          className="absolute top-2 right-2 z-10 grid size-6 place-items-center rounded-lg text-base-content/35 opacity-0 group-hover:opacity-100 hover:bg-base-200 hover:text-base-content transition duration-150"
+          aria-label={`Actions for ${task.title}`}
+        >
+          <More size={14} />
+        </button>
 
         {/* ─── Title & Checkbox (Inline with dir="auto") ─── */}
-        <div className="mt-2.5 flex items-start gap-2" dir="auto">
+        <div className="flex items-start gap-2 pr-4" dir="auto">
           <button
             type="button"
             onClick={(e) => {
@@ -234,63 +213,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             >
               {task.title}
             </h3>
-
-            {task.description && (
-              <p
-                dir="auto"
-                className="mt-0.5 line-clamp-2 text-[10.5px] leading-normal text-base-content/40"
-              >
-                {task.description}
-              </p>
-            )}
           </div>
         </div>
 
-        {/* ─── Meta Info Row (Compact, No redundant priority pill or progress bar) ─── */}
-        {(task.due_date || checklist?.total || task.comments_count || task.is_blocked || isOverdue) ? (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-base-content/40">
-            {task.is_blocked && (
-              <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 font-bold text-amber-600">
-                Blocked
-              </span>
-            )}
-
-            {isOverdue && (
-              <span className="rounded-md bg-red-500/10 px-1.5 py-0.5 font-bold text-red-500">
-                Overdue
-              </span>
-            )}
-
-            {task.due_date && (
-              <span
-                className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold ${
-                  isOverdue ? "bg-red-500/10 text-red-500" : "bg-base-200/50"
-                }`}
-              >
-                <Calendar1 size={11} />
-                {formatDate(task.due_date)}
-              </span>
-            )}
-
-            {checklist?.total ? (
-              <span className="flex items-center gap-1 rounded-md bg-base-200/50 px-1.5 py-0.5 font-semibold">
-                <TaskSquare size={11} />
-                {checklist.done}/{checklist.total}
-              </span>
-            ) : null}
-
-            {Boolean(task.comments_count) && (
-              <span className="flex items-center gap-1 rounded-md bg-base-200/50 px-1.5 py-0.5 font-semibold">
-                <Message size={11} />
-                {task.comments_count}
-              </span>
-            )}
-          </div>
-        ) : null}
-
-        {/* ─── Footer: Assignee Avatar & Timer ─── */}
+        {/* ─── Footer: Assignee Avatar & Timer (Timer visible on hover if inactive, or always if running) ─── */}
         <div className="mt-3 flex items-center justify-between border-t border-base-content/6 pt-2">
-          {/* Assignee Interactive Trigger (Avatar Icon Only) */}
+          {/* Assignee Interactive Trigger */}
           <button
             ref={assigneeTriggerRef}
             type="button"
@@ -332,8 +260,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </div>
           </button>
 
-          {/* Timer controls */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Timer controls (visible always if running, or on hover if not running) */}
+          <div className={`flex items-center gap-1.5 shrink-0 transition-opacity duration-150 ${timerIsRunning ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
             {timerIsRunning && (
               <span className="font-mono text-[10px] font-bold tabular-nums text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
                 {formattedElapsed}
