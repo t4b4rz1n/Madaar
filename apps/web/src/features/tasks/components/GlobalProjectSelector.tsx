@@ -5,7 +5,7 @@ import { ArrowDown2 } from 'iconsax-reactjs';
 import { getProjects } from '../../projects/api/projectsApi';
 import type { Project } from '../../projects/types';
 
-const PROJECT_COLORS = ['#ef4444', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#3b82f6', '#8b5cf6', '#14b8a6'];
+const PASTEL_COLORS = ['#b39ddb', '#9fa8da', '#81d4fa', '#80cbc4', '#a5d6a7', '#ffcc80', '#f48fb1', '#ce93d8'];
 
 export const GlobalProjectSelector: React.FC = () => {
   const { activeProjectId, setActiveProject } = useTaskStore();
@@ -19,7 +19,7 @@ export const GlobalProjectSelector: React.FC = () => {
 
   const activeProject = projects?.find((p: Project) => String(p.id) === String(activeProjectId)) || projects?.[0];
   const activeIndex = projects?.findIndex((p: any) => String(p.id) === String(activeProject?.id)) ?? 0;
-  const activeDotColor = PROJECT_COLORS[activeIndex % PROJECT_COLORS.length];
+  const activeDotColor = activeProject?.color || PASTEL_COLORS[activeIndex % PASTEL_COLORS.length];
 
   React.useEffect(() => {
     if (isLoading) return;
@@ -67,8 +67,8 @@ export const GlobalProjectSelector: React.FC = () => {
             Projects
           </div>
           {projects?.map((p: Project, index: number) => {
-            const dotColor = PROJECT_COLORS[index % PROJECT_COLORS.length];
-            const isActive = p.id === activeProjectId;
+            const dotColor = p.color || PASTEL_COLORS[index % PASTEL_COLORS.length];
+            const isActive = String(p.id) === String(activeProjectId);
             return (
               <button
                 key={p.id}

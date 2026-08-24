@@ -12,18 +12,22 @@ interface CreateEditProjectModalProps {
 }
 
 const PROJECT_COLORS = [
-  { label: "Indigo",    value: "#6366f1" },
-  { label: "Blue",      value: "#3b82f6" },
-  { label: "Cyan",      value: "#06b6d4" },
-  { label: "Emerald",   value: "#10b981" },
-  { label: "Teal",      value: "#14b8a6" },
-  { label: "Lime",      value: "#84cc16" },
-  { label: "Amber",     value: "#f59e0b" },
-  { label: "Orange",    value: "#f97316" },
-  { label: "Rose",      value: "#f43f5e" },
-  { label: "Pink",      value: "#ec4899" },
-  { label: "Purple",    value: "#a855f7" },
-  { label: "Violet",    value: "#8b5cf6" },
+  { label: "Lavender",    value: "#b39ddb" },
+  { label: "Periwinkle",  value: "#9fa8da" },
+  { label: "Sky Blue",    value: "#81d4fa" },
+  { label: "Mint",        value: "#80cbc4" },
+  { label: "Sage",        value: "#a5d6a7" },
+  { label: "Pistachio",   value: "#c5e1a5" },
+  { label: "Butter",      value: "#fff176" },
+  { label: "Peach",       value: "#ffcc80" },
+  { label: "Blush",       value: "#f48fb1" },
+  { label: "Rose Quartz", value: "#ef9a9a" },
+  { label: "Mauve",       value: "#ce93d8" },
+  { label: "Dusty Blue",  value: "#90caf9" },
+  { label: "Clay",        value: "#bcaaa4" },
+  { label: "Sand",        value: "#ffe0b2" },
+  { label: "Lilac",       value: "#e1bee7" },
+  { label: "Seafoam",     value: "#b2dfdb" },
 ];
 
 export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
