@@ -168,11 +168,11 @@ class Task(BaseModel):
         _("Progress Percent"), max_digits=5, decimal_places=2, default=0
     )
     estimated_hours = models.DecimalField(
-        _("Estimated Hours"), max_digits=5, decimal_places=2, null=True, blank=True
+        _("Estimated Hours"), max_digits=10, decimal_places=2, null=True, blank=True
     )
     spent_hours = models.DecimalField(
         _("Spent Hours"),
-        max_digits=5,
+        max_digits=10,
         decimal_places=2,
         default=0,
         help_text=_("Hours logged by the assignee"),
@@ -493,6 +493,11 @@ class AsyncStandup(BaseModel):
     )
     today_work = models.TextField(_("What did you do today? / What will you do tomorrow?"))
     blockers = models.TextField(_("Descriptions and Blockers"), blank=True, null=True)
+    is_complete = models.BooleanField(
+        _("Completed"),
+        default=False,
+        help_text=_("True if the user has finalized the standup text."),
+    )
 
     class Meta:
         verbose_name = _("Async Standup")
