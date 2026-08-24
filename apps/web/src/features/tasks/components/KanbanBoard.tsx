@@ -783,7 +783,7 @@ export const KanbanBoard: React.FC = () => {
               const statusColor = getStatusColor(status.code, status.name);
 
               const sortType = columnSorts[status.id.toString()];
-              let displayColumnTasks = [...columnTasks];
+              const displayColumnTasks = [...columnTasks];
               if (sortType === 'priority') {
                 const prioWeight: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
                 displayColumnTasks.sort((a, b) => (prioWeight[b.priority] || 0) - (prioWeight[a.priority] || 0));

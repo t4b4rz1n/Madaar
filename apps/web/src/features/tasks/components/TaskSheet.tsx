@@ -198,7 +198,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
       setManualHours(String(h));
       setManualMinutes(String(m));
     }
-  }, [isManualTimeOpen, task?.spent_hours]);
+  }, [isManualTimeOpen, task]);
 
   useEffect(() => {
     if (!timerIsRunning) return undefined;
