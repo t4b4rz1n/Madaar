@@ -228,29 +228,68 @@ body {
   background: color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 3px;
-  box-shadow: var(--madaar-focus-ring);
+/* ─── Global Focus State System ─── */
+:focus {
+  outline: none;
 }
 
-button,
-a,
+:focus-visible {
+  outline: none;
+}
+
+/* Form controls (inputs, textareas, selects) */
 input,
 textarea,
-select {
+select,
+.input,
+.textarea,
+.select {
   font: inherit;
+  transition: border-color var(--madaar-duration-fast) var(--madaar-ease-standard),
+              box-shadow var(--madaar-duration-fast) var(--madaar-ease-standard);
 }
 
-button:disabled,
-[aria-disabled="true"] {
-  cursor: not-allowed;
+/* Auto Direction Detection (Persian -> Right / RTL, English -> Left / LTR) */
+input[type="text"],
+input[type="search"],
+input:not([type]),
+textarea,
+.input,
+.textarea {
+  unicode-bidi: plaintext;
+  text-align: start;
 }
 
-button,
-a,
-[role="button"] {
-  -webkit-tap-highlight-color: transparent;
+input:focus,
+textarea:focus,
+select:focus,
+.input:focus,
+.textarea:focus,
+.select:focus,
+.input:focus-within,
+.textarea:focus-within,
+.select:focus-within {
+  outline: none !important;
+  outline-offset: 0 !important;
+  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent) !important;
+}
+
+/* Frameless inputs (e.g. title inputs with bg-transparent or outline-none) */
+input.bg-transparent:focus,
+textarea.bg-transparent:focus,
+input.outline-none:focus,
+textarea.outline-none:focus {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Interactive elements (buttons, links) */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 28%, transparent) !important;
 }
 
 /* Opt-in motion prevents global transitions from fighting drag, scroll and focus. */

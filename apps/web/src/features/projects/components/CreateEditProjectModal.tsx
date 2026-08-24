@@ -251,6 +251,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
               <input
                 type="text"
                 name="name"
+                dir="auto"
                 required
                 placeholder="e.g. Modares Internal System"
                 value={formData.name}
@@ -280,6 +281,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             </label>
             <textarea
               name="description"
+              dir="auto"
               rows={3}
               placeholder="Brief overview of the project objectives..."
               value={formData.description}
