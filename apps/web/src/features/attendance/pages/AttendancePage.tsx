@@ -43,8 +43,11 @@ export const AttendancePage: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!activeOrganizationId && organizations.length > 0) {
-      setActiveOrganization(organizations[0].id);
+    if (organizations.length > 0) {
+      const isValid = organizations.some(org => org.id === activeOrganizationId);
+      if (!activeOrganizationId || !isValid) {
+        setActiveOrganization(organizations[0].id);
+      }
     }
   }, [organizations, activeOrganizationId, setActiveOrganization]);
 
