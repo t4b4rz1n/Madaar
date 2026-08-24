@@ -32,4 +32,3 @@ jobs:
           SECRET_KEY: ci-secret
           DEBUG: "True"
       - run: python -m ruff check .
-

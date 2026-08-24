@@ -54,4 +54,3 @@ Partially present or incomplete relative to the PRD: resource allocation/capacit
 - Project and organization membership are the access-control boundary for tasks, time, reports and notifications.
 - Activity/event records are the audit seam for notifications, analytics, automation and future integrations.
 - Keep financial calculations separate from task/time UI and place them behind services and immutable/auditable records.
-

@@ -416,13 +416,11 @@ class TasksRBACTestCase(APITestCase):
             user=self.admin,
             project=self.project,
             today_work="Admin T",
-            tomorrow_plan="Admin P",
         )
         emp_standup = AsyncStandup.objects.create(
             user=self.employee,
             project=self.project,
             today_work="Emp T",
-            tomorrow_plan="Emp P",
         )
 
         self.client.force_authenticate(user=self.employee)
@@ -461,7 +459,6 @@ class TasksRBACTestCase(APITestCase):
             user=self.employee,
             project=self.project,
             today_work="T",
-            tomorrow_plan="P",
         )
         self.client.force_authenticate(user=self.employee)
         url = reverse("task-standup-detail", kwargs={"pk": standup.id})

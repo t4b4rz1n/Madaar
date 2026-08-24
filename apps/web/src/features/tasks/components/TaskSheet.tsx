@@ -19,6 +19,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { TimeLog } from '../../attendance/types';
 import type { Task } from '../types';
+import { getProjectMembers } from '../../projects/api/projectsApi';
+import { createManualLog } from '../../attendance/api/attendanceApi';
 import {
   addChecklistItem,
   addComment,
@@ -51,9 +53,7 @@ const formatTime = (seconds?: number) => {
   return [hours, minutes, secs].map((part) => part.toString().padStart(2, '0')).join(':');
 };
 
-const formatDate = (value?: string) => value
-  ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value))
-  : 'No due date';
+const formatDate = (value?: string) => value ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)) : 'No due date';
 
 const formatRelativeDate = (value: string) => {
   const date = new Date(value);
@@ -86,11 +86,22 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [priority, setPriority] = useState<Task['priority']>(task?.priority || 'low');
-  const [dueDate, setDueDate] = useState(task?.due_date ? task.due_date.slice(0, 10) : '');
+  const toLocalDatetimeInput = (isoString?: string | null) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  };
+
+  const [dueDate, setDueDate] = useState(task?.due_date ? toLocalDatetimeInput(task.due_date) : '');
   const [commentText, setCommentText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [checklistText, setChecklistText] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'activity'>('overview');
+  const [isManualTimeOpen, setIsManualTimeOpen] = useState(false);
+  const [manualHours, setManualHours] = useState('0');
+  const [manualMinutes, setManualMinutes] = useState('0');
   const [now, setNow] = useState(Date.now());
 
   const taskId = task?.id;
@@ -116,15 +127,53 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     enabled: Boolean(taskId),
   });
 
+  const { data: projectMembers = [] } = useQuery({
+    queryKey: ['projectMembers', task?.project],
+    queryFn: () => getProjectMembers(task!.project!),
+    enabled: Boolean(task?.project),
+  });
+
+  const manualTimeMutation = useMutation({
+    mutationFn: (data: { hours: number; minutes: number }) => {
+      const end_time = new Date().toISOString();
+      const start_time = new Date(Date.now() - (data.hours * 3600 + data.minutes * 60) * 1000).toISOString();
+      return createManualLog({
+        task: taskId!,
+        project: task!.project,
+        start_time,
+        end_time,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Manual time logged successfully');
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['standup-grid'] });
+      setIsManualTimeOpen(false);
+      setManualHours('0');
+      setManualMinutes('0');
+    },
+    onError: (error: any) => toast.error(error.response?.data?.detail || error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || 'Failed to log manual time'),
+  });
+
   useEffect(() => {
     if (!task) return;
     setTitle(task.title);
     setDescription(task.description || '');
     setPriority(task.priority || 'low');
-    setDueDate(task.due_date ? task.due_date.slice(0, 10) : '');
+    setDueDate(task.due_date ? toLocalDatetimeInput(task.due_date) : '');
     setActiveTab('overview');
     window.setTimeout(() => titleRef.current?.focus(), 180);
   }, [task]);
+
+  useEffect(() => {
+    if (isManualTimeOpen && task) {
+      const total = Number(task.spent_hours || 0);
+      const h = Math.floor(total);
+      const m = Math.round((total - h) * 60);
+      setManualHours(String(h));
+      setManualMinutes(String(m));
+    }
+  }, [isManualTimeOpen, task?.spent_hours]);
 
   useEffect(() => {
     if (!timerIsRunning) return undefined;
@@ -268,12 +317,69 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
 
               <section className="mb-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <label className="rounded-2xl border border-base-content/10 bg-base-200/60 p-3"><span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-base-content/40">Priority</span><select value={priority} onChange={(event) => { const value = event.target.value as Task['priority']; setPriority(value); save({ priority: value }); }} className="w-full bg-transparent text-sm font-bold capitalize text-base-content outline-none"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></label>
-                <label className="rounded-2xl border border-base-content/10 bg-base-200/60 p-3"><span className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40"><Calendar size={12} /> Due date</span><input type="date" value={dueDate} onChange={(event) => { setDueDate(event.target.value); save({ due_date: event.target.value ? new Date(event.target.value).toISOString() : undefined }); }} className="w-full bg-transparent text-xs font-bold text-base-content outline-none" /></label>
-                <div className="rounded-2xl border border-base-content/10 bg-base-200/60 p-3"><span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-base-content/40">Time logged</span><strong className="font-mono text-sm tabular-nums text-base-content">{formatTime(elapsedSeconds)}</strong></div>
+                <label className="rounded-2xl border border-base-content/10 bg-base-200/60 p-3"><span className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40"><Calendar size={12} /> Due date</span><input type="datetime-local" value={dueDate} onChange={(event) => { setDueDate(event.target.value); save({ due_date: event.target.value ? new Date(event.target.value).toISOString() : undefined }); }} className="w-full bg-transparent text-xs font-bold text-base-content outline-none" /></label>
+                <div className="rounded-2xl border border-base-content/10 bg-base-200/60 p-3 relative group">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-base-content/40">Time logged</span>
+                    <button type="button" onClick={() => setIsManualTimeOpen(true)} className="flex items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/20">
+                      <Add size={12} /> Add
+                    </button>
+                  </div>
+                  <strong className="font-mono text-sm tabular-nums text-base-content">{formatTime(elapsedSeconds)}</strong>
+                  {isManualTimeOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsManualTimeOpen(false)} />
+                      <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl border border-base-content/10 bg-base-100 p-3 shadow-xl">
+                        <div className="mb-2 flex gap-2">
+                          <label className="flex-1"><span className="text-[10px] text-base-content/60">Hours</span><input type="number" min="0" value={manualHours} onChange={e => setManualHours(e.target.value)} className="w-full rounded bg-base-200 px-2 py-1 text-sm outline-none" /></label>
+                          <label className="flex-1"><span className="text-[10px] text-base-content/60">Mins</span><input type="number" min="0" max="59" value={manualMinutes} onChange={e => setManualMinutes(e.target.value)} className="w-full rounded bg-base-200 px-2 py-1 text-sm outline-none" /></label>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newTotal = Number(manualHours) + Number(manualMinutes) / 60;
+                            const oldTotal = Number(task.spent_hours || 0);
+                            const delta = newTotal - oldTotal;
+
+                            if (Math.abs(delta) < 0.01) {
+                              setIsManualTimeOpen(false);
+                              return;
+                            }
+
+                            if (delta > 0) {
+                              const h = Math.floor(delta);
+                              const m = Math.round((delta - h) * 60);
+                              manualTimeMutation.mutate({ hours: h, minutes: m });
+                            } else {
+                              updateMutation.mutate({ spent_hours: Number(newTotal.toFixed(2)) }, {
+                                onSuccess: () => {
+                                  toast.success('Task total time updated');
+                                  setIsManualTimeOpen(false);
+                                }
+                              });
+                            }
+                          }}
+                          disabled={manualTimeMutation.isPending || updateMutation.isPending}
+                          className="w-full rounded-lg bg-primary py-1.5 text-xs font-bold text-primary-content disabled:opacity-50"
+                        >
+                          Log time
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
                 <div className="rounded-2xl border border-base-content/10 bg-base-200/60 p-3"><span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-base-content/40">Checklist</span><strong className="text-sm text-base-content">{checklistDone}/{checklists.length || task.checklist_stats?.total || 0}</strong></div>
               </section>
 
-              <section className="mb-7"><div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-bold text-base-content">Description</h3><span className="text-[11px] text-base-content/35">Autosaves on blur</span></div><textarea dir="auto" value={description} onChange={(event) => setDescription(event.target.value)} onBlur={() => description !== (task.description || '') && save({ description })} placeholder="Add context, links, or acceptance criteria…" className="min-h-32 w-full resize-y rounded-2xl border border-base-content/10 bg-base-200/60 p-4 text-sm leading-6 text-base-content outline-none transition-colors focus:border-primary/40 focus:bg-base-200" /></section>
+              <section className="mb-7">
+                <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-bold text-base-content">Description</h3></div>
+                <div className="rounded-2xl border border-base-content/10 bg-base-200/50 p-3 focus-within:border-primary/35">
+                  <textarea dir="auto" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Add context, links, or acceptance criteria…" className="min-h-24 w-full resize-none bg-transparent p-1 text-sm leading-6 text-base-content outline-none placeholder:text-base-content/35" />
+                  <div className="flex items-center justify-end border-t border-base-content/8 pt-2">
+                    <button type="button" onClick={() => save({ description })} disabled={description.trim() === (task.description || '').trim() || updateMutation.isPending} className="motion-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-content disabled:opacity-40 hover:opacity-90 transition-opacity"><Send2 size={15} />{updateMutation.isPending ? 'Saving…' : 'Save'}</button>
+                  </div>
+                </div>
+              </section>
 
               <section className="mb-7 rounded-2xl border border-base-content/10 bg-base-200/35 p-4">
                 <div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><TaskSquare size={17} className="text-primary" /><div><h3 className="text-sm font-bold text-base-content">Checklist</h3><p className="text-[11px] text-base-content/40">{checklistDone} of {checklists.length} complete</p></div></div><span className="text-xs font-bold text-primary">{checklistProgress}%</span></div>
@@ -282,7 +388,31 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                 <form className="mt-3 flex gap-2" onSubmit={(event) => { event.preventDefault(); if (checklistText.trim()) checklistAddMutation.mutate(checklistText.trim()); }}><input value={checklistText} onChange={(event) => setChecklistText(event.target.value)} placeholder="Add a checklist item" className="min-w-0 flex-1 rounded-xl border border-base-content/10 bg-base-100 px-3 py-2 text-xs text-base-content outline-none placeholder:text-base-content/35 focus:border-primary/40" /><button type="submit" disabled={!checklistText.trim() || checklistAddMutation.isPending} className="motion-interactive grid size-9 place-items-center rounded-xl bg-base-content text-base-100 disabled:opacity-40" aria-label="Add checklist item"><Add size={16} /></button></form>
               </section>
 
-              <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-base-content/10 bg-base-200/40 p-4"><span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-base-content/40">Assignee</span><div className="flex items-center gap-2 text-sm font-semibold text-base-content">{assignee?.avatar_url || assignee?.avatar ? <img src={assignee.avatar_url || assignee.avatar} alt="" className="size-7 rounded-full object-cover" /> : <span className="grid size-7 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">{initials(assignee?.first_name, assignee?.last_name, assignee?.username)}</span>}<span>{assignee?.first_name || assignee?.username || 'Unassigned'}{assignee?.last_name ? ` ${assignee.last_name}` : ''}</span></div></div><div className="rounded-2xl border border-base-content/10 bg-base-200/40 p-4"><span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-base-content/40">Due</span><p className="text-sm font-semibold text-base-content">{formatDate(task.due_date)}</p></div></div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="rounded-2xl border border-base-content/10 bg-base-200/40 p-4 block">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-base-content/40">Assignee</span>
+                  <select
+                    value={assignee?.id || ''}
+                    onChange={(e) => {
+                      const newId = e.target.value;
+                      const selectedMember = projectMembers.find(m => String(m.user?.id) === newId);
+                      save({
+                        assignee: newId ? newId : null,
+                        assignee_detail: selectedMember?.user || null
+                      } as any);
+                    }}
+                    className="w-full bg-transparent text-sm font-semibold text-base-content outline-none"
+                  >
+                    <option value="">Unassigned</option>
+                    {projectMembers.map(m => m.user && (
+                      <option key={m.id} value={m.user.id}>
+                        {m.user.first_name || m.user.username} {m.user.last_name || ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="rounded-2xl border border-base-content/10 bg-base-200/40 p-4"><span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-base-content/40">Due</span><p className="text-sm font-semibold text-base-content">{formatDate(task.due_date)}</p></div>
+              </div>
             </>}
 
             {activeTab === 'comments' && <section><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-bold text-base-content">Comments</h2><p className="mt-1 text-xs text-base-content/40">Keep the context with the work.</p></div><span className="rounded-full bg-base-200 px-2.5 py-1 text-[11px] font-bold text-base-content/50">{comments.length}</span></div><form onSubmit={(event) => { event.preventDefault(); if (commentText.trim() || selectedFile) commentMutation.mutate(); }} className="mb-6 rounded-2xl border border-base-content/10 bg-base-200/50 p-3 focus-within:border-primary/35"><textarea value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Write a comment…" className="min-h-24 w-full resize-none bg-transparent p-1 text-sm leading-6 text-base-content outline-none placeholder:text-base-content/35" />{selectedFile && <div className="mb-2 flex items-center justify-between rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary"><span className="truncate">{selectedFile.name}</span><button type="button" onClick={() => setSelectedFile(null)} aria-label="Remove attachment"><CloseSquare size={14} /></button></div>}<div className="flex items-center justify-between border-t border-base-content/8 pt-2"><div><input ref={fileInputRef} type="file" hidden accept=".pdf,.png,.jpg,.jpeg,.zip,.doc,.docx,.xls,.xlsx" onChange={(event) => { const file = event.target.files?.[0]; if (file && file.size <= 5 * 1024 * 1024) setSelectedFile(file); else if (file) toast.error('File size must be less than 5MB.'); event.target.value = ''; }} /><button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-lg p-2 text-base-content/35 hover:bg-base-200 hover:text-primary" aria-label="Attach file"><Paperclip2 size={17} /></button></div><button type="submit" disabled={commentMutation.isPending || (!commentText.trim() && !selectedFile)} className="motion-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-content disabled:opacity-40"><Send2 size={15} />{commentMutation.isPending ? 'Sending…' : 'Comment'}</button></div></form><div className="space-y-3">{isCommentsLoading && <div className="py-6 text-center text-xs text-base-content/40">Loading comments…</div>}{!isCommentsLoading && comments.length === 0 && <div className="rounded-2xl border border-dashed border-base-content/10 px-4 py-10 text-center text-sm text-base-content/40">No comments yet.</div>}{comments.map((comment) => <article key={comment.id} className="rounded-2xl border border-base-content/10 bg-base-100 p-4"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">{initials(comment.author_detail?.first_name, comment.author_detail?.last_name, comment.author_detail?.username)}</span><div className="min-w-0"><p className="truncate text-xs font-bold text-base-content">{comment.author_detail?.first_name || comment.author_detail?.username || 'User'}{comment.author_detail?.last_name ? ` ${comment.author_detail.last_name}` : ''}</p><p className="text-[10px] text-base-content/35">{formatRelativeDate(comment.created_at)}</p></div></div><p dir="auto" className="mt-3 whitespace-pre-wrap text-sm leading-6 text-base-content/70">{comment.content || 'Attachment'}</p>{comment.attached_file_url && <a href={comment.attached_file_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg bg-base-200 px-2.5 py-1.5 text-[11px] font-semibold text-primary"><Paperclip2 size={13} />Attachment</a>}</article>)}</div></section>}

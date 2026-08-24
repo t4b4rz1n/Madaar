@@ -430,9 +430,7 @@ class IsAsyncStandupPermission(permissions.BasePermission):
         from projects.models import Project
 
         org_id = (
-            Project.objects.filter(id=project_id)
-            .values_list("organization_id", flat=True)
-            .first()
+            Project.objects.filter(id=project_id).values_list("organization_id", flat=True).first()
         )
         role = get_user_org_role(request, org_id)
         return role in ["owner", "admin"]

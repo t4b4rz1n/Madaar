@@ -43,7 +43,7 @@ export const getAttendances = async (params: Record<string, any> = {}): Promise<
 export const getActiveTimers = async (): Promise<TimeLog[]> => {
   try {
     const res = await ApiService.get<TimeLog[]>('/attendance/time-logs/active-timers/');
-    return Array.isArray(res.data) ? res.data as unknown as TimeLog[] : [];
+    return extractData<TimeLog>(res);
   } catch (error: any) {
     if (error?.detail === 'Not found.' || /not found|no active timer/i.test(error?.message ?? '') || /not found|no active timer/i.test(error?.detail ?? '')) return [];
     throw error;
@@ -70,7 +70,7 @@ export const cancelTimer = async (timerId: string | number): Promise<void> => {
   await ApiService.post(`/attendance/time-logs/${timerId}/cancel/`);
 };
 
-export const createManualLog = async (data: { task: number; start_time: string; end_time: string; description?: string }): Promise<TimeLog> => {
+export const createManualLog = async (data: { task: string | number; project?: string | number; start_time: string; end_time: string; description?: string }): Promise<TimeLog> => {
   const res = await ApiService.post<TimeLog>('/attendance/time-logs/manual-timer/', data);
   return res.data as unknown as TimeLog;
 };
@@ -141,4 +141,27 @@ export const getTeamTimesheet = async (organizationId: string, startDate: string
     params: { organization: organizationId, start_date: startDate, end_date: endDate }
   });
   return extractData<TimesheetEntry>(res);
+};
+
+// ================= Live Activity =================
+export interface LiveActivity {
+  id: number;
+  user: {
+    id: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    avatar_url: string | null;
+  };
+  task_id: number;
+  task_title: string;
+  project_id: string;
+  project_name: string;
+  start_time: string;
+}
+
+export const getLiveActivity = async (projectId: string): Promise<LiveActivity[]> => {
+  const res = await ApiService.get(`/attendance/projects/${projectId}/live-activity/`);
+  return extractData<LiveActivity>(res);
 };

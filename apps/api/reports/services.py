@@ -270,7 +270,6 @@ class EmployeeDashboardService:
                 "date",
                 "hours_worked",
                 "today_work",
-                "tomorrow_plan",
                 "blockers",
                 "created_at",
             )

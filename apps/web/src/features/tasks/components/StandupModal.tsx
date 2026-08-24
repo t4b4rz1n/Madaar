@@ -25,7 +25,6 @@ interface StandupModalProps {
   initial?: {
     hoursWorked?: string;
     todayWork?: string;
-    tomorrowPlan?: string;
     blockers?: string;
   };
   onSaved?: () => void;
@@ -37,7 +36,6 @@ interface StandupFormData {
   projectId: string;
   hoursWorked: string;
   todayWork: string;
-  tomorrowPlan: string;
   blockers: string;
 }
 
@@ -76,7 +74,6 @@ export const StandupModal: React.FC<StandupModalProps> = ({
       projectId: projectId ?? '',
       hoursWorked: initial?.hoursWorked ?? '',
       todayWork: initial?.todayWork ?? '',
-      tomorrowPlan: initial?.tomorrowPlan ?? '',
       blockers: initial?.blockers ?? '',
     },
   });
@@ -88,7 +85,6 @@ export const StandupModal: React.FC<StandupModalProps> = ({
         projectId: projectId ?? '',
         hoursWorked: initial?.hoursWorked ?? '',
         todayWork: initial?.todayWork ?? '',
-        tomorrowPlan: initial?.tomorrowPlan ?? '',
         blockers: initial?.blockers ?? '',
       });
     }
@@ -129,7 +125,6 @@ export const StandupModal: React.FC<StandupModalProps> = ({
         date: targetDate,
         hoursWorked: Math.round(Number(hideHours ? initial?.hoursWorked ?? 0 : data.hoursWorked) * 100) / 100,
         todayWork: data.todayWork.trim(),
-        tomorrowPlan: data.tomorrowPlan.trim(),
         blockers: data.blockers,
       };
       if (entryId) {
@@ -291,21 +286,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
             )}
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-              {S.whatWillYouDoTomorrow} *
-            </label>
-            <textarea
-              rows={3}
-              placeholder={S.whatWillYouDoTomorrowPlaceholder}
-              disabled={readOnly}
-              className={`${inputClass(!!errors.tomorrowPlan)} resize-none`}
-              {...register('tomorrowPlan', { required: S.tomorrowPlanRequired })}
-            />
-            {errors.tomorrowPlan && (
-              <p className="mt-1 text-xs text-error">{errors.tomorrowPlan.message}</p>
-            )}
-          </div>
+
 
           <div>
             <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">

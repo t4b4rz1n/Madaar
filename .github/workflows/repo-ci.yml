@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Copy .env.example to .env
         run: cp apps/api/.env.example apps/api/.env
-      
+
       - run: docker compose config

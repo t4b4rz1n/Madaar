@@ -63,5 +63,3 @@ api-lint:
 
 worker-up:
 	$(DOCKER_COMPOSE) --profile worker up worker
-
-

@@ -64,37 +64,57 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "active_session_start",
             "created_at",
         )
-        read_only_fields = ("id", "overtime_minutes", "created_at", "is_active", "total_seconds", "base_total_seconds", "active_session_start")
+        read_only_fields = (
+            "id",
+            "overtime_minutes",
+            "created_at",
+            "is_active",
+            "total_seconds",
+            "base_total_seconds",
+            "active_session_start",
+        )
 
     def get_is_active(self, obj):
-        if hasattr(obj, 'annotated_is_active'):
+        if hasattr(obj, "annotated_is_active"):
             return obj.annotated_is_active
         return any(s.end_time is None for s in obj.sessions.all() if not s.is_deleted)
 
     def get_total_seconds(self, obj):
-        if hasattr(obj, 'annotated_total_seconds'):
+        if hasattr(obj, "annotated_total_seconds"):
             total = obj.annotated_total_seconds or 0
         else:
-            total = sum(s.duration_seconds for s in obj.sessions.all() if s.duration_seconds and not s.is_deleted)
+            total = sum(
+                s.duration_seconds
+                for s in obj.sessions.all()
+                if s.duration_seconds and not s.is_deleted
+            )
 
-        if hasattr(obj, 'annotated_active_start') and obj.annotated_active_start:
+        if hasattr(obj, "annotated_active_start") and obj.annotated_active_start:
             total += int((timezone.now() - obj.annotated_active_start).total_seconds())
         else:
-            active_session = next((s for s in obj.sessions.all() if s.end_time is None and not s.is_deleted), None)
+            active_session = next(
+                (s for s in obj.sessions.all() if s.end_time is None and not s.is_deleted), None
+            )
             if active_session:
                 total += int((timezone.now() - active_session.start_time).total_seconds())
         return total
 
     def get_active_session_start(self, obj):
-        if hasattr(obj, 'annotated_active_start') and obj.annotated_active_start:
+        if hasattr(obj, "annotated_active_start") and obj.annotated_active_start:
             return obj.annotated_active_start
-        active_session = next((s for s in obj.sessions.all() if s.end_time is None and not s.is_deleted), None)
+        active_session = next(
+            (s for s in obj.sessions.all() if s.end_time is None and not s.is_deleted), None
+        )
         return active_session.start_time if active_session else None
 
     def get_base_total_seconds(self, obj):
-        if hasattr(obj, 'annotated_total_seconds'):
+        if hasattr(obj, "annotated_total_seconds"):
             return obj.annotated_total_seconds or 0
-        return sum(s.duration_seconds for s in obj.sessions.all() if s.duration_seconds and not s.is_deleted)
+        return sum(
+            s.duration_seconds
+            for s in obj.sessions.all()
+            if s.duration_seconds and not s.is_deleted
+        )
 
 
 class AttendanceWriteSerializer(serializers.ModelSerializer):
@@ -132,7 +152,11 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
                     ).exists()
                 if not is_admin:
                     raise serializers.ValidationError(
-                        {"date": _("Only managers and admins can modify attendance records for past dates.")}
+                        {
+                            "date": _(
+                                "Only managers and admins can modify attendance records for past dates."
+                            )
+                        }
                     )
 
         if check_in and check_out:
@@ -375,3 +399,26 @@ class TimesheetTeamSerializer(serializers.Serializer):
     username = serializers.CharField(source="user__username")
     date = serializers.DateField()
     total_seconds = serializers.IntegerField()
+
+
+class LiveActivitySerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    task_id = serializers.ReadOnlyField(source="task.id")
+    task_title = serializers.ReadOnlyField(source="task.title")
+    project_id = serializers.ReadOnlyField(source="project.id")
+    project_name = serializers.ReadOnlyField(source="project.name")
+
+    class Meta:
+        model = TimeLog
+        fields = [
+            "id",
+            "user",
+            "task_id",
+            "task_title",
+            "project_id",
+            "project_name",
+            "start_time",
+        ]
+
+    def get_user(self, obj):
+        return UserMinimalSerializer(obj.user).data

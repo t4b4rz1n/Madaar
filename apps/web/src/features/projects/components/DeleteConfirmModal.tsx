@@ -20,7 +20,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onMouseDown={onClose}>
-      <div 
+      <div
         className="madaar-surface w-full max-w-md rounded-[28px] border border-base-content/10 bg-base-100 p-7 shadow-2xl animate-in fade-in zoom-in duration-200"
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -47,7 +47,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           >
             Cancel
           </button>
-          
+
           <button
             type="button"
             onClick={onConfirm}

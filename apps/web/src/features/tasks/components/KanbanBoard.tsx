@@ -30,14 +30,19 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export const KanbanBoard: React.FC = () => {
-  const { activeProjectId, activeBoardId } = useTaskStore();
+  const { activeProjectId, activeBoardId, selectedTaskId, setSelectedTaskId } = useTaskStore();
   const queryClient = useQueryClient();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [selectedTaskForSheet, setSelectedTaskForSheet] = useState<Task | null>(null);
+
+  const selectedTaskIdParam = selectedTaskId;
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'blocked' | 'priority'>('all');
   const [focusMode, setFocusMode] = useState(false);
   const [focusedTaskId, setFocusedTaskId] = useState<string | number | null>(null);
+
+  const setSelectedTaskForSheet = (task: Task | null) => {
+    setSelectedTaskId(task ? task.id.toString() : null);
+  };
 
   // Add task state
 
@@ -214,6 +219,7 @@ export const KanbanBoard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
+      queryClient.invalidateQueries({ queryKey: ['live-activity'] });
     },
     onError: (err: any, taskId, context: any) => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to start timer';
@@ -253,7 +259,9 @@ export const KanbanBoard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['activeTimers'] });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
+      queryClient.invalidateQueries({ queryKey: ['standup-grid'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceTasks'] });
+      queryClient.invalidateQueries({ queryKey: ['live-activity'] });
     },
     onError: (err: any, taskId) => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to stop timer';
@@ -739,12 +747,12 @@ export const KanbanBoard: React.FC = () => {
       </div>}
 
       <TaskSheet
-        task={selectedTaskForSheet ? localTasks.find(t => t.id === selectedTaskForSheet.id) || selectedTaskForSheet : null}
+        task={selectedTaskIdParam ? localTasks.find(t => String(t.id) === selectedTaskIdParam) || null : null}
         onClose={() => setSelectedTaskForSheet(null)}
         onPatch={patchLocalTask}
         onPlayTimer={handlePlayTimer}
         onStopTimer={handleStopTimer}
-        activeTimer={activeTimers.find(t => t.task?.toString() === selectedTaskForSheet?.id?.toString()) || null}
+        activeTimer={activeTimers.find(t => String(t.task) === selectedTaskIdParam) || null}
         focusMode={focusMode}
       />
     </div>

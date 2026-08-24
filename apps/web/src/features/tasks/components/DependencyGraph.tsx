@@ -1,10 +1,10 @@
 import React, { useMemo, useEffect } from 'react';
-import { 
-  ReactFlow, 
-  MiniMap, 
-  Controls, 
-  Background, 
-  useNodesState, 
+import {
+  ReactFlow,
+  MiniMap,
+  Controls,
+  Background,
+  useNodesState,
   useEdgesState,
   MarkerType,
   type Node,
@@ -28,7 +28,7 @@ const nodeTypes = {
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  
+
   const isHorizontal = direction === 'LR';
   dagreGraph.setGraph({ rankdir: direction, nodesep: 80, ranksep: 120 });
 
@@ -47,12 +47,12 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
 
   const layoutedNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
-    
+
     // We are shifting the dagre node position (anchor=center) to the top left
     // so it matches React Flow's node anchor point
     const width = node.type === 'task' ? 256 : 192;
     const height = node.type === 'task' ? 120 : 48;
-    
+
     return {
       ...node,
       targetPosition: isHorizontal ? Position.Left : Position.Top,
@@ -155,7 +155,7 @@ export const DependencyGraph: React.FC = () => {
         maxZoom={1.5}
         attributionPosition="bottom-right"
       >
-        <MiniMap 
+        <MiniMap
           nodeColor={(n) => {
             if (n.type === 'checklist') return '#94a3b8';
             if ((n.data?.task as Task)?.is_blocked) return '#ef4444';
