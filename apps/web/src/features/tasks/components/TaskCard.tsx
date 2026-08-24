@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { ConfirmationModal } from "../../../components/ConfirmationModal";
 import { deleteTask, getProjectMembers, updateTask } from "../api/tasksApi";
+import { useTaskStore } from "../store/useTaskStore";
 import type { Task } from "../types";
 import type { TimeLog } from "../../attendance/types";
 import { LiveActivityIndicator } from "./LiveActivityIndicator";
@@ -60,8 +61,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMembersMenu, setShowMembersMenu] = useState(false);
+  const [isAssigneePopoverOpen, setIsAssigneePopoverOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const assigneeTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
 
   const isActuallyDone = Boolean(task.is_finished);
@@ -89,20 +92,26 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       toast.error(error.response?.data?.detail || "Could not update task."),
   });
 
+  const storeProjectId = useTaskStore((state) => state.activeProjectId);
+  const effectiveProjectId = task.project || storeProjectId;
+
   const { data: users = [] } = useQuery({
-    queryKey: ["projectMembers", task.project],
+    queryKey: ["projectMembers", effectiveProjectId],
     queryFn: async () => {
-      if (!task.project) return [];
-      const members = await getProjectMembers(task.project.toString());
-      return members.map((member: any) => member.user).filter(Boolean);
+      if (!effectiveProjectId) return [];
+      const members = await getProjectMembers(effectiveProjectId.toString());
+      return (members || [])
+        .map((member: any) => member?.user || member)
+        .filter((u: any) => Boolean(u && u.id));
     },
-    enabled: Boolean(task.project && (isMenuOpen || showMembersMenu)),
+    enabled: Boolean(effectiveProjectId),
     staleTime: 30_000,
   });
 
   const closeMenu = () => {
     setIsMenuOpen(false);
     setShowMembersMenu(false);
+    setIsAssigneePopoverOpen(false);
   };
 
   const initials = task.assignee_detail
@@ -176,91 +185,89 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         )}
 
-        {/* ─── Top Bar: Checkbox + Key + Priority + Menu ─── */}
+        {/* ─── Top Header: Key + Actions ─── */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                (onToggleDone || onMarkDone)?.(task.id);
-              }}
-              className={`grid size-4.5 shrink-0 place-items-center rounded-md transition ${
+          <span className="font-mono text-[11px] font-bold text-base-content/40 tracking-wider">
+            {task.key}
+          </span>
+
+          <button
+            ref={menuTriggerRef}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMenuOpen(true);
+            }}
+            className="grid size-6 place-items-center rounded-lg text-base-content/35 opacity-100 transition hover:bg-base-200 hover:text-base-content sm:opacity-0 sm:group-hover:opacity-100"
+            aria-label={`Actions for ${task.title}`}
+          >
+            <More size={15} />
+          </button>
+        </div>
+
+        {/* ─── Title & Checkbox (Inline with dir="auto") ─── */}
+        <div className="mt-2 flex items-start gap-2.5" dir="auto">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              (onToggleDone || onMarkDone)?.(task.id);
+            }}
+            className={`mt-0.5 grid size-4.5 shrink-0 place-items-center rounded-md transition ${
+              isActuallyDone
+                ? "bg-emerald-500 text-white"
+                : "border border-base-content/25 hover:border-emerald-500 hover:bg-emerald-500/10"
+            }`}
+            title={isActuallyDone ? "Mark incomplete" : "Mark done"}
+          >
+            {isActuallyDone && <TickCircle size={13} variant="Bold" />}
+          </button>
+
+          <div className="min-w-0 flex-1">
+            <h3
+              dir="auto"
+              className={`text-[13px] font-semibold leading-snug ${
                 isActuallyDone
-                  ? "bg-emerald-500 text-white"
-                  : "border border-base-content/25 hover:border-emerald-500 hover:bg-emerald-500/10"
+                  ? "text-base-content/40 line-through"
+                  : "text-base-content"
               }`}
-              title={isActuallyDone ? "Mark incomplete" : "Mark done"}
             >
-              {isActuallyDone && <TickCircle size={13} variant="Bold" />}
-            </button>
+              {task.title}
+            </h3>
 
-            <span className="font-mono text-[11px] font-bold text-base-content/40 tracking-wider truncate">
-              {task.key}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Priority Badge */}
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${prio.bg} ${prio.text}`}
-            >
-              <span className={`size-1.5 rounded-full ${prio.dot}`} />
-              {prio.label}
-            </span>
-
-            {/* Overdue / Blocked Pills */}
-            {task.is_blocked && (
-              <span className="rounded-full bg-amber-500/12 px-2 py-0.5 text-[10px] font-bold text-amber-600">
-                Blocked
-              </span>
+            {task.description && (
+              <p
+                dir="auto"
+                className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-base-content/45"
+              >
+                {task.description}
+              </p>
             )}
-            {isOverdue && (
-              <span className="rounded-full bg-red-500/12 px-2 py-0.5 text-[10px] font-bold text-red-500">
-                Overdue
-              </span>
-            )}
-
-            {/* Actions Menu Trigger */}
-            <button
-              ref={menuTriggerRef}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsMenuOpen(true);
-              }}
-              className="grid size-6 place-items-center rounded-lg text-base-content/35 opacity-100 transition hover:bg-base-200 hover:text-base-content sm:opacity-0 sm:group-hover:opacity-100"
-              aria-label={`Actions for ${task.title}`}
-            >
-              <More size={15} />
-            </button>
           </div>
         </div>
 
-        {/* ─── Task Title & Description ─── */}
-        <h3
-          dir="auto"
-          className={`mt-2.5 line-clamp-2 text-[13px] font-semibold leading-snug ${
-            isActuallyDone
-              ? "text-base-content/40 line-through"
-              : "text-base-content"
-          }`}
-        >
-          {task.title}
-        </h3>
-
-        {task.description && (
-          <p
-            dir="auto"
-            className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-base-content/45"
+        {/* ─── Meta Info Row ─── */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-base-content/45">
+          {/* Priority Badge */}
+          <span
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${prio.bg} ${prio.text}`}
           >
-            {task.description}
-          </p>
-        )}
+            <span className={`size-1.5 rounded-full ${prio.dot}`} />
+            {prio.label}
+          </span>
 
-        {/* ─── Meta Badges Row (Inline) ─── */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-base-content/45">
-          {/* Due date */}
+          {task.is_blocked && (
+            <span className="rounded-md bg-amber-500/12 px-2 py-0.5 text-[10px] font-bold text-amber-600">
+              Blocked
+            </span>
+          )}
+
+          {isOverdue && (
+            <span className="rounded-md bg-red-500/12 px-2 py-0.5 text-[10px] font-bold text-red-500">
+              Overdue
+            </span>
+          )}
+
           {task.due_date && (
             <span
               className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium ${
@@ -272,7 +279,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </span>
           )}
 
-          {/* Checklist progress */}
           {checklist?.total ? (
             <span className="flex items-center gap-1 rounded-md bg-base-200/60 px-1.5 py-0.5 font-medium">
               <TaskSquare size={12} />
@@ -280,7 +286,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </span>
           ) : null}
 
-          {/* Comments count */}
           {Boolean(task.comments_count) && (
             <span className="flex items-center gap-1 rounded-md bg-base-200/60 px-1.5 py-0.5 font-medium">
               <Message size={12} />
@@ -289,9 +294,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </div>
 
-        {/* Checklist progress bar (if checklist exists) */}
+        {/* Checklist progress bar */}
         {checklist?.total ? (
-          <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-base-200">
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-base-200">
             <div
               className={`h-full rounded-full transition-all duration-300 ${
                 progress === 100 ? "bg-emerald-500" : "bg-primary"
@@ -301,19 +306,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         ) : null}
 
-        {/* ─── Footer: Assignee & Timer ─── */}
-        <div className="mt-3 flex items-center justify-between border-t border-base-content/6 pt-2.5">
-          {/* Assignee */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <span
-                className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shadow-xs"
-                title={
-                  task.assignee_detail
-                    ? `Assigned to ${task.assignee_detail.username}`
-                    : "Unassigned"
-                }
-              >
+        {/* ─── Footer: Assignee Avatar & Timer ─── */}
+        <div className="mt-3 flex items-center justify-between border-t border-base-content/6 pt-2">
+          {/* Assignee Interactive Trigger (Avatar Icon Only) */}
+          <button
+            ref={assigneeTriggerRef}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsAssigneePopoverOpen(!isAssigneePopoverOpen);
+            }}
+            className="rounded-full p-0.5 hover:ring-2 hover:ring-primary/30 transition"
+            title={
+              task.assignee_detail
+                ? `Assigned to ${task.assignee_detail.first_name || task.assignee_detail.username}`
+                : "Assign member"
+            }
+          >
+            <div className="relative shrink-0">
+              <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shadow-xs">
                 {task.assignee_detail?.avatar_url || task.assignee_detail?.avatar ? (
                   <img
                     src={
@@ -324,7 +335,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     className="size-6 rounded-full object-cover"
                   />
                 ) : (
-                  initials || <Profile2User size={12} />
+                  initials || <Profile2User size={12} className="text-base-content/45" />
                 )}
               </span>
 
@@ -337,16 +348,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 </div>
               )}
             </div>
-
-            {task.assignee_detail && (
-              <span className="truncate text-[11px] font-semibold text-base-content/55 max-w-[100px]">
-                {task.assignee_detail.first_name || task.assignee_detail.username}
-              </span>
-            )}
-          </div>
+          </button>
 
           {/* Timer controls */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             {timerIsRunning && (
               <span className="font-mono text-[10px] font-bold tabular-nums text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
                 {formattedElapsed}
@@ -371,6 +376,78 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         </div>
       </article>
+
+      {/* ─── Direct Assignee Quick Select Popover Portal ─── */}
+      {isAssigneePopoverOpen &&
+        assigneeTriggerRef.current &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={closeMenu} />
+            <div
+              className="fixed z-50 w-48 max-h-60 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[12px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+              style={{
+                top: assigneeTriggerRef.current.getBoundingClientRect().bottom + 4,
+                left: assigneeTriggerRef.current.getBoundingClientRect().left,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-2 py-1 text-[10px] font-bold text-base-content/40 uppercase tracking-wider">
+                Assign to
+              </div>
+
+              {/* Unassigned Option */}
+              <button
+                type="button"
+                className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition ${
+                  !task.assignee ? "bg-primary/10 text-primary font-bold" : "hover:bg-base-200"
+                }`}
+                onClick={() => {
+                  updateMutation.mutate({ assignee: undefined });
+                  closeMenu();
+                }}
+              >
+                <Profile2User size={14} className="text-base-content/40" />
+                <span>Unassigned</span>
+              </button>
+
+              {/* Users List */}
+              {users.map((user: any) => {
+                const isSelected = String(task.assignee) === String(user.id);
+                return (
+                  <button
+                    type="button"
+                    key={user.id}
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition ${
+                      isSelected
+                        ? "bg-primary/10 text-primary font-bold"
+                        : "hover:bg-base-200"
+                    }`}
+                    onClick={() => {
+                      updateMutation.mutate({ assignee: user.id });
+                      closeMenu();
+                    }}
+                  >
+                    <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shrink-0">
+                      {user.first_name?.[0] || user.username?.[0] || "?"}
+                    </span>
+                    <span className="truncate">
+                      {user.first_name
+                        ? `${user.first_name} ${user.last_name || ""}`
+                        : user.username || user.email}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {users.length === 0 && (
+                <div className="px-2 py-2 text-[11px] text-base-content/40">
+                  No members found
+                </div>
+              )}
+            </div>
+          </>,
+          document.body
+        )}
 
       {/* Dropdown Menu Portal */}
       {isMenuOpen &&
@@ -419,7 +496,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         {user.first_name?.[0] || user.username?.[0] || "?"}
                       </span>
                       <span className="truncate">
-                        {user.full_name || user.username || user.email}
+                        {user.first_name
+                          ? `${user.first_name} ${user.last_name || ""}`
+                          : user.username || user.email}
                       </span>
                     </button>
                   ))}

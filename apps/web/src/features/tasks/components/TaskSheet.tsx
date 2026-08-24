@@ -5,7 +5,6 @@ import {
   Calendar,
   CloseSquare,
   Danger,
-  Message,
   Paperclip2,
   Play,
   Profile2User,
@@ -19,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { TimeLog } from "../../attendance/types";
 import type { Task } from "../types";
+import { useTaskStore } from "../store/useTaskStore";
 import { getProjectMembers } from "../../projects/api/projectsApi";
 import { createManualLog } from "../../attendance/api/attendanceApi";
 import {
@@ -149,10 +149,13 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     enabled: Boolean(taskId),
   });
 
+  const storeProjectId = useTaskStore((state) => state.activeProjectId);
+  const effectiveProjectId = task?.project || storeProjectId;
+
   const { data: projectMembers = [] } = useQuery({
-    queryKey: ["projectMembers", task?.project],
-    queryFn: () => getProjectMembers(task!.project!),
-    enabled: Boolean(task?.project),
+    queryKey: ["projectMembers", effectiveProjectId],
+    queryFn: () => getProjectMembers(effectiveProjectId!),
+    enabled: Boolean(effectiveProjectId),
   });
 
   const manualTimeMutation = useMutation({
@@ -349,7 +352,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           role="dialog"
           aria-modal="true"
           aria-label={`Task details: ${task.title}`}
-          className="absolute inset-y-0 end-0 flex w-full max-w-2xl flex-col rounded-s-3xl border-s border-base-content/10 bg-base-100 shadow-2xl"
+          className="absolute inset-y-0 end-0 flex w-full max-w-xl flex-col rounded-s-3xl border-s border-base-content/10 bg-base-100 shadow-2xl"
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
@@ -358,7 +361,14 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           {/* ─── Top Bar: Context Breadcrumb + Close ─── */}
           <header className="flex shrink-0 items-center justify-between border-b border-base-content/6 px-6 py-3.5">
             <div className="flex items-center gap-2 text-xs font-semibold text-base-content/50">
-              <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono font-bold text-primary">
+              <span
+                onClick={() => {
+                  navigator.clipboard.writeText(task.key);
+                  toast.success(`Copied ${task.key}`);
+                }}
+                className="cursor-pointer rounded-md bg-primary/10 px-2 py-0.5 font-mono font-bold text-primary hover:bg-primary/20 transition"
+                title="Click to copy key"
+              >
                 {task.key}
               </span>
               <span>·</span>
@@ -381,6 +391,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           <div className="px-6 pt-5 pb-2">
             <input
               ref={titleRef}
+              dir="auto"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={() =>
@@ -389,7 +400,6 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.currentTarget.blur();
               }}
-              dir="auto"
               className="w-full bg-transparent text-2xl font-extrabold tracking-tight text-base-content outline-none placeholder:text-base-content/25"
               placeholder="Task title..."
             />
@@ -736,6 +746,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                             {item.is_completed && <TickCircle size={12} variant="Bold" />}
                           </button>
                           <span
+                            dir="auto"
                             className={`truncate text-xs ${
                               item.is_completed
                                 ? "text-base-content/40 line-through"
@@ -766,6 +777,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       className="flex gap-2 pt-1"
                     >
                       <input
+                        dir="auto"
                         value={checklistText}
                         onChange={(e) => setChecklistText(e.target.value)}
                         placeholder="Add step item..."
@@ -803,6 +815,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   className="rounded-2xl border border-base-content/8 bg-base-200/30 p-3 space-y-2 focus-within:border-primary/40 focus-within:bg-base-100 transition"
                 >
                   <textarea
+                    dir="auto"
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     placeholder="Write a comment..."
