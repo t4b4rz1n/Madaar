@@ -20,6 +20,16 @@ import type {
   StandupGridMember,
 } from '../types';
 
+function formatDecimalHours(decimalValue: number | string | null | undefined): string {
+  const num = Number(decimalValue);
+  if (!num || isNaN(num) || num <= 0) return '00:00';
+  const h = Math.floor(num);
+  const m = Math.round((num - h) * 60);
+  const hh = String(h).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
 const pad2 = (value: number): string => String(value).padStart(2, '0');
 
 /** localStorage key so the selected project survives page refreshes. */
@@ -198,6 +208,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
 
   /** Cells with an in-flight quick-save (Enter) request. */
   const [savingCellKeys, setSavingCellKeys] = useState<Set<string>>(() => new Set());
+  const [focusedCellKey, setFocusedCellKey] = useState<string | null>(null);
 
   /**
    * Enter on an editable cell saves the typed hours directly when a standup
@@ -301,30 +312,45 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
     return (
       <div className="relative flex h-8 w-full min-w-[24px] max-w-[34px] items-center justify-center mx-auto">
         {editable ? (
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            max="24"
-            value={value}
-            placeholder="-"
-            aria-label={`${member.username} ${isoDate}`}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === '' || (Number(val) >= 0 && Number(val) <= 24)) {
-                setHourDrafts((prev) => ({ ...prev, [key]: val }));
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleEnterOnCell(member, day);
-              }
-            }}
-            className="h-7 w-full rounded-md bg-transparent text-center text-xs font-semibold text-primary placeholder:text-base-content/30 focus:border-primary/50 focus:bg-base-200/80 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none p-0 transition-colors"
-          />
+          focusedCellKey === key ? (
+            <input
+              autoFocus
+              type="number"
+              step="0.01"
+              min="0"
+              max="24"
+              value={value}
+              placeholder="-"
+              aria-label={`${member.username} ${isoDate}`}
+              onBlur={() => setFocusedCellKey(null)}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || (Number(val) >= 0 && Number(val) <= 24)) {
+                  setHourDrafts((prev) => ({ ...prev, [key]: val }));
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleEnterOnCell(member, day);
+                  setFocusedCellKey(null);
+                }
+              }}
+              className="h-7 w-full rounded-md bg-transparent text-center text-xs font-semibold text-primary placeholder:text-base-content/30 focus:border-primary/50 focus:bg-base-200/80 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none p-0 transition-colors"
+            />
+          ) : (
+            <div
+              tabIndex={0}
+              onFocus={() => setFocusedCellKey(key)}
+              onClick={() => setFocusedCellKey(key)}
+              className="flex h-7 w-full cursor-text items-center justify-center rounded-md bg-transparent text-center text-xs font-semibold text-primary transition-colors hover:bg-base-200/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+            >
+              {value ? formatDecimalHours(value) : '-'}
+            </div>
+          )
         ) : (
           <span
+            title={value ? formatDecimalHours(value) : undefined}
             className={`text-xs font-bold ${
               value
                 ? isOwnRow(member)
@@ -333,7 +359,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                 : 'text-base-content/25'
             }`}
           >
-            {value || '-'}
+            {value ? formatDecimalHours(value) : '-'}
           </span>
         )}
         {showGreenCheck && (
@@ -481,7 +507,7 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                               {displayName}
                             </p>
                             <p className="text-[10px] font-medium text-base-content/50">
-                              {total > 0 ? `${total}${S.hoursTotalSuffix}` : ''}
+                              {formatDecimalHours(total)}
                             </p>
                           </div>
                         </div>

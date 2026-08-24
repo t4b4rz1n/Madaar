@@ -48,39 +48,40 @@ const UserDashboardPage = () => {
   const timezone = useMemo(getTimezone, []);
   const dashboardQuery = useQuery({
     queryKey: ["employee-dashboard", timezone],
- 
+
     queryFn: () => getEmployeeDashboard(timezone),
- 
+
     staleTime: 30_000,
- 
+
     refetchInterval: 60_000,
- 
+
   });
- 
+
   const taskQuery = useQuery({
     queryKey: ["task", selectedTaskId],
     queryFn: () => getTask(selectedTaskId!),
     enabled: Boolean(selectedTaskId),
     staleTime: 60_000,
   });
- 
 
- 
+
+
   const stopTimerMutation = useMutation({
     mutationFn: (timerId: string) => stopTimer(timerId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["active-timer"] });
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["standup-grid"] });
       toast.success("Focus timer stopped");
     },
     onError: () => toast.error("Could not stop the timer"),
   });
- 
 
- 
+
+
   const startTimerMutation = useMutation({
- 
+
     mutationFn: (taskId: string) => startTimer(taskId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
@@ -90,7 +91,7 @@ const UserDashboardPage = () => {
     },
     onError: () => toast.error("Could not start the timer"),
   });
- 
+
   const markDoneMutation = useMutation({
     mutationFn: (taskId: string) => updateTask(taskId, { is_finished: true }),
     onSuccess: async () => {
@@ -100,7 +101,7 @@ const UserDashboardPage = () => {
     },
     onError: () => toast.error("Could not mark the task as done"),
   });
- 
+
   const handlePatchTask = useCallback(
     async (taskId: string | number, patch: Partial<Task>) => {
       await updateTask(taskId, patch);
@@ -109,7 +110,7 @@ const UserDashboardPage = () => {
     },
     [queryClient],
   );
- 
+
   const handleCloseTaskSheet = useCallback(() => {
     setSelectedTaskId(null);
   }, []);
@@ -245,7 +246,7 @@ const UserDashboardPage = () => {
         onPlayTimer={(taskId) => startTimerMutation.mutate(taskId.toString())}
         onStopTimer={() => {
           const timer = dashboard?.active_timers?.find(t => t.task_id === String(taskQuery.data?.id));
-          if (timer) stopTimerMutation.mutate(timer.id); 
+          if (timer) stopTimerMutation.mutate(timer.id);
         }}
         activeTimer={toTimeLog(dashboard?.active_timers, taskQuery.data?.id)}
       />
