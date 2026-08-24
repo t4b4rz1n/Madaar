@@ -4,11 +4,15 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { useAuthStore } from "../../features/auth/store/authStore";
-import { API_TIMEOUT, getApiUrl } from "../api/config";
 
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: getApiUrl(),
-  timeout: API_TIMEOUT,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
+  timeout: 15000,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  withCredentials: true,
 });
 
 let isRefreshing = false;

@@ -47,13 +47,14 @@ export const UsersGrid = ({
 
   const hasUserManagePermission = hasAllPermissions(["users.manage"]);
   const showActionButtons = canManage || hasUserManagePermission;
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteModalState.user) {
-      deleteMutation.mutate(deleteModalState.user.id, {
-        onSuccess: () => {
-          setDeleteModalState({ open: false, user: null });
-        },
-      });
+      try {
+        await deleteMutation.mutateAsync(deleteModalState.user.id);
+        setDeleteModalState({ open: false, user: null });
+      } catch {
+        // Handled in mutation onError
+      }
     }
   };
 
