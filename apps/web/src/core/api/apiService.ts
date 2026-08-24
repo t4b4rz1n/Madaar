@@ -111,6 +111,9 @@ export class ApiService {
       params: options?.params,
       data: options?.data,
     });
+    if (response.status === 204 || !response.data) {
+      return { message: "Deleted successfully", data: null as unknown as T, status: true };
+    }
     return response.data;
   }
 }

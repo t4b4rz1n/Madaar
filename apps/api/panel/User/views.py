@@ -1,7 +1,8 @@
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import User
@@ -71,3 +72,15 @@ class UserViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
         return Response(
             UserListSerializer(updated_instance, context=self.get_serializer_context()).data
         )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user_id = instance.pk
+        with transaction.atomic():
+            if hasattr(instance, "org_memberships"):
+                instance.org_memberships.all().delete()
+            if hasattr(instance, "memberships"):
+                instance.memberships.all().delete()
+            # Direct database hard delete to ensure DB record removal
+            User.objects.filter(pk=user_id).delete()
+        return Response({"status": True, "message": "User deleted successfully", "data": None}, status=status.HTTP_200_OK)

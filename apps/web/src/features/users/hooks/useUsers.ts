@@ -59,21 +59,20 @@ export const useUpdateUser = () => {
   });
 };
 
-export const useDeleteUser = () => {
+export const useDeleteUser = (orgId?: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string | number) => deleteUser(id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await queryClient.invalidateQueries({ queryKey: ["users"], exact: false });
+      await queryClient.invalidateQueries({ queryKey: ["organizations"], exact: false });
+      await queryClient.refetchQueries({ queryKey: ["users"], exact: false });
+      await queryClient.refetchQueries({ queryKey: ["organizations"], exact: false });
       toast.success("User deleted successfully");
     },
     onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to delete user";
-      toast.error(errorMessage);
+      toast.error(error?.response?.data?.message || "Failed to delete user");
     },
   });
 };

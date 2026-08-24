@@ -43,13 +43,14 @@ export const UsersTable = ({
   const { data: rolesData } = useRoles();
   const roles = rolesData?.results || [];
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteModalState.user) {
-      deleteMutation.mutate(deleteModalState.user.id, {
-        onSuccess: () => {
-          setDeleteModalState({ open: false, user: null });
-        },
-      });
+      try {
+        await deleteMutation.mutateAsync(deleteModalState.user.id);
+        setDeleteModalState({ open: false, user: null });
+      } catch {
+        // Handled in mutation onError
+      }
     }
   };
 
