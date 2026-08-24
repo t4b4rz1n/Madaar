@@ -43,7 +43,7 @@ export const getAttendances = async (params: Record<string, any> = {}): Promise<
 export const getActiveTimers = async (): Promise<TimeLog[]> => {
   try {
     const res = await ApiService.get<TimeLog[]>('/attendance/time-logs/active-timers/');
-    return Array.isArray(res.data) ? res.data as unknown as TimeLog[] : [];
+    return extractData<TimeLog>(res);
   } catch (error: any) {
     if (error?.detail === 'Not found.' || /not found|no active timer/i.test(error?.message ?? '') || /not found|no active timer/i.test(error?.detail ?? '')) return [];
     throw error;
