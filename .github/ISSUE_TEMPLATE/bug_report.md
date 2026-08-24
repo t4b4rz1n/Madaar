@@ -10,4 +10,3 @@ labels: bug
 ## Steps to reproduce
 
 ## Expected behavior
-

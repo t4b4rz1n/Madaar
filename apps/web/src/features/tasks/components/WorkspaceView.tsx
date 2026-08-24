@@ -111,12 +111,12 @@ export const WorkspaceView: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-base-100 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-base-300">
             <h3 className="text-lg font-bold text-base-content mb-4">Create New Board</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-base-content/80 mb-1">Board Title</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={boardTitle}
                   onChange={(e) => setBoardTitle(e.target.value)}
                   className="w-full bg-base-200 border border-base-300 rounded-lg px-4 py-2 text-base-content outline-none focus:ring-2 focus:ring-primary"
@@ -140,7 +140,7 @@ export const WorkspaceView: React.FC = () => {
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => {
                   setIsModalOpen(false);
                   setBoardTitle('');
@@ -150,7 +150,7 @@ export const WorkspaceView: React.FC = () => {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={() => createBoardMutation.mutate()}
                 disabled={!boardTitle || createBoardMutation.isPending}
                 className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"

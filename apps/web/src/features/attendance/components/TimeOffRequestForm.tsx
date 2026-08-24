@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const queryClient = useQueryClient();
   const { activeOrganizationId } = useAttendanceStore();
-  
+
   const [formData, setFormData] = useState({
     request_type: 'vacation',
     start_datetime: '',
@@ -39,7 +39,7 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
       toast.error('Please select start and end dates');
       return;
     }
-    
+
     mutation.mutate({
       ...formData,
       organization: activeOrganizationId,
@@ -54,7 +54,7 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
         <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Calendar size={20} /></div>
         <div><h2 className="text-base font-semibold text-base-content">Request time off</h2><p className="mt-1 text-xs text-base-content/45">Plan leave and keep your team informed.</p></div>
       </div>
-      
+
       <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 sm:p-6">
         <div className="col-span-1 md:col-span-2">
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-base-content/45">Leave type</label>
@@ -93,7 +93,7 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
             required
           />
         </div>
-        
+
         <div>
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-base-content/45">End date &amp; time</label>
           <input
@@ -118,7 +118,7 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
           </div>
         </div>
       </div>
-      
+
       <div className="flex justify-end border-t border-base-content/10 p-5 sm:p-6">
         <button
           type="submit"

@@ -322,18 +322,18 @@ def _fmt_task_needs_review(p):
 def _fmt_task_completed(p):
     return (
         _("Task completed"),
-        _(
-            " <b>Task completed!</b>\n\n Task <b>{task}</b> has been successfully completed."
-        ).format(task=p.get("task_title", "—")),
+        _(" <b>Task completed!</b>\n\n Task <b>{task}</b> has been successfully completed.").format(
+            task=p.get("task_title", "—")
+        ),
     )
 
 
 def _fmt_task_deadline_approaching(p):
     return (
         _("Task deadline warning"),
-        _(
-            " <b>Deadline warning!</b>\n\nLess than 24 hours remain for task <b>{task}</b>."
-        ).format(task=p.get("task_title", "—")),
+        _(" <b>Deadline warning!</b>\n\nLess than 24 hours remain for task <b>{task}</b>.").format(
+            task=p.get("task_title", "—")
+        ),
     )
 
 
@@ -369,9 +369,9 @@ def _fmt_standup_submitted(p):
 def _fmt_leave_requested(p):
     return (
         _("Leave requested"),
-        _(
-            " <b>New leave request!</b>\n\n {user}\n Type: {leave_type}\n\nPlease review."
-        ).format(user=p.get("user_name", "—"), leave_type=p.get("leave_type", _("leave"))),
+        _(" <b>New leave request!</b>\n\n {user}\n Type: {leave_type}\n\nPlease review.").format(
+            user=p.get("user_name", "—"), leave_type=p.get("leave_type", _("leave"))
+        ),
     )
 
 
@@ -499,13 +499,10 @@ def _fmt_milestone_created(p):
     )
 
 
-
 def _fmt_task_created(p):
     return (
         _("New Task Created"),
-        _(
-            " <b>New Task Created!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}"
-        ).format(
+        _(" <b>New Task Created!</b>\n\nTask: <b>{task_title}</b>\nProject: {project_name}").format(
             task_title=p.get("task_title", "—"),
             project_name=p.get("project_name", "—"),
         ),

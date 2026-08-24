@@ -11,4 +11,3 @@
 ## Phase 3 - Organization Intelligence
 
 - Reviews, OKRs, HR workflows, and executive dashboards.
-

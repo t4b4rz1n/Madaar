@@ -1,10 +1,10 @@
 import ApiService from "../../../core/api/apiService";
-import type { 
-  Team, 
-  TeamWithDetails, 
-  TeamFormData, 
-  Squad, 
-  SquadFormData 
+import type {
+  Team,
+  TeamWithDetails,
+  TeamFormData,
+  Squad,
+  SquadFormData
 } from "../types";
 
 export const teamsApi = {

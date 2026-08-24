@@ -45,12 +45,12 @@ export const getTasks = async (projectId?: string, boardId?: string, pageSize = 
   const res = await ApiService.get<PaginatedResponse<Task> | Task[]>('/tasks/', { params });
   return extractData<Task>(res);
 };
- 
+
  export const getTask = async (taskId: string | number): Promise<Task> => {
    const res = await ApiService.get<Task>(`/tasks/${taskId}/`);
    return (res as any).data ?? res;
  };
- 
+
 
 export const reorderTasks = async (orders: { id: string | number; order: number }[]): Promise<any> => {
   return await ApiService.post('/tasks/reorder/', { orders });

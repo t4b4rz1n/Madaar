@@ -24,19 +24,19 @@ const formatSeconds = (seconds: number) => {
 export const CheckInOut: React.FC = () => {
   const queryClient = useQueryClient();
   const { activeOrganizationId } = useAttendanceStore();
-  
+
   // Use retry: false for 404s (not checked in yet)
-  const { data: todayAttendance, isLoading, dataUpdatedAt } = useQuery({ 
-    queryKey: ["todayAttendance"], 
+  const { data: todayAttendance, isLoading, dataUpdatedAt } = useQuery({
+    queryKey: ["todayAttendance"],
     queryFn: getTodayAttendance,
     retry: false
   });
 
   const [timer, setTimer] = useState(0);
-  
+
   // Safely extract data in case it's wrapped in an envelope
   const attendanceData = (todayAttendance as any)?.data ?? todayAttendance;
-  
+
   const isActive = attendanceData?.is_active || false;
 
   useEffect(() => {
@@ -46,14 +46,14 @@ export const CheckInOut: React.FC = () => {
     const interval = setInterval(() => {
       const now = Date.now();
       const todayStr = format(now, "yyyy-MM-dd");
-      
+
       // If we crossed midnight and the active attendance is from yesterday
       if (attendanceData?.date && attendanceData.date !== todayStr) {
         queryClient.invalidateQueries({ queryKey: ["todayAttendance"] });
         clearInterval(interval);
         return;
       }
-      
+
       if (isActive && attendanceData?.active_session_start) {
         // Calculate real time elapsed since the session actually started
         const startTime = new Date(attendanceData.active_session_start).getTime();
@@ -63,29 +63,29 @@ export const CheckInOut: React.FC = () => {
         setTimer(attendanceData?.total_seconds || 0);
       }
     }, 1000);
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isActive, attendanceData?.date, attendanceData?.total_seconds, attendanceData?.active_session_start, attendanceData?.base_total_seconds, dataUpdatedAt, queryClient]);
 
 
-  const checkInMutation = useMutation<Attendance, MutationError, string>({ 
-    mutationFn: (organizationId: string) => checkIn(organizationId), 
-    onSuccess: (data) => { 
+  const checkInMutation = useMutation<Attendance, MutationError, string>({
+    mutationFn: (organizationId: string) => checkIn(organizationId),
+    onSuccess: (data) => {
       queryClient.setQueryData(["todayAttendance"], data);
-      toast.success("Timer started (Checked in)"); 
-    }, 
-    onError: (error: MutationError) => toast.error(error?.detail || error?.message || "Could not complete action.") 
+      toast.success("Timer started (Checked in)");
+    },
+    onError: (error: MutationError) => toast.error(error?.detail || error?.message || "Could not complete action.")
   });
-  
-  const checkOutMutation = useMutation<Attendance, MutationError, void>({ 
-    mutationFn: checkOut, 
-    onSuccess: (data) => { 
+
+  const checkOutMutation = useMutation<Attendance, MutationError, void>({
+    mutationFn: checkOut,
+    onSuccess: (data) => {
       queryClient.setQueryData(["todayAttendance"], data);
-      toast.success("Timer stopped (Checked out)"); 
-    }, 
-    onError: (error: MutationError) => toast.error(error?.detail || error?.message || "Could not complete action.") 
+      toast.success("Timer stopped (Checked out)");
+    },
+    onError: (error: MutationError) => toast.error(error?.detail || error?.message || "Could not complete action.")
   });
 
   if (isLoading) return <div className="h-32 animate-pulse rounded-[26px] bg-base-100" />;
@@ -108,7 +108,7 @@ export const CheckInOut: React.FC = () => {
             <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">Total Time</p>
             <p className="mt-1 text-2xl font-bold tracking-tight text-base-content">{formatSeconds(timer)}</p>
           </div>
-          
+
           {!isActive ? (
             <button
               type="button"

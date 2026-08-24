@@ -12,24 +12,26 @@ export const GlobalProjectSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: projects } = useQuery({
+  const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => getProjects(),
   });
 
-  const activeProject = projects?.find((p: Project) => p.id === activeProjectId) || projects?.[0];
-  const activeIndex = projects?.findIndex((p: any) => p.id === activeProject?.id) ?? 0;
+  const activeProject = projects?.find((p: Project) => String(p.id) === String(activeProjectId)) || projects?.[0];
+  const activeIndex = projects?.findIndex((p: any) => String(p.id) === String(activeProject?.id)) ?? 0;
   const activeDotColor = PROJECT_COLORS[activeIndex % PROJECT_COLORS.length];
 
   React.useEffect(() => {
-    if (!projects?.length) {
+    if (isLoading) return;
+
+    if (!projects || projects.length === 0) {
       if (activeProjectId) setActiveProject(null);
       return;
     }
 
-    const hasActiveProject = projects.some((project: Project) => project.id === activeProjectId);
+    const hasActiveProject = projects.some((project: Project) => String(project.id) === String(activeProjectId));
     if (!hasActiveProject) setActiveProject(String(projects[0].id));
-  }, [projects, activeProjectId, setActiveProject]);
+  }, [projects, isLoading, activeProjectId, setActiveProject]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -43,4 +43,3 @@ Apply these rules when extending the repository. They are derived from the PRD a
 - Use focused conventional commits and the repository's branch/PR workflow.
 - Update roadmap/status documentation when a module changes phase or becomes materially implemented.
 - If dependencies or services are unavailable locally, run the checks that are possible, state the blocker, and do not present an unverified build as passing.
-

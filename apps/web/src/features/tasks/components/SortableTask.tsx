@@ -23,7 +23,7 @@ export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPla
     transform,
     transition,
     isDragging,
-  } = useSortable({ 
+  } = useSortable({
     id: task.id.toString(),
     data: {
       type: 'Task',

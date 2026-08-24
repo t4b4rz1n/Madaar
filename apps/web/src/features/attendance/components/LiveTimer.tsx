@@ -59,7 +59,7 @@ export const LiveTimer: React.FC<LiveTimerProps> = ({ tasks = [] }) => {
           {activeTimers.map((timer) => <ActiveTimerRow key={timer.id} timer={timer} tasks={tasks} invalidate={invalidate} />)}
         </div>
       )}
-      
+
       <div className="flex flex-col gap-3 sm:flex-row mt-2">
         <label className="flex-1"><span className="sr-only">Choose a task</span><select value={selectedTaskId} onChange={(event) => setSelectedTaskId(event.target.value)} className="select select-bordered h-12 w-full rounded-xl bg-base-200/60 text-sm font-semibold" disabled={tasks.length === 0}><option value="">Choose a task to track...</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.key} · {task.title}</option>)}</select></label><button type="button" onClick={() => startMutation.mutate()} disabled={!selectedTaskId || startMutation.isPending} className="motion-interactive inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-content shadow-lg shadow-primary/15 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"><Play size={17} variant="Bold" /> Start new timer</button>
       </div>

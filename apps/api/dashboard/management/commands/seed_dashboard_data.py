@@ -284,7 +284,16 @@ class Command(BaseCommand):
             ),
         ]
 
-        for idx, (title, status_code, priority, assignee, due_date, is_blocked, is_finished, estimated_hours) in enumerate(tasks_data):
+        for idx, (
+            title,
+            status_code,
+            priority,
+            assignee,
+            due_date,
+            is_blocked,
+            is_finished,
+            estimated_hours,
+        ) in enumerate(tasks_data):
             status = self._status_map[status_code]
             Task.objects.get_or_create(
                 title=title,

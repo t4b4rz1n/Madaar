@@ -216,9 +216,7 @@ class Holiday(BaseModel):
 class AttendanceSession(BaseModel):
     """Individual time segments for a daily attendance."""
 
-    attendance = models.ForeignKey(
-        Attendance, on_delete=models.CASCADE, related_name="sessions"
-    )
+    attendance = models.ForeignKey(Attendance, on_delete=models.CASCADE, related_name="sessions")
     start_time = models.DateTimeField(_("Start Time"), db_index=True)
     end_time = models.DateTimeField(_("End Time"), null=True, blank=True)
     duration_seconds = models.PositiveIntegerField(_("Duration in Seconds"), default=0)
@@ -236,4 +234,3 @@ class AttendanceSession(BaseModel):
 
     def __str__(self):
         return f"Session for {self.attendance} at {self.start_time}"
-

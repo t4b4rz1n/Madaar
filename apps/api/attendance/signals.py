@@ -28,7 +28,10 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
     # already-approved request (e.g. changing the note) does NOT double-count
     # overtime. __original_status is set by cache_previous_timeoff_state (pre_save).
     old_status = getattr(instance, "__original_status", None)
-    if old_status != TimeOffRequest.Status.APPROVED and instance.status == TimeOffRequest.Status.APPROVED:
+    if (
+        old_status != TimeOffRequest.Status.APPROVED
+        and instance.status == TimeOffRequest.Status.APPROVED
+    ):
         date = instance.start_datetime.date()
         duration = (instance.end_datetime - instance.start_datetime).total_seconds() / 60
 

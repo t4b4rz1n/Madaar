@@ -1,4 +1,4 @@
-import React, { useState, lazy } from 'react';
+import React, { lazy } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { GlobalProjectSelector } from '../components/GlobalProjectSelector';
 import { WorkspaceView } from '../components/WorkspaceView';
@@ -11,8 +11,7 @@ import { Calendar1, Kanban, Graph } from 'iconsax-reactjs';
 const AttendancePage = lazy(() => import('../../attendance/pages/AttendancePage'));
 
 export const TaskManagementPage: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'kanban' | 'graph' | 'attendance'>('kanban');
-  const { activeProjectId, activeBoardId, setActiveBoard } = useTaskStore();
+  const { activeProjectId, activeBoardId, setActiveBoard, viewMode, setViewMode } = useTaskStore();
 
   const { data: boards } = useQuery({
     queryKey: ['boards', activeProjectId],
