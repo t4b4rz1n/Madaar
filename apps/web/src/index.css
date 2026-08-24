@@ -181,19 +181,17 @@
   --madaar-focus-ring: 0 0 0 3px rgb(100 181 255 / 0.34);
 }
 
-/* حل مشکل پس‌زمینه شفاف گزینه‌های select در مد دارک */
+/* حل مشکل پس‌زمینه شفاف گزینه‌های select در مد دارک و لایت */
 select option {
-  background-color: #1e2330 !important;
-  /* پس‌زمینه تیره تِم Madaar */
-  color: #f3f4f6 !important;
-  /* رنگ متن روشن */
+  background-color: var(--color-base-100) !important;
+  color: var(--color-base-content) !important;
   padding: 8px 12px;
 }
 
 select option:hover,
 select option:focus,
 select option:active {
-  background-color: #2b3245 !important;
+  background-color: var(--color-base-200) !important;
 }
 
 /* Font setting */
