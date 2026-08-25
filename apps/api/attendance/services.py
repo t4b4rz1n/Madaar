@@ -431,8 +431,8 @@ class TimeLogService:
             # We can also check if user has project permissions, but superuser/assignee is safe for now
             from projects.models import ProjectMember
 
-            is_manager = ProjectMember.objects.filter(
-                project=task.project, user=user, role__in=["owner", "admin", "team_lead"]
+            is_manager = task.project.owner == user or ProjectMember.objects.filter(
+                project=task.project, user=user
             ).exists()
             if not is_manager:
                 raise PermissionDenied(_("You do not have permission to log time for this task."))

@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from common.models import BaseModel
+from common.validators import validate_file_magic_bytes
 
 User = settings.AUTH_USER_MODEL
 

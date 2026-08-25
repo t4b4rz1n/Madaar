@@ -136,6 +136,29 @@ services:
     networks:
       - network
 
+  beat:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: madar_beat
+    command: celery -A config beat -l info
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - path: ./apps/api/.env
+        required: true
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - network
+
 networks:
   network:
     driver: bridge

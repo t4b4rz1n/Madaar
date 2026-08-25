@@ -217,6 +217,8 @@ class TaskViewSet(viewsets.ModelViewSet):
             else None
         )
 
+        from django.db.models.functions import Coalesce
+        from django.db.models import Sum
         qs = (
             Task.objects.select_related("project", "status", "assignee", "reporter")
             .prefetch_related("checklist_items", "comments")
@@ -224,23 +226,8 @@ class TaskViewSet(viewsets.ModelViewSet):
                 annotated_subtasks_count=Count(
                     "subtasks", filter=Q(subtasks__is_deleted=False), distinct=True
                 ),
-                annotated_checklist_total=Count(
-                    "checklist_items",
-                    filter=Q(checklist_items__is_deleted=False),
-                    distinct=True,
-                ),
-                annotated_checklist_done=Count(
-                    "checklist_items",
-                    filter=Q(
-                        checklist_items__is_completed=True,
-                        checklist_items__is_deleted=False,
-                    ),
-                    distinct=True,
-                ),
-                annotated_comments_count=Count(
-                    "comments",
-                    filter=Q(comments__is_deleted=False),
-                    distinct=True,
+                annotated_spent_seconds=Coalesce(
+                    Sum("time_logs__duration_seconds", filter=Q(time_logs__is_active=False, time_logs__is_deleted=False)), 0
                 ),
             )
             .annotate(

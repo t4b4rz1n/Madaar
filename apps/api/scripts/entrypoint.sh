@@ -37,5 +37,5 @@ if [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ] || [ "$DEBUG" = "1" ]; then
     python manage.py runserver 0.0.0.0:8000
 else
     echo "Running in production mode (gunicorn)..."
-    exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --worker-class gevent
 fi

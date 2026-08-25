@@ -126,6 +126,7 @@ else:
             "PASSWORD": env("DB_PASSWORD", default="strong_password_123"),
             "HOST": env("DB_HOST", default="localhost"),
             "PORT": env("DB_PORT", default="5432"),
+            "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=60),
         }
     }
 
@@ -286,6 +287,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": env("THROTTLE_RATE_ANON", default="60/minute"),
         "user": env("THROTTLE_RATE_USER", default="300/minute"),
+        "login": env("THROTTLE_RATE_LOGIN", default="5/minute"),
     },
 }
 
@@ -430,10 +432,21 @@ X_FRAME_OPTIONS = "DENY"
 # Telegram Config
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default=None)
 TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")
+TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET", default="")
 
 # GitHub Config
 GITHUB_WEBHOOK_SECRET = env("GITHUB_WEBHOOK_SECRET", default="")
 
 # Celery Beat Schedule
 
-CELERY_BEAT_SCHEDULE = {}
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    "check_approaching_tasks_daily": {
+        "task": "tasks.tasks.check_approaching_tasks",
+        "schedule": crontab(hour=8, minute=0),
+    },
+    "check_approaching_milestones_daily": {
+        "task": "projects.tasks.check_approaching_milestones",
+        "schedule": crontab(hour=8, minute=15),
+    },
+}

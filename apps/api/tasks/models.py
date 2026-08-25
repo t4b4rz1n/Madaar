@@ -230,35 +230,40 @@ class Task(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.number and self.project_id:
-            from django.db import transaction
+            from django.db import transaction, IntegrityError
             from django.db.models import Max
+            import time
 
-            from projects.models import Project
-
-            with transaction.atomic():
+            # Retry loop for lock contention
+            max_retries = 3
+            for attempt in range(max_retries):
                 try:
-                    project = Project.objects.select_for_update().get(id=self.project_id)
-                    max_num = (
-                        Task.all_objects.filter(project=project).aggregate(Max("number"))[
-                            "number__max"
-                        ]
-                        or 0
-                    )
-                    self.number = max_num + 1
-                except Exception as exc:
-                    logger.warning(
-                        "Task.save: select_for_update failed for project_id=%s, "
-                        "falling back to aggregate without lock. Error: %s",
-                        self.project_id,
-                        exc,
-                    )
-                    max_num = (
-                        Task.all_objects.filter(project_id=self.project_id).aggregate(
-                            Max("number")
-                        )["number__max"]
-                        or 0
-                    )
-                    self.number = max_num + 1
+                    with transaction.atomic():
+                        # We lock the project only to ensure sequential task numbering. 
+                        # We use select_for_update to serialize creations.
+                        from projects.models import Project
+                        project = Project.objects.select_for_update().get(id=self.project_id)
+                        max_num = (
+                            Task.all_objects.filter(project=project).aggregate(Max("number"))[
+                                "number__max"
+                            ]
+                            or 0
+                        )
+                        self.number = max_num + 1
+                        super().save(*args, **kwargs)
+                        return  # Success, exit loop and function
+                except (IntegrityError, Exception) as e:
+                    # Catch IntegrityError (if concurrent insert happened despite lock)
+                    # or OperationalError/Exception (if lock timed out)
+                    from django.db import OperationalError
+                    if isinstance(e, OperationalError) or isinstance(e, IntegrityError):
+                        if attempt == max_retries - 1:
+                            raise
+                        time.sleep(0.1) # Brief pause before retry
+                        self.number = None # Reset number for retry
+                    else:
+                        raise
+            return
 
         super().save(*args, **kwargs)
 

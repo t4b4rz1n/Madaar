@@ -55,7 +55,7 @@ class Attendance(BaseModel):
                 name="unique_daily_attendance",
             ),
             models.CheckConstraint(
-                check=Q(check_out__gte=F("check_in")) | Q(check_out__isnull=True),
+                condition=Q(check_out__gte=F("check_in")) | Q(check_out__isnull=True),
                 name="check_out_after_check_in",
             ),
         ]
@@ -108,7 +108,7 @@ class TimeLog(BaseModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=Q(end_time__gte=F("start_time")) | Q(end_time__isnull=True),
+                condition=Q(end_time__gte=F("start_time")) | Q(end_time__isnull=True),
                 name="end_time_after_start_time",
             ),
         ]
@@ -177,7 +177,7 @@ class TimeOffRequest(BaseModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=Q(end_datetime__gte=F("start_datetime")),
+                condition=Q(end_datetime__gte=F("start_datetime")),
                 name="end_datetime_after_start_datetime",
             )
         ]
@@ -227,7 +227,7 @@ class AttendanceSession(BaseModel):
         ordering = ["start_time"]
         constraints = [
             models.CheckConstraint(
-                check=Q(end_time__gte=F("start_time")) | Q(end_time__isnull=True),
+                condition=Q(end_time__gte=F("start_time")) | Q(end_time__isnull=True),
                 name="attendance_session_end_after_start",
             )
         ]
