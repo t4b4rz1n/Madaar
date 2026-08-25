@@ -54,6 +54,7 @@ class ActiveTimerSerializer(serializers.Serializer):
 
 class StandupSummarySerializer(serializers.Serializer):
     id = serializers.UUIDField()
+    project = serializers.UUIDField(source="project_id")
     date = serializers.DateField()
     hours_worked = serializers.DecimalField(max_digits=5, decimal_places=2)
     today_work = serializers.CharField()

@@ -20,7 +20,14 @@ import {
 import { toast } from "sonner";
 import { useAuthStore } from "../../auth/store/authStore";
 import { getEmployeeDashboard } from "../api/dashboardApi";
-import { getTodayAttendance, checkIn, checkOut, startTimer, stopTimer, getOrganizations } from "../../attendance/api/attendanceApi";
+import {
+  getTodayAttendance,
+  checkIn,
+  checkOut,
+  startTimer,
+  stopTimer,
+  getOrganizations,
+} from "../../attendance/api/attendanceApi";
 import { useProjects } from "../../projects/hooks/useProjects";
 import { useTickets } from "../../tickets/hooks/useTickets";
 import { updateTask, getTask } from "../../tasks/api/tasksApi";
@@ -44,7 +51,9 @@ const formatDay = () =>
     year: "numeric",
   }).format(new Date());
 
-const formatDecimalHours = (decimalValue: number | string | null | undefined): string => {
+const formatDecimalHours = (
+  decimalValue: number | string | null | undefined,
+): string => {
   const num = Number(decimalValue);
   if (!num || isNaN(num) || num <= 0) return "0h 0m";
   const h = Math.floor(num);
@@ -84,14 +93,18 @@ export const UserDashboardPage = () => {
   const { data: projectsData = [] } = useProjects(undefined);
 
   // 4. Tickets Query
-  const { data: ticketsData } = useTickets(new URLSearchParams({ page_size: "10" }));
+  const { data: ticketsData } = useTickets(
+    new URLSearchParams({ page_size: "10" }),
+  );
   const openTickets = useMemo(() => {
     const list = Array.isArray(ticketsData?.data?.results)
       ? ticketsData.data.results
       : Array.isArray(ticketsData?.results)
-      ? ticketsData.results
-      : [];
-    return list.filter((t: any) => t.status !== "closed" && t.status !== "resolved");
+        ? ticketsData.results
+        : [];
+    return list.filter(
+      (t: any) => t.status !== "closed" && t.status !== "resolved",
+    );
   }, [ticketsData]);
 
   // 5. Selected Task Query
@@ -104,9 +117,14 @@ export const UserDashboardPage = () => {
   const dashboard = dashboardQuery.data;
   const attendance = attendanceQuery.data;
 
-  const isCheckedIn = Boolean(attendance && attendance.check_in && !attendance.check_out);
+  const isCheckedIn = Boolean(
+    attendance && attendance.check_in && !attendance.check_out,
+  );
   const checkInTime = attendance?.check_in
-    ? new Date(attendance.check_in).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    ? new Date(attendance.check_in).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : "";
 
   // Attendance Check-In / Check-Out mutations
@@ -118,7 +136,9 @@ export const UserDashboardPage = () => {
       }
       const targetOrgId = orgs[0]?.id;
       if (!targetOrgId) {
-        throw new Error("No active organization found. Please create or join an organization first.");
+        throw new Error(
+          "No active organization found. Please create or join an organization first.",
+        );
       }
       return checkIn(String(targetOrgId));
     },
@@ -127,7 +147,11 @@ export const UserDashboardPage = () => {
       toast.success("Checked in successfully");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.error || err?.response?.data?.detail || err?.message || "Could not check in";
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Could not check in";
       toast.error(msg);
     },
   });
@@ -176,7 +200,10 @@ export const UserDashboardPage = () => {
   const displayName = user?.first_name || user?.username || "Friend";
   const allTasks: EmployeeTaskSummary[] = useMemo(() => {
     if (!dashboard) return [];
-    return [...(dashboard.overdue_tasks || []), ...(dashboard.upcoming_tasks || [])];
+    return [
+      ...(dashboard.overdue_tasks || []),
+      ...(dashboard.upcoming_tasks || []),
+    ];
   }, [dashboard]);
 
   return (
@@ -229,7 +256,9 @@ export const UserDashboardPage = () => {
             className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all"
           >
             <TickCircle size={15} />
-            <span>{dashboard?.today_standup ? "Update Standup" : "Log Standup"}</span>
+            <span>
+              {dashboard?.today_standup ? "Update Standup" : "Log Standup"}
+            </span>
           </button>
         </div>
       </div>
@@ -239,35 +268,45 @@ export const UserDashboardPage = () => {
         {/* Attendance */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
           <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Attendance</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Attendance
+            </span>
             <Clock size={16} className="text-primary" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
             {isCheckedIn ? `Checked in ${checkInTime}` : "Not checked in"}
           </p>
           <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
-            {isCheckedIn ? "Working on today's shift" : "Click Check In to start shift"}
+            {isCheckedIn
+              ? "Working on today's shift"
+              : "Click Check In to start shift"}
           </p>
         </div>
 
         {/* Focus Tasks */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
           <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Focus Tasks</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Focus Tasks
+            </span>
             <TaskSquare size={16} className="text-blue-500" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
             {allTasks.length} {allTasks.length === 1 ? "Task" : "Tasks"}
           </p>
           <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
-            {dashboard?.overdue_tasks?.length ? `${dashboard.overdue_tasks.length} overdue` : "All on track"}
+            {dashboard?.overdue_tasks?.length
+              ? `${dashboard.overdue_tasks.length} overdue`
+              : "All on track"}
           </p>
         </div>
 
         {/* Daily Standup */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
           <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Daily Standup</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Daily Standup
+            </span>
             <NoteText size={16} className="text-emerald-500" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
@@ -283,14 +322,19 @@ export const UserDashboardPage = () => {
         {/* Active Tickets */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
           <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Open Tickets</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Open Tickets
+            </span>
             <Ticket size={16} className="text-amber-500" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
-            {openTickets.length} {openTickets.length === 1 ? "Ticket" : "Tickets"}
+            {openTickets.length}{" "}
+            {openTickets.length === 1 ? "Ticket" : "Tickets"}
           </p>
           <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
-            {openTickets.length ? "Active support requests" : "No active tickets"}
+            {openTickets.length
+              ? "Active support requests"
+              : "No active tickets"}
           </p>
         </div>
       </div>
@@ -325,7 +369,7 @@ export const UserDashboardPage = () => {
               <div className="space-y-2">
                 {allTasks.map((t: EmployeeTaskSummary) => {
                   const isRunningTimer = dashboard?.active_timers?.some(
-                    (at) => String(at.task_id) === String(t.id)
+                    (at) => String(at.task_id) === String(t.id),
                   );
 
                   return (
@@ -376,7 +420,9 @@ export const UserDashboardPage = () => {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => startTimerMutation.mutate(String(t.id))}
+                            onClick={() =>
+                              startTimerMutation.mutate(String(t.id))
+                            }
                             className="inline-flex h-7 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-[11px] font-bold text-primary hover:bg-primary/20"
                           >
                             <Play size={12} variant="Bold" />
@@ -439,7 +485,10 @@ export const UserDashboardPage = () => {
                         </span>
                       </div>
 
-                      <h3 dir="auto" className="mt-3 text-sm font-black truncate drop-shadow-xs">
+                      <h3
+                        dir="auto"
+                        className="mt-3 text-sm font-black truncate drop-shadow-xs"
+                      >
                         {p.name}
                       </h3>
 
@@ -475,18 +524,26 @@ export const UserDashboardPage = () => {
             {dashboard?.today_standup ? (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs space-y-1.5">
                 <div className="flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400">
-                  <span>Logged {formatDecimalHours(dashboard.today_standup.hours_worked)}</span>
+                  <span>
+                    Logged{" "}
+                    {formatDecimalHours(dashboard.today_standup.hours_worked)}
+                  </span>
                   <TickCircle size={15} />
                 </div>
                 {dashboard.today_standup.today_work && (
-                  <p dir="auto" className="text-base-content/75 text-[11px] line-clamp-2">
+                  <p
+                    dir="auto"
+                    className="text-base-content/75 text-[11px] line-clamp-2"
+                  >
                     {dashboard.today_standup.today_work}
                   </p>
                 )}
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-base-content/15 p-4 text-center">
-                <p className="text-xs text-base-content/50">You haven't logged today's standup yet.</p>
+                <p className="text-xs text-base-content/50">
+                  You haven't logged today's standup yet.
+                </p>
                 <button
                   type="button"
                   onClick={() => setStandupOpen(true)}
@@ -509,12 +566,21 @@ export const UserDashboardPage = () => {
               </div>
               <div className="space-y-2">
                 {dashboard.blocked_tasks.map((t: any) => (
-                  <div key={t.id} className="rounded-xl border border-amber-500/20 bg-base-100 p-2.5 text-xs">
-                    <p dir="auto" className="font-bold text-base-content truncate">
+                  <div
+                    key={t.id}
+                    className="rounded-xl border border-amber-500/20 bg-base-100 p-2.5 text-xs"
+                  >
+                    <p
+                      dir="auto"
+                      className="font-bold text-base-content truncate"
+                    >
                       {t.title}
                     </p>
                     {t.blockers_reason && (
-                      <p dir="auto" className="mt-0.5 text-[10px] text-amber-600 font-medium line-clamp-1">
+                      <p
+                        dir="auto"
+                        className="mt-0.5 text-[10px] text-amber-600 font-medium line-clamp-1"
+                      >
                         {t.blockers_reason}
                       </p>
                     )}
@@ -530,7 +596,10 @@ export const UserDashboardPage = () => {
               <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
                 Support Tickets
               </h3>
-              <Link to="/tickets" className="text-xs font-bold text-primary hover:underline">
+              <Link
+                to="/tickets"
+                className="text-xs font-bold text-primary hover:underline"
+              >
                 View all
               </Link>
             </div>
@@ -548,14 +617,20 @@ export const UserDashboardPage = () => {
                     className="flex items-center justify-between gap-2 rounded-xl border border-base-content/6 bg-base-200/40 p-2.5 text-xs cursor-pointer hover:bg-base-200/70 transition"
                   >
                     <div className="min-w-0">
-                      <p dir="auto" className="font-bold text-base-content truncate">
+                      <p
+                        dir="auto"
+                        className="font-bold text-base-content truncate"
+                      >
                         {t.subject || t.title}
                       </p>
                       <span className="text-[10px] text-base-content/45 capitalize">
                         {t.status}
                       </span>
                     </div>
-                    <ArrowRight size={13} className="shrink-0 text-base-content/40" />
+                    <ArrowRight
+                      size={13}
+                      className="shrink-0 text-base-content/40"
+                    />
                   </div>
                 ))}
               </div>
@@ -571,6 +646,22 @@ export const UserDashboardPage = () => {
           setStandupOpen(false);
           queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
         }}
+        onSaved={() => {
+          setStandupOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
+        }}
+        entryId={dashboard?.today_standup?.id}
+        projectId={dashboard?.today_standup?.project}
+        date={dashboard?.today_standup?.date}
+        initial={
+          dashboard?.today_standup
+            ? {
+                hoursWorked: String(dashboard.today_standup.hours_worked),
+                todayWork: dashboard.today_standup.today_work,
+                blockers: dashboard.today_standup.blockers ?? "",
+              }
+            : undefined
+        }
       />
       <TaskSheet
         task={taskQuery.data ?? null}
