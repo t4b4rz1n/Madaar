@@ -308,12 +308,12 @@ class TimeLogService:
         for chunk_start, chunk_end in chunks:
             chunk_date = chunk_start.date()
 
-            # 2. Find all OTHER timelogs for this user/project overlapping with chunk
+            # 2. Find all OTHER timelogs for this user/task overlapping with chunk
             from attendance.models import TimeLog
 
             other_logs = TimeLog.objects.filter(
                 user=timer.user,
-                task__project=timer.task.project,
+                task=timer.task,
                 start_time__lt=chunk_end,
                 is_deleted=False,
             ).exclude(id=timer.id)

@@ -216,49 +216,70 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         </div>
 
-        {/* ─── Footer: Assignee Avatar & Timer (Timer visible on hover if inactive, or always if running) ─── */}
+        {/* ─── Footer: Assignee Avatar, Metadata & Timer ─── */}
         <div className="mt-3 flex items-center justify-between border-t border-base-content/6 pt-2">
-          {/* Assignee Interactive Trigger */}
-          <button
-            ref={assigneeTriggerRef}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsAssigneePopoverOpen(!isAssigneePopoverOpen);
-            }}
-            className="rounded-full p-0.5 hover:ring-2 hover:ring-primary/30 transition"
-            title={
-              task.assignee_detail
-                ? `Assigned to ${task.assignee_detail.first_name || task.assignee_detail.username}`
-                : "Assign member"
-            }
-          >
-            <div className="relative shrink-0">
-              <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shadow-xs">
-                {task.assignee_detail?.avatar_url || task.assignee_detail?.avatar ? (
-                  <img
-                    src={
-                      task.assignee_detail.avatar_url ||
-                      task.assignee_detail.avatar
-                    }
-                    alt=""
-                    className="size-6 rounded-full object-cover"
-                  />
-                ) : (
-                  initials || <Profile2User size={12} className="text-base-content/45" />
-                )}
-              </span>
+          
+          <div className="flex items-center gap-3">
+            {/* Assignee Interactive Trigger */}
+            <button
+              ref={assigneeTriggerRef}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAssigneePopoverOpen(!isAssigneePopoverOpen);
+              }}
+              className="rounded-full p-0.5 hover:ring-2 hover:ring-primary/30 transition"
+              title={
+                task.assignee_detail
+                  ? `Assigned to ${task.assignee_detail.first_name || task.assignee_detail.username}`
+                  : "Assign member"
+              }
+            >
+              <div className="relative shrink-0">
+                <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shadow-xs">
+                  {task.assignee_detail?.avatar_url || task.assignee_detail?.avatar ? (
+                    <img
+                      src={
+                        task.assignee_detail.avatar_url ||
+                        task.assignee_detail.avatar
+                      }
+                      alt=""
+                      className="size-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    initials || <Profile2User size={12} className="text-base-content/45" />
+                  )}
+                </span>
 
-              {task.project && (
-                <div className="absolute -bottom-1 -right-1 z-10">
-                  <LiveActivityIndicator
-                    projectId={task.project.toString()}
-                    taskId={task.id}
-                  />
-                </div>
-              )}
-            </div>
-          </button>
+                {task.project && (
+                  <div className="absolute -bottom-1 -right-1 z-10">
+                    <LiveActivityIndicator
+                      projectId={task.project.toString()}
+                      taskId={task.id}
+                    />
+                  </div>
+                )}
+              </div>
+            </button>
+
+            {/* ─── Task Metadata (Due Date & Checklist) ─── */}
+            {(task.due_date || (task.checklist_stats && task.checklist_stats.total > 0)) && (
+              <div className="flex items-center gap-2.5 text-[10px] font-medium text-base-content/40">
+                {task.due_date && (
+                  <div className={`flex items-center gap-1 ${isOverdue && !isActuallyDone ? 'text-red-500 font-bold bg-red-500/10 px-1.5 py-0.5 rounded-md -ml-1' : ''}`} title="Due date">
+                    <Calendar1 size={13} variant={isOverdue && !isActuallyDone ? "Bold" : "Linear"} />
+                    <span>{new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                )}
+                {task.checklist_stats && task.checklist_stats.total > 0 && (
+                  <div className={`flex items-center gap-1 ${task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? 'text-emerald-500 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded-md -ml-1' : ''}`} title="Checklist items">
+                    <TaskSquare size={13} variant={task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? "Bold" : "Linear"} />
+                    <span>{task.checklist_stats.done}/{task.checklist_stats.total}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Timer controls (visible always if running, or on hover if not running) */}
           <div className={`flex items-center gap-1.5 shrink-0 transition-opacity duration-150 ${timerIsRunning ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
