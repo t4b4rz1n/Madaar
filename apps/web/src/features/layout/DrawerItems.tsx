@@ -76,6 +76,13 @@ export const drawerItems: DrawerItem[] = [
     permission: "teams.view",
     isPrimary: true,
   },
+  {
+    title: "Team Lead Dashboard",
+    link: "team-lead",
+    section: "Workspace",
+    icon: <Chart21 variant="Outline" />,
+    isPrimary: true,
+  },
 
   // Admin & Settings Navigation (Settings Modal & Command Menu)
   {

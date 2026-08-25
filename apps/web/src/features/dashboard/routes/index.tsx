@@ -2,10 +2,12 @@ import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
 import { StaffRoute } from "../../../core/router/StaffRoute";
 import { UserRoute } from "../../../core/router/UserRoute";
+import { ManagerRoute } from "../../../core/router/ManagerRoute";
 
 const DashboardPage = lazy(() => import("../pages/DashboardPage"));
 const UserDashboardPage = lazy(() => import("../pages/UserDashboardPage"));
 const ManagerDashboardPage = lazy(() => import("../pages/ManagerDashboardPage"));
+const TeamLeadDashboardPage = lazy(() => import("../pages/TeamLeadDashboardPage"));
 
 export const dashboardRoutes: RouteObject[] = [
   {
@@ -30,6 +32,14 @@ export const dashboardRoutes: RouteObject[] = [
       <StaffRoute>
         <ManagerDashboardPage />
       </StaffRoute>
+    ),
+  },
+  {
+    path: "team-lead",
+    element: (
+      <ManagerRoute>
+        <TeamLeadDashboardPage />
+      </ManagerRoute>
     ),
   },
 ];
