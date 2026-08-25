@@ -188,7 +188,7 @@ class TimeLogService:
             else:
                 has_lead_role = user.org_memberships.filter(
                     organization_id=task.project.organization_id,
-                    role__in=["owner", "Admin", "team_lead"],
+                    role__in=["owner", "admin", "team_lead"],
                 ).exists()
                 if not has_lead_role:
                     has_lead_role = user.team_memberships.filter(
@@ -519,7 +519,7 @@ class TimeOffRequestService:
                 .values_list("role", flat=True)
                 .first()
             )
-            if role not in ["owner", "Admin", "team_lead"]:
+            if role not in ["owner", "admin", "team_lead"]:
                 raise PermissionDenied(
                     _("You do not have permission to approve requests in this organization.")
                 )
@@ -543,7 +543,7 @@ class TimeOffRequestService:
                 .values_list("role", flat=True)
                 .first()
             )
-            if role not in ["owner", "Admin", "team_lead"]:
+            if role not in ["owner", "admin", "team_lead"]:
                 raise PermissionDenied(
                     _("You do not have permission to reject requests in this organization.")
                 )
