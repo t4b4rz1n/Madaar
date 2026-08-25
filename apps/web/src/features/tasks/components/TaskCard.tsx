@@ -86,12 +86,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const effectiveProjectId = task.project || storeProjectId;
 
   const { data: users = [] } = useQuery({
-    queryKey: ["projectMembers", effectiveProjectId],
+    queryKey: ["projectUsers", effectiveProjectId],
     queryFn: async () => {
       if (!effectiveProjectId) return [];
       const members = await getProjectMembers(effectiveProjectId.toString());
       return (members || [])
-        .map((member: any) => member?.user || member)
+        .map((member: any) => member?.user)
         .filter((u: any) => Boolean(u && u.id));
     },
     enabled: Boolean(effectiveProjectId),
@@ -105,8 +105,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   const initials = task.assignee_detail
-    ? `${task.assignee_detail.first_name?.[0] || ""}${task.assignee_detail.last_name?.[0] || ""}`.toUpperCase() ||
-      task.assignee_detail.username?.[0]?.toUpperCase()
+    ? (task.assignee_detail.first_name || task.assignee_detail.last_name
+        ? `${task.assignee_detail.first_name?.[0] || ""}${task.assignee_detail.last_name?.[0] || ""}`
+        : task.assignee_detail.full_name?.[0] || task.assignee_detail.username?.[0] || "?").toUpperCase()
     : "";
 
 
@@ -359,12 +360,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     }}
                   >
                     <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shrink-0">
-                      {user.first_name?.[0] || user.username?.[0] || "?"}
+                      {(user.first_name?.[0] || user.full_name?.[0] || user.username?.[0] || user.email?.[0] || "?").toUpperCase()}
                     </span>
                     <span className="truncate">
-                      {user.first_name
-                        ? `${user.first_name} ${user.last_name || ""}`
-                        : user.username || user.email}
+                      {user.first_name || user.last_name
+                        ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+                        : user.full_name || user.username || user.email || "Unknown Member"}
                     </span>
                   </button>
                 );
@@ -424,12 +425,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       }}
                     >
                       <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] text-primary">
-                        {user.first_name?.[0] || user.username?.[0] || "?"}
+                        {(user.first_name?.[0] || user.full_name?.[0] || user.username?.[0] || user.email?.[0] || "?").toUpperCase()}
                       </span>
                       <span className="truncate">
-                        {user.first_name
-                          ? `${user.first_name} ${user.last_name || ""}`
-                          : user.username || user.email}
+                        {user.first_name || user.last_name
+                          ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+                          : user.full_name || user.username || user.email || "Unknown Member"}
                       </span>
                     </button>
                   ))}

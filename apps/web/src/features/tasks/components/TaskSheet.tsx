@@ -444,7 +444,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   (m) =>
                     m.user && (
                       <option key={m.id} value={m.user.id}>
-                        {m.user.first_name || m.user.username}
+                        {m.user.first_name || m.user.last_name ? `${m.user.first_name || ""} ${m.user.last_name || ""}`.trim() : m.user.full_name || m.user.username}
                       </option>
                     )
                 )}
