@@ -6,6 +6,8 @@ RUN apt-get update \
        libpq-dev \
        gettext \
        curl \
+       libmagic1 \
+       netcat-openbsd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

@@ -134,7 +134,8 @@ class Attachment(BaseModel):
                     "txt",
                     "csv",
                 ]
-            )
+            ),
+            validate_file_magic_bytes,
         ],
     )
 

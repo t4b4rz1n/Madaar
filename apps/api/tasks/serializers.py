@@ -252,18 +252,12 @@ class TaskListSerializer(serializers.ModelSerializer):
         return obj.subtasks.count()
 
     def get_comments_count(self, obj):
-        if hasattr(obj, "_prefetched_objects_cache") and "comments" in obj._prefetched_objects_cache:
-            return len([c for c in obj.comments.all() if not c.is_deleted])
         if hasattr(obj, "annotated_comments_count"):
             return obj.annotated_comments_count
         return obj.comments.count()
 
     def get_checklist_stats(self, obj):
-        if hasattr(obj, "_prefetched_objects_cache") and "checklist_items" in obj._prefetched_objects_cache:
-            valid_items = [c for c in obj.checklist_items.all() if not c.is_deleted]
-            total = len(valid_items)
-            done = len([c for c in valid_items if c.is_completed])
-        elif hasattr(obj, "annotated_checklist_total"):
+        if hasattr(obj, "annotated_checklist_total"):
             total = obj.annotated_checklist_total
             done = obj.annotated_checklist_done
         else:
