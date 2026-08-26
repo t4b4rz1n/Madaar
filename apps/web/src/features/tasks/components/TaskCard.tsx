@@ -107,7 +107,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const initials = task.assignee_detail
     ? (task.assignee_detail.first_name || task.assignee_detail.last_name
         ? `${task.assignee_detail.first_name?.[0] || ""}${task.assignee_detail.last_name?.[0] || ""}`
-        : task.assignee_detail.full_name?.[0] || task.assignee_detail.username?.[0] || "?").toUpperCase()
+        : task.assignee_detail.username?.[0] || "?").toUpperCase()
     : "";
 
 
