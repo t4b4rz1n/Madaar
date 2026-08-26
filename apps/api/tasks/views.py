@@ -217,23 +217,57 @@ class TaskViewSet(viewsets.ModelViewSet):
             else None
         )
 
+        from django.db.models import IntegerField, Subquery, Sum
         from django.db.models.functions import Coalesce
-        from django.db.models import Sum, Subquery, IntegerField
-        
-        comments_sq = TaskComment.objects.filter(task=OuterRef('pk'), is_deleted=False).values('task').annotate(c=Count('id')).values('c')
-        checklists_sq = TaskChecklistItem.objects.filter(task=OuterRef('pk'), is_deleted=False).values('task').annotate(c=Count('id')).values('c')
-        checklists_done_sq = TaskChecklistItem.objects.filter(task=OuterRef('pk'), is_completed=True, is_deleted=False).values('task').annotate(c=Count('id')).values('c')
-        subtasks_sq = Task.objects.filter(parent_task=OuterRef('pk'), is_deleted=False).values('parent_task').annotate(c=Count('id')).values('c')
-        
+
+        comments_sq = (
+            TaskComment.objects.filter(task=OuterRef("pk"), is_deleted=False)
+            .values("task")
+            .annotate(c=Count("id"))
+            .values("c")
+        )
+        checklists_sq = (
+            TaskChecklistItem.objects.filter(task=OuterRef("pk"), is_deleted=False)
+            .values("task")
+            .annotate(c=Count("id"))
+            .values("c")
+        )
+        checklists_done_sq = (
+            TaskChecklistItem.objects.filter(
+                task=OuterRef("pk"), is_completed=True, is_deleted=False
+            )
+            .values("task")
+            .annotate(c=Count("id"))
+            .values("c")
+        )
+        subtasks_sq = (
+            Task.objects.filter(parent_task=OuterRef("pk"), is_deleted=False)
+            .values("parent_task")
+            .annotate(c=Count("id"))
+            .values("c")
+        )
+
         qs = (
             Task.objects.select_related("project", "status", "assignee", "reporter")
             .annotate(
-                annotated_subtasks_count=Coalesce(Subquery(subtasks_sq, output_field=IntegerField()), 0),
-                annotated_comments_count=Coalesce(Subquery(comments_sq, output_field=IntegerField()), 0),
-                annotated_checklist_total=Coalesce(Subquery(checklists_sq, output_field=IntegerField()), 0),
-                annotated_checklist_done=Coalesce(Subquery(checklists_done_sq, output_field=IntegerField()), 0),
+                annotated_subtasks_count=Coalesce(
+                    Subquery(subtasks_sq, output_field=IntegerField()), 0
+                ),
+                annotated_comments_count=Coalesce(
+                    Subquery(comments_sq, output_field=IntegerField()), 0
+                ),
+                annotated_checklist_total=Coalesce(
+                    Subquery(checklists_sq, output_field=IntegerField()), 0
+                ),
+                annotated_checklist_done=Coalesce(
+                    Subquery(checklists_done_sq, output_field=IntegerField()), 0
+                ),
                 annotated_spent_seconds=Coalesce(
-                    Sum("time_logs__duration_seconds", filter=Q(time_logs__is_active=False, time_logs__is_deleted=False)), 0
+                    Sum(
+                        "time_logs__duration_seconds",
+                        filter=Q(time_logs__is_active=False, time_logs__is_deleted=False),
+                    ),
+                    0,
                 ),
             )
             .annotate(

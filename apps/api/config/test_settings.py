@@ -1,4 +1,4 @@
-# ruff: noqa: F403
+# ruff: noqa: F403, F405
 from .settings import *
 
 # Override cache backend for tests to use in-memory cache
