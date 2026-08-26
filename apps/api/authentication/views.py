@@ -44,6 +44,7 @@ class SwaggerSessionLogoutView(View):
 
 from rest_framework.throttling import ScopedRateThrottle
 
+
 class UserRegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)

@@ -301,9 +301,7 @@ def _fmt_task_assigned(p):
     return (
         _("New task assigned"),
         _(
-            " <b>A new task has been assigned to you!</b>\n\n"
-            " Task: <b>{task}</b>\n"
-            " By: {assigner}"
+            " <b>A new task has been assigned to you!</b>\n\n Task: <b>{task}</b>\n By: {assigner}"
         ).format(task=p.get("task_title", "—"), assigner=p.get("assigner", _("manager"))),
     )
 
@@ -312,9 +310,7 @@ def _fmt_task_needs_review(p):
     return (
         _("Task ready for review"),
         _(
-            " <b>Task is ready for review!</b>\n\n"
-            " Task: <b>{task}</b>\n"
-            " Submitted by: {assignee}"
+            " <b>Task is ready for review!</b>\n\n Task: <b>{task}</b>\n Submitted by: {assignee}"
         ).format(task=p.get("task_title", "—"), assignee=p.get("assignee", _("your colleague"))),
     )
 
@@ -399,9 +395,7 @@ def _fmt_organization_created(p):
     return (
         _("New organization"),
         _(
-            " <b>New organization created!</b>\n\n"
-            " Name: <b>{org_name}</b>\n"
-            " Owner: {owner_name}"
+            " <b>New organization created!</b>\n\n Name: <b>{org_name}</b>\n Owner: {owner_name}"
         ).format(
             org_name=p.get("org_name", "—"),
             owner_name=p.get("owner_name", "—"),

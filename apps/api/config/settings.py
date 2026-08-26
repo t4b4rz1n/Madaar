@@ -440,6 +440,7 @@ GITHUB_WEBHOOK_SECRET = env("GITHUB_WEBHOOK_SECRET", default="")
 # Celery Beat Schedule
 
 from celery.schedules import crontab
+
 CELERY_BEAT_SCHEDULE = {
     "check_approaching_tasks_daily": {
         "task": "tasks.tasks.check_approaching_tasks",
