@@ -308,15 +308,18 @@ class TimeLogService:
         for chunk_start, chunk_end in chunks:
             chunk_date = chunk_start.date()
 
-            # 2. Find all OTHER timelogs for this user/task overlapping with chunk
+            # 2. Find OTHER timelogs for this user that have priority over this timer.
+            # Priority rule: A timer only subtracts overlaps with timers that started earlier.
+            from django.db.models import Q
+
             from attendance.models import TimeLog
 
             other_logs = TimeLog.objects.filter(
+                Q(start_time__lt=timer.start_time)
+                | Q(start_time=timer.start_time, id__lt=timer.id),
                 user=timer.user,
-                task=timer.task,
-                start_time__lt=chunk_end,
                 is_deleted=False,
-            ).exclude(id=timer.id)
+            )
 
             other_intervals = []
             for log in other_logs:
