@@ -54,7 +54,7 @@ export const getOrganizationMembers = async (orgId: string): Promise<Organizatio
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
-      profile_image: user.profile_image,
+      profile_image: (user as any).avatar ?? (user as any).profile_image ?? null,
     },
   }));
 };
