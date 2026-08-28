@@ -4,6 +4,7 @@ from rest_framework import serializers
 from accounts.models import User
 
 from .models import Organization
+from .models import OrganizationMembership
 
 
 class OrganizationOwnerSerializer(serializers.ModelSerializer):
@@ -82,3 +83,56 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
         attrs["slug"] = candidate
         return attrs
+
+
+class OrganizationMemberSerializer(serializers.ModelSerializer):
+    user_id = serializers.UUIDField(source="user.id", read_only=True)
+    full_name = serializers.SerializerMethodField()
+    email = serializers.EmailField(source="user.email", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+    avatar = serializers.ImageField(source="user.avatar", read_only=True)
+    role_name = serializers.CharField(source="role", read_only=True)
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
+
+    class Meta:
+        model = OrganizationMembership
+        fields = (
+            "id",
+            "user_id",
+            "full_name",
+            "email",
+            "username",
+            "avatar",
+            "role",
+            "role_name",
+            "role_display",
+            "created_at",
+        )
+        read_only_fields = fields
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name()
+
+
+class AddOrgMemberSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField(required=True)
+    role_id = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        default=OrganizationMembership.Role.EMPLOYEE,
+    )
+
+    class Meta:
+        validators = []
+
+    def validate_user_id(self, value):
+        try:
+            user = User.objects.get(pk=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found.")
+
+        if not user.is_active:
+            raise serializers.ValidationError("User is not active.")
+
+        return value

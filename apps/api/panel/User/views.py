@@ -1,5 +1,6 @@
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
+from organizations.models import OrganizationMembership
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
@@ -21,6 +22,15 @@ class UserViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
     search_fields = ["username", "email", "first_name", "last_name"]
     ordering_fields = ["date_joined", "username", "email"]
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def get_queryset(self):
+        queryset = User.objects.all().order_by("-date_joined")
+        unassigned = self.request.query_params.get("unassigned")
+        if unassigned and unassigned.lower() in ("true", "1"):
+            queryset = queryset.exclude(
+                org_memberships__is_deleted=False
+            )
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "create":

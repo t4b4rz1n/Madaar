@@ -1,15 +1,35 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Add, CloseCircle, Hierarchy, Lock, Message, User } from "iconsax-reactjs";
+import {
+  Add,
+  CloseCircle,
+  Hierarchy,
+  Lock,
+  Message,
+  User,
+  AddCircle,
+  ArrowDown2,
+} from "iconsax-reactjs";
 import { createPortal } from "react-dom";
 import { z } from "zod";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCreateUser } from "../../users/hooks/useUsers";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useCreateUser, useUnassignedUsers } from "../../users/hooks/useUsers";
 import { useRoles } from "../../roles/hooks/useRoles";
+import { addExistingMember } from "../api/organizationsApi";
 import InputField from "../../../components/InputField";
 import type { UserFormData } from "../../users/types";
+import type { User as UserType } from "../../users/types";
+
+const MEMBERSHIP_ROLES = [
+  { value: "admin", label: "Admin" },
+  { value: "team_lead", label: "Team Lead" },
+  { value: "employee", label: "Employee" },
+  { value: "hr", label: "Human Resources" },
+  { value: "accountant", label: "Accountant" },
+];
 
 const backdropVariants = { hidden: { opacity: 0 }, visible: { opacity: 1 } };
 const modalVariants = {
@@ -40,15 +60,47 @@ interface CreateOrgMemberModalProps {
   onClose: () => void;
 }
 
+type MemberTab = "add_existing" | "create_new";
+
 export const CreateOrgMemberModal = ({
   orgId,
   isOpen,
   onClose,
 }: CreateOrgMemberModalProps) => {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<MemberTab>("add_existing");
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("");
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+
   const createMutation = useCreateUser();
+  const {
+    data: unassignedUsers = [],
+    isLoading: isLoadingUsers,
+  } = useUnassignedUsers();
   const { data: rolesData, isLoading: isLoadingRoles } = useRoles();
   const roles = rolesData?.results ?? [];
+
+  const addExistingMutation = useMutation({
+    mutationFn: (data: { user_id: string; role_id?: string | null }) =>
+      addExistingMember(orgId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["users", "unassigned"] });
+      toast.success("Member added successfully");
+      handleClose();
+    },
+    onError: (error: any) => {
+      if (error?.response?.status === 409) {
+        toast.error("User is already a member of this organization");
+        return;
+      }
+      toast.error(error?.response?.data?.message || "Failed to add member");
+    },
+  });
 
   const {
     control,
@@ -67,18 +119,54 @@ export const CreateOrgMemberModal = ({
     },
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      reset({
-        username: "",
-        email: "",
-        password: "",
-        first_name: "",
-        last_name: "",
-        role_id: null,
-      });
+  const resetForm = () => {
+    reset({
+      username: "",
+      email: "",
+      password: "",
+      first_name: "",
+      last_name: "",
+      role_id: null,
+    });
+    setSelectedUserId("");
+    setSelectedRoleId("");
+    setUserSearch("");
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const handleTabChange = (tab: MemberTab) => {
+    setActiveTab(tab);
+    resetForm();
+  };
+
+  const filteredUsers = unassignedUsers.filter((u: UserType) => {
+    const query = userSearch.toLowerCase();
+    return (
+      u.username.toLowerCase().includes(query) ||
+      u.email.toLowerCase().includes(query) ||
+      u.first_name.toLowerCase().includes(query) ||
+      u.last_name.toLowerCase().includes(query)
+    );
+  });
+
+  const selectedUser = unassignedUsers.find(
+    (u: UserType) => String(u.id) === selectedUserId,
+  );
+
+  const handleAddExistingSubmit = () => {
+    if (!selectedUserId) {
+      toast.error("Please select a user");
+      return;
     }
-  }, [isOpen, reset]);
+    addExistingMutation.mutate({
+      user_id: selectedUserId,
+      role_id: selectedRoleId || undefined,
+    });
+  };
 
   const onSubmit = handleSubmit((data) => {
     const payload: UserFormData = {
@@ -97,13 +185,18 @@ export const CreateOrgMemberModal = ({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["organizations"] });
         queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
-        queryClient.invalidateQueries({ queryKey: ["organizations", orgId, "members"] });
-        onClose();
+        queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+        handleClose();
       },
     });
   });
 
-  const isLoading = createMutation.isPending;
+  const isLoading = createMutation.isPending || addExistingMutation.isPending;
+
+  const tabs: { key: MemberTab; label: string; icon: typeof User }[] = [
+    { key: "add_existing", label: "Add Existing User", icon: User },
+    { key: "create_new", label: "Create New User", icon: AddCircle },
+  ];
 
   const modalContent = (
     <AnimatePresence>
@@ -114,13 +207,14 @@ export const CreateOrgMemberModal = ({
           animate="visible"
           exit="hidden"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={onClose}
+          onClick={handleClose}
         >
           <motion.div
             variants={modalVariants}
             className="relative w-full max-w-xl bg-base-100 rounded-2xl shadow-xl m-4 max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className="p-6 flex-shrink-0 border-b border-base-content/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -129,232 +223,423 @@ export const CreateOrgMemberModal = ({
                   </div>
                   <div>
                     <h3 className="font-bold text-2xl text-base-content">
-                      Create Organization Member
+                      Add Organization Member
                     </h3>
                     <p className="text-base-content/70 text-sm">
-                      Add a new user to this organization
+                      Add a user to this organization
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="p-2 hover:bg-base-content/10 rounded-lg transition-colors"
                   disabled={isLoading}
                 >
                   <CloseCircle className="w-6 h-6 text-base-content/60" />
                 </button>
               </div>
+
+              {/* Segmented Tabs */}
+              <div className="mt-5 flex gap-1 rounded-xl bg-base-200/60 p-1 backdrop-blur-xl">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => handleTabChange(tab.key)}
+                      disabled={isLoading}
+                      className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+                        isActive
+                          ? "bg-base-100 text-base-content shadow-sm backdrop-blur-xl"
+                          : "text-base-content/50 hover:text-base-content/80"
+                      }`}
+                    >
+                      <Icon size={16} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
+            {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 pt-6">
-              <form id="org-member-form" onSubmit={onSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Controller
-                    name="first_name"
-                    control={control}
-                    render={({ field }) => (
-                      <label className="form-control w-full">
-                        <div className="label mb-2">
-                          <span className="label-text font-semibold">First Name</span>
-                        </div>
-                        <InputField
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="John"
-                          classNameInput={errors.first_name ? "input-error" : ""}
-                        />
-                        {errors.first_name && (
-                          <span className="text-error text-xs mt-1">
-                            {errors.first_name.message}
-                          </span>
-                        )}
-                      </label>
-                    )}
-                  />
-
-                  <Controller
-                    name="last_name"
-                    control={control}
-                    render={({ field }) => (
-                      <label className="form-control w-full">
-                        <div className="label mb-2">
-                          <span className="label-text font-semibold">Last Name</span>
-                        </div>
-                        <InputField
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="Doe"
-                          classNameInput={errors.last_name ? "input-error" : ""}
-                        />
-                        {errors.last_name && (
-                          <span className="text-error text-xs mt-1">
-                            {errors.last_name.message}
-                          </span>
-                        )}
-                      </label>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <Controller
-                    name="username"
-                    control={control}
-                    render={({ field }) => (
-                      <label className="form-control w-full">
-                        <div className="label mb-2">
-                          <span className="label-text font-semibold">
-                            Username <span className="text-error">*</span>
-                          </span>
-                        </div>
-                        <InputField
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="johndoe"
-                          icon={<User size={18} />}
-                          classNameInput={errors.username ? "input-error" : ""}
-                        />
-                        {errors.username && (
-                          <span className="text-error text-xs mt-1">
-                            {errors.username.message}
-                          </span>
-                        )}
-                      </label>
-                    )}
-                  />
-
-                  <Controller
-                    name="email"
-                    control={control}
-                    render={({ field }) => (
-                      <label className="form-control w-full">
-                        <div className="label mb-2">
-                          <span className="label-text font-semibold">
-                            Email <span className="text-error">*</span>
-                          </span>
-                        </div>
-                        <InputField
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="john@example.com"
-                          icon={<Message size={18} />}
-                          classNameInput={errors.email ? "input-error" : ""}
-                        />
-                        {errors.email && (
-                          <span className="text-error text-xs mt-1">
-                            {errors.email.message}
-                          </span>
-                        )}
-                      </label>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <Controller
-                    name="password"
-                    control={control}
-                    render={({ field }) => (
-                      <label className="form-control w-full">
-                        <div className="label mb-2">
-                          <span className="label-text font-semibold">
-                            Password <span className="text-error">*</span>
-                          </span>
-                        </div>
-                        <InputField
-                          type="password"
-                          {...field}
-                          value={field.value ?? ""}
-                          placeholder="Min. 8 characters"
-                          icon={<Lock size={18} />}
-                          classNameInput={errors.password ? "input-error" : ""}
-                        />
-                        {errors.password ? (
-                          <span className="text-error text-xs mt-1">
-                            {errors.password.message}
+              {/* --- Add Existing User Tab --- */}
+              {activeTab === "add_existing" && (
+                <div className="space-y-5">
+                  {/* User Select */}
+                  <div className="form-control w-full">
+                    <div className="label mb-2">
+                      <span className="label-text font-semibold">
+                        Select User <span className="text-error">*</span>
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          !isLoadingUsers && setIsUserDropdownOpen(!isUserDropdownOpen)
+                        }
+                        className="input input-bordered flex w-full items-center justify-between rounded-xl px-4 py-3 text-left"
+                        disabled={isLoadingUsers}
+                      >
+                        {isLoadingUsers ? (
+                          <span className="text-base-content/50">Loading users...</span>
+                        ) : selectedUser ? (
+                          <span className="flex items-center gap-2">
+                            <span className="grid size-7 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                              {(
+                                selectedUser.first_name?.[0] ||
+                                selectedUser.username[0]
+                              ).toUpperCase()}
+                            </span>
+                            <span>
+                              {selectedUser.first_name || selectedUser.username}
+                              {selectedUser.last_name
+                                ? ` ${selectedUser.last_name}`
+                                : ""}
+                              <span className="ml-1.5 text-xs text-base-content/45">
+                                ({selectedUser.email})
+                              </span>
+                            </span>
                           </span>
                         ) : (
-                          <span className="text-xs text-base-content/60 mt-1">
-                            At least 8 characters with upper, lower, and numbers
+                          <span className="text-base-content/50">
+                            Choose an unassigned user
                           </span>
                         )}
-                      </label>
-                    )}
-                  />
+                        <ArrowDown2
+                          size={16}
+                          className={`text-base-content/40 transition-transform ${
+                            isUserDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
 
-                  <Controller
-                    name="role_id"
-                    control={control}
-                    render={({ field }) => (
-                      <label className="form-control w-full">
-                        <div className="label mb-2">
-                          <span className="label-text font-semibold">User Role</span>
-                        </div>
-                        <div className="relative">
-                          <select
-                            name={field.name}
-                            ref={field.ref}
-                            value={field.value ?? ""}
-                            onBlur={field.onBlur}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === "" ? null : Number(e.target.value),
-                              )
-                            }
-                            className={`select select-bordered w-full pl-10 ${
-                              errors.role_id ? "select-error" : ""
-                            }`}
-                            disabled={isLoadingRoles}
-                          >
-                            <option value="">Select a role</option>
-                            {roles.map((role) => (
-                              <option key={role.id} value={String(role.id)}>
-                                {role.name}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
-                            <Hierarchy size={18} />
+                      {isUserDropdownOpen && (
+                        <div className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-xl border border-base-content/10 bg-base-100 shadow-xl backdrop-blur-xl">
+                          <div className="border-b border-base-content/10 p-2">
+                            <input
+                              type="text"
+                              value={userSearch}
+                              onChange={(e) => setUserSearch(e.target.value)}
+                              placeholder="Search users..."
+                              className="input input-sm input-bordered w-full rounded-lg"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="max-h-48 overflow-y-auto">
+                            {filteredUsers.length === 0 ? (
+                              <div className="px-4 py-8 text-center text-sm text-base-content/45">
+                                {userSearch
+                                  ? "No matching users found"
+                                  : "No unassigned users available"}
+                              </div>
+                            ) : (
+                              filteredUsers.map((u: UserType) => (
+                                <button
+                                  key={u.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedUserId(String(u.id));
+                                    setIsUserDropdownOpen(false);
+                                    setUserSearch("");
+                                  }}
+                                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-base-200/60 ${
+                                    String(u.id) === selectedUserId
+                                      ? "bg-primary/5 text-primary"
+                                      : ""
+                                  }`}
+                                >
+                                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-base-200 text-xs font-bold text-base-content/60">
+                                    {(
+                                      u.first_name?.[0] || u.username[0]
+                                    ).toUpperCase()}
+                                  </span>
+                                  <span className="min-w-0">
+                                    <p className="truncate font-medium">
+                                      {u.first_name || u.username}
+                                      {u.last_name ? ` ${u.last_name}` : ""}
+                                    </p>
+                                    <p className="truncate text-xs text-base-content/45">
+                                      {u.email}
+                                    </p>
+                                  </span>
+                                </button>
+                              ))
+                            )}
                           </div>
                         </div>
-                        {errors.role_id && (
-                          <span className="text-error text-xs mt-1">
-                            {errors.role_id.message}
-                          </span>
-                        )}
-                      </label>
+                      )}
+                    </div>
+                    {!isLoadingUsers && unassignedUsers.length === 0 && (
+                      <p className="mt-2 text-xs text-base-content/45">
+                        All users are already assigned to an organization.
+                      </p>
                     )}
-                  />
+                  </div>
+
+                  {/* Role Select */}
+                  <div className="form-control w-full">
+                    <div className="label mb-2">
+                      <span className="label-text font-semibold">
+                        Role
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <select
+                        value={selectedRoleId}
+                        onChange={(e) => setSelectedRoleId(e.target.value)}
+                        className="select select-bordered w-full rounded-xl pl-10"
+                    >
+                        <option value="">Select a role</option>
+                        {MEMBERSHIP_ROLES.map((role) => (
+                          <option key={role.value} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
+                        <Hierarchy size={18} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </form>
+              )}
+
+              {/* --- Create New User Tab --- */}
+              {activeTab === "create_new" && (
+                <form id="org-member-form" onSubmit={onSubmit}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Controller
+                      name="first_name"
+                      control={control}
+                      render={({ field }) => (
+                        <label className="form-control w-full">
+                          <div className="label mb-2">
+                            <span className="label-text font-semibold">First Name</span>
+                          </div>
+                          <InputField
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="John"
+                            classNameInput={errors.first_name ? "input-error" : ""}
+                          />
+                          {errors.first_name && (
+                            <span className="text-error text-xs mt-1">
+                              {errors.first_name.message}
+                            </span>
+                          )}
+                        </label>
+                      )}
+                    />
+
+                    <Controller
+                      name="last_name"
+                      control={control}
+                      render={({ field }) => (
+                        <label className="form-control w-full">
+                          <div className="label mb-2">
+                            <span className="label-text font-semibold">Last Name</span>
+                          </div>
+                          <InputField
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Doe"
+                            classNameInput={errors.last_name ? "input-error" : ""}
+                          />
+                          {errors.last_name && (
+                            <span className="text-error text-xs mt-1">
+                              {errors.last_name.message}
+                            </span>
+                          )}
+                        </label>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <Controller
+                      name="username"
+                      control={control}
+                      render={({ field }) => (
+                        <label className="form-control w-full">
+                          <div className="label mb-2">
+                            <span className="label-text font-semibold">
+                              Username <span className="text-error">*</span>
+                            </span>
+                          </div>
+                          <InputField
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="johndoe"
+                            icon={<User size={18} />}
+                            classNameInput={errors.username ? "input-error" : ""}
+                          />
+                          {errors.username && (
+                            <span className="text-error text-xs mt-1">
+                              {errors.username.message}
+                            </span>
+                          )}
+                        </label>
+                      )}
+                    />
+
+                    <Controller
+                      name="email"
+                      control={control}
+                      render={({ field }) => (
+                        <label className="form-control w-full">
+                          <div className="label mb-2">
+                            <span className="label-text font-semibold">
+                              Email <span className="text-error">*</span>
+                            </span>
+                          </div>
+                          <InputField
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="john@example.com"
+                            icon={<Message size={18} />}
+                            classNameInput={errors.email ? "input-error" : ""}
+                          />
+                          {errors.email && (
+                            <span className="text-error text-xs mt-1">
+                              {errors.email.message}
+                            </span>
+                          )}
+                        </label>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <Controller
+                      name="password"
+                      control={control}
+                      render={({ field }) => (
+                        <label className="form-control w-full">
+                          <div className="label mb-2">
+                            <span className="label-text font-semibold">
+                              Password <span className="text-error">*</span>
+                            </span>
+                          </div>
+                          <InputField
+                            type="password"
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Min. 8 characters"
+                            icon={<Lock size={18} />}
+                            classNameInput={errors.password ? "input-error" : ""}
+                          />
+                          {errors.password ? (
+                            <span className="text-error text-xs mt-1">
+                              {errors.password.message}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-base-content/60 mt-1">
+                              At least 8 characters with upper, lower, and numbers
+                            </span>
+                          )}
+                        </label>
+                      )}
+                    />
+
+                    <Controller
+                      name="role_id"
+                      control={control}
+                      render={({ field }) => (
+                        <label className="form-control w-full">
+                          <div className="label mb-2">
+                            <span className="label-text font-semibold">User Role</span>
+                          </div>
+                          <div className="relative">
+                            <select
+                              name={field.name}
+                              ref={field.ref}
+                              value={field.value ?? ""}
+                              onBlur={field.onBlur}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === "" ? null : Number(e.target.value),
+                                )
+                              }
+                              className={`select select-bordered w-full rounded-xl pl-10 ${
+                                errors.role_id ? "select-error" : ""
+                              }`}
+                              disabled={isLoadingRoles}
+                            >
+                              <option value="">Select a role</option>
+                              {roles.map((role) => (
+                                <option key={role.id} value={String(role.id)}>
+                                  {role.name}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
+                              <Hierarchy size={18} />
+                            </div>
+                          </div>
+                          {errors.role_id && (
+                            <span className="text-error text-xs mt-1">
+                              {errors.role_id.message}
+                            </span>
+                          )}
+                        </label>
+                      )}
+                    />
+                  </div>
+                </form>
+              )}
             </div>
 
+            {/* Footer */}
             <div className="p-6 flex-shrink-0 border-t border-base-content/10 bg-base-200/30 rounded-b-2xl">
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="btn btn-ghost rounded-xl"
                   disabled={isLoading}
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  form="org-member-form"
-                  disabled={isLoading}
-                  className="btn btn-primary rounded-xl px-6"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Saving...
-                    </span>
-                  ) : (
-                    "Create Member"
-                  )}
-                </button>
+
+                {activeTab === "add_existing" ? (
+                  <button
+                    type="button"
+                    onClick={handleAddExistingSubmit}
+                    disabled={isLoading || !selectedUserId || addExistingMutation.isPending}
+                    className="btn btn-primary rounded-xl px-6"
+                  >
+                    {addExistingMutation.isPending ? (
+                      <span className="flex items-center gap-2">
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Adding...
+                      </span>
+                    ) : (
+                      "Add Member"
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    form="org-member-form"
+                    disabled={isLoading}
+                    className="btn btn-primary rounded-xl px-6"
+                  >
+                    {createMutation.isPending ? (
+                      <span className="flex items-center gap-2">
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Saving...
+                      </span>
+                    ) : (
+                      "Create Member"
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

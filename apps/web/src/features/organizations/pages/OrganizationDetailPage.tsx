@@ -1,20 +1,21 @@
 import { AnimatePresence, motion } from "motion/react";
-import { Add, ArrowLeft, People, User } from "iconsax-reactjs";
+import { Add, ArrowLeft, People, User, Trash } from "iconsax-reactjs";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getOrganizationDetails,
-  getOrganizationMembers,
+  getMembers,
+  removeMember,
 } from "../api/organizationsApi";
 import { CreateOrgMemberModal } from "../components/CreateOrgMemberModal";
 import type { OrganizationMember } from "../types";
 
 const getUserDisplayName = (member: OrganizationMember): string => {
-  const { user } = member;
-  const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+  const fullName = member.full_name?.trim();
   if (fullName) return fullName;
-  return user.username || user.email || "Member";
+  return member.username || member.email || "Member";
 };
 
 const getInitials = (name: string): string => {
@@ -28,7 +29,9 @@ const getInitials = (name: string): string => {
 export default function OrganizationDetailPage() {
   const { orgId } = useParams<{ orgId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isCreateMemberOpen, setIsCreateMemberOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<OrganizationMember | null>(null);
 
   const { data: organization, isLoading: isOrgLoading } = useQuery({
     queryKey: ["organizations", orgId],
@@ -37,9 +40,23 @@ export default function OrganizationDetailPage() {
   });
 
   const { data: members = [], isLoading: isMembersLoading } = useQuery({
-    queryKey: ["organizations", orgId, "members"],
-    queryFn: () => getOrganizationMembers(orgId!),
+    queryKey: ["organization-members", orgId],
+    queryFn: () => getMembers(orgId!),
     enabled: Boolean(orgId),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (userId: string) => removeMember(orgId!, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
+      toast.success("Member removed successfully");
+      setMemberToRemove(null);
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to remove member");
+    },
   });
 
   if (isOrgLoading) {
@@ -160,24 +177,32 @@ export default function OrganizationDetailPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  className="madaar-surface flex items-center gap-4 rounded-xl border border-base-content/10 bg-base-100 p-4 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
+                  className="madaar-surface group relative flex items-center gap-4 rounded-xl border border-base-content/10 bg-base-100 p-4 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
                 >
                   <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                     {getInitials(getUserDisplayName(member))}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">
                       {getUserDisplayName(member)}
                     </p>
                     <p className="truncate text-xs text-base-content/45">
-                      {member.user.email}
+                      {member.email}
                     </p>
-                    {member.role && (
+                    {member.role_display && (
                       <span className="mt-1 inline-block rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-medium text-base-content/55">
-                        {member.role}
+                        {member.role_display}
                       </span>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setMemberToRemove(member)}
+                    className="btn btn-ghost btn-square btn-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-error/60 hover:text-error hover:bg-error/10"
+                    title="Remove from organization"
+                  >
+                    <Trash size={16} />
+                  </button>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -192,6 +217,79 @@ export default function OrganizationDetailPage() {
           onClose={() => setIsCreateMemberOpen(false)}
         />
       )}
+
+      {/* Remove Confirmation Dialog */}
+      <AnimatePresence>
+        {memberToRemove && (
+          <motion.div
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1 },
+            }}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setMemberToRemove(null)}
+          >
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 30, scale: 0.98 },
+                visible: { opacity: 1, y: 0, scale: 1 },
+                exit: { opacity: 0, y: 30, scale: 0.98 },
+              }}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="w-full max-w-md rounded-2xl border border-base-content/10 bg-base-100 p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="mx-auto mb-4 grid size-14 place-items-center rounded-full bg-error/10 text-error">
+                  <Trash size={28} />
+                </div>
+                <h3 className="text-lg font-bold text-base-content">
+                  Remove Member
+                </h3>
+                <p className="mt-2 text-sm text-base-content/60">
+                  Are you sure you want to remove{" "}
+                  <span className="font-semibold">
+                    {getUserDisplayName(memberToRemove)}
+                  </span>{" "}
+                  from this organization? This action cannot be undone.
+                </p>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMemberToRemove(null)}
+                  className="btn btn-ghost rounded-xl"
+                  disabled={removeMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    removeMutation.mutate(String(memberToRemove.user_id))
+                  }
+                  disabled={removeMutation.isPending}
+                  className="btn btn-error rounded-xl px-6"
+                >
+                  {removeMutation.isPending ? (
+                    <span className="flex items-center gap-2">
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Removing...
+                    </span>
+                  ) : (
+                    "Remove"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-}
+};

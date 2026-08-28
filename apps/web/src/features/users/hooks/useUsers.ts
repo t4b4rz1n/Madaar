@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createUser, deleteUser, getUsers, updateUser } from "../api/usersApi";
+import { getUnassignedUsers } from "../api/usersApi";
 import type { UserFormData, UserUpdateData } from "../types";
 
 export const useUsers = (params: URLSearchParams) => {
@@ -17,6 +18,13 @@ export const useUsers = (params: URLSearchParams) => {
       return response.data;
     },
     placeholderData: keepPreviousData,
+  });
+};
+
+export const useUnassignedUsers = () => {
+  return useQuery({
+    queryKey: ["users", "unassigned"],
+    queryFn: () => getUnassignedUsers(),
   });
 };
 
