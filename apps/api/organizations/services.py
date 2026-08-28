@@ -17,10 +17,14 @@ COMPATIBILITY_ROLE_PERMISSIONS_MAP = {
 
 # Default permissions granted to ALL organization members automatically
 DEFAULT_ORG_PERMISSIONS = {
+    "org.view",
+    "user.view",
+    "role.view",
     "project.view",
     "task.view",
     "board.view",
     "notification.view",
+    "attendance.view_all",
 }
 
 class PermissionService:

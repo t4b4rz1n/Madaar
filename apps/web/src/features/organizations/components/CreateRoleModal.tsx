@@ -4,6 +4,13 @@ import { useTranslation } from 'react-i18next';
 // Define the permissions structure
 const PERMISSION_GROUPS = [
   {
+    category: 'ORGANIZATION',
+    items: [
+      { id: 'org.manage_settings', label: 'Manage Settings', isDefault: false },
+      { id: 'org.view', label: 'View Organization', isDefault: true },
+    ]
+  },
+  {
     category: 'USERS',
     items: [
       { id: 'user.manage', label: 'Manage Users', isDefault: false },
@@ -14,42 +21,37 @@ const PERMISSION_GROUPS = [
     category: 'ROLES',
     items: [
       { id: 'org.manage_roles', label: 'Manage Roles', isDefault: false },
-    ]
-  },
-  {
-    category: 'KANBAN',
-    items: [
-      { id: 'kanban.manage', label: 'Manage Kanban', isDefault: false },
-      { id: 'task.view', label: 'View Tasks', isDefault: true },
-      { id: 'board.view', label: 'View Boards', isDefault: true },
-    ]
-  },
-  {
-    category: 'NOTIFICATIONS',
-    items: [
-      { id: 'notification.send', label: 'Send Notifications', isDefault: false },
-      { id: 'notification.view', label: 'View Notifications', isDefault: true },
-    ]
-  },
-  {
-    category: 'TEAMS',
-    items: [
-      { id: 'team.manage', label: 'Manage Teams', isDefault: false },
-      { id: 'team.view', label: 'View Teams', isDefault: true },
+      { id: 'role.view', label: 'View Roles', isDefault: true },
     ]
   },
   {
     category: 'PROJECTS',
     items: [
       { id: 'project.manage', label: 'Manage Projects', isDefault: false },
+      { id: 'project.create', label: 'Create Projects', isDefault: false },
       { id: 'project.view', label: 'View Projects', isDefault: true },
     ]
   },
   {
-    category: 'AUTOMATIONS',
+    category: 'TASKS & KANBAN',
     items: [
-      { id: 'automation.manage', label: 'Manage Automations', isDefault: false },
-      { id: 'automation.view', label: 'View Automations', isDefault: true },
+      { id: 'kanban.manage', label: 'Manage Kanban (Create/Move)', isDefault: false },
+      { id: 'task.view', label: 'View Tasks', isDefault: true },
+      { id: 'board.view', label: 'View Boards', isDefault: true },
+    ]
+  },
+  {
+    category: 'ATTENDANCE',
+    items: [
+      { id: 'leave.approve', label: 'Approve Leaves', isDefault: false },
+      { id: 'attendance.view_all', label: 'View Timesheets', isDefault: true },
+    ]
+  },
+  {
+    category: 'NOTIFICATIONS',
+    items: [
+      { id: 'notification.manage', label: 'Configure Automations', isDefault: false },
+      { id: 'notification.view', label: 'View Notifications', isDefault: true },
     ]
   }
 ];
