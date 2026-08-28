@@ -68,6 +68,57 @@ class Team(BaseModel):
         return self.name
 
 
+
+
+class Permission(BaseModel):
+    code = models.CharField(max_length=100, unique=True, db_index=True, help_text="e.g., 'task.create', 'leave.approve'")
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    module = models.CharField(max_length=50, help_text="e.g., 'tasks', 'attendance', 'core'")
+
+    class Meta:
+        db_table = "permissions"
+        verbose_name = "Permission"
+        verbose_name_plural = "Permissions"
+        ordering = ["module", "code"]
+
+    def __str__(self):
+        return f"{self.module} - {self.code}"
+
+
+class Role(BaseModel):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="custom_roles",
+    )
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    is_protected = models.BooleanField(
+        default=False, 
+        help_text="Protected roles (like Owner) cannot be deleted or completely stripped of permissions."
+    )
+    permissions = models.ManyToManyField(
+        Permission, 
+        related_name="roles", 
+        blank=True
+    )
+
+    class Meta:
+        db_table = "roles"
+        verbose_name = "Role"
+        verbose_name_plural = "Roles"
+        ordering = ["organization", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "name"],
+                name="unique_role_name_per_org",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.organization.name})"
+
 class OrganizationMembership(BaseModel):
     class Role(models.TextChoices):
         OWNER = "owner", "Owner"
