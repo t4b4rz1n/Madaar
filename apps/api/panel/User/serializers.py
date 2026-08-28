@@ -30,6 +30,7 @@ def _extract_org_id(request):
 class UserListSerializer(serializers.ModelSerializer):
     role_id = serializers.SerializerMethodField()
     role_name = serializers.SerializerMethodField()
+    organization = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -44,6 +45,7 @@ class UserListSerializer(serializers.ModelSerializer):
             "avatar",
             "role_id",
             "role_name",
+            "organization",
         ]
         ref_name = "users_panel"
 
@@ -96,6 +98,15 @@ class UserListSerializer(serializers.ModelSerializer):
             return dynamic_role.name
         if membership and membership.role:
             return membership.get_role_display()
+        return None
+
+    def get_organization(self, obj):
+        membership = obj.org_memberships.filter(is_deleted=False).first()
+        if membership:
+            return {
+                "id": str(membership.organization.id),
+                "name": membership.organization.name,
+            }
         return None
 
 

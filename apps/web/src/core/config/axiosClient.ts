@@ -31,8 +31,11 @@ const processQueue = (error: any, token: string | null = null) => {
   });
   failedQueue = [];
 };
-
-// Request interceptor: reads access token directly from Zustand memory state
+ 
+ const getApiUrl = (): string =>
+   (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, "");
+ 
+ // Request interceptor: reads access token directly from Zustand memory state
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().access;
