@@ -42,14 +42,21 @@ class SwaggerSessionLogoutView(View):
         return redirect(next_url)
 
 
+from rest_framework.throttling import ScopedRateThrottle
+
+
 class UserRegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = UserRegisterSerializer
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "login"
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "login"
 
 
 class LogoutView(APIView):

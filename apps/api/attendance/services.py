@@ -188,7 +188,7 @@ class TimeLogService:
             else:
                 has_lead_role = user.org_memberships.filter(
                     organization_id=task.project.organization_id,
-                    role__in=["owner", "Admin", "team_lead"],
+                    role__in=["owner", "admin", "team_lead"],
                 ).exists()
                 if not has_lead_role:
                     has_lead_role = user.team_memberships.filter(
@@ -308,15 +308,18 @@ class TimeLogService:
         for chunk_start, chunk_end in chunks:
             chunk_date = chunk_start.date()
 
-            # 2. Find all OTHER timelogs for this user/project overlapping with chunk
+            # 2. Find OTHER timelogs for this user that have priority over this timer.
+            # Priority rule: A timer only subtracts overlaps with timers that started earlier.
+            from django.db.models import Q
+
             from attendance.models import TimeLog
 
             other_logs = TimeLog.objects.filter(
+                Q(start_time__lt=timer.start_time)
+                | Q(start_time=timer.start_time, id__lt=timer.id),
                 user=timer.user,
-                task__project=timer.task.project,
-                start_time__lt=chunk_end,
                 is_deleted=False,
-            ).exclude(id=timer.id)
+            )
 
             other_intervals = []
             for log in other_logs:
@@ -431,9 +434,12 @@ class TimeLogService:
             # We can also check if user has project permissions, but superuser/assignee is safe for now
             from projects.models import ProjectMember
 
-            is_manager = ProjectMember.objects.filter(
-                project=task.project, user=user, role__in=["owner", "admin", "team_lead"]
-            ).exists()
+            is_manager = (
+                task.project.owner == user
+                or ProjectMember.objects.filter(
+                    project=task.project, user=user, is_active=True
+                ).exists()
+            )
             if not is_manager:
                 raise PermissionDenied(_("You do not have permission to log time for this task."))
 
@@ -519,7 +525,7 @@ class TimeOffRequestService:
                 .values_list("role", flat=True)
                 .first()
             )
-            if role not in ["owner", "Admin", "team_lead"]:
+            if role not in ["owner", "admin", "team_lead"]:
                 raise PermissionDenied(
                     _("You do not have permission to approve requests in this organization.")
                 )
@@ -543,7 +549,7 @@ class TimeOffRequestService:
                 .values_list("role", flat=True)
                 .first()
             )
-            if role not in ["owner", "Admin", "team_lead"]:
+            if role not in ["owner", "admin", "team_lead"]:
                 raise PermissionDenied(
                     _("You do not have permission to reject requests in this organization.")
                 )

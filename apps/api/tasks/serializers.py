@@ -234,6 +234,8 @@ class TaskListSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "reporter", "created_at", "updated_at")
 
     def get_spent_seconds(self, obj):
+        if hasattr(obj, "annotated_spent_seconds"):
+            return obj.annotated_spent_seconds
         from django.db.models import Sum
 
         total = obj.time_logs.filter(is_active=False).aggregate(total=Sum("duration_seconds"))[
@@ -259,8 +261,8 @@ class TaskListSerializer(serializers.ModelSerializer):
             total = obj.annotated_checklist_total
             done = obj.annotated_checklist_done
         else:
-            total = obj.checklist_items.count()
-            done = obj.checklist_items.filter(is_completed=True).count()
+            total = obj.checklist_items.filter(is_deleted=False).count()
+            done = obj.checklist_items.filter(is_completed=True, is_deleted=False).count()
 
         percent = round((done / total * 100), 1) if total > 0 else 0.0
         return {"total": total, "done": done, "percent": percent}

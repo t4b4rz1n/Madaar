@@ -316,7 +316,7 @@ class TelegramBotService:
         cls._update_user_language(user, lang)
 
         name = user.first_name if user else _("User")
-        msg = _(" <b>Madaar Bot Main Menu</b>\n\n" "Hello {name}! Use the buttons below:").format(
+        msg = _(" <b>Madaar Bot Main Menu</b>\n\nHello {name}! Use the buttons below:").format(
             name=name
         )
         cls._send_or_edit(
@@ -513,7 +513,7 @@ class TelegramBotService:
                 status_name = t.status.name if t.status else "—"
                 project_name = t.project.name if t.project else "—"
                 lines.append(
-                    f"{i}. {p_emoji} <b>{t.title}</b>\n" f"      {project_name} |  {status_name}"
+                    f"{i}. {p_emoji} <b>{t.title}</b>\n      {project_name} |  {status_name}"
                 )
 
             # Summary

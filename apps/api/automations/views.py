@@ -86,6 +86,13 @@ class TelegramWebhookView(View):
     """
 
     def post(self, request, *args, **kwargs):
+        expected_secret = getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "")
+        if expected_secret:
+            received_secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+            if received_secret != expected_secret:
+                logger.warning("Telegram Webhook unauthorized access attempt.")
+                return JsonResponse({"error": "Unauthorized"}, status=403)
+
         try:
             data = json.loads(request.body)
 

@@ -1,4 +1,4 @@
-# ruff: noqa: F403
+# ruff: noqa: F403, F405
 from .settings import *
 
 # Override cache backend for tests to use in-memory cache
@@ -8,3 +8,8 @@ CACHES = {
         "LOCATION": "test-cache",
     }
 }
+
+# Disable throttling limits for tests
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["login"] = "1000/minute"
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["anon"] = "1000/minute"
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["user"] = "1000/minute"

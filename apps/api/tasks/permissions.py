@@ -72,12 +72,12 @@ def extract_organization_id(obj_or_request):
         raw_org_id = obj_or_request.query_params.get(
             "organization"
         ) or obj_or_request.query_params.get("organization_id")
-        if raw_org_id and str(raw_org_id).strip().isdigit():
+        if raw_org_id and str(raw_org_id).strip():
             return str(raw_org_id).strip()
         raw_proj_id = obj_or_request.query_params.get("project") or obj_or_request.query_params.get(
             "project_id"
         )
-        if raw_proj_id and str(raw_proj_id).strip().isdigit():
+        if raw_proj_id and str(raw_proj_id).strip():
             from projects.models import Project
 
             return (
@@ -104,7 +104,7 @@ def extract_project_id(obj_or_request):
         p_id = obj_or_request.query_params.get("project") or obj_or_request.query_params.get(
             "project_id"
         )
-        if p_id and str(p_id).strip().isdigit():
+        if p_id and str(p_id).strip():
             return str(p_id).strip()
 
     if hasattr(obj_or_request, "method") and obj_or_request.method in [

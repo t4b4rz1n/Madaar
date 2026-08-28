@@ -71,7 +71,7 @@ class Team(BaseModel):
 class OrganizationMembership(BaseModel):
     class Role(models.TextChoices):
         OWNER = "owner", "Owner"
-        ADMIN = "Admin", "Admin"
+        ADMIN = "admin", "Admin"
         TEAM_LEAD = "team_lead", "Team Lead"
         EMPLOYEE = "employee", "Employee"
         HR = "hr", "Human Resources"

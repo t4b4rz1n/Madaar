@@ -36,6 +36,9 @@ class Command(BaseCommand):
 
         url = f"https://api.telegram.org/bot{bot_token}/setWebhook"
         payload = {"url": full_webhook_url}
+        secret_token = getattr(settings, "TELEGRAM_WEBHOOK_SECRET", None)
+        if secret_token:
+            payload["secret_token"] = secret_token
 
         try:
             response = requests.post(url, json=payload)
