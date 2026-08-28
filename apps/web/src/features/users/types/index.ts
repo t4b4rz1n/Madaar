@@ -13,6 +13,7 @@ export interface User {
   is_staff: boolean;
   role_id: number | null;
   profile_image: string | null;
+  organization?: { id: string; name: string } | null;
 }
 
 export interface UserFormData {

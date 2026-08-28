@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Add, Profile2User } from "iconsax-reactjs";
+import { Add } from "iconsax-reactjs";
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../../components/Pagination";
@@ -154,7 +154,7 @@ export default function UsersListPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="bg-base-100 min-h-[calc(100vh-121px)] backdrop-blur-lg border border-base-content/10 rounded-2xl p-4 sm:p-6 flex flex-col"
+        className="madaar-glass shadow-madaar-card min-h-[calc(100vh-121px)] rounded-2xl p-5 sm:p-8 flex flex-col"
       >
         {/* Header */}
         <motion.div
@@ -162,23 +162,20 @@ export default function UsersListPage() {
           className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
         >
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-base-content">
-              <Profile2User size={28} /> Users Management
-            </h1>
-            <p className="text-base-content/70 mt-1">
-              Manage and monitor all users in the system.
-            </p>
+            <span className="text-[11px] font-semibold tracking-wider text-primary uppercase">DIRECTORY</span>
+            <h1 className="text-2xl font-bold tracking-tight text-base-content">Team &amp; Access Directory</h1>
+            <p className="text-xs text-base-content/60 mt-1">Manage users, organizational assignments, and permission roles across workspaces.</p>
           </div>
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
             <ViewSwitcher
               viewMode={viewMode}
               setViewMode={setViewMode}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-base-200/40 backdrop-blur-md border border-base-content/8 rounded-xl"
             />
             {canManageUsers && (
               <button
                 onClick={handleCreateUser}
-                className="btn btn-primary rounded-xl gap-2"
+                className="btn btn-primary btn-sm md:btn-md rounded-xl gap-2 font-medium shadow-sm hover:shadow-md transition-transform duration-100 active:scale-95"
               >
                 <Add size={20} />
                 <span>Create User</span>
@@ -188,7 +185,7 @@ export default function UsersListPage() {
         </motion.div>
 
         {/* Toolbar */}
-        <motion.div variants={itemVariants} className="mt-6">
+        <motion.div variants={itemVariants} className="relative z-10 mt-6">
           <UsersToolbar
             onSearch={handleSearch}
             onSortChange={handleSort}

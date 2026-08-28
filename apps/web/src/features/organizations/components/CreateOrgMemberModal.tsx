@@ -89,7 +89,7 @@ export const CreateOrgMemberModal = ({
       last_name: data.last_name ?? "",
       is_active: true,
       is_staff: false,
-      role_id: data.role_id ?? null,
+      role_id: data.role_id ? Number(data.role_id) : null,
       organization_id: orgId,
     };
 

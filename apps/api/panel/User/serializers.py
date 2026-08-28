@@ -7,6 +7,8 @@ from accounts.models import User
 
 
 class UserListSerializer(serializers.ModelSerializer):
+    organization = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -18,8 +20,18 @@ class UserListSerializer(serializers.ModelSerializer):
             "is_active",
             "is_staff",
             "avatar",
+            "organization",
         ]
         ref_name = "users_panel"
+
+    def get_organization(self, obj):
+        membership = obj.org_memberships.filter(is_deleted=False).first()
+        if membership:
+            return {
+                "id": str(membership.organization.id),
+                "name": membership.organization.name,
+            }
+        return None
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

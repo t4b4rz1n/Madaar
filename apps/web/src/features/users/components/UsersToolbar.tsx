@@ -8,7 +8,6 @@ import {
 } from "iconsax-reactjs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import InputField from "../../../components/InputField";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { useRoles } from "../../roles/hooks/useRoles";
 import type { Role } from "../../roles/types";
@@ -35,13 +34,11 @@ export const UsersToolbar = ({
 }: ToolbarProps) => {
   const [searchParams] = useSearchParams();
 
-  // فقط برای فیلد سرچ استیت محلی نگه می‌داریم تا Debounce بشه
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("search") || "",
   );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // بقیه فیلترها مستقیماً از URL خوانده می‌شوند (تک‌منبع حقیقت یا Single Source of Truth)
   const activeFilter = searchParams.get("is_active") || "";
   const roleFilter = searchParams.get("role_id") || "";
 
@@ -58,7 +55,6 @@ export const UsersToolbar = ({
     [rolesData?.results],
   );
 
-  // محاسبه سورت فعلی مستقیماً از روی URL
   const sortConfig = useMemo<{ key: SortKey; dir: SortDirection }>(() => {
     const ordering = searchParams.get("ordering") || "";
     const isDesc = ordering.startsWith("-");
@@ -78,12 +74,10 @@ export const UsersToolbar = ({
     onSearchRef.current = onSearch;
   }, [onSearch]);
 
-  // همگام‌سازی استیت سرچ متنی در صورتی که URL از بیرون تغییر کند (مثل کلیک روی ریست فیلترها)
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
   }, [searchParams]);
 
-  // اعمال دبانس سرچ
   const isFirstSearch = useRef(true);
   useEffect(() => {
     if (isFirstSearch.current) {
@@ -93,7 +87,6 @@ export const UsersToolbar = ({
     onSearchRef.current(debouncedSearchQuery);
   }, [debouncedSearchQuery]);
 
-  // هندلرهای مستقیم برای اعمال تغییرات بدون نیاز به افکت‌های مزاحم
   const handleActiveFilterChange = (value: string) => {
     onFilterChange({
       is_active: value,
@@ -139,33 +132,35 @@ export const UsersToolbar = ({
     (opt) => opt.key === sortConfig.key,
   )?.label;
 
-  const buttonBaseClass =
-    "btn btn-ghost rounded-xl hover:bg-primary/10 hover:text-primary border-none";
-
   const hasActiveFilters = Boolean(activeFilter || roleFilter);
 
   return (
-    <div className="flex w-full flex-col items-center gap-3 rounded-2xl border border-base-content/10 bg-linear-to-r from-base-100 to-base-200/40 p-2 md:flex-row">
-      <div className="grow w-full">
-        <InputField
-          name="search"
+    // relative z-20 on the root container ensures the toolbar layer sits above grid/table content
+    <div className="relative z-20 flex w-full flex-col items-center gap-3 rounded-2xl border border-base-content/8 bg-base-100/40 backdrop-blur-xl saturate-150 p-3 shadow-sm md:flex-row">
+      {/* Search input matching Taskboard search bar */}
+      <div className="grow w-full relative">
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+          <SearchNormal1 size={18} />
+        </div>
+        <input
+          type="text"
           placeholder="Search users..."
-          icon={<SearchNormal1 size={18} />}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          classNameInput="!bg-transparent !shadow-none"
+          className="w-full rounded-xl border border-base-content/10 bg-base-100/40 px-4 py-2 text-sm backdrop-blur-md placeholder:text-base-content/40 focus:border-primary/50 focus:bg-base-100/80 focus:outline-none transition-all pl-10"
         />
       </div>
 
-      <div className="flex items-center gap-1 rounded-xl border border-base-content/10 p-1">
+      {/* Pill-shaped segment group for filter/sort controls */}
+      <div className="flex items-center gap-1.5 rounded-full border border-base-content/8 bg-base-100/30 backdrop-blur-md p-1">
         <div className="relative" ref={filterRef}>
           <button
             type="button"
             onClick={() => setIsFilterOpen((prev) => !prev)}
-            className={`${buttonBaseClass} ${
+            className={`btn btn-sm rounded-full px-4 border-base-content/8 bg-base-100/40 backdrop-blur-md hover:bg-primary/10 hover:border-primary/30 hover:text-primary motion-interactive active:scale-95 transition-all duration-100 ${
               isFilterOpen || hasActiveFilters
-                ? "bg-primary/10 text-primary"
-                : ""
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "text-base-content/70"
             }`}
           >
             <Filter size={18} />
@@ -178,17 +173,18 @@ export const UsersToolbar = ({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="absolute right-0 top-full z-10 mt-2 w-72 rounded-box border border-base-content/10 bg-base-100 p-4 shadow-lg md:left-0 md:right-auto"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="absolute end-0 top-full z-50 mt-2 w-72 rounded-2xl border border-base-content/10 bg-base-100/95 backdrop-blur-2xl p-4 shadow-madaar-raised"
               >
                 <div className="flex flex-col space-y-4">
                   <label className="form-control w-full">
                     <div className="label pb-1">
-                      <span className="label-text text-xs font-semibold">
+                      <span className="label-text text-xs font-semibold tracking-tight text-base-content/70">
                         Status
                       </span>
                     </div>
                     <select
-                      className="select select-sm w-full border-base-300 !shadow-none"
+                      className="select select-sm w-full border-base-content/10 rounded-xl bg-base-100/40 backdrop-blur-sm !shadow-none focus:border-primary/40 transition-all duration-200"
                       value={activeFilter}
                       onChange={(e) => handleActiveFilterChange(e.target.value)}
                     >
@@ -200,12 +196,12 @@ export const UsersToolbar = ({
 
                   <label className="form-control w-full">
                     <div className="label pb-1">
-                      <span className="label-text text-xs font-semibold">
+                      <span className="label-text text-xs font-semibold tracking-tight text-base-content/70">
                         Role
                       </span>
                     </div>
                     <select
-                      className="select select-sm w-full border-base-300 !shadow-none"
+                      className="select select-sm w-full border-base-content/10 rounded-xl bg-base-100/40 backdrop-blur-sm !shadow-none focus:border-primary/40 transition-all duration-200"
                       value={roleFilter}
                       onChange={(e) => handleRoleFilterChange(e.target.value)}
                     >
@@ -226,7 +222,7 @@ export const UsersToolbar = ({
           <button
             type="button"
             tabIndex={0}
-            className={`${buttonBaseClass} flex-nowrap`}
+            className="btn btn-sm rounded-full px-4 border-base-content/8 bg-base-100/40 backdrop-blur-md hover:bg-primary/10 hover:border-primary/30 hover:text-primary motion-interactive flex-nowrap text-base-content/70 active:scale-95 transition-all duration-100"
           >
             <Sort size={18} />
             <span className="mx-1 whitespace-nowrap font-semibold">
@@ -236,11 +232,17 @@ export const UsersToolbar = ({
 
           <ul
             tabIndex={0}
-            className="dropdown-content z-[1] mt-2 w-48 rounded-box border border-base-content/10 bg-base-100 p-2 shadow-lg menu"
+            className="dropdown-content z-50 mt-2 w-48 rounded-2xl border border-base-content/8 bg-base-100/90 backdrop-blur-xl p-2 shadow-madaar-raised menu"
           >
             {sortOptions.map((opt) => (
               <li key={opt.key} onClick={() => handleSortKeyChange(opt.key)}>
-                <a className={sortConfig.key === opt.key ? "active" : ""}>
+                <a
+                  className={`rounded-xl ${
+                    sortConfig.key === opt.key
+                      ? "active bg-primary/10 text-primary"
+                      : "text-base-content/70"
+                  }`}
+                >
                   {opt.label}
                 </a>
               </li>
@@ -251,7 +253,7 @@ export const UsersToolbar = ({
         <button
           type="button"
           onClick={toggleSortDirection}
-          className={`${buttonBaseClass} btn-circle`}
+          className="btn btn-sm rounded-full px-3 border-base-content/8 bg-base-100/40 backdrop-blur-md hover:bg-primary/10 hover:border-primary/30 hover:text-primary motion-interactive text-base-content/70 btn-circle active:scale-95 transition-all duration-100"
         >
           {sortConfig.dir === "asc" ? (
             <ArrowUp2 size={18} />

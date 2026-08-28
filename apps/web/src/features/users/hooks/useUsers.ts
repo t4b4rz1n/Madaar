@@ -59,7 +59,7 @@ export const useUpdateUser = () => {
   });
 };
 
-export const useDeleteUser = (orgId?: string) => {
+export const useDeleteUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
