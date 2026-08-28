@@ -1,4 +1,6 @@
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
+from organizations.models import Organization, OrganizationMembership
 from rest_framework import serializers
 
 from accounts.models import User
@@ -102,6 +104,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         write_only=True, required=True, style={"input_type": "password"}
     )
     email = serializers.EmailField(required=True)
+    organization_id = serializers.UUIDField(
+        required=False, write_only=True, allow_null=True
+    )
     role_id = serializers.CharField(write_only=True, required=False, allow_null=True)
 
     class Meta:
@@ -115,6 +120,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "is_active",
             "is_staff",
             "avatar",
+            "organization_id",
             "role_id",
         ]
         extra_kwargs = {
@@ -126,6 +132,39 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError(_("A user with this email already exists."))
         return value
+
+    def validate_organization_id(self, value):
+        from organizations.models import Organization, OrganizationMembership
+        from django.utils.translation import gettext_lazy as _
+        if value is None:
+            return value
+
+        try:
+            org = Organization.objects.get(pk=value)
+        except Organization.DoesNotExist:
+            raise serializers.ValidationError(_("Organization not found.")) from None
+
+        request_user = getattr(self.context.get("request"), "user", None)
+
+        if request_user and request_user.is_authenticated:
+            if request_user.is_superuser:
+                return value
+            if org.owner == request_user:
+                return value
+            if OrganizationMembership.objects.filter(
+                user=request_user,
+                organization=org,
+                role__in=[
+                    OrganizationMembership.Role.OWNER,
+                    OrganizationMembership.Role.ADMIN,
+                ],
+                is_deleted=False,
+            ).exists():
+                return value
+
+        raise serializers.ValidationError(
+            _("You do not have permission to create members for this organization.")
+        )
 
     def create(self, validated_data):
         from django.db import transaction
@@ -143,26 +182,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if "is_staff" in validated_data and not (actor and actor.is_superuser):
             validated_data["is_staff"] = False
 
+        organization_id = validated_data.pop("organization_id", None)
         role_id = validated_data.pop("role_id", None)
-        raw_org_id = _extract_org_id(request)
 
         org = None
-        if raw_org_id:
-            org = Organization.objects.filter(id=raw_org_id, is_deleted=False).first()
-            if not org:
-                raise serializers.ValidationError({"organization_id": _("Organization not found.")})
-            if actor and not actor.is_superuser:
-                has_manage = PermissionService.has_permission(
-                    actor, "org.manage_members", str(org.id)
-                ) or PermissionService.has_permission(actor, "org.manage_settings", str(org.id))
-                if not has_manage:
-                    raise serializers.ValidationError(
-                        {
-                            "organization_id": _(
-                                "You do not have permission to manage members in this organization."
-                            )
-                        }
-                    )
+        if organization_id:
+            org = Organization.objects.filter(id=organization_id, is_deleted=False).first()
         elif actor and not actor.is_superuser:
             mem = (
                 actor.org_memberships.filter(is_deleted=False)
@@ -188,8 +213,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
             )
 
             if org:
+                request_user = getattr(self.context.get("request"), "user", None)
+                invited_by = (
+                    request_user
+                    if request_user and request_user.is_authenticated
+                    else None
+                )
                 membership, created_mem = OrganizationMembership.objects.get_or_create(
-                    user=user, organization=org, is_deleted=False
+                    user=user, organization=org, is_deleted=False,
+                    defaults={"invited_by": invited_by}
                 )
                 role_obj = None
                 if role_id:

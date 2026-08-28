@@ -29,7 +29,7 @@ const createOrgMemberSchema = z.object({
     .regex(/[0-9]/, "Must contain at least one number"),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
-  role_id: z.number().nullable(),
+  role_id: z.union([z.string(), z.number()]).nullable().optional(),
 });
 
 type OrgMemberFormData = z.infer<typeof createOrgMemberSchema>;
@@ -97,6 +97,7 @@ export const CreateOrgMemberModal = ({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["organizations"] });
         queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["organizations", orgId, "members"] });
         onClose();
       },
     });
