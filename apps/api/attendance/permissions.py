@@ -1,8 +1,10 @@
 from rest_framework import permissions
+from organizations.services import PermissionService
 
 
 class BaseAttendancePermission(permissions.BasePermission):
     def get_user_org_role(self, request, organization_id=None):
+        # Kept for compatibility but we should prefer PermissionService directly
         user = request.user
         if not user or not user.is_authenticated:
             return None
@@ -49,15 +51,14 @@ class BaseAttendancePermission(permissions.BasePermission):
 
 
 class IsAttendanceOwnerOrAdmin(BaseAttendancePermission):
-    """Attendance: only the record owner or Owner/Admin can access."""
+    """Attendance: only the record owner or those with 'attendance.view_all' can access."""
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_staff or request.user.is_superuser:
             return True
         if obj.user == request.user:
             return True
-        role = self.get_user_org_role(request, obj.organization_id)
-        return role in ["owner", "admin"]
+        return PermissionService.has_permission(request.user, "attendance.view_all", obj.organization_id)
 
 
 class IsTimeLogOwnerOrAdmin(BaseAttendancePermission):
@@ -78,28 +79,26 @@ class IsTimeLogOwnerOrAdmin(BaseAttendancePermission):
 
         if obj.user == request.user:
             return True
-        role = self.get_user_org_role(request, org_id)
-        return role in ["owner", "admin"]
+        return PermissionService.has_permission(request.user, "attendance.view_all", org_id)
 
 
 class IsTimeOffRequestPermission(BaseAttendancePermission):
-    """Time-off: only the requester or Owner/Admin can view/modify; approve/reject is Owner/Admin only."""
+    """Time-off: only the requester or someone with 'leave.approve' can view/modify; approve/reject requires 'leave.approve'."""
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_staff or request.user.is_superuser:
             return True
 
         is_owner = obj.user == request.user
-        role = self.get_user_org_role(request, obj.organization_id)
-        is_manager = role in ["owner", "admin"]
+        has_approve_perm = PermissionService.has_permission(request.user, "leave.approve", obj.organization_id)
 
         if view.action in ["approve", "reject"]:
-            return is_manager
+            return has_approve_perm
 
         if view.action == "cancel":
             return is_owner and obj.status == "pending"
 
-        return is_owner or is_manager
+        return is_owner or has_approve_perm
 
 
 class IsHolidayPermission(BaseAttendancePermission):
@@ -117,8 +116,7 @@ class IsHolidayPermission(BaseAttendancePermission):
         if not org_id:
             return False
 
-        role = self.get_user_org_role(request, org_id)
-        return role in ["owner", "admin"]
+        return PermissionService.has_permission(request.user, "org.manage_settings", org_id)
 
 
 class IsTimesheetPermission(BaseAttendancePermission):

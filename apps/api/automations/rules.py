@@ -173,23 +173,44 @@ def _determine_target_users(recipients: list[str], payload: dict) -> set[str]:
                     "user_id", flat=True
                 )
             )
-        elif recipient in (Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS):
+        elif recipient in (
+            Recipient.HAS_PERM_ORG_MANAGE, 
+            Recipient.HAS_PERM_LEAVE_APPROVE, 
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_TASK_REVIEW,
+            Recipient.HAS_PERM_TASK_MANAGE
+        ):
             from organizations.models import OrganizationMembership
+            from django.db import models
 
-            roles = (
-                [OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN]
-                if recipient == Recipient.ORGANIZATION_ADMINS
-                else [OrganizationMembership.Role.TEAM_LEAD]
-            )
+            perm_map = {
+                Recipient.HAS_PERM_ORG_MANAGE: "org.manage_settings",
+                Recipient.HAS_PERM_LEAVE_APPROVE: "leave.approve",
+                Recipient.HAS_PERM_PROJECT_MANAGE: "project.manage",
+                Recipient.HAS_PERM_TASK_REVIEW: "task.review",
+                Recipient.HAS_PERM_TASK_MANAGE: "task.manage_all"
+            }
+            perm_code = perm_map.get(recipient)
             org_id = project.organization_id if project else payload.get("organization_id")
-            if org_id:
-                add_many(
-                    OrganizationMembership.objects.filter(
-                        organization_id=org_id,
-                        role__in=roles,
-                        is_deleted=False,
-                    ).values_list("user_id", flat=True)
-                )
+            if org_id and perm_code:
+                legacy_roles = []
+                try:
+                    from organizations.services import COMPATIBILITY_ROLE_PERMISSIONS_MAP
+                    for role, perms in COMPATIBILITY_ROLE_PERMISSIONS_MAP.items():
+                        if perm_code in perms:
+                            legacy_roles.append(role)
+                except ImportError:
+                    pass
+                
+                matching_memberships = OrganizationMembership.objects.filter(
+                    organization_id=org_id,
+                    is_deleted=False
+                ).filter(
+                    models.Q(dynamic_roles__permissions__code=perm_code) |
+                    models.Q(role__in=legacy_roles)
+                ).values_list("user_id", flat=True).distinct()
+                
+                add_many(matching_memberships)
         elif recipient == Recipient.SUPERUSERS:
             add_many(
                 User.objects.filter(

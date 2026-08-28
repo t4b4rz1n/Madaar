@@ -11,8 +11,11 @@ from django.utils.translation import gettext_lazy as _
 class Recipient:
     PROJECT_OWNER = "project_owner"
     PROJECT_MEMBERS = "project_members"
-    ORGANIZATION_ADMINS = "organization_admins"
-    TEAM_LEADS = "team_leads"
+    HAS_PERM_ORG_MANAGE = "has_perm_org_manage"
+    HAS_PERM_LEAVE_APPROVE = "has_perm_leave_approve"
+    HAS_PERM_PROJECT_MANAGE = "has_perm_project_manage"
+    HAS_PERM_TASK_REVIEW = "has_perm_task_review"
+    HAS_PERM_TASK_MANAGE = "has_perm_task_manage"
     ASSIGNEE = "assignee"
     REPORTER = "reporter"
     TARGET_USERS = "target_users"
@@ -24,8 +27,11 @@ class Recipient:
 RECIPIENT_CHOICES = (
     (Recipient.PROJECT_OWNER, _("Project owner")),
     (Recipient.PROJECT_MEMBERS, _("Project members")),
-    (Recipient.ORGANIZATION_ADMINS, _("Organization admins")),
-    (Recipient.TEAM_LEADS, _("Team leads")),
+    (Recipient.HAS_PERM_ORG_MANAGE, _("Users with org settings permission")),
+    (Recipient.HAS_PERM_LEAVE_APPROVE, _("Users who can approve leaves")),
+    (Recipient.HAS_PERM_PROJECT_MANAGE, _("Users who can manage projects")),
+    (Recipient.HAS_PERM_TASK_REVIEW, _("Users who can review tasks")),
+    (Recipient.HAS_PERM_TASK_MANAGE, _("Users who can manage tasks")),
     (Recipient.ASSIGNEE, _("Task assignee")),
     (Recipient.REPORTER, _("Task reporter")),
     (Recipient.TARGET_USERS, _("Users directly affected by the event")),
@@ -62,7 +68,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.TARGET_USERS,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
@@ -74,31 +80,31 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.TARGET_USERS,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
         "project_over_budget",
         _("Project budget warning"),
         _("The project budget requires attention."),
-        [Recipient.PROJECT_OWNER, Recipient.ORGANIZATION_ADMINS],
+        [Recipient.PROJECT_OWNER, Recipient.HAS_PERM_ORG_MANAGE],
         allowed_recipients=[
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.ORGANIZATION_ADMINS,
-            Recipient.TEAM_LEADS,
+            Recipient.HAS_PERM_ORG_MANAGE,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
         ],
     ),
     _event(
         "milestone_approaching",
         _("Milestone deadline approaching"),
         _("A milestone is due within 48 hours."),
-        [Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
+        [Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE],
         allowed_recipients=[
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.TEAM_LEADS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
@@ -109,8 +115,8 @@ AUTOMATION_EVENT_CATALOG = (
         allowed_recipients=[
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.TEAM_LEADS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
@@ -123,8 +129,8 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.REPORTER,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.TEAM_LEADS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
@@ -137,36 +143,36 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.REPORTER,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.TEAM_LEADS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
         "task_completed",
         _("Task completed"),
         _("A task is marked complete."),
-        [Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
+        [Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE],
         allowed_recipients=[
             Recipient.ASSIGNEE,
             Recipient.REPORTER,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.TEAM_LEADS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
         "task_deadline_approaching",
         _("Task deadline approaching"),
         _("An unfinished task is due within 24 hours."),
-        [Recipient.ASSIGNEE, Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
+        [Recipient.ASSIGNEE, Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE],
         allowed_recipients=[
             Recipient.ASSIGNEE,
             Recipient.REPORTER,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.TEAM_LEADS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
@@ -180,8 +186,8 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.REPORTER,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.TEAM_LEADS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
@@ -194,18 +200,18 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.REPORTER,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
-            Recipient.TEAM_LEADS,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
         "standup_submitted",
         _("Daily stand-up submitted"),
         _("A team member submits a daily stand-up."),
-        [Recipient.ORGANIZATION_ADMINS],
+        [Recipient.HAS_PERM_ORG_MANAGE],
         allowed_recipients=[
-            Recipient.ORGANIZATION_ADMINS,
-            Recipient.TEAM_LEADS,
+            Recipient.HAS_PERM_ORG_MANAGE,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
         ],
@@ -214,10 +220,10 @@ AUTOMATION_EVENT_CATALOG = (
         "leave_requested",
         _("Leave requested"),
         _("A user submits a leave request."),
-        [Recipient.ORGANIZATION_ADMINS],
+        [Recipient.HAS_PERM_LEAVE_APPROVE],
         allowed_recipients=[
-            Recipient.ORGANIZATION_ADMINS,
-            Recipient.TEAM_LEADS,
+            Recipient.HAS_PERM_LEAVE_APPROVE,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.REQUESTER,
         ],
     ),
@@ -228,18 +234,18 @@ AUTOMATION_EVENT_CATALOG = (
         [Recipient.REQUESTER],
         allowed_recipients=[
             Recipient.REQUESTER,
-            Recipient.ORGANIZATION_ADMINS,
-            Recipient.TEAM_LEADS,
+            Recipient.HAS_PERM_LEAVE_APPROVE,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
         ],
     ),
     _event(
         "timer_started",
         _("Work timer started"),
         _("A work timer is started for a task."),
-        [Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS],
+        [Recipient.HAS_PERM_ORG_MANAGE, Recipient.HAS_PERM_PROJECT_MANAGE],
         allowed_recipients=[
-            Recipient.ORGANIZATION_ADMINS,
-            Recipient.TEAM_LEADS,
+            Recipient.HAS_PERM_ORG_MANAGE,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.PROJECT_OWNER,
             Recipient.ASSIGNEE,
             Recipient.REPORTER,
@@ -268,34 +274,34 @@ AUTOMATION_EVENT_CATALOG = (
         allowed_recipients=[
             Recipient.SUPERUSERS,
             Recipient.PROJECT_OWNER,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
         "member_added_to_project",
         _("Member added to project (admin view)"),
         _("A user is added to a project — admins and superusers are notified."),
-        [Recipient.SUPERUSERS, Recipient.PROJECT_OWNER, Recipient.ORGANIZATION_ADMINS],
+        [Recipient.SUPERUSERS, Recipient.PROJECT_OWNER, Recipient.HAS_PERM_ORG_MANAGE],
         allowed_recipients=[
             Recipient.SUPERUSERS,
             Recipient.PROJECT_OWNER,
-            Recipient.ORGANIZATION_ADMINS,
+            Recipient.HAS_PERM_ORG_MANAGE,
         ],
     ),
     _event(
         "member_added_to_org",
         _("Member added to organization"),
         _("A user is added to an organization — admins and superusers are notified."),
-        [Recipient.SUPERUSERS, Recipient.ORGANIZATION_ADMINS],
-        allowed_recipients=[Recipient.SUPERUSERS, Recipient.ORGANIZATION_ADMINS],
+        [Recipient.SUPERUSERS, Recipient.HAS_PERM_ORG_MANAGE],
+        allowed_recipients=[Recipient.SUPERUSERS, Recipient.HAS_PERM_ORG_MANAGE],
     ),
     # ── Owner-specific events ──────────────────────────────────────────────
     _event(
         "board_created",
         _("Board created"),
         _("A new board is created in a project."),
-        [Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
-        allowed_recipients=[Recipient.PROJECT_OWNER, Recipient.TEAM_LEADS],
+        [Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE],
+        allowed_recipients=[Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE],
     ),
     _event(
         "milestone_created",
@@ -309,8 +315,8 @@ AUTOMATION_EVENT_CATALOG = (
         "task_created",
         _("Task created"),
         _("A new task is created in the project."),
-        [Recipient.TEAM_LEADS],
-        allowed_recipients=[Recipient.TEAM_LEADS, Recipient.PROJECT_OWNER],
+        [Recipient.HAS_PERM_PROJECT_MANAGE],
+        allowed_recipients=[Recipient.HAS_PERM_PROJECT_MANAGE, Recipient.PROJECT_OWNER],
     ),
 )
 

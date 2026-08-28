@@ -202,3 +202,49 @@ class TeamMembership(BaseModel):
 
     def __str__(self):
         return f"{self.user_id} - {self.team_id} ({self.role})"
+
+
+class OrganizationAuditLog(BaseModel):
+    class Action(models.TextChoices):
+        ROLE_CREATED = "role_created", "Role Created"
+        ROLE_UPDATED = "role_updated", "Role Updated"
+        ROLE_DELETED = "role_deleted", "Role Deleted"
+        PERMISSION_GRANTED = "permission_granted", "Permission Granted"
+        PERMISSION_REVOKED = "permission_revoked", "Permission Revoked"
+        NOTIFICATION_POLICY_CHANGED = "notification_policy_changed", "Notification Policy Changed"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="performed_org_audits",
+    )
+    action = models.CharField(max_length=50, choices=Action.choices)
+    target_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="targeted_org_audits",
+        help_text="The user who was affected by this action (e.g. granted a role)."
+    )
+    details = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Detailed payload about what changed (e.g. which permissions were added)."
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        db_table = "organization_audit_logs"
+        verbose_name = "Organization Audit Log"
+        verbose_name_plural = "Organization Audit Logs"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.organization.name} - {self.action} by {self.actor_id}"
