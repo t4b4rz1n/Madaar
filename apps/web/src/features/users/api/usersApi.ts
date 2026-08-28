@@ -13,3 +13,11 @@ export const updateUser = (id: string | number, data: UserUpdateData) =>
 
 export const deleteUser = (id: string | number) =>
   ApiService.delete(`panel/users/${id}/`);
+
+/** Fetch users who are not assigned to any organization */
+export const getUnassignedUsers = async (): Promise<User[]> => {
+  const response = await ApiService.getList<User>(
+    "panel/users/?unassigned=true",
+  );
+  return response.data?.results ?? [];
+};

@@ -30,16 +30,21 @@ export interface OrganizationPayload {
   status: OrganizationStatus;
 }
 
+/** Flat member result from /api/v1/organizations/{orgId}/members/ */
 export interface OrganizationMember {
   id: number;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    profile_image: string | null;
-  };
+  user_id: string;
+  full_name: string;
+  email: string;
+  username: string;
+  avatar: string | null;
   role?: string;
-  joined_at?: string;
+  role_name?: string;
+  role_display?: string;
+  created_at?: string;
+}
+
+export interface AddExistingMemberPayload {
+  user_id: string;
+  role_id?: string | null;
 }

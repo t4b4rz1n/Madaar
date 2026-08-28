@@ -1,6 +1,6 @@
 import ApiService from "../../../core/api/apiService";
 import type { Organization, OrganizationMember, OrganizationPayload } from "../types";
-import type { User } from "../../users/types";
+import type { AddExistingMemberPayload } from "../types";
 
 const unwrap = <T>(response: unknown): T => {
   const value = response as { data?: unknown } | null;
@@ -44,17 +44,28 @@ export const getOrganizationDetails = async (orgId: string): Promise<Organizatio
   return unwrap<Organization>(response);
 };
 
-export const getOrganizationMembers = async (orgId: string): Promise<OrganizationMember[]> => {
-  const response = await ApiService.getList<User>(`panel/users/?organization_id=${orgId}`);
-  return (response.data?.results ?? []).map((user) => ({
-    id: user.id,
-    user: {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      profile_image: (user as any).avatar ?? (user as any).profile_image ?? null,
-    },
-  }));
+/** Fetch members for a given organization */
+export const getMembers = async (orgId: string): Promise<OrganizationMember[]> => {
+  const response = await ApiService.get<OrganizationMember[]>(
+    `/organizations/${orgId}/members/`,
+  );
+  const data = response.data;
+  return Array.isArray(data) ? data : [];
+};
+
+/** Add an existing user to the organization */
+export const addExistingMember = async (
+  orgId: string,
+  data: AddExistingMemberPayload,
+): Promise<OrganizationMember> => {
+  const response = await ApiService.post<OrganizationMember>(
+    `/organizations/${orgId}/members/`,
+    data,
+  );
+  return unwrap<OrganizationMember>(response);
+};
+
+/** Remove a member from the organization */
+export const removeMember = async (orgId: string, userId: string): Promise<void> => {
+  await ApiService.delete(`/organizations/${orgId}/members/${userId}/`);
 };
