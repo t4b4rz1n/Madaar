@@ -14,7 +14,17 @@ COMPATIBILITY_ROLE_PERMISSIONS_MAP = {
     "employee": ["task.create"]
 }
 
+
+# Default permissions granted to ALL organization members automatically
+DEFAULT_ORG_PERMISSIONS = {
+    "project.view",
+    "task.view",
+    "board.view",
+    "notification.view",
+}
+
 class PermissionService:
+
     @staticmethod
     def has_permission(user: User, permission_code: str, organization_id: Union[int, str]) -> bool:
         """
@@ -35,7 +45,11 @@ class PermissionService:
         except OrganizationMembership.DoesNotExist:
             return False
             
-        # 1. Check dynamic roles (The New Way)
+        # 1. Check default member permissions
+        if permission_code in DEFAULT_ORG_PERMISSIONS:
+            return True
+
+        # 2. Check dynamic roles (The New Way)
         if membership.dynamic_roles.filter(permissions__code=permission_code).exists():
             return True
             
