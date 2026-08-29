@@ -62,7 +62,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         name = attrs.get("name", getattr(self.instance, "name", ""))
         supplied_slug = attrs.get("slug")
-        base_slug = slugify(supplied_slug or name)
+        base_slug = slugify(supplied_slug or name, allow_unicode=True)
         if not base_slug:
             raise serializers.ValidationError(
                 {"slug": "Provide a name that can be used as a URL slug."}

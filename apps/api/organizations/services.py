@@ -1,80 +1,95 @@
 from typing import Union
+
 from django.contrib.auth import get_user_model
+
 from organizations.models import OrganizationMembership
 
 User = get_user_model()
 
-# Compatibility mapping for phase 4 before complete DB migration is guaranteed
-COMPATIBILITY_ROLE_PERMISSIONS_MAP = {
-    "owner": ["org.manage_settings", "org.manage_roles", "org.manage_members", "project.create", "project.manage", "task.create", "task.manage_all", "task.review", "leave.approve", "attendance.view_all", "finance.manage", "finance.view_reports"],
-    "admin": ["org.manage_members", "project.create", "project.manage", "task.create", "task.manage_all", "task.review", "leave.approve", "attendance.view_all", "finance.view_reports"],
-    "team_lead": ["project.create", "task.create", "task.manage_all", "task.review", "leave.approve"],
-    "hr": ["org.manage_members", "leave.approve", "attendance.view_all"],
-    "accountant": ["finance.manage", "finance.view_reports", "attendance.view_all"],
-    "employee": ["task.create"]
-}
+from organizations.constants import (
+    COMPATIBILITY_ROLE_PERMISSIONS_MAP,
+    DEFAULT_ORG_PERMISSIONS,
+)
 
-
-# Default permissions granted to ALL organization members automatically
-DEFAULT_ORG_PERMISSIONS = {
-    "org.view",
-    "user.view",
-    "role.view",
-    "project.view",
-    "task.view",
-    "board.view",
-    "notification.view",
-    "attendance.view_all",
-}
 
 class PermissionService:
+    @classmethod
+    def get_user_permissions(cls, user: User, organization_id: Union[int, str]) -> set[str]:
+        """
+        Returns all active permission codes for a user in a given organization,
+        including default member permissions and role-based permissions.
+        """
+        if not user or not user.is_authenticated or not organization_id:
+            return set()
 
-    @staticmethod
-    def has_permission(user: User, permission_code: str, organization_id: Union[int, str]) -> bool:
+        if user.is_superuser or user.is_staff:
+            from organizations.models import Permission
+
+            return set(Permission.objects.filter(is_deleted=False).values_list("code", flat=True))
+
+        cache_key = str(organization_id)
+        if not hasattr(user, "_cached_user_org_perms"):
+            user._cached_user_org_perms = {}
+
+        if cache_key in user._cached_user_org_perms:
+            return user._cached_user_org_perms[cache_key]
+
+        try:
+            membership = OrganizationMembership.objects.prefetch_related(
+                "dynamic_roles__permissions"
+            ).get(user=user, organization_id=organization_id, is_deleted=False)
+        except OrganizationMembership.DoesNotExist:
+            user._cached_user_org_perms[cache_key] = set()
+            return set()
+
+        user_perms = set(DEFAULT_ORG_PERMISSIONS)
+
+        # 1. Dynamic Roles (In-Memory Evaluation of prefetched data)
+        for role in membership.dynamic_roles.all():
+            if not getattr(role, "is_deleted", False):
+                for perm in role.permissions.all():
+                    if not getattr(perm, "is_deleted", False):
+                        user_perms.add(perm.code)
+
+        # 2. Compatibility Layer (Fallback for legacy static roles)
+        static_role = membership.role
+        if static_role and static_role in COMPATIBILITY_ROLE_PERMISSIONS_MAP:
+            user_perms.update(COMPATIBILITY_ROLE_PERMISSIONS_MAP[static_role])
+
+        user._cached_user_org_perms[cache_key] = user_perms
+        return user_perms
+
+    @classmethod
+    def has_permission(
+        cls, user: User, permission_code: str, organization_id: Union[int, str]
+    ) -> bool:
         """
         Check if a user has a specific permission within an organization.
-        It uses the new dynamic roles if available, and falls back to static role mapping during migration.
+        Uses in-memory evaluated role permissions and cached request-scoped storage.
         """
         if not user or not user.is_authenticated:
             return False
-            
+
         if user.is_superuser or user.is_staff:
             return True
-            
-        try:
-            membership = OrganizationMembership.objects.prefetch_related('dynamic_roles__permissions').get(
-                user=user, 
-                organization_id=organization_id
-            )
-        except OrganizationMembership.DoesNotExist:
-            return False
-            
-        # 1. Check default member permissions
-        if permission_code in DEFAULT_ORG_PERMISSIONS:
-            return True
 
-        # 2. Check dynamic roles (The New Way)
-        if membership.dynamic_roles.filter(permissions__code=permission_code).exists():
-            return True
-            
-        # 2. Compatibility Layer (The Old Way - Fallback)
-        # Useful while data migration might not be complete in all environments
-        static_role = membership.role
-        allowed_perms_for_static_role = COMPATIBILITY_ROLE_PERMISSIONS_MAP.get(static_role, [])
-        if permission_code in allowed_perms_for_static_role:
-            return True
-            
-        return False
+        if not organization_id:
+            return False
+
+        user_perms = cls.get_user_permissions(user, organization_id)
+        return permission_code in user_perms
+
 
 class AuditService:
     @staticmethod
     def log_action(organization, actor, action, target_user=None, details=None, ip_address=None):
         from .models import OrganizationAuditLog
+
         return OrganizationAuditLog.objects.create(
             organization=organization,
             actor=actor,
             action=action,
             target_user=target_user,
             details=details or {},
-            ip_address=ip_address
+            ip_address=ip_address,
         )
