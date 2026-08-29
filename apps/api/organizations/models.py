@@ -68,10 +68,10 @@ class Team(BaseModel):
         return self.name
 
 
-
-
 class Permission(BaseModel):
-    code = models.CharField(max_length=100, unique=True, db_index=True, help_text="e.g., 'task.create', 'leave.approve'")
+    code = models.CharField(
+        max_length=100, unique=True, db_index=True, help_text="e.g., 'task.create', 'leave.approve'"
+    )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     module = models.CharField(max_length=50, help_text="e.g., 'tasks', 'attendance', 'core'")
@@ -95,14 +95,10 @@ class Role(BaseModel):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     is_protected = models.BooleanField(
-        default=False, 
-        help_text="Protected roles (like Owner) cannot be deleted or completely stripped of permissions."
+        default=False,
+        help_text="Protected roles (like Owner) cannot be deleted or completely stripped of permissions.",
     )
-    permissions = models.ManyToManyField(
-        Permission, 
-        related_name="roles", 
-        blank=True
-    )
+    permissions = models.ManyToManyField(Permission, related_name="roles", blank=True)
 
     class Meta:
         db_table = "roles"
@@ -112,12 +108,14 @@ class Role(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "name"],
-                name="unique_role_name_per_org",
+                condition=models.Q(is_deleted=False),
+                name="unique_active_role_name_per_org",
             )
         ]
 
     def __str__(self):
         return f"{self.name} ({self.organization.name})"
+
 
 class OrganizationMembership(BaseModel):
     class Role(models.TextChoices):
@@ -150,6 +148,13 @@ class OrganizationMembership(BaseModel):
         blank=True,
         related_name="invited_memberships",
     )
+    dynamic_roles = models.ManyToManyField(
+        "Role",
+        related_name="memberships",
+        blank=True,
+        verbose_name="Dynamic Roles",
+        help_text="The new permission-based roles assigned to this member.",
+    )
 
     class Meta:
         db_table = "organization_memberships"
@@ -159,7 +164,8 @@ class OrganizationMembership(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "organization"],
-                name="unique_org_membership_user_org",
+                condition=models.Q(is_deleted=False),
+                name="unique_active_org_membership_user_org",
             )
         ]
 
@@ -196,7 +202,8 @@ class TeamMembership(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "team"],
-                name="unique_team_membership_user_team",
+                condition=models.Q(is_deleted=False),
+                name="unique_active_team_membership_user_team",
             )
         ]
 
@@ -231,12 +238,12 @@ class OrganizationAuditLog(BaseModel):
         null=True,
         blank=True,
         related_name="targeted_org_audits",
-        help_text="The user who was affected by this action (e.g. granted a role)."
+        help_text="The user who was affected by this action (e.g. granted a role).",
     )
     details = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Detailed payload about what changed (e.g. which permissions were added)."
+        help_text="Detailed payload about what changed (e.g. which permissions were added).",
     )
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
