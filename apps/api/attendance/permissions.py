@@ -1,4 +1,5 @@
 from rest_framework import permissions
+
 from organizations.services import PermissionService
 
 
@@ -18,12 +19,25 @@ class BaseAttendancePermission(permissions.BasePermission):
         if cache_key in request._user_org_roles_cache:
             return request._user_org_roles_cache[cache_key]
 
-        qs = user.org_memberships.all()
+        qs = user.org_memberships.filter(is_deleted=False)
         if organization_id:
             qs = qs.filter(organization_id=organization_id)
 
         membership = qs.first()
-        role = membership.role.lower() if membership else None
+        if not membership:
+            from organizations.models import Organization
+
+            if (
+                organization_id
+                and Organization.objects.filter(
+                    id=organization_id, owner=user, is_deleted=False
+                ).exists()
+            ):
+                role = "owner"
+            else:
+                role = None
+        else:
+            role = (membership.role or "member").lower()
         request._user_org_roles_cache[cache_key] = role
         return role
 
@@ -58,7 +72,9 @@ class IsAttendanceOwnerOrAdmin(BaseAttendancePermission):
             return True
         if obj.user == request.user:
             return True
-        return PermissionService.has_permission(request.user, "attendance.view_all", obj.organization_id)
+        return PermissionService.has_permission(
+            request.user, "attendance.view_all", obj.organization_id
+        )
 
 
 class IsTimeLogOwnerOrAdmin(BaseAttendancePermission):
@@ -90,7 +106,9 @@ class IsTimeOffRequestPermission(BaseAttendancePermission):
             return True
 
         is_owner = obj.user == request.user
-        has_approve_perm = PermissionService.has_permission(request.user, "leave.approve", obj.organization_id)
+        has_approve_perm = PermissionService.has_permission(
+            request.user, "leave.approve", obj.organization_id
+        )
 
         if view.action in ["approve", "reject"]:
             return has_approve_perm

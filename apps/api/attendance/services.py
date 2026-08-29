@@ -172,7 +172,7 @@ class TimeLogService:
     @staticmethod
     @transaction.atomic
     def start_timer(user, task):
-        # Permission check: Assignee, Superuser/Staff, Project Owner, Org Owner/Admin/Team Lead can start timer
+        # Permission check: Assignee, Superuser/Staff, Project Owner, or user with project.manage permission can start timer
         can_start = False
         if (
             task.assignee == user
@@ -186,16 +186,18 @@ class TimeLogService:
             ):
                 can_start = True
             else:
-                has_lead_role = user.org_memberships.filter(
-                    organization_id=task.project.organization_id,
-                    role__in=["owner", "admin", "team_lead"],
-                ).exists()
-                if not has_lead_role:
-                    has_lead_role = user.team_memberships.filter(
-                        team__organization_id=task.project.organization_id, role="lead"
-                    ).exists()
-                if has_lead_role:
-                    can_start = True
+                from organizations.services import PermissionService
+
+                # Use PermissionService: project.manage or attendance.view_all
+                can_start = PermissionService.has_permission(
+                    user=user,
+                    permission_code="project.manage",
+                    organization_id=str(task.project.organization_id),
+                ) or PermissionService.has_permission(
+                    user=user,
+                    permission_code="attendance.view_all",
+                    organization_id=str(task.project.organization_id),
+                )
 
         if not can_start:
             raise PermissionDenied(

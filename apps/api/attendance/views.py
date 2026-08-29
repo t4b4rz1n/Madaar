@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from organizations.models import Organization, OrganizationMembership
+from organizations.services import PermissionService
 from tasks.models import Task
 
 from .models import Attendance, Holiday, TimeLog, TimeOffRequest
@@ -87,11 +88,19 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             qs = qs.all()
         else:
-            admin_orgs = user.org_memberships.filter(role__in=["owner", "admin"]).values_list(
-                "organization_id", flat=True
-            )
-
-            qs = qs.filter(Q(user=user) | Q(organization_id__in=admin_orgs)).distinct()
+            # Use PermissionService: orgs where the user has attendance.view_all permission
+            admin_org_ids = [
+                m.organization_id
+                for m in user.org_memberships.filter(is_deleted=False).prefetch_related(
+                    "dynamic_roles__permissions"
+                )
+                if PermissionService.has_permission(
+                    user=user,
+                    permission_code="attendance.view_all",
+                    organization_id=str(m.organization_id),
+                )
+            ]
+            qs = qs.filter(Q(user=user) | Q(organization_id__in=admin_org_ids)).distinct()
 
         # Optional filters
         org_id = self.request.query_params.get("organization")
@@ -282,11 +291,19 @@ class TimeOffRequestViewSet(viewsets.ModelViewSet):
         if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
             qs = qs.all()
         else:
-            admin_orgs = user.org_memberships.filter(role__in=["owner", "admin"]).values_list(
-                "organization_id", flat=True
-            )
-
-            qs = qs.filter(Q(user=user) | Q(organization_id__in=admin_orgs)).distinct()
+            # Use PermissionService: orgs where the user can approve leaves
+            admin_org_ids = [
+                m.organization_id
+                for m in user.org_memberships.filter(is_deleted=False).prefetch_related(
+                    "dynamic_roles__permissions"
+                )
+                if PermissionService.has_permission(
+                    user=user,
+                    permission_code="leave.approve",
+                    organization_id=str(m.organization_id),
+                )
+            ]
+            qs = qs.filter(Q(user=user) | Q(organization_id__in=admin_org_ids)).distinct()
 
         # Optional filters
         status_filter = self.request.query_params.get("status")
@@ -458,12 +475,17 @@ class LiveActivityView(viewsets.GenericViewSet):
             )
             is_member = project.members.filter(user=user, is_active=True, is_deleted=False).exists()
             if not is_member:
-                is_admin = OrganizationMembership.objects.filter(
-                    organization=project.organization,
+                # Use PermissionService: check project.manage or attendance.view_all
+                can_view = PermissionService.has_permission(
                     user=user,
-                    role__in=["owner", "admin", "team_lead"],
-                ).exists()
-                if not is_admin:
+                    permission_code="project.manage",
+                    organization_id=str(project.organization_id),
+                ) or PermissionService.has_permission(
+                    user=user,
+                    permission_code="attendance.view_all",
+                    organization_id=str(project.organization_id),
+                )
+                if not can_view:
                     return Response(
                         {
                             "detail": _(
