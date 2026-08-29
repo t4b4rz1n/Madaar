@@ -43,7 +43,7 @@ export const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UserUpdateData }) =>
+    mutationFn: ({ id, data }: { id: string | number; data: UserUpdateData }) =>
       updateUser(id, data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -63,7 +63,7 @@ export const useDeleteUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => deleteUser(id),
+    mutationFn: (id: string | number) => deleteUser(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User deleted successfully");

@@ -1,8 +1,8 @@
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Lock, Message, TickSquare, User, Hierarchy } from "iconsax-reactjs";
-import { Controller, useWatch } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import InputField from "../../../components/InputField";
+import { useAuthStore } from "../../auth/store/authStore";
 import { useRoles } from "../../roles/hooks/useRoles";
 
 interface UserFormProps {
@@ -15,28 +15,15 @@ interface UserFormProps {
 export const UserForm = ({
   control,
   errors,
-  setValue,
+  setValue: _setValue,
   editMode,
 }: UserFormProps) => {
   const { data: rolesData, isLoading: isLoadingRoles } = useRoles();
   const roles = rolesData?.results || [];
 
-  const selectedRoleId = useWatch({
-    control,
-    name: "role_id",
-  });
+  const currentUser = useAuthStore((state) => state.user);
+  const canEditStaff = !!currentUser?.is_staff;
 
-  const selectedRole = roles.find((role: any) => role.id === selectedRoleId);
-
-  const isSuperAdmin =
-    selectedRole?.name?.trim().toLowerCase() === "super admin";
-
-  useEffect(() => {
-    setValue("is_staff", isSuperAdmin, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  }, [isSuperAdmin, setValue]);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -140,7 +127,7 @@ export const UserForm = ({
                   onBlur={field.onBlur}
                   onChange={(e) =>
                     field.onChange(
-                      e.target.value === "" ? null : Number(e.target.value),
+                      e.target.value === "" ? null : e.target.value,
                     )
                   }
                   className={`select select-bordered w-full pl-10 ${
@@ -243,7 +230,7 @@ export const UserForm = ({
           render={({ field }) => (
             <label
               className={`label justify-start gap-3 ${
-                isSuperAdmin
+                canEditStaff
                   ? "cursor-pointer"
                   : "cursor-not-allowed opacity-50"
               }`}
@@ -252,7 +239,7 @@ export const UserForm = ({
                 type="checkbox"
                 checked={!!field.value}
                 onChange={(e) => field.onChange(e.target.checked)}
-                disabled={!isSuperAdmin}
+                disabled={!canEditStaff}
                 className="checkbox checkbox-primary"
               />
               <div className="flex items-center gap-2">
