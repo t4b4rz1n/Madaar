@@ -18,30 +18,20 @@ def check_approaching_milestones():
     now = timezone.now().date()
     target = now + timedelta(days=2)
 
-    approaching_milestones = Milestone.objects.filter(
-        target_date=target, status__in=[Milestone.Status.PENDING, Milestone.Status.IN_PROGRESS]
+    approaching_milestones = Milestone.objects.select_related("project").filter(
+        target_date=target,
+        status__in=[Milestone.Status.PENDING, Milestone.Status.IN_PROGRESS],
+        is_deleted=False,
     )
 
     for milestone in approaching_milestones:
         project = milestone.project
-        target_ids = []
-        if project.owner_id:
-            target_ids.append(str(project.owner_id))
-
-        from organizations.models import OrganizationMembership
-
-        team_leads = OrganizationMembership.objects.filter(
-            organization_id=project.organization_id, role=OrganizationMembership.Role.TEAM_LEAD
-        ).values_list("user_id", flat=True)
-        target_ids.extend([str(tl) for tl in team_leads])
-
-        if target_ids:
-            EventDispatcher.dispatch(
-                event_type="milestone_approaching",
-                payload={
-                    "target_user_ids": list(set(target_ids)),
-                    "project_id": str(project.id),
-                    "project_name": project.name,
-                    "milestone_title": milestone.title,
-                },
-            )
+        EventDispatcher.dispatch(
+            event_type="milestone_approaching",
+            payload={
+                "project_id": str(project.id),
+                "project_name": project.name,
+                "milestone_title": milestone.title,
+                "organization_id": str(project.organization_id),
+            },
+        )

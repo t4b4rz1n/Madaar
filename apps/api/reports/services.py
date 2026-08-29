@@ -454,12 +454,14 @@ class ManagerDashboardService:
         return sorted(
             OrganizationMembership.objects.filter(
                 user=user,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                ],
                 is_deleted=False,
-            ).values_list("organization_id", flat=True)
+            )
+            .filter(
+                Q(dynamic_roles__permissions__code__in=["org.manage_settings", "project.manage"])
+                | Q(role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN])
+            )
+            .values_list("organization_id", flat=True)
+            .distinct()
         )
 
     @classmethod
@@ -689,12 +691,14 @@ class ManagerDashboardService:
         admin_org_ids = list(
             OrganizationMembership.objects.filter(
                 user=user,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                ],
                 is_deleted=False,
-            ).values_list("organization_id", flat=True)
+            )
+            .filter(
+                Q(dynamic_roles__permissions__code__in=["org.manage_settings", "project.manage"])
+                | Q(role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN])
+            )
+            .values_list("organization_id", flat=True)
+            .distinct()
         )
 
         if admin_org_ids:
@@ -1053,11 +1057,21 @@ class ExecutiveDashboardService:
             membership = (
                 OrganizationMembership.objects.filter(
                     user=user,
-                    role__in=[
-                        OrganizationMembership.Role.OWNER,
-                        OrganizationMembership.Role.ADMIN,
-                    ],
                     is_deleted=False,
+                )
+                .filter(
+                    Q(
+                        dynamic_roles__permissions__code__in=[
+                            "org.manage_settings",
+                            "finance.view_reports",
+                        ]
+                    )
+                    | Q(
+                        role__in=[
+                            OrganizationMembership.Role.OWNER,
+                            OrganizationMembership.Role.ADMIN,
+                        ]
+                    )
                 )
                 .order_by("created_at")
                 .first()
