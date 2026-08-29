@@ -21,6 +21,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import permissions
 
 from organizations.models import OrganizationMembership
+from organizations.services import PermissionService
 
 # ---------------------------------------------------------------------------
 # Helpers (private)
@@ -40,7 +41,13 @@ def _get_org_role(user, organization):
 
 
 def _is_org_admin(user, organization) -> bool:
-    """Check whether *user* is admin or owner of *organization*."""
+    """Check whether *user* can manage the organization (admin/owner via permission or legacy role)."""
+    if not organization:
+        return False
+    # New: check permission-based
+    if PermissionService.has_permission(user, "project.manage", organization.id):
+        return True
+    # Fallback: check legacy static role
     role = _get_org_role(user, organization)
     return role in (
         OrganizationMembership.Role.OWNER,
@@ -138,6 +145,10 @@ class CanCreateProject(permissions.BasePermission):
         # Extract the target organisation from the request payload
         org_id = request.data.get("organization_id")
         if org_id:
+            # New: check permission-based first
+            if PermissionService.has_permission(user, "project.create", org_id):
+                return True
+            # Fallback: check legacy static role
             return OrganizationMembership.objects.filter(
                 user=user,
                 organization_id=org_id,
@@ -148,8 +159,6 @@ class CanCreateProject(permissions.BasePermission):
                 is_deleted=False,
             ).exists()
 
-        # If no org_id provided, deny permission immediately.
-        # This prevents bypassing authorization checks.
         return False
 
 

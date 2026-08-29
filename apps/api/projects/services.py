@@ -127,7 +127,27 @@ class ProjectService:
     @transaction.atomic
     def create(cls, *, actor, validated_data: dict[str, Any]) -> Project:
         """Create a new Project and log a ``PROJECT_CREATED`` event."""
+        if not validated_data.get("owner") and actor and actor.is_authenticated:
+            validated_data["owner"] = actor
+
         project = Project.objects.create(**validated_data)
+
+        # Automatically add creator and owner as active project members
+        members_to_add = set()
+        if actor and actor.is_authenticated:
+            members_to_add.add(actor)
+        if project.owner and project.owner.is_authenticated:
+            members_to_add.add(project.owner)
+
+        for member_user in members_to_add:
+            ProjectMember.objects.get_or_create(
+                project=project,
+                user=member_user,
+                defaults={
+                    "allocation_percentage": 100,
+                    "is_active": True,
+                },
+            )
 
         _ActivityLogger.log(
             project=project,
@@ -264,17 +284,30 @@ class ProjectMemberService:
         user = validated_data.get("user")
         team = validated_data.get("team")
         reactivated = None
+        existing = None
 
         if user:
-            reactivated = ProjectMember.all_objects.filter(
-                project=project, user=user, is_deleted=True
-            ).first()
+            existing = ProjectMember.objects.filter(project=project, user=user).first()
+            if not existing:
+                reactivated = ProjectMember.all_objects.filter(
+                    project=project, user=user, is_deleted=True
+                ).first()
         elif team:
-            reactivated = ProjectMember.all_objects.filter(
-                project=project, team=team, user__isnull=True, is_deleted=True
+            existing = ProjectMember.objects.filter(
+                project=project, team=team, user__isnull=True
             ).first()
+            if not existing:
+                reactivated = ProjectMember.all_objects.filter(
+                    project=project, team=team, user__isnull=True, is_deleted=True
+                ).first()
 
-        if reactivated:
+        if existing:
+            for attr, value in validated_data.items():
+                setattr(existing, attr, value)
+            existing.is_active = True
+            existing.save()
+            member = existing
+        elif reactivated:
             reactivated.is_deleted = False
             reactivated.is_active = True
             for attr, value in validated_data.items():

@@ -231,20 +231,26 @@ class TaskService:
             )
         ):
             from organizations.models import OrganizationMembership
+            from organizations.services import PermissionService
             from projects.models import ProjectMember
 
-            is_org_owner = (
+            is_org_manager = (
                 project.organization.owner == reporter
-                or OrganizationMembership.objects.filter(
-                    organization=project.organization,
-                    user=reporter,
-                    role=OrganizationMembership.Role.OWNER,
-                ).exists()
+                or project.owner == reporter
+                or PermissionService.has_permission(
+                    reporter, "project.manage", project.organization_id
+                )
+                or PermissionService.has_permission(
+                    reporter, "task.manage_all", project.organization_id
+                )
+                or PermissionService.has_permission(
+                    reporter, "org.manage_settings", project.organization_id
+                )
             )
 
-            if not is_org_owner:
+            if not is_org_manager:
                 is_member = ProjectMember.objects.filter(
-                    project=project, user=reporter, is_active=True
+                    project=project, user=reporter, is_active=True, is_deleted=False
                 ).exists()
                 if not is_member:
                     raise PermissionDenied(_("You are not a member of this project."))
@@ -397,13 +403,25 @@ class TaskService:
 
         # Permission check for moving tasks
         if not actor.is_staff and not actor.is_superuser:
-            # admin, owner, team_lead can move any task
-            pass
+            org_id = str(task.project.organization_id) if task.project else None
+            from organizations.services import PermissionService
+
+            can_manage = org_id and PermissionService.has_permission(
+                actor, "task.manage_all", org_id
+            )
+            is_assignee_or_reporter = task.assignee_id == actor.id or task.reporter_id == actor.id
+            is_member = (
+                task.project
+                and task.project.members.filter(
+                    user=actor, is_active=True, is_deleted=False
+                ).exists()
+            )
+
+            if not (can_manage or is_assignee_or_reporter or is_member):
+                raise ValidationError(_("You do not have permission to move this task."))
 
         old_status = task.status
         old_order = task.order
-
-        pass
 
         action_parts = []
 
@@ -422,8 +440,13 @@ class TaskService:
             if code == "doing":
                 try:
                     TimeLogService.start_timer(actor, task)
-                except Exception:
-                    pass
+                except Exception as timer_err:
+                    import logging
+
+                    logging.getLogger(__name__).warning(
+                        "Auto start timer failed on task move: %s", timer_err
+                    )
+
             elif code in ["review", "done"]:
                 # Stop timers for anyone working on this task
                 from attendance.models import TimeLog
