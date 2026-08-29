@@ -89,10 +89,23 @@ export const getRoleIcon = (roleName: string) => {
 };
 
 export const getRoleName = (
-  roleId: number | null | undefined,
+  roleId: string | number | null | undefined,
   roles: Role[],
+  directRoleName?: string | null,
 ): string | null => {
+  if (directRoleName) return directRoleName;
   if (!roleId) return null;
 
-  return roles.find((role) => role.id === roleId)?.name || null;
+  const match = roles.find(
+    (role) =>
+      String(role.id) === String(roleId) ||
+      role.name.toLowerCase() === String(roleId).toLowerCase(),
+  );
+  if (match) return match.name;
+
+  if (typeof roleId === "string" && !roleId.includes("-") && isNaN(Number(roleId))) {
+    return roleId.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  return null;
 };

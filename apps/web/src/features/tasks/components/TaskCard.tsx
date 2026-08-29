@@ -219,7 +219,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* ─── Footer: Assignee Avatar, Metadata & Timer ─── */}
         <div className="mt-3 flex items-center justify-between border-t border-base-content/6 pt-2">
-          
+
           <div className="flex items-center gap-3">
             {/* Assignee Interactive Trigger */}
             <button

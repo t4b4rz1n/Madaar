@@ -498,7 +498,7 @@ export const KanbanBoard: React.FC = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     isDraggingRef.current = false;
     const { active, over } = event;
-    
+
     if (activeColumn) {
       setActiveColumn(null);
     }

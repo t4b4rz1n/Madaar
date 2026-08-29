@@ -15,14 +15,14 @@ export const MainLayout = () => {
   const { setSidebarOpen } = useLayoutStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
-  const { hasAllPermissions } = usePermissions();
+  const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const isStaff = user?.is_staff === true;
   const { pathname } = useLocation();
   const [isCommandMenuOpen, setCommandMenuOpen] = useState(false);
 
   const commandItems = useMemo(
-    () => getVisibleDrawerItems(user, hasAllPermissions),
-    [hasAllPermissions, user],
+    () => getVisibleDrawerItems(user, hasAllPermissions, hasAnyPermission),
+    [hasAllPermissions, hasAnyPermission, user],
   );
 
   const breadcrumbs = useMemo(() => {

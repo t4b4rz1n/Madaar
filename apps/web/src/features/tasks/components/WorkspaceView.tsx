@@ -90,13 +90,13 @@ export const WorkspaceView: React.FC = () => {
               style={{ background: board.background_color || pastelFallback }}
             >
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition duration-300" />
-              
+
               <div className="relative z-10 flex justify-end">
                 <span className="rounded-full bg-white/20 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
                   {board.statuses?.length || 0} Statuses
                 </span>
               </div>
-              
+
               <div className="relative z-10 my-auto flex flex-1 items-center justify-center px-3">
                 <h3 dir="auto" className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight text-center drop-shadow-md">
                   {board.title}
