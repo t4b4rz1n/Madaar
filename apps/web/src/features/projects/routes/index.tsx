@@ -11,7 +11,7 @@ export const projectsRoutes: RouteObject[] = [
     path: "projects",
     element: (
       <PermissionGuard
-        permissions={["projects.view"]}
+        permissions={["project.view", "project.create", "project.manage"]}
         fallback={<Navigate to="/dashboard" replace />}
       >
         <ProjectsPage />
@@ -22,7 +22,7 @@ export const projectsRoutes: RouteObject[] = [
     path: "projects/:id",
     element: (
       <PermissionGuard
-        permissions={["projects.view"]}
+        permissions={["project.view", "project.create", "project.manage"]}
         fallback={<Navigate to="/projects" replace />}
       >
         <ProjectDetailsPage />

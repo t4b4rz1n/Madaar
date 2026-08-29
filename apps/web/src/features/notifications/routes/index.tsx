@@ -9,7 +9,7 @@ const notificationsRoutes: RouteObject[] = [
     path: "/notifications",
     element: (
       <PermissionGuard
-        permissions={["notifications.view"]}
+        permissions={["notification.view", "org.manage_settings"]}
         fallback={<Navigate to="/dashboard" replace />}
       >
         <NotificationsPage />

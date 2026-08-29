@@ -7,35 +7,23 @@ const TicketsListPage = lazy(() => import("../pages/TicketsListPage"));
 const TicketDetailsPage = lazy(() => import("../pages/TicketDetailsPage"));
 const TicketTypesListPage = lazy(() => import("../pages/TicketTypesListPage"));
 
+// All authenticated org members can access their own tickets
+// tickets.view OR defaultForMembers — no hard permission block at route level
 export const ticketsRoutes: RouteObject[] = [
   {
     path: "tickets",
-    element: (
-      <PermissionGuard
-        permissions={["tickets.view"]}
-        fallback={<Navigate to="/dashbord" replace />}
-      >
-        <TicketsListPage />
-      </PermissionGuard>
-    ),
+    element: <TicketsListPage />,
   },
   {
     path: "tickets/:id",
-    element: (
-      <PermissionGuard
-        permissions={["tickets.view"]}
-        fallback={<Navigate to="/dashbord" replace />}
-      >
-        <TicketDetailsPage />
-      </PermissionGuard>
-    ),
+    element: <TicketDetailsPage />,
   },
   {
     path: "ticket-types",
     element: (
       <PermissionGuard
-        permissions={["tickets.view"]}
-        fallback={<Navigate to="/dashbord" replace />}
+        permissions={["org.manage_settings"]}
+        fallback={<Navigate to="/dashboard" replace />}
       >
         <TicketTypesListPage />
       </PermissionGuard>
