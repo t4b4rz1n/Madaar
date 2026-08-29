@@ -1,4 +1,5 @@
 from rest_framework import permissions
+
 from organizations.services import PermissionService
 
 
@@ -21,7 +22,9 @@ class CanManageRoles(permissions.BasePermission):
 
         # 2. Check query params
         if hasattr(request, "query_params"):
-            org_id = request.query_params.get("organization_id") or request.query_params.get("organization")
+            org_id = request.query_params.get("organization_id") or request.query_params.get(
+                "organization"
+            )
             if org_id:
                 return org_id
 
@@ -57,10 +60,9 @@ class CanManageRoles(permissions.BasePermission):
                 or PermissionService.has_permission(user, "org.manage_settings", org_id)
             )
 
-        return (
-            PermissionService.has_permission(user, "org.manage_roles", org_id)
-            or PermissionService.has_permission(user, "org.manage_settings", org_id)
-        )
+        return PermissionService.has_permission(
+            user, "org.manage_roles", org_id
+        ) or PermissionService.has_permission(user, "org.manage_settings", org_id)
 
     def has_object_permission(self, request, view, obj):
         user = request.user
@@ -81,7 +83,6 @@ class CanManageRoles(permissions.BasePermission):
                 or PermissionService.has_permission(user, "org.manage_settings", org_id)
             )
 
-        return (
-            PermissionService.has_permission(user, "org.manage_roles", org_id)
-            or PermissionService.has_permission(user, "org.manage_settings", org_id)
-        )
+        return PermissionService.has_permission(
+            user, "org.manage_roles", org_id
+        ) or PermissionService.has_permission(user, "org.manage_settings", org_id)

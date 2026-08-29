@@ -79,7 +79,6 @@ COMPATIBILITY_ROLE_PERMISSIONS_MAP = {
         "attendance.view_all",
         "notification.view",
     ],
-
     "employee": [
         "org.view",
         "user.view",
