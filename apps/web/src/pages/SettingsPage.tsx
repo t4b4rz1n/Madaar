@@ -6,8 +6,8 @@ import { usePermissions } from "../features/auth/hooks/usePermissions";
 
 const SettingsPage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
-  const { hasAllPermissions } = usePermissions();
-  const adminItems = getAdminDrawerItems(user, hasAllPermissions);
+  const { hasAllPermissions, hasAnyPermission } = usePermissions();
+  const adminItems = getAdminDrawerItems(user, hasAllPermissions, hasAnyPermission);
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 py-2">

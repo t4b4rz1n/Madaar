@@ -25,9 +25,14 @@ export type DrawerItem = {
   icon: ReactNode;
   section: "Workspace" | "AdminSettings" | "Support" | "Account";
   staffOnly?: boolean;
+  /** Single permission required (AND) */
   permission?: string;
+  /** Multiple permissions — user needs ANY ONE of these (OR check) */
+  permissions?: string[];
   requiresOrgAdmin?: boolean;
   isPrimary?: boolean;
+  /** If true, shown to all authenticated org members regardless of permissions */
+  defaultForMembers?: boolean;
 };
 
 export const drawerItems: DrawerItem[] = [
@@ -51,7 +56,7 @@ export const drawerItems: DrawerItem[] = [
     link: "projects",
     section: "Workspace",
     icon: <Briefcase variant="Outline" />,
-    permission: "projects.view",
+    permissions: ["project.view", "project.create", "project.manage"],
     isPrimary: true,
   },
   {
@@ -73,7 +78,7 @@ export const drawerItems: DrawerItem[] = [
     link: "manager",
     section: "Workspace",
     icon: <Chart21 variant="Outline" />,
-    permission: "teams.view",
+    permissions: ["org.manage_members", "attendance.view_all", "report.view"],
     isPrimary: true,
   },
 
@@ -83,35 +88,35 @@ export const drawerItems: DrawerItem[] = [
     link: "organizations",
     section: "AdminSettings",
     icon: <Profile2User variant="Outline" />,
-    requiresOrgAdmin: true,
+    permissions: ["org.manage_settings", "org.manage_members", "org.view"],
   },
   {
     title: "Users Management",
     link: "users",
     section: "AdminSettings",
     icon: <People variant="Outline" />,
-    permission: "users.view",
+    permissions: ["user.view", "org.manage_members"],
   },
   {
     title: "Teams Management",
     link: "teams",
     section: "AdminSettings",
     icon: <TeamsIcon variant="Outline" />,
-    permission: "teams.view",
+    permissions: ["user.view", "org.manage_members"],
   },
   {
     title: "Roles & Permissions",
     link: "roles",
     section: "AdminSettings",
     icon: <ShieldSecurity size="20" />,
-    permission: "roles.manage",
+    permissions: ["org.manage_roles", "role.view"],
   },
   {
     title: "Automations",
     link: "automations",
     section: "AdminSettings",
     icon: <Flash variant="Outline" />,
-    requiresOrgAdmin: true,
+    permissions: ["org.manage_settings", "automation.manage"],
   },
   {
     title: "Discounts",
@@ -121,20 +126,21 @@ export const drawerItems: DrawerItem[] = [
     permission: "discounts.manage",
   },
 
-  // Support & System
+  // Support & System — visible to ALL org members by default
   {
     title: "Notifications",
     link: "notifications",
-    section: "Support",
+    section: "AdminSettings",
     icon: <Notification variant="Outline" />,
-    permission: "notifications.view",
+    permissions: ["notification.view", "org.manage_settings"],
+    defaultForMembers: true,
   },
   {
     title: "Tickets",
     link: "tickets",
     section: "Support",
     icon: <Ticket variant="Outline" />,
-    permission: "tickets.view",
+    defaultForMembers: true, // every member sees their own tickets
   },
 
   // Account
@@ -149,24 +155,48 @@ export const drawerItems: DrawerItem[] = [
 export const getVisibleDrawerItems = (
   user: AuthUser | null,
   hasAllPermissions: (permissions: string[]) => boolean,
+  hasAnyPermission: (permissions: string[]) => boolean,
   primaryOnly = false
 ) =>
   drawerItems.filter((item) => {
     if (primaryOnly && !item.isPrimary) return false;
     if (item.staffOnly && !user?.is_staff) return false;
-    if (item.requiresOrgAdmin && !user?.can_manage_automations) return false;
+    if (
+      item.requiresOrgAdmin &&
+      !user?.can_manage_automations &&
+      !user?.is_staff &&
+      !hasAnyPermission(["org.manage_settings", "core.automations.manage"])
+    ) {
+      return false;
+    }
+    if (item.defaultForMembers) return !!user;
+    // OR-check: any one of the permissions array is enough
+    if (item.permissions?.length && !hasAnyPermission(item.permissions)) return false;
+    // AND-check: single legacy permission
     if (item.permission && !hasAllPermissions([item.permission])) return false;
     return true;
   });
 
 export const getAdminDrawerItems = (
   user: AuthUser | null,
-  hasAllPermissions: (permissions: string[]) => boolean
+  hasAllPermissions: (permissions: string[]) => boolean,
+  hasAnyPermission: (permissions: string[]) => boolean
 ) =>
   drawerItems.filter((item) => {
     if (item.isPrimary) return false;
     if (item.staffOnly && !user?.is_staff) return false;
-    if (item.requiresOrgAdmin && !user?.can_manage_automations) return false;
+    if (
+      item.requiresOrgAdmin &&
+      !user?.can_manage_automations &&
+      !user?.is_staff &&
+      !hasAnyPermission(["org.manage_settings", "core.automations.manage"])
+    ) {
+      return false;
+    }
+    if (item.defaultForMembers) return !!user;
+    // OR-check: any one of the permissions array is enough
+    if (item.permissions?.length && !hasAnyPermission(item.permissions)) return false;
+    // AND-check: single legacy permission
     if (item.permission && !hasAllPermissions([item.permission])) return false;
     return true;
   });

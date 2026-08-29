@@ -44,7 +44,7 @@ export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { hasAllPermissions } = usePermissions();
+  const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen } = useLayoutStore();
   const { activeProjectId, setActiveProject } = useTaskStore();
   const logout = useLogout();
@@ -59,7 +59,7 @@ export const Sidebar = () => {
     setSidebarOpen(false);
   }, [location.pathname, setSidebarOpen]);
 
-  const primaryItems = getVisibleDrawerItems(user, hasAllPermissions, true);
+  const primaryItems = getVisibleDrawerItems(user, hasAllPermissions, hasAnyPermission, true);
 
   return (
     <>
