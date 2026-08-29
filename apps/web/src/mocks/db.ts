@@ -28,136 +28,136 @@ export const mockProfile: UserProfile = {
 
 export let mockUsers: User[] = [
   {
-    id: 1,
+    id: "1",
     username: "admin",
     email: "admin@example.com",
     first_name: "John",
     last_name: "Doe",
     is_active: true,
     is_staff: true,
-    role_id: 1,
-    profile_image: null,
+    role_id: "1",
+    avatar: null,
   },
   {
-    id: 2,
+    id: "2",
     username: "sarah_k",
     email: "sarah.k@example.com",
     first_name: "Sarah",
     last_name: "Kerrigan",
     is_active: true,
     is_staff: false,
-    role_id: 2,
-    profile_image: null,
+    role_id: "2",
+    avatar: null,
   },
   {
-    id: 3,
+    id: "3",
     username: "jim_raynor",
     email: "jim.r@example.com",
     first_name: "Jim",
     last_name: "Raynor",
     is_active: true,
     is_staff: false,
-    role_id: 3,
-    profile_image: null,
+    role_id: "3",
+    avatar: null,
   },
   {
-    id: 4,
+    id: "4",
     username: "zeratul_void",
     email: "zeratul@example.com",
     first_name: "Zeratul",
     last_name: "Protos",
     is_active: false,
     is_staff: false,
-    role_id: 5,
-    profile_image: null,
+    role_id: "5",
+    avatar: null,
   },
   {
-    id: 5,
+    id: "5",
     username: "artanis_hierarch",
     email: "artanis@example.com",
     first_name: "Artanis",
     last_name: "Hierarch",
     is_active: true,
     is_staff: false,
-    role_id: 6,
-    profile_image: null,
+    role_id: "6",
+    avatar: null,
   },
   {
-    id: 6,
+    id: "6",
     username: "nova_terra",
     email: "nova@example.com",
     first_name: "Nova",
     last_name: "Terra",
     is_active: true,
     is_staff: false,
-    role_id: 7,
-    profile_image: null,
+    role_id: "7",
+    avatar: null,
   },
   {
-    id: 7,
+    id: "7",
     username: "tassadar_hero",
     email: "tassadar@example.com",
     first_name: "Tassadar",
     last_name: "Templar",
     is_active: false,
     is_staff: true,
-    role_id: 8,
-    profile_image: null,
+    role_id: "8",
+    avatar: null,
   },
   {
-    id: 8,
+    id: "8",
     username: "fenix_dragoon",
     email: "fenix@example.com",
     first_name: "Fenix",
     last_name: "Steward",
     is_active: true,
     is_staff: false,
-    role_id: 3,
-    profile_image: null,
+    role_id: "3",
+    avatar: null,
   },
   {
-    id: 9,
+    id: "9",
     username: "valerian_mengsk",
     email: "valerian@example.com",
     first_name: "Valerian",
     last_name: "Mengsk",
     is_active: true,
     is_staff: false,
-    role_id: 3,
-    profile_image: null,
+    role_id: "3",
+    avatar: null,
   },
   {
-    id: 10,
+    id: "10",
     username: "abathur_evolve",
     email: "abathur@example.com",
     first_name: "Abathur",
     last_name: "Zerg",
     is_active: true,
     is_staff: false,
-    role_id: 3,
-    profile_image: null,
+    role_id: "3",
+    avatar: null,
   },
   {
-    id: 11,
+    id: "11",
     username: "dehak_pack",
     email: "dehaka@example.com",
     first_name: "Dehaka",
     last_name: "Primal",
     is_active: true,
     is_staff: false,
-    role_id: 3,
-    profile_image: null,
+    role_id: "3",
+    avatar: null,
   },
   {
-    id: 12,
+    id: "12",
     username: "alarak_highlord",
     email: "alarak@example.com",
     first_name: "Alarak",
     last_name: "Taldirim",
     is_active: true,
     is_staff: true,
-    role_id: 1,
-    profile_image: null,
+    role_id: "1",
+    avatar: null,
   },
 ];
 
@@ -568,19 +568,21 @@ export const mockActivities: ProjectActivity[] = [
     created_at: "2026-01-01T10:00:00Z",
   },
 ];
-// Mutators to simulate DB state mutations
 export const db = {
   users: {
     getAll: () => mockUsers,
-    getById: (id: number) => mockUsers.find((u) => u.id === id),
+    getById: (id: string) => mockUsers.find((u) => u.id === id),
     create: (user: Omit<User, "id">) => {
-      const nextId =
-        mockUsers.length > 0 ? Math.max(...mockUsers.map((u) => u.id)) + 1 : 1;
-      const newUser = { ...user, id: nextId };
+      const nextId = String(
+        mockUsers.length > 0
+          ? Math.max(...mockUsers.map((u) => Number(u.id) || 0)) + 1
+          : 1,
+      );
+      const newUser: User = { ...user, id: nextId };
       mockUsers.unshift(newUser); // Add to beginning of list
       return newUser;
     },
-    update: (id: number, updates: Partial<User>) => {
+    update: (id: string, updates: Partial<User>) => {
       const idx = mockUsers.findIndex((u) => u.id === id);
       if (idx !== -1) {
         mockUsers[idx] = { ...mockUsers[idx], ...updates };
@@ -588,7 +590,7 @@ export const db = {
       }
       return null;
     },
-    delete: (id: number) => {
+    delete: (id: string) => {
       const initialLength = mockUsers.length;
       mockUsers = mockUsers.filter((u) => u.id !== id);
       return mockUsers.length < initialLength;
