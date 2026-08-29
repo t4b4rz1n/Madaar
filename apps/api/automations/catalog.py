@@ -43,7 +43,9 @@ RECIPIENT_CHOICES = (
 RECIPIENT_CODES = {code for code, _label in RECIPIENT_CHOICES}
 
 
-def _event(code, label, description, recipients, allowed_recipients=None):
+def _event(
+    code, label, description, recipients, allowed_recipients=None, mandatory_recipients=None
+):
     return {
         "code": code,
         "label": label,
@@ -52,6 +54,7 @@ def _event(code, label, description, recipients, allowed_recipients=None):
         "allowed_recipients": allowed_recipients
         if allowed_recipients is not None
         else sorted(RECIPIENT_CODES),
+        "mandatory_recipients": mandatory_recipients or [],
     }
 
 
@@ -70,6 +73,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.PROJECT_MEMBERS,
             Recipient.HAS_PERM_ORG_MANAGE,
         ],
+        mandatory_recipients=[Recipient.TARGET_USERS],
     ),
     _event(
         "project_member_removed",
@@ -82,6 +86,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.PROJECT_MEMBERS,
             Recipient.HAS_PERM_ORG_MANAGE,
         ],
+        mandatory_recipients=[Recipient.TARGET_USERS],
     ),
     _event(
         "project_over_budget",
@@ -132,6 +137,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.HAS_PERM_ORG_MANAGE,
         ],
+        mandatory_recipients=[Recipient.ASSIGNEE],
     ),
     _event(
         "task_needs_review",
@@ -146,6 +152,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.HAS_PERM_ORG_MANAGE,
         ],
+        mandatory_recipients=[Recipient.REPORTER],
     ),
     _event(
         "task_completed",
@@ -160,6 +167,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.HAS_PERM_ORG_MANAGE,
         ],
+        mandatory_recipients=[Recipient.REPORTER],
     ),
     _event(
         "task_deadline_approaching",
@@ -174,6 +182,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.HAS_PERM_ORG_MANAGE,
         ],
+        mandatory_recipients=[Recipient.ASSIGNEE],
     ),
     _event(
         "user_mentioned",
@@ -189,6 +198,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.HAS_PERM_ORG_MANAGE,
         ],
+        mandatory_recipients=[Recipient.MENTIONED_USERS],
     ),
     _event(
         "task_commented",
@@ -226,6 +236,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.REQUESTER,
         ],
+        mandatory_recipients=[Recipient.HAS_PERM_LEAVE_APPROVE],
     ),
     _event(
         "leave_resolved",
@@ -237,6 +248,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.HAS_PERM_LEAVE_APPROVE,
             Recipient.HAS_PERM_PROJECT_MANAGE,
         ],
+        mandatory_recipients=[Recipient.REQUESTER],
     ),
     _event(
         "timer_started",
@@ -291,9 +303,15 @@ AUTOMATION_EVENT_CATALOG = (
     _event(
         "member_added_to_org",
         _("Member added to organization"),
-        _("A user is added to an organization — admins and superusers are notified."),
-        [Recipient.SUPERUSERS, Recipient.HAS_PERM_ORG_MANAGE],
-        allowed_recipients=[Recipient.SUPERUSERS, Recipient.HAS_PERM_ORG_MANAGE],
+        _(
+            "A user is added to an organization — the new member, admins and superusers are notified."
+        ),
+        [Recipient.TARGET_USERS, Recipient.SUPERUSERS, Recipient.HAS_PERM_ORG_MANAGE],
+        allowed_recipients=[
+            Recipient.TARGET_USERS,
+            Recipient.SUPERUSERS,
+            Recipient.HAS_PERM_ORG_MANAGE,
+        ],
     ),
     # ── Owner-specific events ──────────────────────────────────────────────
     _event(

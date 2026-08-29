@@ -31,7 +31,7 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
     """
     project = instance.project
     creator_name = (
-        project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
+        project.owner.get_full_name() or project.owner.username if project.owner else "System"
     )
 
     if created and instance.user:
@@ -116,7 +116,7 @@ def notify_project_member_deleted(sender, instance, **kwargs):
     if instance.user:
         project = instance.project
         remover_name = (
-            project.owner.get_full_name() or project.owner.username if project.owner else "سیستم"
+            project.owner.get_full_name() or project.owner.username if project.owner else "System"
         )
         EventDispatcher.dispatch(
             event_type="project_member_removed",
