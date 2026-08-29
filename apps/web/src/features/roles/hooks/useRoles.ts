@@ -1,14 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createRole, deleteRole, getRoles, updateRole } from "../api/rolesApi";
+import {
+  createRole,
+  deleteRole,
+  getPermissions,
+  getRoles,
+  updateRole,
+} from "../api/rolesApi";
 import type { ApiResponseList } from "../../../core/api/apiService";
-import type { Role, RoleFormData, RoleUpdateData } from "../types";
+import type { PermissionsResponse, Role, RoleFormData, RoleUpdateData } from "../types";
 
 const ROLES_QUERY_KEY = ["roles"] as const;
+const PERMISSIONS_QUERY_KEY = ["roles", "permissions"] as const;
 
 export const useRoles = () => {
   return useQuery<ApiResponseList<Role>>({
     queryKey: ROLES_QUERY_KEY,
     queryFn: () => getRoles(),
+  });
+};
+
+/** Fetches all system permissions + default role→permissions mapping from the backend. */
+export const usePermissions = () => {
+  return useQuery<PermissionsResponse>({
+    queryKey: PERMISSIONS_QUERY_KEY,
+    queryFn: getPermissions,
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes — permissions rarely change
   });
 };
 
@@ -27,7 +43,7 @@ export const useUpdateRole = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: RoleUpdateData }) =>
+    mutationFn: ({ id, data }: { id: string; data: RoleUpdateData }) =>
       updateRole(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
@@ -39,7 +55,7 @@ export const useDeleteRole = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => deleteRole(id),
+    mutationFn: (id: string) => deleteRole(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
     },

@@ -2,16 +2,21 @@
 
 import ApiService from "../../../core/api/apiService";
 import type { ApiResponseList } from "../../../core/api/apiService";
-import type { Role, RoleFormData, RoleUpdateData } from "../types";
+import type { Permission, Role, RoleFormData, RoleUpdateData } from "../types";
 
-// افزودن اسلش پایانی برای سازگاری کامل با Django REST Framework
 const ROLES_ENDPOINT = "/panel/roles/";
+const PERMISSIONS_ENDPOINT = "/panel/roles/permissions/";
 
 export type GetRolesParams = {
   page?: number;
   page_size?: number;
   search?: string;
   ordering?: string;
+};
+
+export type PermissionsResponse = {
+  permissions: Permission[];
+  default_roles: Record<string, string[]>;
 };
 
 export const getRoles = async (
@@ -29,7 +34,7 @@ export const createRole = async (payload: RoleFormData): Promise<Role> => {
 };
 
 export const updateRole = async (
-  id: number,
+  id: string,
   payload: RoleUpdateData,
 ): Promise<Role> => {
   const response = await ApiService.patch<Role>(
@@ -39,6 +44,13 @@ export const updateRole = async (
   return response.data;
 };
 
-export const deleteRole = async (id: number): Promise<void> => {
+export const deleteRole = async (id: string): Promise<void> => {
   await ApiService.delete(`${ROLES_ENDPOINT}${id}/`);
+};
+
+export const getPermissions = async (): Promise<PermissionsResponse> => {
+  const response = await ApiService.get<PermissionsResponse>(PERMISSIONS_ENDPOINT);
+  // Handle wrapped response: {status, data: {permissions, default_roles}}
+  const data = (response.data as any)?.data ?? response.data;
+  return data as PermissionsResponse;
 };
