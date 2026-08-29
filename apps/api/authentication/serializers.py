@@ -116,6 +116,49 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 is_deleted=False,
             ).exists()
 
+        # ---- Collect permissions from dynamic_roles (or legacy fallback) ----
+        user_permissions: list[str] = []
+        user_role_id = None
+        user_role_name = None
+
+        try:
+            from organizations.models import OrganizationMembership
+
+            membership = (
+                OrganizationMembership.objects.filter(user=self.user, is_deleted=False)
+                .prefetch_related("dynamic_roles__permissions")
+                .first()
+            )
+
+            if membership:
+                from organizations.services import (
+                    COMPATIBILITY_ROLE_PERMISSIONS_MAP,
+                    DEFAULT_ORG_PERMISSIONS,
+                )
+
+                dynamic_roles = [r for r in membership.dynamic_roles.all() if not r.is_deleted]
+                if dynamic_roles:
+                    first_role = dynamic_roles[0]
+                    user_role_id = str(first_role.id)
+                    user_role_name = first_role.name
+                    # Collect all permission codes from all dynamic roles
+                    for role in dynamic_roles:
+                        for perm in role.permissions.all():
+                            if not perm.is_deleted and perm.code not in user_permissions:
+                                user_permissions.append(perm.code)
+                else:
+                    # Fallback: derive permissions from legacy static role
+                    static_role = membership.role
+                    user_role_name = static_role
+                    user_permissions = list(COMPATIBILITY_ROLE_PERMISSIONS_MAP.get(static_role, []))
+
+                # Merge default organization member permissions
+                for def_perm in DEFAULT_ORG_PERMISSIONS:
+                    if def_perm not in user_permissions:
+                        user_permissions.append(def_perm)
+        except Exception:
+            pass
+
         user_data = {
             "id": self.user.id,
             "username": self.user.username,
@@ -128,6 +171,14 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             "notify_via_email": notify_via_email,
             "notify_via_telegram": notify_via_telegram,
             "can_manage_automations": can_manage_automations,
+            # New: role + permissions for frontend permission gating
+            "role": {
+                "id": user_role_id,
+                "name": user_role_name,
+                "permissions": user_permissions,
+            }
+            if (user_role_id or user_role_name)
+            else None,
         }
 
         data["user"] = user_data
