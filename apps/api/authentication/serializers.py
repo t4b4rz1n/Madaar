@@ -109,11 +109,23 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         try:
             from organizations.models import OrganizationMembership
 
-            membership = (
+            memberships = list(
                 OrganizationMembership.objects.filter(user=self.user, is_deleted=False)
                 .prefetch_related("dynamic_roles__permissions")
-                .first()
+                .order_by("-created_at")
             )
+
+            membership = None
+            if memberships:
+                membership_with_dynamic_role = next(
+                    (
+                        m
+                        for m in memberships
+                        if any(not r.is_deleted for r in m.dynamic_roles.all())
+                    ),
+                    None,
+                )
+                membership = membership_with_dynamic_role or memberships[0]
 
             if membership:
                 from organizations.services import (
@@ -126,21 +138,16 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                     first_role = dynamic_roles[0]
                     user_role_id = str(first_role.id)
                     user_role_name = first_role.name
-                    # Collect all permission codes from all dynamic roles
                     for role in dynamic_roles:
                         for perm in role.permissions.all():
                             if not perm.is_deleted and perm.code not in user_permissions:
                                 user_permissions.append(perm.code)
                 else:
-                    # Fallback: derive permissions from legacy static role
                     static_role = membership.role
                     user_role_name = static_role
-                    user_permissions = list(COMPATIBILITY_ROLE_PERMISSIONS_MAP.get(static_role, []))
-
-                # Merge default organization member permissions
-                for def_perm in DEFAULT_ORG_PERMISSIONS:
-                    if def_perm not in user_permissions:
-                        user_permissions.append(def_perm)
+                    user_permissions = list(
+                        COMPATIBILITY_ROLE_PERMISSIONS_MAP.get(static_role, DEFAULT_ORG_PERMISSIONS)
+                    )
         except Exception:
             pass
 

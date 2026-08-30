@@ -42,19 +42,25 @@ class PermissionService:
             user._cached_user_org_perms[cache_key] = set()
             return set()
 
-        user_perms = set(DEFAULT_ORG_PERMISSIONS)
+        user_perms = set()
 
-        # 1. Dynamic Roles (In-Memory Evaluation of prefetched data)
-        for role in membership.dynamic_roles.all():
-            if not getattr(role, "is_deleted", False):
+        dynamic_roles = [
+            r for r in membership.dynamic_roles.all() if not getattr(r, "is_deleted", False)
+        ]
+
+        if dynamic_roles:
+            # 1. Dynamic Roles (Strictly in-memory evaluation of assigned role permissions)
+            for role in dynamic_roles:
                 for perm in role.permissions.all():
                     if not getattr(perm, "is_deleted", False):
                         user_perms.add(perm.code)
-
-        # 2. Compatibility Layer (Fallback for legacy static roles)
-        static_role = membership.role
-        if static_role and static_role in COMPATIBILITY_ROLE_PERMISSIONS_MAP:
-            user_perms.update(COMPATIBILITY_ROLE_PERMISSIONS_MAP[static_role])
+        else:
+            # 2. Compatibility Layer (Fallback ONLY for legacy unmigrated static memberships)
+            static_role = membership.role
+            if static_role and static_role in COMPATIBILITY_ROLE_PERMISSIONS_MAP:
+                user_perms.update(COMPATIBILITY_ROLE_PERMISSIONS_MAP[static_role])
+            else:
+                user_perms.update(DEFAULT_ORG_PERMISSIONS)
 
         user._cached_user_org_perms[cache_key] = user_perms
         return user_perms

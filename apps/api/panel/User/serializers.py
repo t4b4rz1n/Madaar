@@ -25,7 +25,34 @@ class UserListSerializer(serializers.ModelSerializer):
         ref_name = "users_panel"
 
     def _get_active_membership_and_role(self, obj):
+        from organizations.models import Organization
+
+        request = self.context.get("request")
+        raw_org_id = request and (
+            request.data.get("organization_id")
+            or request.query_params.get("organization_id")
+            or request.headers.get("X-Organization-Id")
+        )
+        actor = (
+            request.user if (request and request.user and request.user.is_authenticated) else None
+        )
+        target_org_id = raw_org_id
+        if not target_org_id and actor and not actor.is_superuser:
+            actor_mem = actor.org_memberships.filter(is_deleted=False).first()
+            if actor_mem:
+                target_org_id = actor_mem.organization_id
+
+        if not target_org_id:
+            first_org = Organization.objects.filter(is_deleted=False).first()
+            if first_org:
+                target_org_id = first_org.id
+
         memberships = [m for m in obj.org_memberships.all() if not getattr(m, "is_deleted", False)]
+        if target_org_id:
+            matching = [m for m in memberships if str(m.organization_id) == str(target_org_id)]
+            if matching:
+                memberships = matching
+
         if memberships:
             membership = memberships[0]
             dynamic_roles = [
@@ -163,10 +190,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
                     )
                     if role_obj:
                         membership.dynamic_roles.set([role_obj])
+                        if role_obj.name.lower() in OrganizationMembership.Role.values:
+                            membership.role = role_obj.name.lower()
+                        else:
+                            membership.role = OrganizationMembership.Role.EMPLOYEE
                         membership.save()
                     elif str(role_id) in OrganizationMembership.Role.values:
                         membership.role = str(role_id)
                         membership.save()
+
+                    PermissionService.clear_user_cache(user, org.id)
 
                 try:
                     from organizations.models import OrganizationAuditLog
@@ -308,11 +341,19 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                         )
                         if role_obj:
                             membership.dynamic_roles.set([role_obj])
+                            if role_obj.name.lower() in OrganizationMembership.Role.values:
+                                membership.role = role_obj.name.lower()
+                            else:
+                                membership.role = OrganizationMembership.Role.EMPLOYEE
                             membership.save()
                         elif str(role_id) in OrganizationMembership.Role.values:
                             membership.role = str(role_id)
                             membership.dynamic_roles.clear()
                             membership.save()
+
+                        from organizations.services import PermissionService
+
+                        PermissionService.clear_user_cache(user, org.id)
 
                         try:
                             from organizations.models import OrganizationAuditLog

@@ -83,11 +83,23 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 DEFAULT_ORG_PERMISSIONS,
             )
 
-            membership = (
+            memberships = list(
                 OrganizationMembership.objects.filter(user=instance, is_deleted=False)
                 .prefetch_related("dynamic_roles__permissions")
-                .first()
+                .order_by("-created_at")
             )
+
+            membership = None
+            if memberships:
+                membership_with_dynamic_role = next(
+                    (
+                        m
+                        for m in memberships
+                        if any(not r.is_deleted for r in m.dynamic_roles.all())
+                    ),
+                    None,
+                )
+                membership = membership_with_dynamic_role or memberships[0]
 
             if membership:
                 dynamic_roles = [r for r in membership.dynamic_roles.all() if not r.is_deleted]
@@ -102,12 +114,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 else:
                     static_role = membership.role
                     user_role_name = static_role
-                    user_permissions = list(COMPATIBILITY_ROLE_PERMISSIONS_MAP.get(static_role, []))
-
-                # Merge default organization member permissions
-                for def_perm in DEFAULT_ORG_PERMISSIONS:
-                    if def_perm not in user_permissions:
-                        user_permissions.append(def_perm)
+                    user_permissions = list(
+                        COMPATIBILITY_ROLE_PERMISSIONS_MAP.get(static_role, DEFAULT_ORG_PERMISSIONS)
+                    )
         except Exception:
             pass
 

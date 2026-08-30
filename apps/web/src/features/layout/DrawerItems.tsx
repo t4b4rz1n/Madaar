@@ -42,6 +42,7 @@ export const drawerItems: DrawerItem[] = [
     link: "dashboard",
     section: "Workspace",
     icon: <Calendar variant="Outline" />,
+    defaultForMembers: true,
     isPrimary: true,
   },
   {
@@ -49,6 +50,7 @@ export const drawerItems: DrawerItem[] = [
     link: "tasks",
     section: "Workspace",
     icon: <TaskSquare variant="Outline" />,
+    permissions: ["task.view", "board.view", "task.create", "task.manage_all"],
     isPrimary: true,
   },
   {
@@ -64,6 +66,7 @@ export const drawerItems: DrawerItem[] = [
     link: "standups",
     section: "Workspace",
     icon: <NoteText variant="Outline" />,
+    permissions: ["task.view", "task.create", "project.view", "org.manage_settings"],
     isPrimary: true,
   },
   {
@@ -71,6 +74,7 @@ export const drawerItems: DrawerItem[] = [
     link: "attendance",
     section: "Workspace",
     icon: <Timer1 variant="Outline" />,
+    permissions: ["attendance.view", "attendance.view_all", "leave.approve"],
     isPrimary: true,
   },
   {
@@ -78,7 +82,12 @@ export const drawerItems: DrawerItem[] = [
     link: "manager",
     section: "Workspace",
     icon: <Chart21 variant="Outline" />,
-    permissions: ["org.manage_members", "attendance.view_all", "report.view"],
+    permissions: [
+      "org.manage_members",
+      "attendance.view_all",
+      "report.view",
+      "finance.view_reports",
+    ],
     isPrimary: true,
   },
 
@@ -88,21 +97,21 @@ export const drawerItems: DrawerItem[] = [
     link: "organizations",
     section: "AdminSettings",
     icon: <Profile2User variant="Outline" />,
-    permissions: ["org.manage_settings", "org.manage_members", "org.view"],
+    permissions: ["org.manage_settings", "org.manage_members", "org.manage_roles"],
   },
   {
     title: "Users Management",
     link: "users",
     section: "AdminSettings",
     icon: <People variant="Outline" />,
-    permissions: ["user.view", "org.manage_members"],
+    permissions: ["user.view", "org.manage_members", "org.manage_roles"],
   },
   {
     title: "Teams Management",
     link: "teams",
     section: "AdminSettings",
     icon: <TeamsIcon variant="Outline" />,
-    permissions: ["user.view", "org.manage_members"],
+    permissions: ["user.view", "org.manage_members", "org.manage_roles"],
   },
   {
     title: "Roles & Permissions",
@@ -123,25 +132,25 @@ export const drawerItems: DrawerItem[] = [
     link: "discounts",
     section: "AdminSettings",
     icon: <DiscountShape variant="Outline" />,
-    permission: "discounts.manage",
+    permissions: ["finance.manage", "finance.view_reports"],
   },
 
-  // Support & System — visible to ALL org members by default
+  // Support & System
   {
     title: "Notifications",
     link: "notifications",
     section: "AdminSettings",
     icon: <Notification variant="Outline" />,
     permissions: ["notification.view", "org.manage_settings"],
-    defaultForMembers: true,
   },
   {
     title: "Tickets",
     link: "tickets",
     section: "Support",
     icon: <Ticket variant="Outline" />,
-    defaultForMembers: true, // every member sees their own tickets
+    defaultForMembers: true,
   },
+
 
   // Account
   {
