@@ -61,3 +61,16 @@ export const useLogout = () => {
     navigate("/login");
   };
 };
+
+export const useRefreshProfile = () => {
+  const updateUser = useAuthStore((state) => state.updateUser);
+
+  return useMutation({
+    mutationFn: () => import("../api/authApi").then(m => m.getProfileRequest()),
+    onSuccess: (userProfile) => {
+      if (userProfile) {
+        updateUser(userProfile);
+      }
+    },
+  });
+};

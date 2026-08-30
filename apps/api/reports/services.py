@@ -457,7 +457,13 @@ class ManagerDashboardService:
                 is_deleted=False,
             )
             .filter(
-                Q(dynamic_roles__permissions__code__in=["org.manage_settings", "project.manage"])
+                Q(
+                    dynamic_roles__permissions__code__in=[
+                        "org.manage_settings",
+                        "project.manage",
+                        "report.view",
+                    ]
+                )
                 | Q(role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN])
             )
             .values_list("organization_id", flat=True)
@@ -694,7 +700,13 @@ class ManagerDashboardService:
                 is_deleted=False,
             )
             .filter(
-                Q(dynamic_roles__permissions__code__in=["org.manage_settings", "project.manage"])
+                Q(
+                    dynamic_roles__permissions__code__in=[
+                        "org.manage_settings",
+                        "project.manage",
+                        "report.view",
+                    ]
+                )
                 | Q(role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN])
             )
             .values_list("organization_id", flat=True)
@@ -1064,6 +1076,7 @@ class ExecutiveDashboardService:
                         dynamic_roles__permissions__code__in=[
                             "org.manage_settings",
                             "finance.view_reports",
+                            "report.view",
                         ]
                     )
                     | Q(

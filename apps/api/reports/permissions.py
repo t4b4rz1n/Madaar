@@ -65,17 +65,13 @@ def _get_org_role(user, org_id) -> str | None:
 
 
 def _is_org_admin_or_owner(user, org_id) -> bool:
-    """Check whether *user* is admin or owner of the given organisation."""
+    """Check whether *user* has management access for the given organisation."""
+    if not user or not org_id:
+        return False
     return (
-        _get_user_org_roles(user)
-        .filter(
-            organization_id=org_id,
-            role__in=[
-                OrganizationMembership.Role.OWNER,
-                OrganizationMembership.Role.ADMIN,
-            ],
-        )
-        .exists()
+        PermissionService.has_permission(user, "org.manage_settings", org_id)
+        or PermissionService.has_permission(user, "finance.view_reports", org_id)
+        or PermissionService.has_permission(user, "report.view", org_id)
     )
 
 
@@ -135,16 +131,7 @@ class IsEmployeeOrAbove(permissions.BasePermission):
 
 
 class IsManagerOrAbove(permissions.BasePermission):
-    """Managers (team_lead, admin, owner) may access team-level dashboards.
-
-    Access is validated against the ``team_id`` query-parameter:
-    * ``owner`` / ``admin`` of the team's organisation → full access
-    * ``team_lead`` in the org AND lead of the specific team → access
-    * All others → denied
-
-    If no ``team_id`` is provided, access is granted only if the user
-    leads at least one team (the view will auto-select their teams).
-    """
+    """Managers (team_lead, admin, owner, or users with report permissions) may access team-level dashboards."""
 
     message = _("You must be a team lead or organisation admin to access this dashboard.")
 
@@ -187,18 +174,17 @@ class IsManagerOrAbove(permissions.BasePermission):
         if managed_teams:
             return True
 
-        # Also allow org admins/owners or users with project.manage
+        # Also allow org admins/owners or users with project.manage / report.view
         memberships = _get_user_org_roles(user)
         for m in memberships:
-            if PermissionService.has_permission(user, "project.manage", m.organization_id):
+            if (
+                PermissionService.has_permission(user, "project.manage", m.organization_id)
+                or PermissionService.has_permission(user, "report.view", m.organization_id)
+                or PermissionService.has_permission(user, "org.manage_settings", m.organization_id)
+            ):
                 return True
 
-        return memberships.filter(
-            role__in=[
-                OrganizationMembership.Role.OWNER,
-                OrganizationMembership.Role.ADMIN,
-            ],
-        ).exists()
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -207,10 +193,7 @@ class IsManagerOrAbove(permissions.BasePermission):
 
 
 class IsExecutive(permissions.BasePermission):
-    """Only organisation owners and admins may access the executive dashboard.
-
-    Access is validated against the ``org_id`` query-parameter.
-    """
+    """Only organisation owners, admins, and users with executive report permissions may access the executive dashboard."""
 
     message = _("Only organisation owners and admins can access the executive dashboard.")
 
@@ -228,23 +211,20 @@ class IsExecutive(permissions.BasePermission):
         _validate_uuid_param(org_id, "org_id")
 
         if org_id:
-            # New: check permission-based first
-            if PermissionService.has_permission(user, "org.manage_settings", org_id):
-                return True
-            if PermissionService.has_permission(user, "finance.view_reports", org_id):
-                return True
-            # Fallback: legacy role
-            return _is_org_admin_or_owner(user, org_id)
+            return (
+                PermissionService.has_permission(user, "org.manage_settings", org_id)
+                or PermissionService.has_permission(user, "finance.view_reports", org_id)
+                or PermissionService.has_permission(user, "report.view", org_id)
+            )
 
-        # No org_id — allow if user is admin/owner of at least one org OR has manage_settings anywhere
+        # No org_id — allow if user has manage_settings / finance.view_reports / report.view anywhere
         memberships = _get_user_org_roles(user)
         for m in memberships:
-            if PermissionService.has_permission(user, "org.manage_settings", m.organization_id):
+            if (
+                PermissionService.has_permission(user, "org.manage_settings", m.organization_id)
+                or PermissionService.has_permission(user, "finance.view_reports", m.organization_id)
+                or PermissionService.has_permission(user, "report.view", m.organization_id)
+            ):
                 return True
 
-        return memberships.filter(
-            role__in=[
-                OrganizationMembership.Role.OWNER,
-                OrganizationMembership.Role.ADMIN,
-            ],
-        ).exists()
+        return False

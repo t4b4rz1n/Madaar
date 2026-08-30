@@ -101,21 +101,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         except Exception:
             pass
 
-        can_manage_automations = False
-        if self.user.is_staff or self.user.is_superuser:
-            can_manage_automations = True
-        else:
-            from organizations.models import OrganizationMembership
-
-            can_manage_automations = OrganizationMembership.objects.filter(
-                user=self.user,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                ],
-                is_deleted=False,
-            ).exists()
-
         # ---- Collect permissions from dynamic_roles (or legacy fallback) ----
         user_permissions: list[str] = []
         user_role_id = None
@@ -158,6 +143,13 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                         user_permissions.append(def_perm)
         except Exception:
             pass
+
+        can_manage_automations = bool(
+            self.user.is_staff
+            or self.user.is_superuser
+            or "automation.manage" in user_permissions
+            or "org.manage_settings" in user_permissions
+        )
 
         user_data = {
             "id": self.user.id,

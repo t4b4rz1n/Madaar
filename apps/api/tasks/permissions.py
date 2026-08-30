@@ -286,7 +286,7 @@ class IsBoardPermission(BaseMadaarPermission):
 
 
 class IsTaskStatusPermission(BaseMadaarPermission):
-    """Kanban status access: Read for all org members; Modify for Owner, Admin, Board Creator, or Team Lead."""
+    """Kanban status access: Read for all org members; Modify for Owner, Admin, Board Creator, or users with board.manage."""
 
     def check_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
@@ -303,9 +303,6 @@ class IsTaskStatusPermission(BaseMadaarPermission):
                 or PermissionService.has_permission(request.user, "task.manage_all", org_id)
                 or PermissionService.has_permission(request.user, "board.manage", org_id)
             ):
-                return True
-            role = get_user_org_role(request, org_id)
-            if role in ["owner", "admin", "team_lead"]:
                 return True
         return False
 
@@ -325,6 +322,7 @@ class IsTaskStatusPermission(BaseMadaarPermission):
                 PermissionService.has_permission(request.user, "org.manage_settings", org_id)
                 or PermissionService.has_permission(request.user, "project.manage", org_id)
                 or PermissionService.has_permission(request.user, "task.manage_all", org_id)
+                or PermissionService.has_permission(request.user, "board.manage", org_id)
             ):
                 return True
         return False

@@ -41,18 +41,12 @@ def _get_org_role(user, organization):
 
 
 def _is_org_admin(user, organization) -> bool:
-    """Check whether *user* can manage the organization (admin/owner via permission or legacy role)."""
+    """Check whether *user* can manage the organization (admin/owner via dynamic permissions)."""
     if not organization:
         return False
-    # New: check permission-based
-    if PermissionService.has_permission(user, "project.manage", organization.id):
-        return True
-    # Fallback: check legacy static role
-    role = _get_org_role(user, organization)
-    return role in (
-        OrganizationMembership.Role.OWNER,
-        OrganizationMembership.Role.ADMIN,
-    )
+    return PermissionService.has_permission(
+        user, "project.manage", organization.id
+    ) or PermissionService.has_permission(user, "org.manage_settings", organization.id)
 
 
 def _is_project_member(user, project) -> bool:
@@ -145,19 +139,11 @@ class CanCreateProject(permissions.BasePermission):
         # Extract the target organisation from the request payload
         org_id = request.data.get("organization_id")
         if org_id:
-            # New: check permission-based first
-            if PermissionService.has_permission(user, "project.create", org_id):
-                return True
-            # Fallback: check legacy static role
-            return OrganizationMembership.objects.filter(
-                user=user,
-                organization_id=org_id,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                ],
-                is_deleted=False,
-            ).exists()
+            return (
+                PermissionService.has_permission(user, "project.create", org_id)
+                or PermissionService.has_permission(user, "project.manage", org_id)
+                or PermissionService.has_permission(user, "org.manage_settings", org_id)
+            )
 
         return False
 
@@ -243,7 +229,7 @@ class CanViewProjectActivity(_ProjectFromKwargsMixin):
             return False
         if _is_project_owner(user, project):
             return True
-        if _get_org_role(user, project.organization):
+        if PermissionService.has_permission(user, "project.view", project.organization_id):
             return True
         if _is_project_member(user, project):
             return True

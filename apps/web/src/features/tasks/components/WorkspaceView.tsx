@@ -6,13 +6,24 @@ import { Add, FolderAdd } from 'iconsax-reactjs';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { usePermissions } from '../../auth/hooks/usePermissions';
+
 export const WorkspaceView: React.FC = () => {
   const { activeProjectId, setActiveBoard } = useTaskStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { hasPermission, isStaff } = usePermissions();
+
+  const canManageBoard =
+    hasPermission('board.manage') ||
+    hasPermission('project.manage') ||
+    hasPermission('org.manage_settings') ||
+    isStaff;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [boardTitle, setBoardTitle] = useState('');
   const [boardColor, setBoardColor] = useState('linear-gradient(135deg, #b39ddb, #9fa8da)');
+
 
   const { data: boards } = useQuery({
     queryKey: ['boards', activeProjectId],
@@ -107,14 +118,17 @@ export const WorkspaceView: React.FC = () => {
         })}
 
         {/* Add Board Card */}
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-base-content/15 bg-base-100/50 text-base-content/40 transition hover:border-base-content/25 hover:bg-base-100 hover:text-base-content"
-        >
-          <Add size={24} />
-          <span className="text-sm font-bold">Add Board</span>
-        </button>
+        {canManageBoard && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-base-content/15 bg-base-100/50 text-base-content/40 transition hover:border-base-content/25 hover:bg-base-100 hover:text-base-content"
+          >
+            <Add size={24} />
+            <span className="text-sm font-bold">Add Board</span>
+          </button>
+        )}
       </div>
+
 
       {/* Create Board Modal */}
       {isModalOpen && (

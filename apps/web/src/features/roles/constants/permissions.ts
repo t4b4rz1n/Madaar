@@ -7,43 +7,42 @@ export interface PermissionItem {
 }
 
 export const SYSTEM_PERMISSIONS: PermissionItem[] = [
-  // Users
-  { id: "users.manage", label: "Manage Users", group: "USERS" },
-  { id: "users.view", label: "View Users", group: "USERS" },
+  // Organization & Core
+  { id: "org.view", label: "View Organization", group: "ORGANIZATION" },
+  { id: "org.manage_settings", label: "Manage Org Settings", group: "ORGANIZATION" },
+  { id: "org.manage_roles", label: "Manage Roles & Permissions", group: "ORGANIZATION" },
+  { id: "org.manage_members", label: "Manage Organization Members", group: "ORGANIZATION" },
+  { id: "user.view", label: "View Users", group: "ORGANIZATION" },
+  { id: "role.view", label: "View Roles", group: "ORGANIZATION" },
 
-  // Roles
-  { id: "roles.manage", label: "Manage Roles", group: "ROLES" },
+  // Projects
+  { id: "project.view", label: "View Projects", group: "PROJECTS" },
+  { id: "project.create", label: "Create Project", group: "PROJECTS" },
+  { id: "project.manage", label: "Manage All Projects", group: "PROJECTS" },
 
-  // Discounts module
-  { id: "discounts.view", label: "View Discounts", group: "Discounts" },
-  // Notifications
-  {
-    id: "notifications.view",
-    label: "View Notifications",
-    group: "NOTIFICATIONS",
-  },
-  {
-    id: "notifications.send",
-    label: "Send Notifications",
-    group: "NOTIFICATIONS",
-  },
+  // Tasks & Boards
+  { id: "task.view", label: "View Tasks", group: "TASKS" },
+  { id: "task.create", label: "Create Task", group: "TASKS" },
+  { id: "task.manage_all", label: "Manage All Tasks", group: "TASKS" },
+  { id: "task.review", label: "Review Tasks", group: "TASKS" },
+  { id: "board.view", label: "View Boards", group: "TASKS" },
+  { id: "board.manage", label: "Manage Boards & Columns", group: "TASKS" },
 
-  // Teams
-  { id: "teams.view", label: "View Teams", group: "TEAMS" },
-  { id: "teams.manage", label: "Manage Teams", group: "TEAMS" },
+  // Attendance & Time-off
+  { id: "attendance.view", label: "View Personal Attendance", group: "ATTENDANCE" },
+  { id: "attendance.view_all", label: "View All Attendances", group: "ATTENDANCE" },
+  { id: "leave.approve", label: "Approve Leave Requests", group: "ATTENDANCE" },
 
-  // Tickets
-  { id: "tickets.view", label: "View Tickets", group: "TICKETS" },
-  { id: "tickets.manage", label: "Manage Tickets", group: "TICKETS" },
+  // Finance & Payroll
+  { id: "finance.manage", label: "Manage Finance & Payroll", group: "FINANCE" },
+  { id: "finance.view_reports", label: "View Financial Reports", group: "FINANCE" },
 
-  // Automations
-  { id: "automations.view", label: "View Automations", group: "AUTOMATIONS" },
-  { id: "automations.manage", label: "Manage Automations", group: "AUTOMATIONS" },
+  // Automations & Notifications
+  { id: "notification.view", label: "View Notifications", group: "AUTOMATIONS" },
+  { id: "automation.manage", label: "Manage Automations", group: "AUTOMATIONS" },
 
-  //projects
-  {id: "projects.view", label: "View Projects", group: "PROJECT"},
-  {id: "projects.manage", label: "Manage Projects", group: "PROJECT"},
-
+  // Reports
+  { id: "report.view", label: "View Reports & Dashboards", group: "REPORTS" },
 ];
 
 export const PERMISSIONS_BY_GROUP = SYSTEM_PERMISSIONS.reduce(

@@ -72,21 +72,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         except Exception:
             pass
 
-        can_manage_automations = False
-        if instance.is_staff or instance.is_superuser:
-            can_manage_automations = True
-        else:
-            from organizations.models import OrganizationMembership
-
-            can_manage_automations = OrganizationMembership.objects.filter(
-                user=instance,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                ],
-                is_deleted=False,
-            ).exists()
-
         user_permissions: list[str] = []
         user_role_id = None
         user_role_name = None
@@ -125,6 +110,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                         user_permissions.append(def_perm)
         except Exception:
             pass
+
+        can_manage_automations = bool(
+            instance.is_staff
+            or instance.is_superuser
+            or "automation.manage" in user_permissions
+            or "org.manage_settings" in user_permissions
+        )
 
         ret["id"] = instance.id
         ret["is_staff"] = instance.is_staff

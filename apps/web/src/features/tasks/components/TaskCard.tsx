@@ -40,6 +40,9 @@ const priorityLeftBorder: Record<Task["priority"], string> = {
 
 
 
+import { useAuthStore } from "../../auth/store/authStore";
+import { usePermissions } from "../../auth/hooks/usePermissions";
+
 export const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onClick,
@@ -49,6 +52,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onToggleDone,
   activeTimer,
 }) => {
+  const currentUser = useAuthStore((state) => state.user);
+  const { hasPermission, isStaff } = usePermissions();
+
+  const currentUserId = currentUser?.id;
+  const isAssignee = Boolean(
+    currentUserId &&
+      (String(task.assignee) === String(currentUserId) ||
+        String(task.assignee_detail?.id) === String(currentUserId))
+  );
+  const isReporter = Boolean(
+    currentUserId &&
+      (String(task.reporter) === String(currentUserId) ||
+        String((task as any).reporter_detail?.id) === String(currentUserId))
+  );
+  const canManageAll = hasPermission("task.manage_all") || isStaff;
+  const canEditTask = canManageAll || isAssignee || isReporter || hasPermission("task.create");
+  const canDeleteTask = canManageAll || isReporter;
+
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMembersMenu, setShowMembersMenu] = useState(false);
   const [isAssigneePopoverOpen, setIsAssigneePopoverOpen] = useState(false);
@@ -56,6 +78,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const assigneeTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
+
 
   const isActuallyDone = Boolean(task.is_finished);
   const isOverdue = Boolean(
@@ -225,17 +248,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <button
               ref={assigneeTriggerRef}
               type="button"
+              disabled={!canEditTask}
               onClick={(e) => {
                 e.stopPropagation();
-                setIsAssigneePopoverOpen(!isAssigneePopoverOpen);
+                if (canEditTask) {
+                  setIsAssigneePopoverOpen(!isAssigneePopoverOpen);
+                }
               }}
-              className="rounded-full p-0.5 hover:ring-2 hover:ring-primary/30 transition"
+              className={`rounded-full p-0.5 transition ${
+                canEditTask ? "hover:ring-2 hover:ring-primary/30" : "cursor-default"
+              }`}
               title={
                 task.assignee_detail
                   ? `Assigned to ${task.assignee_detail.first_name || task.assignee_detail.username}`
-                  : "Assign member"
+                  : canEditTask
+                  ? "Assign member"
+                  : "Unassigned"
               }
             >
+
               <div className="relative shrink-0">
                 <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shadow-xs">
                   {task.assignee_detail?.avatar_url || task.assignee_detail?.avatar ? (
@@ -447,47 +478,58 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   >
                     <TaskSquare size={15} className="text-primary" /> Open task sheet
                   </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
-                    onClick={() => setShowMembersMenu(true)}
-                  >
-                    <Profile2User size={15} className="text-base-content/50" /> Change assignee
-                  </button>
-                  <label className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 hover:bg-base-200">
-                    <Calendar1 size={15} className="text-base-content/50" />
-                    <span className="flex-1">Due date</span>
-                    <input
-                      type="date"
-                      value={task.due_date ? task.due_date.slice(0, 10) : ""}
-                      onChange={(e) => {
-                        updateMutation.mutate({
-                          due_date: e.target.value
-                            ? new Date(e.target.value).toISOString()
-                            : undefined,
-                        });
-                        closeMenu();
-                      }}
-                      className="w-3 opacity-0"
-                    />
-                  </label>
-                  <div className="my-1 h-px bg-base-content/8" />
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-red-500 hover:bg-red-50"
-                    onClick={() => {
-                      closeMenu();
-                      setIsDeleteModalOpen(true);
-                    }}
-                  >
-                    <Trash size={15} /> Delete task
-                  </button>
+
+                  {canEditTask && (
+                    <>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                        onClick={() => setShowMembersMenu(true)}
+                      >
+                        <Profile2User size={15} className="text-base-content/50" /> Change assignee
+                      </button>
+                      <label className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 hover:bg-base-200">
+                        <Calendar1 size={15} className="text-base-content/50" />
+                        <span className="flex-1">Due date</span>
+                        <input
+                          type="date"
+                          value={task.due_date ? task.due_date.slice(0, 10) : ""}
+                          onChange={(e) => {
+                            updateMutation.mutate({
+                              due_date: e.target.value
+                                ? new Date(e.target.value).toISOString()
+                                : undefined,
+                            });
+                            closeMenu();
+                          }}
+                          className="w-3 opacity-0"
+                        />
+                      </label>
+                    </>
+                  )}
+
+                  {canDeleteTask && (
+                    <>
+                      <div className="my-1 h-px bg-base-content/8" />
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-red-500 hover:bg-red-50"
+                        onClick={() => {
+                          closeMenu();
+                          setIsDeleteModalOpen(true);
+                        }}
+                      >
+                        <Trash size={15} /> Delete task
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
           </>,
           document.body
         )}
+
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

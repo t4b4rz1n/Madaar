@@ -79,6 +79,18 @@ class PermissionService:
         user_perms = cls.get_user_permissions(user, organization_id)
         return permission_code in user_perms
 
+    @classmethod
+    def clear_user_cache(cls, user: User, organization_id: Union[int, str] = None):
+        """Invalidate the cached permissions dictionary on the user instance."""
+        if not user:
+            return
+        if not hasattr(user, "_cached_user_org_perms"):
+            return
+        if organization_id is not None:
+            user._cached_user_org_perms.pop(str(organization_id), None)
+        else:
+            user._cached_user_org_perms.clear()
+
 
 class AuditService:
     @staticmethod

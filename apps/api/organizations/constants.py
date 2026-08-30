@@ -3,6 +3,44 @@ Centralized constants for Organization Roles, Permissions, and Default Mappings.
 Eliminates duplication across signals, services, views, and migrations.
 """
 
+SYSTEM_PERMISSIONS = [
+    {"code": "org.view", "name": "View Organization", "module": "core"},
+    {"code": "org.manage_settings", "name": "Manage Org Settings", "module": "core"},
+    {"code": "org.manage_roles", "name": "Manage Roles & Permissions", "module": "core"},
+    {"code": "org.manage_members", "name": "Manage Organization Members", "module": "core"},
+    {"code": "user.view", "name": "View Users List", "module": "core"},
+    {"code": "role.view", "name": "View Roles List", "module": "core"},
+    {"code": "project.view", "name": "View Projects", "module": "projects"},
+    {"code": "project.create", "name": "Create New Project", "module": "projects"},
+    {"code": "project.manage", "name": "Manage All Projects", "module": "projects"},
+    {"code": "task.view", "name": "View Tasks", "module": "tasks"},
+    {"code": "task.create", "name": "Create Task", "module": "tasks"},
+    {"code": "task.manage_all", "name": "Manage All Tasks", "module": "tasks"},
+    {"code": "task.review", "name": "Review & Approve Tasks", "module": "tasks"},
+    {"code": "board.view", "name": "View Kanban Boards", "module": "tasks"},
+    {"code": "board.manage", "name": "Manage Boards & Columns", "module": "tasks"},
+    {"code": "attendance.view", "name": "View Personal Attendance", "module": "attendance"},
+    {
+        "code": "attendance.view_all",
+        "name": "View All Member Attendances",
+        "module": "attendance",
+    },
+    {
+        "code": "leave.approve",
+        "name": "Approve & Reject Leave Requests",
+        "module": "attendance",
+    },
+    {
+        "code": "finance.manage",
+        "name": "Manage Payroll & Financial Records",
+        "module": "billing",
+    },
+    {"code": "finance.view_reports", "name": "View Financial Reports", "module": "billing"},
+    {"code": "notification.view", "name": "View Notifications", "module": "automations"},
+    {"code": "automation.manage", "name": "Manage Automation Rules", "module": "automations"},
+    {"code": "report.view", "name": "View Executive & Manager Reports", "module": "reports"},
+]
+
 DEFAULT_ORG_PERMISSIONS = [
     "org.view",
     "user.view",
@@ -12,6 +50,7 @@ DEFAULT_ORG_PERMISSIONS = [
     "board.view",
     "notification.view",
 ]
+
 
 # Legacy Static Role -> Dynamic Permission Codes Mapping
 COMPATIBILITY_ROLE_PERMISSIONS_MAP = {

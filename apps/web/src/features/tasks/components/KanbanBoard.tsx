@@ -31,9 +31,17 @@ import { SortableTask } from './SortableTask';
 import { Add, More, SearchNormal1, TickCircle, Category, Activity, User, Danger, Flash } from 'iconsax-reactjs';
 import { toast } from 'sonner';
 
+import { usePermissions } from '../../auth/hooks/usePermissions';
+
 export const KanbanBoard: React.FC = () => {
   const { activeProjectId, activeBoardId, selectedTaskId, setSelectedTaskId } = useTaskStore();
   const currentUser = useAuthStore((state) => state.user);
+  const { hasPermission, isStaff } = usePermissions();
+
+  const canCreateTask = hasPermission('task.create') || hasPermission('task.manage_all') || isStaff;
+  const canManageBoard = hasPermission('board.manage') || hasPermission('project.manage') || hasPermission('org.manage_settings') || isStaff;
+  const canEditTask = hasPermission('task.manage_all') || hasPermission('task.create') || isStaff;
+
   const queryClient = useQueryClient();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeColumn, setActiveColumn] = useState<any | null>(null);
@@ -45,6 +53,7 @@ export const KanbanBoard: React.FC = () => {
   const [focusedTaskId, setFocusedTaskId] = useState<string | number | null>(null);
   const [columnSorts, setColumnSorts] = useState<Record<string, 'priority' | 'due_date' | 'title' | null>>({});
   const [columnMenuAnchor, setColumnMenuAnchor] = useState<{ id: string | number; rect: DOMRect } | null>(null);
+
 
   const setSelectedTaskForSheet = (task: Task | null) => {
     setSelectedTaskId(task ? task.id.toString() : null);
@@ -438,19 +447,22 @@ export const KanbanBoard: React.FC = () => {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    isDraggingRef.current = true;
     const { active } = event;
     const activeId = active.id.toString();
 
     if (activeId.startsWith('col-')) {
+      if (!canManageBoard) return;
+      isDraggingRef.current = true;
       const statusId = activeId.replace('col-', '');
       const status = boards?.flatMap(b => b.statuses).find(s => s.id.toString() === statusId);
       if (status) setActiveColumn(status);
     } else {
+      isDraggingRef.current = true;
       const task = localTasks.find(t => t.id.toString() === activeId);
       if (task) setActiveTask(task);
     }
   };
+
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
@@ -742,17 +754,20 @@ export const KanbanBoard: React.FC = () => {
             </button>
 
             {/* Quick Add Button */}
-            <button
-              type="button"
-              onClick={() => setAddingTaskToStatusId(board.statuses[0]?.id || null)}
-              className="inline-flex h-8.5 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
-            >
-              <Add size={15} />
-              <span>New Task</span>
-            </button>
+            {canCreateTask && (
+              <button
+                type="button"
+                onClick={() => setAddingTaskToStatusId(board.statuses[0]?.id || null)}
+                className="inline-flex h-8.5 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
+              >
+                <Add size={15} />
+                <span>New Task</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
+
 
       {focusMode ? (
         <FocusModeView
@@ -852,18 +867,20 @@ export const KanbanBoard: React.FC = () => {
                               }}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setColumnMenuAnchor(null);
-                                  setAddingTaskToStatusId(status.id);
-                                }}
-                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-primary hover:bg-primary/10"
-                              >
-                                <Add size={14} /> Add task to column
-                              </button>
+                              {canCreateTask && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setColumnMenuAnchor(null);
+                                    setAddingTaskToStatusId(status.id);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-primary hover:bg-primary/10"
+                                >
+                                  <Add size={14} /> Add task to column
+                                </button>
+                              )}
 
-                              <div className="my-1 h-px bg-base-content/8" />
+                              {canCreateTask && <div className="my-1 h-px bg-base-content/8" />}
 
                               <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
                                 Sort Column
@@ -921,35 +938,39 @@ export const KanbanBoard: React.FC = () => {
                                 By Title (A - Z)
                               </button>
 
-                              <div className="my-1 h-px bg-base-content/8" />
+                              {canManageBoard && (
+                                <>
+                                  <div className="my-1 h-px bg-base-content/8" />
 
-                              <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                                Move Column
-                              </div>
+                                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
+                                    Move Column
+                                  </div>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setColumnMenuAnchor(null);
-                                  handleMoveStatus(status.id, 'left');
-                                }}
-                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-base-content/70 hover:bg-base-200"
-                              >
-                                Move Left
-                              </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setColumnMenuAnchor(null);
+                                      handleMoveStatus(status.id, 'left');
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-base-content/70 hover:bg-base-200"
+                                  >
+                                    Move Left
+                                  </button>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setColumnMenuAnchor(null);
-                                  handleMoveStatus(status.id, 'right');
-                                }}
-                                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-base-content/70 hover:bg-base-200"
-                              >
-                                Move Right
-                              </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setColumnMenuAnchor(null);
+                                      handleMoveStatus(status.id, 'right');
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-base-content/70 hover:bg-base-200"
+                                  >
+                                    Move Right
+                                  </button>
+                                </>
+                              )}
 
-                              {columnTasks.length > 0 && (
+                              {canEditTask && columnTasks.length > 0 && (
                                 <>
                                   <div className="my-1 h-px bg-base-content/8" />
                                   <button
@@ -966,6 +987,7 @@ export const KanbanBoard: React.FC = () => {
                                   </button>
                                 </>
                               )}
+
                             </div>
                           </>,
                           document.body
@@ -1074,7 +1096,7 @@ export const KanbanBoard: React.FC = () => {
                     )}
                   </div>
 
-                  {addingTaskToStatusId !== status.id && (
+                  {canCreateTask && addingTaskToStatusId !== status.id && (
                     <button
                       type="button"
                       onClick={() => {
@@ -1093,50 +1115,53 @@ export const KanbanBoard: React.FC = () => {
             })}
           </SortableContext>
 
-          {isAddingStatus ? (
-            <div className="min-w-[282px] w-[282px] rounded-2xl border border-primary/20 bg-base-100 p-3.5 flex flex-col h-fit shadow-md animate-in fade-in slide-in-from-top-2 duration-150">
-              <input
-                autoFocus
-                value={newStatusName}
-                onChange={e => setNewStatusName(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') handleCreateStatus();
-                  if (e.key === 'Escape') {
-                    setIsAddingStatus(false);
-                    setNewStatusName('');
-                  }
-                }}
-                dir="auto"
-                placeholder="New column name..."
-                className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-base-content/30 px-2 py-1 mb-3.5 border-b border-base-content/10"
-              />
-              <div className="flex gap-1.5 justify-end">
-                <button
-                  type="button"
-                  onClick={() => { setIsAddingStatus(false); setNewStatusName(''); }}
-                  className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-base-content/50 hover:bg-base-200 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreateStatus}
-                  disabled={!newStatusName.trim() || createStatusMutation.isPending}
-                  className="rounded-lg bg-primary px-3 py-1 text-[11px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {createStatusMutation.isPending ? '...' : 'Add Column'}
-                </button>
+          {canManageBoard && (
+            isAddingStatus ? (
+              <div className="min-w-[282px] w-[282px] rounded-2xl border border-primary/20 bg-base-100 p-3.5 flex flex-col h-fit shadow-md animate-in fade-in slide-in-from-top-2 duration-150">
+                <input
+                  autoFocus
+                  value={newStatusName}
+                  onChange={e => setNewStatusName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleCreateStatus();
+                    if (e.key === 'Escape') {
+                      setIsAddingStatus(false);
+                      setNewStatusName('');
+                    }
+                  }}
+                  dir="auto"
+                  placeholder="New column name..."
+                  className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-base-content/30 px-2 py-1 mb-3.5 border-b border-base-content/10"
+                />
+                <div className="flex gap-1.5 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => { setIsAddingStatus(false); setNewStatusName(''); }}
+                    className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-base-content/50 hover:bg-base-200 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateStatus}
+                    disabled={!newStatusName.trim() || createStatusMutation.isPending}
+                    className="rounded-lg bg-primary px-3 py-1 text-[11px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {createStatusMutation.isPending ? '...' : 'Add Column'}
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsAddingStatus(true)}
-              className="min-w-[282px] w-[282px] rounded-2xl p-4 flex items-center justify-center gap-1.5 border border-dashed border-base-content/15 text-base-content/40 hover:border-base-content/25 hover:bg-base-100/50 hover:text-base-content/65 transition h-[56px] font-bold text-xs"
-            >
-              <span className="text-sm leading-none mb-0.5">+</span>
-              Add Column
-            </button>
+            ) : (
+              <button
+                onClick={() => setIsAddingStatus(true)}
+                className="min-w-[282px] w-[282px] rounded-2xl p-4 flex items-center justify-center gap-1.5 border border-dashed border-base-content/15 text-base-content/40 hover:border-base-content/25 hover:bg-base-100/50 hover:text-base-content/65 transition h-[56px] font-bold text-xs"
+              >
+                <span className="text-sm leading-none mb-0.5">+</span>
+                Add Column
+              </button>
+            )
           )}
+
           <DragOverlay>
             {activeColumn ? (
               <div className="min-w-[282px] w-[282px] rounded-2xl border border-primary/20 bg-base-100 p-4 shadow-xl opacity-85">
