@@ -520,14 +520,13 @@ class TimeOffRequestService:
     def approve(request_id, manager):
         req = get_object_or_404(TimeOffRequest, id=request_id)
 
-        # Check permissions explicitly in service
+        # Check permissions explicitly in service using PermissionService
         if not manager.is_staff and not manager.is_superuser:
-            role = (
-                manager.org_memberships.filter(organization_id=req.organization_id)
-                .values_list("role", flat=True)
-                .first()
-            )
-            if role not in ["owner", "admin", "team_lead"]:
+            from organizations.services import PermissionService
+
+            if not PermissionService.has_permission(
+                manager, "leave.approve", str(req.organization_id)
+            ):
                 raise PermissionDenied(
                     _("You do not have permission to approve requests in this organization.")
                 )
@@ -544,14 +543,13 @@ class TimeOffRequestService:
     def reject(request_id, manager, note=""):
         req = get_object_or_404(TimeOffRequest, id=request_id)
 
-        # Check permissions explicitly in service
+        # Check permissions explicitly in service using PermissionService
         if not manager.is_staff and not manager.is_superuser:
-            role = (
-                manager.org_memberships.filter(organization_id=req.organization_id)
-                .values_list("role", flat=True)
-                .first()
-            )
-            if role not in ["owner", "admin", "team_lead"]:
+            from organizations.services import PermissionService
+
+            if not PermissionService.has_permission(
+                manager, "leave.approve", str(req.organization_id)
+            ):
                 raise PermissionDenied(
                     _("You do not have permission to reject requests in this organization.")
                 )

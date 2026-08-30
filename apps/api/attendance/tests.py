@@ -412,14 +412,43 @@ class TimeOffRequestTests(AttendanceBaseTestCase):
         self.assertEqual(approved.status, TimeOffRequest.Status.APPROVED)
         self.assertEqual(approved.approved_by, self.owner)
 
+    def test_timeoffrequest_service_custom_role_approve(self):
+        from organizations.models import Permission, Role
+
+        # Create a custom role with leave.approve permission
+        perm_leave_approve = Permission.objects.get(code="leave.approve")
+        custom_role = Role.objects.create(
+            organization=self.org,
+            name="HR Specialist",
+            description="Can approve leaves",
+        )
+        custom_role.permissions.add(perm_leave_approve)
+
+        # Create an HR user and assign custom role
+        hr_user = User.objects.create_user(
+            username="hr_specialist", email="hr_specialist@example.com", password="password"
+        )
+        membership = OrganizationMembership.objects.create(
+            user=hr_user,
+            organization=self.org,
+            role="employee",
+        )
+        membership.dynamic_roles.add(custom_role)
+
+        # Approve using user with custom role
+        approved = TimeOffRequestService.approve(self.req.id, hr_user)
+        self.assertEqual(approved.status, TimeOffRequest.Status.APPROVED)
+        self.assertEqual(approved.approved_by, hr_user)
+
     def test_timeoffrequest_service_reject(self):
         rejected = TimeOffRequestService.reject(self.req.id, self.admin, "No capacity")
         self.assertEqual(rejected.status, TimeOffRequest.Status.REJECTED)
         self.assertEqual(rejected.manager_note, "No capacity")
 
     def test_timeoffrequest_service_permission_denied(self):
+        # User without leave.approve permission is denied
         with self.assertRaises(PermissionDenied):
-            TimeOffRequestService.approve(self.req.id, self.other_employee)
+            TimeOffRequestService.approve(self.req.id, self.employee)
 
     def test_timeoffrequest_viewset_workflow(self):
         url = reverse("timeoff-requests-list")
