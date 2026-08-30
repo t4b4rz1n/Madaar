@@ -1,4 +1,4 @@
-import { Edit2, People } from "iconsax-reactjs";
+import { Edit2, People, Profile2User, Setting3, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
 
 interface TeamsTableProps {
@@ -6,6 +6,9 @@ interface TeamsTableProps {
   isLoading: boolean;
   isError: boolean;
   onEdit: (team: TeamWithDetails) => void;
+  onManageSquads?: (team: TeamWithDetails) => void;
+  onManageMembers?: (team: TeamWithDetails) => void;
+  onDelete: (team: TeamWithDetails) => void;
   canManage: boolean;
 }
 
@@ -14,6 +17,9 @@ export const TeamsTable = ({
   isLoading,
   isError,
   onEdit,
+  onManageSquads,
+  onManageMembers,
+  onDelete,
   canManage,
 }: TeamsTableProps) => {
   if (isLoading) {
@@ -114,14 +120,26 @@ export const TeamsTable = ({
                 </div>
               </td>
               <td className="text-base-content/80">
-                {team.leader_details
-                  ? `${team.leader_details.first_name} ${team.leader_details.last_name}`
-                  : "—"}
+                <div className="flex items-center gap-2">
+                  {team.leader_details ? (
+                    <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      {team.leader_details.first_name?.[0]?.toUpperCase() || "?"}
+                      {team.leader_details.last_name?.[0]?.toUpperCase() || ""}
+                    </div>
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-base-200 text-base-content/40 flex items-center justify-center shrink-0">
+                      <Profile2User size={14} />
+                    </div>
+                  )}
+                  <span>
+                    {team.leader_details
+                      ? `${team.leader_details.first_name} ${team.leader_details.last_name}`
+                      : "\u2014"}
+                  </span>
+                </div>
               </td>
               <td>
-                <span className="badge badge-ghost badge-sm font-mono">
-                  {team.squads_count ?? 0}
-                </span>
+                <span className="font-mono text-sm">{team.squads_count ?? 0}</span>
               </td>
               <td>
                 <span
@@ -139,13 +157,43 @@ export const TeamsTable = ({
               </td>
               {canManage && (
                 <td className="text-end">
-                  <button
-                    onClick={() => onEdit(team)}
-                    className="btn btn-ghost btn-xs text-primary hover:bg-primary/10 rounded-lg gap-1"
-                  >
-                    <Edit2 size={14} />
-                    Edit
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onManageMembers?.(team)}
+                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:text-primary hover:bg-primary/10"
+                      title="Manage Members"
+                    >
+                      <User size={14} />
+                      <span className="hidden sm:inline">Members</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onManageSquads?.(team)}
+                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:text-primary hover:bg-primary/10"
+                      title="Manage Squads"
+                    >
+                      <Setting3 size={14} />
+                      <span className="hidden sm:inline">Squads</span>
+                      <span className="badge badge-xs badge-ghost font-mono">{team.squads_count ?? 0}</span>
+                    </button>
+                    <button
+                      onClick={() => onEdit(team)}
+                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:text-primary hover:bg-primary/10"
+                      title="Edit Team"
+                    >
+                      <Edit2 size={14} />
+                      <span className="hidden sm:inline">Edit</span>
+                    </button>
+                    <button
+                      onClick={() => onDelete(team)}
+                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:text-error hover:bg-error/10"
+                      title="Delete Team"
+                    >
+                      <Trash size={14} />
+                      <span className="hidden sm:inline">Delete</span>
+                    </button>
+                  </div>
                 </td>
               )}
             </tr>

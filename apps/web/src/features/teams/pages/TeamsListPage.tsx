@@ -2,14 +2,20 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Add } from "iconsax-reactjs";
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { getOrganizations } from "../../organizations/api/organizationsApi";
+import { useDeleteTeam } from "../hooks/useTeams";
+import { ConfirmationModal } from "../../../components/ConfirmationModal";
 import { Pagination } from "../../../components/Pagination";
 import { ViewSwitcher } from "../../../components/ViewSwitcher";
 import { CreateEditTeamModal } from "../components/CreateEditTeamModal";
+import { TeamMembersModal } from "../components/TeamMembersModal";
+import { TeamSquadsModal } from "../components/TeamSquadsModal";
 import { TeamsGrid } from "../components/TeamsGrid";
 import { TeamsTable } from "../components/TeamsTable";
 import { TeamsToolbar } from "../components/TeamsToolbar";
 import { useTeams } from "../hooks/useTeams";
-import type { TeamWithDetails } from "../types";
+import type { Team, TeamWithDetails } from "../types";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 
 type ViewMode = "grid" | "table";
@@ -40,6 +46,23 @@ export default function TeamsListPage() {
     open: boolean;
     team: TeamWithDetails | null;
   }>({ open: false, team: null });
+  const [selectedSquadTeam, setSelectedSquadTeam] = useState<Team | null>(null);
+  const [selectedMemberTeam, setSelectedMemberTeam] = useState<Team | null>(null);
+
+  // Organization context
+  const { data: organizations } = useQuery({
+    queryKey: ["organizations"],
+    queryFn: getOrganizations,
+    staleTime: 60_000,
+  });
+  const currentOrgName = organizations?.[0]?.name;
+
+  // Delete team state
+  const [deleteModalState, setDeleteModalState] = useState<{
+    open: boolean;
+    team: TeamWithDetails | null;
+  }>({ open: false, team: null });
+  const deleteTeam = useDeleteTeam();
 
   // پیش‌فرض نمایش کارتی (Grid)
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -143,6 +166,36 @@ export default function TeamsListPage() {
     setModalState({ open: false, team: null });
   };
 
+  const handleManageSquads = (team: TeamWithDetails) => {
+    setSelectedSquadTeam(team);
+  };
+
+  const handleCloseSquadModal = () => {
+    setSelectedSquadTeam(null);
+  };
+
+  const handleManageMembers = (team: TeamWithDetails) => {
+    setSelectedMemberTeam(team);
+  };
+
+  const handleCloseMembersModal = () => {
+    setSelectedMemberTeam(null);
+  };
+
+  const handleDeleteTeam = (team: TeamWithDetails) => {
+    setDeleteModalState({ open: true, team });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModalState.team) return;
+    try {
+      await deleteTeam.mutateAsync(deleteModalState.team.id);
+      setDeleteModalState({ open: false, team: null });
+    } catch {
+      // toast handled by hook
+    }
+  };
+
   const teams = useMemo(
     () => teamsResponse?.results || [],
     [teamsResponse?.results],
@@ -166,6 +219,12 @@ export default function TeamsListPage() {
               <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
                 Teams
               </h1>
+              {currentOrgName && (
+                <span className="rounded-full bg-primary/5 border border-primary/20 px-3 py-0.5 text-xs font-semibold text-primary flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  {currentOrgName}
+                </span>
+              )}
               <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
                 {totalResults}
               </span>
@@ -219,6 +278,9 @@ export default function TeamsListPage() {
                   isLoading={showLoading}
                   isError={isError}
                   onEdit={handleEditTeam}
+                  onManageSquads={handleManageSquads}
+                  onManageMembers={handleManageMembers}
+                  onDelete={handleDeleteTeam}
                   canManage={canManageTeams}
                 />
               ) : (
@@ -227,6 +289,9 @@ export default function TeamsListPage() {
                   isLoading={showLoading}
                   isError={isError}
                   onEdit={handleEditTeam}
+                  onManageSquads={handleManageSquads}
+                  onManageMembers={handleManageMembers}
+                  onDelete={handleDeleteTeam}
                   canManage={canManageTeams}
                 />
               )}
@@ -252,6 +317,25 @@ export default function TeamsListPage() {
         isOpen={canManageTeams && modalState.open}
         onClose={handleCloseModal}
         team={modalState.team}
+      />
+      <TeamSquadsModal
+        team={selectedSquadTeam}
+        isOpen={selectedSquadTeam !== null}
+        onClose={handleCloseSquadModal}
+        onManageMembers={handleManageMembers}
+      />
+      <TeamMembersModal
+        team={selectedMemberTeam}
+        isOpen={selectedMemberTeam !== null}
+        onClose={handleCloseMembersModal}
+      />
+      <ConfirmationModal
+        isOpen={deleteModalState.open}
+        onClose={() => setDeleteModalState({ open: false, team: null })}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Team"
+        message={`Are you sure you want to delete the team "${deleteModalState.team?.name}"? This action cannot be undone.`}
+        isLoading={deleteTeam.isPending}
       />
     </>
   );

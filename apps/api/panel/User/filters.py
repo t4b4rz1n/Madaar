@@ -5,7 +5,9 @@ from accounts.models import User
 
 
 class UserFilter(filters.FilterSet):
-    organization_id = django_filters.UUIDFilter(method="filter_by_organization")
+    organization_id = django_filters.UUIDFilter(
+        method="filter_by_organization",
+    )
     created_at = filters.DateFromToRangeFilter(field_name="date_joined")
 
     def filter_by_organization(self, queryset, name, value):
@@ -13,6 +15,7 @@ class UserFilter(filters.FilterSet):
             org_memberships__organization_id=value,
             org_memberships__is_deleted=False,
         ).distinct()
+
 
     class Meta:
         model = User

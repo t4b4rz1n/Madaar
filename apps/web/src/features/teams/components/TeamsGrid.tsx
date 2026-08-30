@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit2, People, Profile2User } from "iconsax-reactjs";
+import { Edit2, People, Profile2User, Setting3, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
 
 interface TeamsGridProps {
@@ -7,6 +7,9 @@ interface TeamsGridProps {
   isLoading: boolean;
   isError: boolean;
   onEdit: (team: TeamWithDetails) => void;
+  onManageSquads?: (team: TeamWithDetails) => void;
+  onManageMembers?: (team: TeamWithDetails) => void;
+  onDelete: (team: TeamWithDetails) => void;
   canManage: boolean;
 }
 
@@ -28,6 +31,9 @@ export const TeamsGrid = ({
   isLoading,
   isError,
   onEdit,
+  onManageSquads,
+  onManageMembers,
+  onDelete,
   canManage,
 }: TeamsGridProps) => {
   if (isLoading) {
@@ -111,35 +117,76 @@ export const TeamsGrid = ({
 
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-base-content/80">
-                <Profile2User size={16} className="text-base-content/50" />
-                <span className="font-medium">Leader:</span>
-                <span className="truncate">
-                  {team.leader_details
-                    ? `${team.leader_details.first_name} ${team.leader_details.last_name}`
-                    : "Not assigned"}
-                </span>
+                <div className="flex items-center gap-2 min-w-0">
+                  {team.leader_details ? (
+                    <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      {team.leader_details.first_name?.[0]?.toUpperCase() || "?"}
+                      {team.leader_details.last_name?.[0]?.toUpperCase() || ""}
+                    </div>
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-base-200 text-base-content/40 flex items-center justify-center shrink-0">
+                      <Profile2User size={14} />
+                    </div>
+                  )}
+                  <span className="font-medium text-base-content/60">Leader:</span>
+                  <span className="truncate">
+                    {team.leader_details
+                      ? `${team.leader_details.first_name} ${team.leader_details.last_name}`
+                      : "Not assigned"}
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 text-sm text-base-content/80">
                 <People size={16} className="text-base-content/50" />
                 <span className="font-medium">Squads Count:</span>
-                <span>{team.squads_count ?? 0}</span>
+                <span className="font-mono text-sm">{team.squads_count ?? 0}</span>
               </div>
             </div>
           </div>
 
-          <div className="px-6 pb-6 pt-2 flex justify-between items-center bg-base-200/20 rounded-b-2xl border-t border-base-content/5">
+          <div className="px-6 pb-6 pt-3 flex items-end bg-base-200/20 rounded-b-2xl border-t border-base-content/5">
             <div className="text-xs text-base-content/50">
               {new Date(team.created_at ?? "").toLocaleDateString()}
             </div>
             {canManage && (
-              <button
-                onClick={() => onEdit(team)}
-                className="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1 rounded-lg"
-              >
-                <Edit2 size={14} />
-                Edit
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onManageMembers?.(team)}
+                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-base-content/60 hover:text-primary hover:bg-primary/10 motion-interactive"
+                  title="Manage Members"
+                >
+                  <User size={14} />
+                  <span className="hidden sm:inline">Members</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onManageSquads?.(team)}
+                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-base-content/60 hover:text-primary hover:bg-primary/10 motion-interactive"
+                  title="Manage Squads"
+                >
+                  <Setting3 size={14} />
+                  <span className="hidden sm:inline">Squads</span>
+                  <span className="badge badge-xs badge-ghost font-mono">{team.squads_count ?? 0}</span>
+                </button>
+                <button
+                  onClick={() => onEdit(team)}
+                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-base-content/60 hover:text-primary hover:bg-primary/10 motion-interactive"
+                  title="Edit Team"
+                >
+                  <Edit2 size={14} />
+                  <span className="hidden sm:inline">Edit</span>
+                </button>
+                <button
+                  onClick={() => onDelete(team)}
+                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-base-content/60 hover:text-error hover:bg-error/10 motion-interactive"
+                  title="Delete Team"
+                >
+                  <Trash size={14} />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+              </div>
             )}
           </div>
         </motion.div>

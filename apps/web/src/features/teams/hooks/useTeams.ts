@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { teamsApi } from "../api/teamsApi";
-import type { SquadFormData, TeamFormData } from "../types";
+import type { AddTeamMemberPayload, SquadFormData, TeamFormData } from "../types";
 
 export const useTeams = (params: URLSearchParams) => {
   const serializedParams = params.toString();
@@ -102,8 +102,9 @@ export const useSquads = (teamId?: number) => {
         teamId !== undefined ? { team_id: teamId } : undefined,
       );
 
-      return response.data;
+      return response.data.results;
     },
+    enabled: !!teamId,
   });
 };
 
@@ -187,6 +188,92 @@ export const useDeleteSquad = () => {
         error.message ||
         "Failed to delete squad";
 
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useTeamMembers = (teamId?: number) => {
+  return useQuery({
+    queryKey: ["teams", teamId, "members"],
+    queryFn: async () => {
+      if (!teamId) return [];
+      const response = await teamsApi.getTeamMembers(teamId);
+      return response.data.results;
+    },
+    enabled: !!teamId,
+  });
+};
+
+export const useAddTeamMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AddTeamMemberPayload) => teamsApi.addTeamMember(payload),
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["teams", variables.team, "members"] }),
+        queryClient.invalidateQueries({ queryKey: ["teams", variables.team] }),
+        queryClient.invalidateQueries({ queryKey: ["teams"] }),
+        queryClient.invalidateQueries({ queryKey: ["organizations"] }),
+      ]);
+      toast.success("Member added successfully");
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "Failed to add member";
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useRemoveTeamMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ membershipId }: { membershipId: number; teamId: number }) =>
+      teamsApi.removeTeamMember(membershipId),
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["teams", variables.teamId, "members"] }),
+        queryClient.invalidateQueries({ queryKey: ["teams", variables.teamId] }),
+        queryClient.invalidateQueries({ queryKey: ["teams"] }),
+        queryClient.invalidateQueries({ queryKey: ["organizations"] }),
+      ]);
+      toast.success("Member removed successfully");
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "Failed to remove member";
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useUpdateTeamMemberRole = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ membershipId, role }: { membershipId: number; role: string; teamId: number }) =>
+      teamsApi.updateTeamMemberRole(membershipId, role),
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["teams", variables.teamId, "members"] }),
+        queryClient.invalidateQueries({ queryKey: ["teams", variables.teamId] }),
+        queryClient.invalidateQueries({ queryKey: ["teams"] }),
+        queryClient.invalidateQueries({ queryKey: ["organizations"] }),
+      ]);
+      toast.success("Member role updated successfully");
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "Failed to update member role";
       toast.error(errorMessage);
     },
   });
