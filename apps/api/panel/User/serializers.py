@@ -4,6 +4,27 @@ from rest_framework import serializers
 from accounts.models import User
 
 
+def _extract_org_id(request):
+    if not request:
+        return None
+    req_data = getattr(request, "data", None)
+    if isinstance(req_data, dict):
+        val = req_data.get("organization_id")
+        if val:
+            return val
+    query_params = getattr(request, "query_params", getattr(request, "GET", None))
+    if query_params:
+        val = query_params.get("organization_id")
+        if val:
+            return val
+    headers = getattr(request, "headers", None)
+    if headers:
+        val = headers.get("X-Organization-Id")
+        if val:
+            return val
+    return None
+
+
 class UserListSerializer(serializers.ModelSerializer):
     role_id = serializers.SerializerMethodField()
     role_name = serializers.SerializerMethodField()
@@ -28,11 +49,7 @@ class UserListSerializer(serializers.ModelSerializer):
         from organizations.models import Organization
 
         request = self.context.get("request")
-        raw_org_id = request and (
-            request.data.get("organization_id")
-            or request.query_params.get("organization_id")
-            or request.headers.get("X-Organization-Id")
-        )
+        raw_org_id = _extract_org_id(request)
         actor = (
             request.user if (request and request.user and request.user.is_authenticated) else None
         )
@@ -127,11 +144,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             validated_data["is_staff"] = False
 
         role_id = validated_data.pop("role_id", None)
-        raw_org_id = request and (
-            request.data.get("organization_id")
-            or request.query_params.get("organization_id")
-            or request.headers.get("X-Organization-Id")
-        )
+        raw_org_id = _extract_org_id(request)
 
         org = None
         if raw_org_id:
@@ -288,12 +301,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             user = super().update(instance, validated_data)
 
             if role_id is not None:
-                raw_org_id = request and (
-                    request.data.get("organization_id")
-                    or request.query_params.get("organization_id")
-                    or request.headers.get("X-Organization-Id")
-                )
+                raw_org_id = _extract_org_id(request)
                 org = None
+
                 if raw_org_id:
                     org = Organization.objects.filter(id=raw_org_id, is_deleted=False).first()
 
