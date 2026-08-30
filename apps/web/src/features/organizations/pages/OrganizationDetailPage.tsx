@@ -48,14 +48,16 @@ export default function OrganizationDetailPage() {
   const removeMutation = useMutation({
     mutationFn: (userId: string) => removeMember(orgId!, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
       toast.success("Member removed successfully");
-      setMemberToRemove(null);
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to remove member");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
+      setMemberToRemove(null);
     },
   });
 

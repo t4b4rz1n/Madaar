@@ -14,6 +14,7 @@ class TeamSerializer(serializers.ModelSerializer):
     is_active = serializers.SerializerMethodField()
     lead_id = serializers.SerializerMethodField()
     leader_details = serializers.SerializerMethodField()
+    organization_id = serializers.UUIDField(read_only=True)
     squads_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -25,6 +26,7 @@ class TeamSerializer(serializers.ModelSerializer):
             "organization",
             "parent_team",
             "is_active",
+            "organization_id",
             "lead_id",
             "leader_details",
             "squads_count",
@@ -115,6 +117,28 @@ class TeamSerializer(serializers.ModelSerializer):
                     )
 
         return team
+
+
+class TeamMembershipSerializer(serializers.ModelSerializer):
+    user_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeamMembership
+        fields = (
+            "id",
+            "team",
+            "user",
+            "user_details",
+            "role",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+    def get_user_details(self, obj):
+        if obj.user:
+            return LeaderDetailsSerializer(obj.user).data
+        return None
 
 
 class SquadSerializer(serializers.ModelSerializer):

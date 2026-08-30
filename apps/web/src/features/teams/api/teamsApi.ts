@@ -1,11 +1,13 @@
 import ApiService from "../../../core/api/apiService";
 import type {
   Team,
+  TeamMember,
   TeamWithDetails,
   TeamFormData,
   Squad,
   SquadFormData
 } from "../types";
+import type { AddTeamMemberPayload } from "../types";
 
 export const teamsApi = {
   // دریافت لیست تیم‌ها با قابلیت فیلتر و صفحه‌بندی
@@ -26,7 +28,7 @@ export const teamsApi = {
 
   // دریافت لیست اسکوادها (معمولاً بر اساس team_id فیلتر می‌شود)
   getSquads: (params?: { team_id?: number }) =>
-    ApiService.get<Squad[]>("/panel/squads/", { params }),
+    ApiService.getList<Squad>("/panel/squads/", { params }),
 
   // ایجاد اسکواد جدید
   createSquad: (data: SquadFormData) =>
@@ -39,4 +41,22 @@ export const teamsApi = {
   // حذف اسکواد
   deleteSquad: (id: number) =>
     ApiService.delete(`/panel/squads/${id}/`),
+
+  // دریافت اعضای تیم
+  getTeamMembers: (teamId: number) =>
+    ApiService.getList<TeamMember>("/panel/team-memberships/", {
+      params: { team_id: teamId },
+    }),
+
+  // افزودن عضو جدید به تیم
+  addTeamMember: (payload: AddTeamMemberPayload) =>
+    ApiService.post<TeamMember>("/panel/team-memberships/", payload),
+
+  // حذف عضو از تیم
+  removeTeamMember: (membershipId: number) =>
+    ApiService.delete(`/panel/team-memberships/${membershipId}/`),
+
+  // بروزرسانی نقش عضو تیم
+  updateTeamMemberRole: (membershipId: number, role: string) =>
+    ApiService.patch<TeamMember>(`/panel/team-memberships/${membershipId}/`, { role }),
 };

@@ -87,6 +87,7 @@ export const CreateOrgMemberModal = ({
       addExistingMember(orgId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
       queryClient.invalidateQueries({ queryKey: ["users", "unassigned"] });

@@ -36,7 +36,11 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 filter=Q(memberships__is_deleted=False),
                 distinct=True,
             ),
-            team_count=Count("teams", distinct=True),
+            team_count=Count(
+                "teams",
+                filter=Q(teams__parent_team__isnull=True, teams__is_deleted=False),
+                distinct=True,
+            ),
             project_count=Count(
                 "projects",
                 filter=Q(projects__is_deleted=False),
@@ -119,12 +123,12 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        membership = OrganizationMembership.objects.filter(
+        membership = OrganizationMembership.all_objects.filter(
             organization=organization,
         ).filter(Q(user_id=user_id) | Q(id=user_id)).first()
 
         if membership:
             membership.is_deleted = True
-            membership.save(update_fields=["is_deleted", "updated_at"])
+            membership.save(update_fields=["is_deleted"])
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "Member removed."}, status=status.HTTP_200_OK)
