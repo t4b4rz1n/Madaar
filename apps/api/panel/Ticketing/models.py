@@ -102,9 +102,25 @@ class Message(BaseModel):
         super().save(*args, **kwargs)
         if is_new:
             ticket = self.ticket
-            if self.sender.is_staff:
+            sender = self.sender
+            # Treat staff, superusers, and org managers as support staff
+            is_support_staff = sender.is_staff or sender.is_superuser
+            if not is_support_staff:
+                from organizations.services import PermissionService
+
+                memberships = sender.org_memberships.filter(is_deleted=False).values_list(
+                    "organization_id", flat=True
+                )
+                for org_id in memberships:
+                    if PermissionService.has_permission(
+                        sender, "org.manage_members", org_id
+                    ) or PermissionService.has_permission(sender, "org.manage_settings", org_id):
+                        is_support_staff = True
+                        break
+
+            if is_support_staff:
                 ticket.status = Ticket.Status.ANSWERED
-            elif not self.sender.is_staff:
+            else:
                 ticket.status = Ticket.Status.OPEN
             ticket.updated_at = timezone.now()
             ticket.save()

@@ -1,13 +1,14 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, viewsets
+from rest_framework import generics, permissions, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from common.utils.mixins import FieldFilterOverviewMixin
+from organizations.services import PermissionService
 from panel.Ticketing.models import Message, Ticket, TicketType
 
 from .filters import MessageFilter, StaffTicketFilter
@@ -21,8 +22,76 @@ from .serializers import (
 )
 
 
+class CanManageTickets(permissions.BasePermission):
+    """
+    Allows staff/superusers and users who have 'org.manage_members' or
+    'org.manage_settings' in ANY of their organizations to manage support tickets.
+
+    The Ticket model is global (no organization FK), so we check if the user
+    has a managerial role in at least one organization.
+    """
+
+    message = "You do not have permission to manage support tickets."
+
+    def _is_manager_in_any_org(self, user):
+        memberships = user.org_memberships.filter(is_deleted=False).values_list(
+            "organization_id", flat=True
+        )
+        for org_id in memberships:
+            if PermissionService.has_permission(
+                user, "org.manage_members", org_id
+            ) or PermissionService.has_permission(user, "org.manage_settings", org_id):
+                return True
+        return False
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_staff or user.is_superuser:
+            return True
+        return self._is_manager_in_any_org(user)
+
+
+class CanManageTicketTypes(permissions.BasePermission):
+    """
+    Allows staff/superusers and users with 'org.manage_settings' to manage
+    ticket type definitions (create/edit/delete ticket categories).
+    """
+
+    message = "You do not have permission to manage ticket types."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_staff or user.is_superuser:
+            return True
+
+        if request.method in permissions.SAFE_METHODS:
+            # Read: any org manager can view ticket types
+            memberships = user.org_memberships.filter(is_deleted=False).values_list(
+                "organization_id", flat=True
+            )
+            for org_id in memberships:
+                if PermissionService.has_permission(
+                    user, "org.manage_members", org_id
+                ) or PermissionService.has_permission(user, "org.manage_settings", org_id):
+                    return True
+            return False
+
+        # Write: only org.manage_settings
+        memberships = user.org_memberships.filter(is_deleted=False).values_list(
+            "organization_id", flat=True
+        )
+        for org_id in memberships:
+            if PermissionService.has_permission(user, "org.manage_settings", org_id):
+                return True
+        return False
+
+
 class StaffTicketViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, CanManageTickets]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = StaffTicketFilter
     search_fields = ["title", "messages__text", "user__username", "user__email", "id"]
@@ -41,7 +110,7 @@ class StaffTicketViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
 
 
 class StaffTicketTypeViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, CanManageTicketTypes]
     queryset = TicketType.objects.all()
     serializer_class = TicketTypeSerializer
     filter_backends = [SearchFilter, OrderingFilter]
@@ -52,7 +121,7 @@ class StaffTicketTypeViewSet(viewsets.ModelViewSet):
 
 
 class StaffMessageListCreateAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, CanManageTickets]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = MessageFilter
@@ -104,7 +173,7 @@ class StaffMessageListCreateAPIView(generics.ListCreateAPIView):
 
 
 class StaffMessageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, CanManageTickets]
     serializer_class = MessageSerializer
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete", "head", "options"]

@@ -4,12 +4,84 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 
 from common.utils.mixins import FieldFilterOverviewMixin
 from organizations.models import Team
+from organizations.services import PermissionService
 
 from .serializers import SquadSerializer, TeamSerializer
 
 
+class CanManageTeams(permissions.BasePermission):
+    """
+    Permission class guarding Team & Squad endpoints:
+    - Read: requires 'user.view', 'org.manage_members', or 'org.manage_settings'.
+    - Write: requires 'org.manage_members' or 'org.manage_settings'.
+    """
+
+    def _extract_org_id(self, request, obj=None):
+        if obj and hasattr(obj, "organization_id"):
+            return obj.organization_id
+        if hasattr(request, "data") and isinstance(request.data, dict):
+            org_id = request.data.get("organization_id") or request.data.get("organization")
+            if org_id:
+                return org_id
+        if hasattr(request, "query_params"):
+            org_id = request.query_params.get("organization_id") or request.query_params.get(
+                "organization"
+            )
+            if org_id:
+                return org_id
+        if request.user and request.user.is_authenticated:
+            mem = request.user.org_memberships.filter(is_deleted=False).first()
+            if mem:
+                return mem.organization_id
+        return None
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_staff or user.is_superuser:
+            return True
+
+        org_id = self._extract_org_id(request)
+        if not org_id:
+            return False
+
+        if request.method in permissions.SAFE_METHODS:
+            return (
+                PermissionService.has_permission(user, "user.view", org_id)
+                or PermissionService.has_permission(user, "org.manage_members", org_id)
+                or PermissionService.has_permission(user, "org.manage_settings", org_id)
+            )
+
+        return PermissionService.has_permission(
+            user, "org.manage_members", org_id
+        ) or PermissionService.has_permission(user, "org.manage_settings", org_id)
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_staff or user.is_superuser:
+            return True
+
+        org_id = getattr(obj, "organization_id", None) or self._extract_org_id(request, obj)
+        if not org_id:
+            return False
+
+        if request.method in permissions.SAFE_METHODS:
+            return (
+                PermissionService.has_permission(user, "user.view", org_id)
+                or PermissionService.has_permission(user, "org.manage_members", org_id)
+                or PermissionService.has_permission(user, "org.manage_settings", org_id)
+            )
+
+        return PermissionService.has_permission(
+            user, "org.manage_members", org_id
+        ) or PermissionService.has_permission(user, "org.manage_settings", org_id)
+
+
 class StaffTeamViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, CanManageTeams]
     serializer_class = TeamSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ["name", "description"]
@@ -29,8 +101,9 @@ class StaffTeamViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
 
 
 class StaffSquadViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, CanManageTeams]
     serializer_class = SquadSerializer
+
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ["name", "description"]
 
