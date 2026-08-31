@@ -1,13 +1,10 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext_lazy as _
 
-from common.models import SoftDeleteQuerySet
-
 
 class UserManager(BaseUserManager):
     """
     Custom user manager for User model with email as the unique identifier.
-    Filters out soft-deleted users by default.
     """
 
     def create_user(

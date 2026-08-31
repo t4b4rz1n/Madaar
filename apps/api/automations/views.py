@@ -146,13 +146,17 @@ class AutomationRuleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def _can_manage_organization(self, organization):
-        """Check if the current user has org.manage_settings or org.manage_members permission.
+        """Check if the current user has automation.manage or org.manage_settings permission.
         Falls back gracefully for superusers and staff.
         """
         user = self.request.user
         if user.is_staff or user.is_superuser:
             return True
         return PermissionService.has_permission(
+            user=user,
+            permission_code="automation.manage",
+            organization_id=str(organization.id),
+        ) or PermissionService.has_permission(
             user=user,
             permission_code="org.manage_settings",
             organization_id=str(organization.id),
@@ -180,16 +184,23 @@ class AutomationRuleViewSet(viewsets.ModelViewSet):
             return AutomationRule.objects.filter(organization=organization).order_by("event_type")
         if self.request.user.is_staff or self.request.user.is_superuser:
             return AutomationRule.objects.all().order_by("event_type")
-        # Return rules for all orgs where the user has org.manage_settings permission
+        # Return rules for all orgs where the user has automation.manage or org.manage_settings permission
         manageable_org_ids = [
             m.organization_id
             for m in OrganizationMembership.objects.filter(user=self.request.user, is_deleted=False)
             .select_related("organization")
             .prefetch_related("dynamic_roles__permissions")
-            if PermissionService.has_permission(
-                user=self.request.user,
-                permission_code="org.manage_settings",
-                organization_id=str(m.organization_id),
+            if (
+                PermissionService.has_permission(
+                    user=self.request.user,
+                    permission_code="automation.manage",
+                    organization_id=str(m.organization_id),
+                )
+                or PermissionService.has_permission(
+                    user=self.request.user,
+                    permission_code="org.manage_settings",
+                    organization_id=str(m.organization_id),
+                )
             )
         ]
         return (
@@ -247,6 +258,11 @@ class AutomationCatalogView(APIView):
         can_manage = (
             request.user.is_staff
             or request.user.is_superuser
+            or PermissionService.has_permission(
+                user=request.user,
+                permission_code="automation.manage",
+                organization_id=str(organization.id),
+            )
             or PermissionService.has_permission(
                 user=request.user,
                 permission_code="org.manage_settings",
