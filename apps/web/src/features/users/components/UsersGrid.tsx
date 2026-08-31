@@ -43,9 +43,9 @@ export const UsersGrid = ({
   const deleteMutation = useDeleteUser();
   const { data: rolesData } = useRoles();
   const roles = rolesData?.results || [];
-  const { hasAllPermissions } = usePermissions();
+  const { hasAnyPermission } = usePermissions();
 
-  const hasUserManagePermission = hasAllPermissions(["users.manage"]);
+  const hasUserManagePermission = hasAnyPermission(["org.manage_members", "org.manage_settings"]);
   const showActionButtons = canManage || hasUserManagePermission;
   const handleDelete = () => {
     if (deleteModalState.user) {

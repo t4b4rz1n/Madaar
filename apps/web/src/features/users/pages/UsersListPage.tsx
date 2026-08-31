@@ -31,9 +31,9 @@ const itemVariants = {
 };
 
 export default function UsersListPage() {
-  const { hasAllPermissions } = usePermissions();
+  const { hasAnyPermission } = usePermissions();
 
-  const canManageUsers = hasAllPermissions(["users.manage"]);
+  const canManageUsers = hasAnyPermission(["org.manage_members", "org.manage_settings"]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [modalState, setModalState] = useState<{

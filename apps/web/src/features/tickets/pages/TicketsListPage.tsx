@@ -29,7 +29,7 @@ import InputField from "../../../components/InputField";
 import { formatDate } from "../../../utils/formatDate";
 import { useDebounce } from "../../../hooks/useDebounce";
 import type { TicketTypeItem } from "../types";
-import { useAuthStore } from "../../auth/store/authStore";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const containerVariants = {
@@ -49,16 +49,17 @@ const modalVariants = {
 type TabId = "tickets" | "categories";
 
 export default function TicketsListPage() {
-  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
+  const { hasAnyPermission, isStaff } = usePermissions();
+  const isManager = isStaff || hasAnyPermission(["org.manage_members", "org.manage_settings"]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabId>("tickets");
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!isStaff && activeTab !== "tickets") {
+    if (!isManager && activeTab !== "tickets") {
       setActiveTab("tickets");
     }
-  }, [activeTab, isStaff]);
+  }, [activeTab, isManager]);
 
   // ── Tickets state ──────────────────────────────────────────────────────────
   const {
@@ -208,7 +209,7 @@ export default function TicketsListPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const handleSave = () => {
-    if (!isStaff) return;
+    if (!isManager) return;
     if (!modalState.name.trim()) return;
     if (modalState.item) {
       updateMutation.mutate(
@@ -225,7 +226,7 @@ export default function TicketsListPage() {
   };
 
   const handleDelete = () => {
-    if (!isStaff) return;
+    if (!isManager) return;
     if (deleteModalState.item) {
       deleteMutation.mutate(deleteModalState.item.id, {
         onSuccess: () => setDeleteModalState({ open: false, item: null }),
@@ -245,7 +246,7 @@ export default function TicketsListPage() {
       icon: <Messages size={16} />,
       count: totalResults || undefined,
     },
-    ...(isStaff
+    ...(isManager
       ? [
           {
             id: "categories" as const,
@@ -281,7 +282,7 @@ export default function TicketsListPage() {
             </div>
             <p className="mt-1 text-xs font-medium text-base-content/50">
               {activeTab === "tickets"
-                ? isStaff
+                ? isManager
                   ? "Manage and respond to support tickets submitted by users."
                   : "View and follow up on your support tickets."
                 : "Manage ticket types and departments."}
@@ -299,7 +300,7 @@ export default function TicketsListPage() {
                   <span>Create Ticket</span>
                 </button>
               </PermissionGuard>
-            ) : isStaff ? (
+            ) : isManager ? (
               <button
                 type="button"
                 onClick={() => setModalState({ open: true, item: null, name: "" })}
@@ -313,7 +314,7 @@ export default function TicketsListPage() {
         </motion.div>
 
         {/* Tabs */}
-        {isStaff && (
+        {isManager && (
           <motion.div variants={itemVariants} className="mt-4">
             <div className="flex gap-1 p-1 bg-base-100 border border-base-content/8 rounded-xl w-fit">
               {tabs.map((tab) => (
@@ -472,7 +473,7 @@ export default function TicketsListPage() {
                           <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
                             Created At
                           </th>
-                          {isStaff && (
+                          {isManager && (
                             <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
                               Actions
                             </th>
@@ -504,7 +505,7 @@ export default function TicketsListPage() {
                             <td className="px-6 py-4 text-sm text-base-content/75">
                               {formatDate(item.created_at)}
                             </td>
-                            {isStaff && (
+                            {isManager && (
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2">
                                   <button
@@ -563,7 +564,7 @@ export default function TicketsListPage() {
 
       {/* Create/Edit Category Modal */}
       <AnimatePresence>
-        {modalState.open && isStaff && (
+        {modalState.open && isManager && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -653,7 +654,7 @@ export default function TicketsListPage() {
 
       {/* Delete Confirmation */}
       <ConfirmationModal
-        isOpen={isStaff && deleteModalState.open}
+        isOpen={isManager && deleteModalState.open}
         onClose={() => setDeleteModalState({ open: false, item: null })}
         onConfirm={handleDelete}
         title="Delete Category"
