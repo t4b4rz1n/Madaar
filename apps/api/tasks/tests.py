@@ -346,11 +346,11 @@ class TasksRBACTestCase(APITestCase):
             board=self.board, code="todo", name="To Do", order=1
         )
 
-    def test_hr_accountant_read_only_tasks(self):
-        """HR and Accountant roles should be read-only on tasks."""
+    def test_hr_accountant_no_access_tasks(self):
+        """HR and Accountant roles should have no access to tasks by default."""
         self.client.force_authenticate(user=self.hr)
         res = self.client.get(reverse("task-list"))
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
         res = self.client.post(
             reverse("task-list"),

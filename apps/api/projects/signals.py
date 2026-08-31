@@ -113,6 +113,16 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=ProjectMember, dispatch_uid="notify_project_member_deleted_uid")
 def notify_project_member_deleted(sender, instance, **kwargs):
+    # Guard: BaseModel.delete() performs a soft-delete by setting is_deleted=True and
+    # calling save() (which fires post_save) THEN manually fires post_delete to mimic
+    # Django's default behaviour.  The post_save listener
+    # (notify_project_member_added_or_changed) has already dispatched
+    # "project_member_removed" for soft-deletes, so we must not dispatch it again here.
+    # Only dispatch from this handler when the row is truly hard-deleted (is_deleted is
+    # still False because no soft-delete logic ran).
+    if getattr(instance, "is_deleted", False):
+        return
+
     if instance.user:
         project = instance.project
         remover_name = (

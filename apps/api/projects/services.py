@@ -83,7 +83,11 @@ class ProjectService:
         """
         qs = Project.all_objects.all() if include_deleted else Project.objects.all()
         return qs.select_related("organization", "owner").annotate(
-            member_count=Count("members", filter=Q(members__is_deleted=False)),
+            member_count=Count(
+                "members__user",
+                filter=Q(members__is_deleted=False, members__user__isnull=False),
+                distinct=True,
+            ),
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
             milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False)),
         )

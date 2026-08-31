@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Clock, DocumentText, People, Timer1 } from 'iconsax-reactjs';
 import { getOrganizations } from '../api/attendanceApi';
 import { useAttendanceStore } from '../store/useAttendanceStore';
-import { useAuthStore } from '../../auth/store/authStore';
 import { CheckInOut } from '../components/CheckInOut';
 import { LiveTimer } from '../components/LiveTimer';
 import { TimesheetTable } from '../components/TimesheetTable';
@@ -15,6 +14,7 @@ import { TeamTimesheetView } from '../components/TeamTimesheetView';
 import { getTasks } from '../../tasks/api/tasksApi';
 import { useTaskStore } from '../../tasks/store/useTaskStore';
 import type { Task } from '../../tasks/types';
+import { usePermissions } from '../../auth/hooks/usePermissions';
 
 type AttendanceTab = 'overview' | 'timesheet' | 'timeoff' | 'team';
 
@@ -26,7 +26,6 @@ const tabs: { id: AttendanceTab; label: string; helper: string; icon: typeof Tim
 ];
 
 export const AttendancePage: React.FC = () => {
-  const { user } = useAuthStore();
   const { activeOrganizationId, setActiveOrganization } = useAttendanceStore();
   const { activeProjectId, activeBoardId } = useTaskStore();
   const [activeTab, setActiveTab] = useState<AttendanceTab>('overview');
@@ -51,7 +50,9 @@ export const AttendancePage: React.FC = () => {
     }
   }, [organizations, activeOrganizationId, setActiveOrganization]);
 
-  const isManager = user?.is_staff || false;
+  const { hasAnyPermission } = usePermissions();
+  // مدیر بودن بر اساس پرمیشن واقعی، نه is_staff
+  const isManager = hasAnyPermission(['attendance.view_all', 'leave.approve']);
   const visibleTabs = tabs.filter((tab) => tab.id !== 'team' || isManager);
   const activeTabMeta = visibleTabs.find((tab) => tab.id === activeTab) || visibleTabs[0];
 

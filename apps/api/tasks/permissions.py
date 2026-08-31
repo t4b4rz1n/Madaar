@@ -245,21 +245,29 @@ class BaseMadaarPermission(permissions.BasePermission):
 
 
 class IsBoardPermission(BaseMadaarPermission):
-    """Board access: Read for all org members; Modify for Owner, Admin, Team Lead, or Creator."""
+    """Board access: Read for users with board.view; Modify for users with board.manage, project.manage, task.manage_all, org.manage_settings, or Creator."""
 
     def check_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             org_id = extract_organization_id(request)
-            return get_user_org_role(request, org_id) is not None
+            if not org_id:
+                return True
+            from organizations.services import PermissionService
+
+            return (
+                PermissionService.has_permission(request.user, "board.view", org_id)
+                or PermissionService.has_permission(request.user, "task.view", org_id)
+            )
 
         org_id = extract_organization_id(request)
         if org_id:
             from organizations.services import PermissionService
 
             if (
-                PermissionService.has_permission(request.user, "org.manage_settings", org_id)
+                PermissionService.has_permission(request.user, "board.manage", org_id)
                 or PermissionService.has_permission(request.user, "project.manage", org_id)
                 or PermissionService.has_permission(request.user, "task.manage_all", org_id)
+                or PermissionService.has_permission(request.user, "org.manage_settings", org_id)
             ):
                 return True
         return False
@@ -267,7 +275,14 @@ class IsBoardPermission(BaseMadaarPermission):
     def check_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             org_id = extract_organization_id(obj)
-            return get_user_org_role(request, org_id) is not None
+            if not org_id:
+                return True
+            from organizations.services import PermissionService
+
+            return (
+                PermissionService.has_permission(request.user, "board.view", org_id)
+                or PermissionService.has_permission(request.user, "task.view", org_id)
+            )
 
         if hasattr(obj, "created_by") and obj.created_by == request.user:
             return True
@@ -277,21 +292,29 @@ class IsBoardPermission(BaseMadaarPermission):
             from organizations.services import PermissionService
 
             if (
-                PermissionService.has_permission(request.user, "org.manage_settings", org_id)
+                PermissionService.has_permission(request.user, "board.manage", org_id)
                 or PermissionService.has_permission(request.user, "project.manage", org_id)
                 or PermissionService.has_permission(request.user, "task.manage_all", org_id)
+                or PermissionService.has_permission(request.user, "org.manage_settings", org_id)
             ):
                 return True
         return False
 
 
 class IsTaskStatusPermission(BaseMadaarPermission):
-    """Kanban status access: Read for all org members; Modify for Owner, Admin, Board Creator, or users with board.manage."""
+    """Kanban status access: Read for users with board.view or task.view; Modify for board.manage, project.manage, task.manage_all, or Board Creator."""
 
     def check_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             org_id = extract_organization_id(request)
-            return get_user_org_role(request, org_id) is not None
+            if not org_id:
+                return True
+            from organizations.services import PermissionService
+
+            return (
+                PermissionService.has_permission(request.user, "board.view", org_id)
+                or PermissionService.has_permission(request.user, "task.view", org_id)
+            )
 
         org_id = extract_organization_id(request)
         if org_id:
@@ -309,7 +332,14 @@ class IsTaskStatusPermission(BaseMadaarPermission):
     def check_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             org_id = extract_organization_id(obj)
-            return get_user_org_role(request, org_id) is not None
+            if not org_id:
+                return True
+            from organizations.services import PermissionService
+
+            return (
+                PermissionService.has_permission(request.user, "board.view", org_id)
+                or PermissionService.has_permission(request.user, "task.view", org_id)
+            )
 
         if hasattr(obj, "board") and obj.board and obj.board.created_by == request.user:
             return True
@@ -329,11 +359,19 @@ class IsTaskStatusPermission(BaseMadaarPermission):
 
 
 class IsTaskPermission(BaseMadaarPermission):
-    """Task access: Read for org members; Modify for Owner, Admin, Lead, or Assignee/Reporter."""
+    """Task access: Read for org members with task.view; Modify for Assignee, Reporter, Creator, or users with task.manage_all / task.review."""
 
     def check_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
-            return True
+            org_id = extract_organization_id(request)
+            if not org_id:
+                return True
+            from organizations.services import PermissionService
+
+            return (
+                PermissionService.has_permission(request.user, "task.view", org_id)
+                or PermissionService.has_permission(request.user, "task.manage_all", org_id)
+            )
 
         org_id = extract_organization_id(request)
         if org_id:
@@ -350,13 +388,25 @@ class IsTaskPermission(BaseMadaarPermission):
 
     def check_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
-            return True
+            org_id = extract_organization_id(obj)
+            if not org_id:
+                return True
+            from organizations.services import PermissionService
+
+            return (
+                PermissionService.has_permission(request.user, "task.view", org_id)
+                or PermissionService.has_permission(request.user, "task.manage_all", org_id)
+            )
 
         org_id = extract_organization_id(obj)
         if org_id:
             from organizations.services import PermissionService
 
             if PermissionService.has_permission(request.user, "task.manage_all", org_id):
+                return True
+            if getattr(view, "action", None) == "mark_done" and PermissionService.has_permission(
+                request.user, "task.review", org_id
+            ):
                 return True
 
         if request.method == "DELETE":
