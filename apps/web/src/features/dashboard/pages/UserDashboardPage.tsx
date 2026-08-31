@@ -117,8 +117,11 @@ export const UserDashboardPage = () => {
   const dashboard = dashboardQuery.data;
   const attendance = attendanceQuery.data;
 
+  // Use is_active (session-based) if available, fall back to check_in && !check_out
   const isCheckedIn = Boolean(
-    attendance && attendance.check_in && !attendance.check_out,
+    attendance &&
+    ((attendance as any).is_active ||
+      (attendance.check_in && !attendance.check_out)),
   );
   const checkInTime = attendance?.check_in
     ? new Date(attendance.check_in).toLocaleTimeString([], {
@@ -142,12 +145,16 @@ export const UserDashboardPage = () => {
       }
       return checkIn(String(targetOrgId));
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(["today-attendance"], data);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
       toast.success("Checked in successfully");
     },
     onError: (err: any) => {
+      // axiosClient transforms errors: err is already the response body
       const msg =
+        err?.error ||
+        err?.detail ||
         err?.response?.data?.error ||
         err?.response?.data?.detail ||
         err?.message ||
@@ -158,7 +165,8 @@ export const UserDashboardPage = () => {
 
   const checkOutMutation = useMutation({
     mutationFn: () => checkOut(),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(["today-attendance"], data);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
       toast.success("Checked out successfully");
     },
