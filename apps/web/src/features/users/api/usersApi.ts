@@ -8,8 +8,8 @@ export const getUsers = (params: URLSearchParams) => {
 export const createUser = (data: UserFormData) =>
   ApiService.post<User>("panel/users/", data);
 
-export const updateUser = (id: number, data: UserUpdateData) =>
+export const updateUser = (id: string | number, data: UserUpdateData) =>
   ApiService.patch<User>(`panel/users/${id}/`, data);
 
-export const deleteUser = (id: number) =>
+export const deleteUser = (id: string | number) =>
   ApiService.delete(`panel/users/${id}/`);

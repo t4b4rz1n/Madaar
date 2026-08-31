@@ -57,13 +57,88 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
+
+        telegram_connected = False
+        notify_via_email = True
+        notify_via_telegram = False
+
         try:
             wsp = instance.work_style_profile
-            ret["notify_via_email"] = wsp.notify_via_email if not wsp.is_deleted else True
-            ret["notify_via_telegram"] = wsp.notify_via_telegram if not wsp.is_deleted else False
+            if wsp and not wsp.is_deleted:
+                if wsp.telegram_chat_id:
+                    telegram_connected = True
+                notify_via_email = wsp.notify_via_email
+                notify_via_telegram = wsp.notify_via_telegram
         except Exception:
-            ret["notify_via_email"] = True
-            ret["notify_via_telegram"] = False
+            pass
+
+        user_permissions: list[str] = []
+        user_role_id = None
+        user_role_name = None
+
+        try:
+            from organizations.models import OrganizationMembership
+            from organizations.services import (
+                COMPATIBILITY_ROLE_PERMISSIONS_MAP,
+                DEFAULT_ORG_PERMISSIONS,
+            )
+
+            memberships = list(
+                OrganizationMembership.objects.filter(user=instance, is_deleted=False)
+                .prefetch_related("dynamic_roles__permissions")
+                .order_by("-created_at")
+            )
+
+            membership = None
+            if memberships:
+                membership_with_dynamic_role = next(
+                    (
+                        m
+                        for m in memberships
+                        if any(not r.is_deleted for r in m.dynamic_roles.all())
+                    ),
+                    None,
+                )
+                membership = membership_with_dynamic_role or memberships[0]
+
+            if membership:
+                dynamic_roles = [r for r in membership.dynamic_roles.all() if not r.is_deleted]
+                if dynamic_roles:
+                    first_role = dynamic_roles[0]
+                    user_role_id = str(first_role.id)
+                    user_role_name = first_role.name
+                    for role in dynamic_roles:
+                        for perm in role.permissions.all():
+                            if not perm.is_deleted and perm.code not in user_permissions:
+                                user_permissions.append(perm.code)
+                else:
+                    static_role = membership.role
+                    user_role_name = static_role
+                    user_permissions = list(
+                        COMPATIBILITY_ROLE_PERMISSIONS_MAP.get(static_role, DEFAULT_ORG_PERMISSIONS)
+                    )
+        except Exception:
+            pass
+
+        can_manage_automations = bool(
+            instance.is_staff
+            or instance.is_superuser
+            or "automation.manage" in user_permissions
+            or "org.manage_settings" in user_permissions
+        )
+
+        ret["id"] = instance.id
+        ret["is_staff"] = instance.is_staff
+        ret["telegram_connected"] = telegram_connected
+        ret["notify_via_email"] = notify_via_email
+        ret["notify_via_telegram"] = notify_via_telegram
+        ret["can_manage_automations"] = can_manage_automations
+        ret["role"] = {
+            "id": user_role_id,
+            "name": user_role_name or "Member",
+            "permissions": user_permissions,
+        }
+
         return ret
 
     def update(self, instance, validated_data):

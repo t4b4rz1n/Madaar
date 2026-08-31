@@ -174,7 +174,7 @@ export const handlers = [
     if (user && credentials.password) {
       // پیدا کردن نقش کاربر از دیتابیس موک
       const userRole = user.role_id
-        ? mockRoles.find((r) => r.id === user.role_id)
+        ? mockRoles.find((r) => String(r.id) === String(user.role_id))
         : null;
       return HttpResponse.json({
         status: true,
@@ -192,12 +192,12 @@ export const handlers = [
             role_id: user.role_id ?? null,
             role: userRole
               ? {
-                  id: userRole.id,
+                  id: String(userRole.id),
                   name: userRole.name,
                   permissions: userRole.permissions,
                 }
               : null,
-            profile_image_url: user.profile_image,
+            profile_image_url: user.avatar,
           },
         },
       });
@@ -313,11 +313,8 @@ export const handlers = [
       last_name: data.last_name,
       is_active: Boolean(data.is_active),
       is_staff: Boolean(data.is_staff),
-      role_id:
-        data.role_id === null || data.role_id === undefined
-          ? null
-          : Number(data.role_id),
-      profile_image: null,
+      role_id: data.role_id ?? null,
+      avatar: null,
     });
 
     return HttpResponse.json({
@@ -328,7 +325,7 @@ export const handlers = [
   }),
 
   http.patch("*/panel/users/:id/", async ({ params, request }) => {
-    const id = Number(params.id);
+    const id = String(params.id);
     const data = (await request.json()) as UserUpdateData;
 
     const updated = db.users.update(id, {
@@ -339,7 +336,7 @@ export const handlers = [
       is_active: Boolean(data.is_active),
       is_staff: Boolean(data.is_staff),
       ...(data.role_id !== undefined && {
-        role_id: data.role_id === null ? null : Number(data.role_id),
+        role_id: data.role_id,
       }),
     });
 
@@ -362,7 +359,7 @@ export const handlers = [
   }),
 
   http.delete("*/panel/users/:id/", ({ params }) => {
-    const id = Number(params.id);
+    const id = String(params.id);
     const success = db.users.delete(id);
 
     if (!success) {
@@ -1062,6 +1059,102 @@ export const handlers = [
     });
   }),
 
+  http.get("*/panel/roles/permissions/", () => {
+    const permissions = [
+      { id: "1", code: "org.view", name: "View Organization", module: "core" },
+      { id: "2", code: "org.manage_settings", name: "Manage Org Settings", module: "core" },
+      { id: "3", code: "org.manage_roles", name: "Manage Roles & Permissions", module: "core" },
+      { id: "4", code: "org.manage_members", name: "Manage Organization Members", module: "core" },
+      { id: "5", code: "user.view", name: "View Users List", module: "core" },
+      { id: "6", code: "role.view", name: "View Roles List", module: "core" },
+      { id: "7", code: "project.view", name: "View Projects", module: "projects" },
+      { id: "8", code: "project.create", name: "Create New Project", module: "projects" },
+      { id: "9", code: "project.manage", name: "Manage All Projects", module: "projects" },
+      { id: "10", code: "task.view", name: "View Tasks", module: "tasks" },
+      { id: "11", code: "task.create", name: "Create Task", module: "tasks" },
+      { id: "12", code: "task.manage_all", name: "Manage All Tasks", module: "tasks" },
+      { id: "13", code: "task.review", name: "Review & Approve Tasks", module: "tasks" },
+      { id: "14", code: "board.view", name: "View Kanban Boards", module: "tasks" },
+      { id: "15", code: "board.manage", name: "Manage Boards & Columns", module: "tasks" },
+      { id: "16", code: "attendance.view", name: "View Personal Attendance", module: "attendance" },
+      { id: "17", code: "attendance.view_all", name: "View All Member Attendances", module: "attendance" },
+      { id: "18", code: "leave.approve", name: "Approve & Reject Leave Requests", module: "attendance" },
+      { id: "19", code: "finance.manage", name: "Manage Payroll & Financial Records", module: "billing" },
+      { id: "20", code: "finance.view_reports", name: "View Financial Reports", module: "billing" },
+      { id: "21", code: "notification.view", name: "View Notifications", module: "automations" },
+      { id: "22", code: "automation.manage", name: "Manage Automation Rules", module: "automations" },
+      { id: "23", code: "report.view", name: "View Executive & Manager Reports", module: "reports" },
+    ];
+    return HttpResponse.json({
+      status: true,
+      message: "Permissions fetched successfully",
+      data: { permissions },
+    });
+  }),
+
+  http.get("*/panel/roles/", ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page")) || 1;
+    const pageSize = Number(url.searchParams.get("page_size")) || 10;
+    const search = url.searchParams.get("search");
+
+    let roles = [...db.roles.getAll()];
+
+    if (search) {
+      const q = search.toLowerCase();
+      roles = roles.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          (r.description || "").toLowerCase().includes(q),
+      );
+    }
+
+    const response = createPaginatedResponse(
+      roles,
+      page,
+      pageSize,
+      request.url,
+    );
+
+    return HttpResponse.json(response);
+  }),
+
+  http.post("*/panel/roles/", async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string;
+      description?: string;
+      permissions?: string[];
+    };
+
+    if (!body?.name?.trim()) {
+      return HttpResponse.json(
+        {
+          status: false,
+          message: "Role name is required",
+          data: {},
+        },
+        { status: 400 },
+      );
+    }
+
+    const newRole = db.roles.create({
+      name: body.name.trim(),
+      description: body.description?.trim?.() ?? "",
+      is_active: true,
+      is_staff: false,
+      permissions: body.permissions ?? [],
+    });
+
+    return HttpResponse.json(
+      {
+        status: true,
+        message: "Role created successfully",
+        data: newRole,
+      },
+      { status: 201 },
+    );
+  }),
+
   http.get("*/roles/", ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
@@ -1094,6 +1187,7 @@ export const handlers = [
 
     return HttpResponse.json(response);
   }),
+
 
   http.post("*/roles/", async ({ request }) => {
     const body = (await request.json()) as {
@@ -1260,7 +1354,7 @@ export const handlers = [
 
     // Enrich with lead info, squad count, and member count
     const detailedTeams = teams.map((team) => {
-      const lead = team.lead_id ? db.users.getById(team.lead_id) : null;
+      const lead = team.lead_id ? db.users.getById(String(team.lead_id)) : null;
       const squadsCount = db.squads.getByTeamId(team.id).length;
       // Team members are simulated based on users in this team's squads or the team lead
       // For simplicity, we currently simulate member count using other filters or a fixed number

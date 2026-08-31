@@ -123,9 +123,10 @@ export const UsersTable = ({
             </thead>
             <tbody className="divide-y divide-base-content/5">
               {users.map((user, index) => {
-                const roleName = getRoleName(user.role_id, roles);
+                const roleName = getRoleName(user.role_id, roles, user.role_name);
 
                 return (
+
                   <motion.tr
                     key={user.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -136,9 +137,9 @@ export const UsersTable = ({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/10 shrink-0 flex items-center justify-center border border-base-200">
-                          {user.profile_image ? (
+                          {user.avatar ? (
                             <img
-                              src={user.profile_image}
+                              src={user.avatar}
                               alt={user.username}
                               className="w-full h-full object-cover"
                             />

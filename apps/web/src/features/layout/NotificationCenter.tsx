@@ -23,7 +23,7 @@ export const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { hasAllPermissions } = usePermissions();
-  const canViewNotifications = hasAllPermissions(["notifications.view"]);
+  const canViewNotifications = hasAllPermissions(["notification.view"]);
   const params = useMemo(
     () => new URLSearchParams({ page: "1", page_size: "6", ordering: "-created_at" }),
     [],

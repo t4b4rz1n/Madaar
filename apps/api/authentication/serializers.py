@@ -101,20 +101,62 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         except Exception:
             pass
 
-        can_manage_automations = False
-        if self.user.is_staff or self.user.is_superuser:
-            can_manage_automations = True
-        else:
+        # ---- Collect permissions from dynamic_roles (or legacy fallback) ----
+        user_permissions: list[str] = []
+        user_role_id = None
+        user_role_name = None
+
+        try:
             from organizations.models import OrganizationMembership
 
-            can_manage_automations = OrganizationMembership.objects.filter(
-                user=self.user,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                ],
-                is_deleted=False,
-            ).exists()
+            memberships = list(
+                OrganizationMembership.objects.filter(user=self.user, is_deleted=False)
+                .prefetch_related("dynamic_roles__permissions")
+                .order_by("-created_at")
+            )
+
+            membership = None
+            if memberships:
+                membership_with_dynamic_role = next(
+                    (
+                        m
+                        for m in memberships
+                        if any(not r.is_deleted for r in m.dynamic_roles.all())
+                    ),
+                    None,
+                )
+                membership = membership_with_dynamic_role or memberships[0]
+
+            if membership:
+                from organizations.services import (
+                    COMPATIBILITY_ROLE_PERMISSIONS_MAP,
+                    DEFAULT_ORG_PERMISSIONS,
+                )
+
+                dynamic_roles = [r for r in membership.dynamic_roles.all() if not r.is_deleted]
+                if dynamic_roles:
+                    first_role = dynamic_roles[0]
+                    user_role_id = str(first_role.id)
+                    user_role_name = first_role.name
+                    for role in dynamic_roles:
+                        for perm in role.permissions.all():
+                            if not perm.is_deleted and perm.code not in user_permissions:
+                                user_permissions.append(perm.code)
+                else:
+                    static_role = membership.role
+                    user_role_name = static_role
+                    user_permissions = list(
+                        COMPATIBILITY_ROLE_PERMISSIONS_MAP.get(static_role, DEFAULT_ORG_PERMISSIONS)
+                    )
+        except Exception:
+            pass
+
+        can_manage_automations = bool(
+            self.user.is_staff
+            or self.user.is_superuser
+            or "automation.manage" in user_permissions
+            or "org.manage_settings" in user_permissions
+        )
 
         user_data = {
             "id": self.user.id,
@@ -128,6 +170,14 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             "notify_via_email": notify_via_email,
             "notify_via_telegram": notify_via_telegram,
             "can_manage_automations": can_manage_automations,
+            # New: role + permissions for frontend permission gating
+            "role": {
+                "id": user_role_id,
+                "name": user_role_name,
+                "permissions": user_permissions,
+            }
+            if (user_role_id or user_role_name)
+            else None,
         }
 
         data["user"] = user_data

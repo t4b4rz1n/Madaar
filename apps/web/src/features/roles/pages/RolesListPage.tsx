@@ -24,14 +24,14 @@ const RolesListPage = () => {
     return `Delete role «${roleToDelete.name}»`;
   }, [roleToDelete]);
 
-  const handleDeleteClick = (roleId: number) => {
+  const handleDeleteClick = (roleId: string) => {
     const found = roles.find((r) => r.id === roleId) ?? null;
     setRoleToDelete(found);
     setDeleteErrorMessage(null);
     setIsDeleteOpen(true);
   };
 
-  const handleEditClick = (roleId: number) => {
+  const handleEditClick = (roleId: string) => {
     const found = roles.find((r) => r.id === roleId) ?? null;
     setRoleToEdit(found);
     setIsEditOpen(true);
@@ -199,19 +199,18 @@ const RolesListPage = () => {
 
                         <td className="py-4 text-center">
                           <div className="flex flex-wrap items-center justify-center gap-2">
-                            {role.is_active ? (
+                            {role.is_protected ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/20 bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning">
+                                Protected
+                              </span>
+                            ) : (
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
                                 Active
                               </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-base-300 bg-base-300 px-2.5 py-1 text-xs font-semibold text-base-content/50">
-                                Inactive
-                              </span>
                             )}
-
-                            {role.is_staff && (
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-info/20 bg-info/10 px-2.5 py-1 text-xs font-semibold text-info">
-                                Staff
+                            {role.member_count !== undefined && (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-base-300 bg-base-200 px-2.5 py-1 text-xs font-semibold text-base-content/60">
+                                {role.member_count} members
                               </span>
                             )}
                           </div>

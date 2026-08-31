@@ -141,7 +141,7 @@ services:
       context: ./apps/api
       dockerfile: Dockerfile
     container_name: madar_beat
-    command: celery -A config beat -l info
+    command: celery -A config beat -l info -s /tmp/celerybeat-schedule
     volumes:
       - ./apps/api:/app
     env_file:

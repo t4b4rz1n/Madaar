@@ -43,3 +43,14 @@ export const loginRequest = async (
     );
   }
 };
+
+export const getProfileRequest = async (): Promise<User> => {
+  try {
+    const response = await ApiService.get<User>("/accounts/profile/");
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Failed to load user profile.")
+    );
+  }
+};

@@ -30,10 +30,10 @@ const itemVariants = {
 };
 
 export default function TeamsListPage() {
-  const { hasAllPermissions } = usePermissions();
+  const { hasAnyPermission } = usePermissions();
 
   // مجوز مدیریت تیم‌ها
-  const canManageTeams = hasAllPermissions(["teams.manage"]);
+  const canManageTeams = hasAnyPermission(["org.manage_members", "org.manage_settings"]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [modalState, setModalState] = useState<{

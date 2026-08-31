@@ -50,9 +50,7 @@ def handle_task_automations(sender, instance, created, **kwargs):
         # 7. task_assigned
         # Trigger if created with an assignee, OR if assignee was changed
         if instance.assignee_id and (created or old_assignee != instance.assignee_id):
-            assigner = (
-                "سیستم"  # Can be extracted if we have request context, but hard to get in signals
-            )
+            assigner = "System"
             EventDispatcher.dispatch(
                 event_type="task_assigned",
                 payload={
@@ -81,42 +79,21 @@ def handle_task_automations(sender, instance, created, **kwargs):
                             "task_title": instance.title,
                             "assignee": instance.assignee.get_full_name()
                             if instance.assignee
-                            else "کاربر",
+                            else "User",
                         },
                     )
 
             # 9. task_completed
             if instance.is_finished and not old_finished:
-                target_ids = []
-                if instance.reporter_id:
-                    target_ids.append(str(instance.reporter_id))
-                if instance.assignee_id:
-                    target_ids.append(str(instance.assignee_id))
-
-                if instance.project:
-                    from organizations.models import OrganizationMembership
-
-                    team_leads = OrganizationMembership.objects.filter(
-                        organization_id=instance.project.organization_id,
-                        role=OrganizationMembership.Role.TEAM_LEAD,
-                    ).values_list("user_id", flat=True)
-                    target_ids.extend([str(tl) for tl in team_leads])
-
-                if target_ids:
-                    EventDispatcher.dispatch(
-                        event_type="task_completed",
-                        payload={
-                            "target_user_ids": list(set(target_ids)),
-                            "project_id": str(instance.project_id),
-                            "assignee_id": str(instance.assignee_id)
-                            if instance.assignee_id
-                            else None,
-                            "reporter_id": str(instance.reporter_id)
-                            if instance.reporter_id
-                            else None,
-                            "task_title": instance.title,
-                        },
-                    )
+                EventDispatcher.dispatch(
+                    event_type="task_completed",
+                    payload={
+                        "project_id": str(instance.project_id),
+                        "assignee_id": str(instance.assignee_id) if instance.assignee_id else None,
+                        "reporter_id": str(instance.reporter_id) if instance.reporter_id else None,
+                        "task_title": instance.title,
+                    },
+                )
     except Exception as exc:
         import logging
 
@@ -139,7 +116,7 @@ def handle_task_comments(sender, instance, created, **kwargs):
             author_name = (
                 instance.author.get_full_name() or instance.author.username
                 if instance.author
-                else "یک کاربر"
+                else "A User"
             )
             content = instance.content
 
@@ -167,7 +144,7 @@ def handle_task_comments(sender, instance, created, **kwargs):
                             "reporter_id": str(task.reporter_id) if task.reporter_id else None,
                             "task_title": task.title,
                             "author": author_name,
-                            "comment_text": f"{author_name} شما را تگ کرد: {content[:50]}...",
+                            "comment_text": f"{author_name} mentioned you: {content[:50]}...",
                         },
                     )
 
@@ -217,27 +194,17 @@ def handle_standup_submitted(sender, instance, created, **kwargs):
             user_name = (
                 (instance.user.get_full_name() or instance.user.username)
                 if instance.user
-                else "یک همکار"
+                else "A Colleague"
             )
 
-            # Target Organization Owners and Admins
-            managers = []
             org_id = instance.project.organization_id if instance.project else None
 
             if org_id:
-                from organizations.models import OrganizationMembership
-
-                managers = OrganizationMembership.objects.filter(
-                    organization_id=org_id,
-                    role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
-                ).values_list("user_id", flat=True)
-
-            if managers:
                 EventDispatcher.dispatch(
                     event_type="standup_submitted",
                     payload={
-                        "target_user_ids": [str(m) for m in set(managers)],
                         "organization_id": str(org_id),
+                        "project_id": str(instance.project_id) if instance.project else None,
                         "user_name": user_name,
                     },
                 )

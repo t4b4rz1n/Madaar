@@ -22,7 +22,7 @@ import type { Project, ProjectStatus } from "../types";
 import { CreateEditProjectModal } from "../components/CreateEditProjectModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { useDeleteProject } from "../hooks/useProjects";
-
+import { usePermissions } from "../../auth/hooks/usePermissions";
 
 
 const statusConfig: Record<
@@ -132,6 +132,9 @@ export default function ProjectsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const deleteProjectMutation = useDeleteProject();
+  const { hasAnyPermission } = usePermissions();
+  const canCreateProject = hasAnyPermission(["project.create", "project.manage"]);
+  const canManageProject = hasAnyPermission(["project.manage"]);
 
   const [search, setSearch] = useState("");
 
@@ -250,14 +253,17 @@ export default function ProjectsPage() {
               </button>
             )}
           </label>
-          <button
-            type="button"
-            onClick={handleCreateProject}
-            className="inline-flex h-9.5 items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all shrink-0"
-          >
-            <Add size={16} />
-            <span>New Project</span>
-          </button>
+          {/* دکمه New Project - فقط برای کاربران با پرمیشن */}
+          {canCreateProject && (
+            <button
+              type="button"
+              onClick={handleCreateProject}
+              className="inline-flex h-9.5 items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all shrink-0"
+            >
+              <Add size={16} />
+              <span>New Project</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -327,17 +333,20 @@ export default function ProjectsPage() {
                       {cfg.label}
                     </span>
 
-                    <ProjectActionMenu
-                      project={project}
-                      onEdit={() => handleEditProject(project)}
-                      onDelete={() => handleDeleteClick(project)}
-                      onComplete={() =>
-                        lifecycleMutation.mutate({ id: project.id, action: "complete" })
-                      }
-                      onArchive={() =>
-                        lifecycleMutation.mutate({ id: project.id, action: "archive" })
-                      }
-                    />
+                    {/* منوی اکشن - فقط برای مدیران */}
+                    {canManageProject && (
+                      <ProjectActionMenu
+                        project={project}
+                        onEdit={() => handleEditProject(project)}
+                        onDelete={() => handleDeleteClick(project)}
+                        onComplete={() =>
+                          lifecycleMutation.mutate({ id: project.id, action: "complete" })
+                        }
+                        onArchive={() =>
+                          lifecycleMutation.mutate({ id: project.id, action: "archive" })
+                        }
+                      />
+                    )}
                   </div>
 
                   {/* Large Centered Project Name */}
@@ -360,15 +369,17 @@ export default function ProjectsPage() {
             })}
           </AnimatePresence>
 
-          {/* Add Project Card */}
-          <button
-            type="button"
-            onClick={handleCreateProject}
-            className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-base-content/15 bg-base-100/50 text-base-content/40 transition hover:border-base-content/25 hover:bg-base-100 hover:text-base-content"
-          >
-            <Add size={24} />
-            <span className="text-sm font-bold">New Project</span>
-          </button>
+          {/* کارت اضافه کردن پروژه - فقط برای کاربران با پرمیشن */}
+          {canCreateProject && (
+            <button
+              type="button"
+              onClick={handleCreateProject}
+              className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-base-content/15 bg-base-100/50 text-base-content/40 transition hover:border-base-content/25 hover:bg-base-100 hover:text-base-content"
+            >
+              <Add size={24} />
+              <span className="text-sm font-bold">New Project</span>
+            </button>
+          )}
         </div>
       )}
 

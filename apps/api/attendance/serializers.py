@@ -140,16 +140,21 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
         if date and date > timezone.localdate():
             raise serializers.ValidationError({"date": _("Date cannot be in the future.")})
 
-        # Past date modification restriction: only managers and admins can create/edit past attendance
+        # Past date modification restriction: only users with attendance.view_all can create/edit past records
         request = self.context.get("request")
         if date and date < timezone.localdate():
             if request and request.user and request.user.is_authenticated:
                 is_admin = request.user.is_staff or request.user.is_superuser
                 if not is_admin and organization:
-                    is_admin = request.user.org_memberships.filter(
-                        organization=organization,
-                        role__in=["owner", "admin"],
-                    ).exists()
+                    from organizations.services import PermissionService
+
+                    is_admin = PermissionService.has_permission(
+                        user=request.user,
+                        permission_code="attendance.view_all",
+                        organization_id=str(organization.id)
+                        if hasattr(organization, "id")
+                        else str(organization),
+                    )
                 if not is_admin:
                     raise serializers.ValidationError(
                         {
@@ -364,9 +369,15 @@ class HolidaySerializer(serializers.ModelSerializer):
         if request and request.method in ["POST", "PUT", "PATCH"]:
             if organization:
                 if request.user and request.user.is_authenticated:
-                    is_admin = request.user.org_memberships.filter(
-                        organization=organization, role__in=["owner", "admin", "hr"]
-                    ).exists()
+                    from organizations.services import PermissionService
+
+                    is_admin = PermissionService.has_permission(
+                        user=request.user,
+                        permission_code="org.manage_settings",
+                        organization_id=str(organization.id)
+                        if hasattr(organization, "id")
+                        else str(organization),
+                    )
                     if not is_admin and not (request.user.is_staff or request.user.is_superuser):
                         raise serializers.ValidationError(
                             {

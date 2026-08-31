@@ -13,18 +13,23 @@ import {
   deleteTicketType,
 } from "../api/ticketsApi";
 import type { EntityId, TicketFormData } from "../types";
-import { useAuthStore } from "../../auth/store/authStore";
+import { usePermissions } from "../../auth/hooks/usePermissions";
+
+const useIsManager = () => {
+  const { hasAnyPermission, isStaff } = usePermissions();
+  return isStaff || hasAnyPermission(["org.manage_members", "org.manage_settings"]);
+};
 
 // Tickets hooks
 export const useTickets = (
   params: URLSearchParams,
   options?: any
 ) => {
-  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
+  const isManager = useIsManager();
   return useQuery<any>({
-    queryKey: ["tickets", isStaff ? "staff" : "user", params.toString()],
+    queryKey: ["tickets", isManager ? "staff" : "user", params.toString()],
     queryFn: async () => {
-      const response = await getTickets(params, isStaff);
+      const response = await getTickets(params, isManager);
       return response.data;
     },
     placeholderData: keepPreviousData,
@@ -33,11 +38,11 @@ export const useTickets = (
 };
 
 export const useTicket = (id: string) => {
-  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
+  const isManager = useIsManager();
   return useQuery({
-    queryKey: ["ticket", isStaff ? "staff" : "user", id],
+    queryKey: ["ticket", isManager ? "staff" : "user", id],
     queryFn: async () => {
-      const response = await getTicket(id, isStaff);
+      const response = await getTicket(id, isManager);
       return response.data;
     },
     enabled: !!id,
@@ -60,11 +65,11 @@ export const useCreateTicket = () => {
 
 export const useUpdateTicketStatus = (ticketId: string) => {
   const queryClient = useQueryClient();
-  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
-  const scope = isStaff ? "staff" : "user";
+  const isManager = useIsManager();
+  const scope = isManager ? "staff" : "user";
   return useMutation({
     mutationFn: (status: "open" | "in_progress" | "answered" | "closed") =>
-      updateTicket(ticketId, { status }, isStaff),
+      updateTicket(ticketId, { status }, isManager),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
       queryClient.invalidateQueries({ queryKey: ["ticket", scope, ticketId] });
@@ -78,11 +83,11 @@ export const useUpdateTicketStatus = (ticketId: string) => {
 
 // Ticket Messages (Chat) hooks
 export const useTicketMessages = (ticketId: string, params: URLSearchParams) => {
-  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
+  const isManager = useIsManager();
   return useQuery({
-    queryKey: ["ticket-messages", isStaff ? "staff" : "user", ticketId, params.toString()],
+    queryKey: ["ticket-messages", isManager ? "staff" : "user", ticketId, params.toString()],
     queryFn: async () => {
-      const response = await getTicketMessages(ticketId, params, isStaff);
+      const response = await getTicketMessages(ticketId, params, isManager);
       return response.data;
     },
     enabled: !!ticketId,
@@ -94,11 +99,11 @@ export const useTicketMessages = (ticketId: string, params: URLSearchParams) => 
 
 export const useSendTicketMessage = (ticketId: string) => {
   const queryClient = useQueryClient();
-  const isStaff = useAuthStore((state) => state.user?.is_staff === true);
-  const scope = isStaff ? "staff" : "user";
+  const isManager = useIsManager();
+  const scope = isManager ? "staff" : "user";
   return useMutation({
     mutationFn: async (data: { text?: string; file?: File }) => {
-      return sendTicketMessage(ticketId, data.text, data.file, isStaff);
+      return sendTicketMessage(ticketId, data.text, data.file, isManager);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

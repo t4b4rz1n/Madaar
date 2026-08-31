@@ -68,6 +68,55 @@ class Team(BaseModel):
         return self.name
 
 
+class Permission(BaseModel):
+    code = models.CharField(
+        max_length=100, unique=True, db_index=True, help_text="e.g., 'task.create', 'leave.approve'"
+    )
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    module = models.CharField(max_length=50, help_text="e.g., 'tasks', 'attendance', 'core'")
+
+    class Meta:
+        db_table = "permissions"
+        verbose_name = "Permission"
+        verbose_name_plural = "Permissions"
+        ordering = ["module", "code"]
+
+    def __str__(self):
+        return f"{self.module} - {self.code}"
+
+
+class Role(BaseModel):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="custom_roles",
+    )
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    is_protected = models.BooleanField(
+        default=False,
+        help_text="Protected roles (like Owner) cannot be deleted or completely stripped of permissions.",
+    )
+    permissions = models.ManyToManyField(Permission, related_name="roles", blank=True)
+
+    class Meta:
+        db_table = "roles"
+        verbose_name = "Role"
+        verbose_name_plural = "Roles"
+        ordering = ["organization", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "name"],
+                condition=models.Q(is_deleted=False),
+                name="unique_active_role_name_per_org",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.organization.name})"
+
+
 class OrganizationMembership(BaseModel):
     class Role(models.TextChoices):
         OWNER = "owner", "Owner"
@@ -99,6 +148,13 @@ class OrganizationMembership(BaseModel):
         blank=True,
         related_name="invited_memberships",
     )
+    dynamic_roles = models.ManyToManyField(
+        "Role",
+        related_name="memberships",
+        blank=True,
+        verbose_name="Dynamic Roles",
+        help_text="The new permission-based roles assigned to this member.",
+    )
 
     class Meta:
         db_table = "organization_memberships"
@@ -108,7 +164,8 @@ class OrganizationMembership(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "organization"],
-                name="unique_org_membership_user_org",
+                condition=models.Q(is_deleted=False),
+                name="unique_active_org_membership_user_org",
             )
         ]
 
@@ -145,9 +202,56 @@ class TeamMembership(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "team"],
-                name="unique_team_membership_user_team",
+                condition=models.Q(is_deleted=False),
+                name="unique_active_team_membership_user_team",
             )
         ]
 
     def __str__(self):
         return f"{self.user_id} - {self.team_id} ({self.role})"
+
+
+class OrganizationAuditLog(BaseModel):
+    class Action(models.TextChoices):
+        ROLE_CREATED = "role_created", "Role Created"
+        ROLE_UPDATED = "role_updated", "Role Updated"
+        ROLE_DELETED = "role_deleted", "Role Deleted"
+        PERMISSION_GRANTED = "permission_granted", "Permission Granted"
+        PERMISSION_REVOKED = "permission_revoked", "Permission Revoked"
+        NOTIFICATION_POLICY_CHANGED = "notification_policy_changed", "Notification Policy Changed"
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="performed_org_audits",
+    )
+    action = models.CharField(max_length=50, choices=Action.choices)
+    target_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="targeted_org_audits",
+        help_text="The user who was affected by this action (e.g. granted a role).",
+    )
+    details = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Detailed payload about what changed (e.g. which permissions were added).",
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        db_table = "organization_audit_logs"
+        verbose_name = "Organization Audit Log"
+        verbose_name_plural = "Organization Audit Logs"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.organization.name} - {self.action} by {self.actor_id}"

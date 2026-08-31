@@ -32,7 +32,6 @@ from .permissions import (
     IsTaskCommentPermission,
     IsTaskPermission,
     IsTaskStatusPermission,
-    get_user_org_role,
 )
 from .serializers import (
     AsyncStandupSerializer,
@@ -683,8 +682,15 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             )
 
         is_super = user.is_staff or user.is_superuser
-        role = None if is_super else get_user_org_role(request, project.organization_id)
-        is_org_manager = role in ("owner", "admin")
+        from organizations.services import PermissionService
+
+        org_id = project.organization_id
+        is_org_manager = (
+            is_super
+            or PermissionService.has_permission(user, "org.manage_settings", org_id)
+            or PermissionService.has_permission(user, "project.manage", org_id)
+            or PermissionService.has_permission(user, "task.manage_all", org_id)
+        )
 
         is_project_member = (
             True

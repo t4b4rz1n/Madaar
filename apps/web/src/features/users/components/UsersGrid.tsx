@@ -43,9 +43,9 @@ export const UsersGrid = ({
   const deleteMutation = useDeleteUser();
   const { data: rolesData } = useRoles();
   const roles = rolesData?.results || [];
-  const { hasAllPermissions } = usePermissions();
+  const { hasAnyPermission } = usePermissions();
 
-  const hasUserManagePermission = hasAllPermissions(["users.manage"]);
+  const hasUserManagePermission = hasAnyPermission(["org.manage_members", "org.manage_settings"]);
   const showActionButtons = canManage || hasUserManagePermission;
   const handleDelete = () => {
     if (deleteModalState.user) {
@@ -120,9 +120,10 @@ export const UsersGrid = ({
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {users.map((user, index) => {
-          const roleName = getRoleName(user.role_id, roles);
+          const roleName = getRoleName(user.role_id, roles, user.role_name);
 
           return (
+
             <motion.div
               key={user.id}
               initial={{ opacity: 0, y: 20 }}
@@ -132,9 +133,9 @@ export const UsersGrid = ({
             >
               <div className="flex items-center gap-4 mb-5">
                 <div className="w-14 h-14 rounded-full overflow-hidden bg-primary/5 shrink-0 flex items-center justify-center border border-base-200 shadow-sm">
-                  {user.profile_image ? (
+                  {user.avatar ? (
                     <img
-                      src={user.profile_image}
+                      src={user.avatar}
                       alt={user.username}
                       className="w-full h-full object-cover"
                     />

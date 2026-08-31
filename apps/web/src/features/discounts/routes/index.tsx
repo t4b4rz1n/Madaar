@@ -10,7 +10,7 @@ const discountsRoutes: RouteObject[] = [
     path: "/discounts",
     element: (
       <PermissionGuard
-        permissions={["discounts.view"]}
+        permissions={["finance.manage", "finance.view_reports", "org.manage_settings"]}
         fallback={<Navigate to="/dashboard" replace />}
       >
         <DiscountsListPage />

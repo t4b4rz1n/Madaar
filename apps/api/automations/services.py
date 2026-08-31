@@ -183,9 +183,12 @@ class TelegramBotService:
 
             is_owner = (
                 Organization.objects.filter(owner=user).exists()
-                or OrganizationMembership.objects.filter(
-                    user=user, role=OrganizationMembership.Role.OWNER
-                ).exists()
+                or OrganizationMembership.objects.filter(user=user, is_deleted=False)
+                .filter(
+                    Q(dynamic_roles__permissions__code="org.manage_settings")
+                    | Q(role=OrganizationMembership.Role.OWNER)
+                )
+                .exists()
             )
 
             if is_owner:
@@ -667,9 +670,16 @@ class TelegramBotService:
         if org:
             return org
 
-        # 2. Ownership via membership
+        # 2. Ownership via membership / dynamic permissions
         membership = (
-            OrganizationMembership.objects.filter(user=user, role=OrganizationMembership.Role.OWNER)
+            OrganizationMembership.objects.filter(
+                user=user,
+                is_deleted=False,
+            )
+            .filter(
+                Q(dynamic_roles__permissions__code="org.manage_settings")
+                | Q(role=OrganizationMembership.Role.OWNER)
+            )
             .select_related("organization")
             .first()
         )

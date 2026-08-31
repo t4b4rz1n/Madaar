@@ -9,9 +9,27 @@ from automations.catalog import EVENTS_BY_CODE, Recipient
 from automations.channels.email import send_email_notification
 from automations.channels.telegram import send_telegram_notification
 from automations.models import AutomationRule
+from panel.Notification.models import Notification
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+def _get_event_link(event_type: str, payload: dict) -> str:
+    """Generate a relevant frontend link based on event type and payload."""
+    project_id = payload.get("project_id")
+    task_id = payload.get("task_id")
+    organization_id = payload.get("organization_id")
+
+    if task_id and project_id:
+        return f"/projects/{project_id}/board?task={task_id}"
+    if project_id:
+        return f"/projects/{project_id}"
+    if event_type in ("leave_requested", "leave_resolved"):
+        return "/requests/time-off"
+    if organization_id:
+        return f"/organizations/{organization_id}"
+    return "/"
 
 
 def process_rules_for_event(event_type: str, payload: dict):
@@ -48,9 +66,11 @@ def process_rules_for_event(event_type: str, payload: dict):
         )
         return
 
-    # An absent rule means the catalog default is active.  This avoids creating
-    # 15 duplicate database rows for every project while keeping defaults live.
-    recipients = rule.recipients if rule else event["default_recipients"]
+    # An absent rule means the catalog default is active.
+    # Phase 6: Mandatory recipients are ALWAYS merged in, even if custom rule omitted them.
+    configured_recipients = set(rule.recipients if rule else event["default_recipients"])
+    mandatory_recipients = set(event.get("mandatory_recipients", []))
+    recipients = list(configured_recipients | mandatory_recipients)
     action_type = rule.action_type if rule else AutomationRule.ActionType.BOTH
 
     # 1. Resolve configured recipient roles from the event context.
@@ -60,9 +80,12 @@ def process_rules_for_event(event_type: str, payload: dict):
         logger.info(f"No target users for event '{event_type}'. Skipping.")
         return
 
-    # 2. Fetch users in a single optimized query, including their WorkStyleProfile
-    users = User.objects.filter(id__in=target_user_ids).select_related("work_style_profile")
+    # 2. Fetch users in a single optimized query, filtered by is_active=True
+    users = User.objects.filter(id__in=target_user_ids, is_active=True).select_related(
+        "work_style_profile"
+    )
     sent_telegram_chat_ids = set()
+    notifications_to_create = []
 
     from django.conf import settings
 
@@ -84,11 +107,22 @@ def process_rules_for_event(event_type: str, payload: dict):
         )
         send_telegram_notification.delay(rule.telegram_group_id, grp_msg)
 
-    # 2. Route to enabled channels, respecting each user's delivery preferences.
+    # 3. Route to enabled channels, respecting security scope and delivery preferences.
     for user in users:
+        # Phase 7: Pre-dispatch security validation (active membership & scope)
+        if not _is_recipient_authorized(
+            user, payload, organization_id, project_id, event_type=event_type
+        ):
+            logger.debug(
+                "Skipping notification for user %s on event '%s': not authorized or not an active member.",
+                user.id,
+                event_type,
+            )
+            continue
+
         wsp = getattr(user, "work_style_profile", None)
         # select_related bypasses SoftDeleteManager, so a soft-deleted
-        # profile is still loaded.  Treat it as non-existent.
+        # profile is still loaded. Treat it as non-existent.
         if wsp and getattr(wsp, "is_deleted", False):
             wsp = None
 
@@ -109,6 +143,27 @@ def process_rules_for_event(event_type: str, payload: dict):
         )
 
         if not should_send_email and not should_send_telegram:
+            # We still want to send in-app notifications even if email/telegram are disabled
+            pass
+
+        # Create English in-app notification
+        with translation.override("en"):
+            from django.utils.html import strip_tags
+
+            _, en_message = _format_message(event_type, payload)
+            clean_text = strip_tags(en_message).replace("\n", " ").strip()
+            # replace multiple spaces with single space
+            clean_text = " ".join(clean_text.split())
+
+        notifications_to_create.append(
+            Notification(
+                user=user,
+                text=clean_text[:255],
+                link=_get_event_link(event_type, payload),
+            )
+        )
+
+        if not should_send_email and not should_send_telegram:
             continue
 
         # Determine language preferences
@@ -116,14 +171,13 @@ def process_rules_for_event(event_type: str, payload: dict):
         if wsp and getattr(wsp, "telegram_language", None):
             lang = wsp.telegram_language
 
-        translation.activate(lang)
-
-        subject, formatted_message = _format_message(event_type, payload)
-        message = (
-            _render_template(rule.message_template, payload)
-            if rule and rule.message_template
-            else formatted_message
-        )
+        with translation.override(lang):
+            subject, formatted_message = _format_message(event_type, payload)
+            message = (
+                _render_template(rule.message_template, payload)
+                if rule and rule.message_template
+                else formatted_message
+            )
 
         if should_send_email:
             send_email_notification.delay(user.email, subject, message)
@@ -132,6 +186,9 @@ def process_rules_for_event(event_type: str, payload: dict):
             if telegram_chat_id not in sent_telegram_chat_ids:
                 send_telegram_notification.delay(telegram_chat_id, message)
                 sent_telegram_chat_ids.add(telegram_chat_id)
+
+    if notifications_to_create:
+        Notification.objects.bulk_create(notifications_to_create, ignore_conflicts=True)
 
 
 def _determine_target_users(recipients: list[str], payload: dict) -> set[str]:
@@ -173,37 +230,103 @@ def _determine_target_users(recipients: list[str], payload: dict) -> set[str]:
                     "user_id", flat=True
                 )
             )
-        elif recipient in (Recipient.ORGANIZATION_ADMINS, Recipient.TEAM_LEADS):
+        elif recipient in (
+            Recipient.HAS_PERM_ORG_MANAGE,
+            Recipient.HAS_PERM_LEAVE_APPROVE,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_TASK_REVIEW,
+            Recipient.HAS_PERM_TASK_MANAGE,
+        ):
+            from django.db import models
+
             from organizations.models import OrganizationMembership
 
-            roles = (
-                [OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN]
-                if recipient == Recipient.ORGANIZATION_ADMINS
-                else [OrganizationMembership.Role.TEAM_LEAD]
-            )
+            perm_map = {
+                Recipient.HAS_PERM_ORG_MANAGE: "org.manage_settings",
+                Recipient.HAS_PERM_LEAVE_APPROVE: "leave.approve",
+                Recipient.HAS_PERM_PROJECT_MANAGE: "project.manage",
+                Recipient.HAS_PERM_TASK_REVIEW: "task.review",
+                Recipient.HAS_PERM_TASK_MANAGE: "task.manage_all",
+            }
+            perm_code = perm_map.get(recipient)
             org_id = project.organization_id if project else payload.get("organization_id")
-            if org_id:
-                add_many(
-                    OrganizationMembership.objects.filter(
-                        organization_id=org_id,
-                        role__in=roles,
-                        is_deleted=False,
-                    ).values_list("user_id", flat=True)
+            if org_id and perm_code:
+                legacy_roles = []
+                try:
+                    from organizations.services import COMPATIBILITY_ROLE_PERMISSIONS_MAP
+
+                    for role, perms in COMPATIBILITY_ROLE_PERMISSIONS_MAP.items():
+                        if perm_code in perms:
+                            legacy_roles.append(role)
+                except ImportError:
+                    pass
+
+                matching_memberships = (
+                    OrganizationMembership.objects.filter(organization_id=org_id, is_deleted=False)
+                    .filter(
+                        models.Q(dynamic_roles__permissions__code=perm_code)
+                        | models.Q(role__in=legacy_roles)
+                    )
+                    .values_list("user_id", flat=True)
+                    .distinct()
                 )
+
+                add_many(matching_memberships)
         elif recipient == Recipient.SUPERUSERS:
             add_many(
                 User.objects.filter(
                     is_superuser=True,
-                    work_style_profile__is_deleted=False,
-                    work_style_profile__notify_via_telegram=True,
-                    work_style_profile__telegram_chat_id__isnull=False,
-                )
-                .exclude(work_style_profile__telegram_chat_id="")
-                .exclude(work_style_profile__telegram_chat_id__regex=r"^\s+$")
-                .values_list("id", flat=True)
+                    is_active=True,
+                ).values_list("id", flat=True)
             )
 
     return users
+
+
+def _is_recipient_authorized(
+    user, payload: dict, organization_id, project_id, event_type=None
+) -> bool:
+    """Verifies that a recipient is still active and authorized within the organization/project scope."""
+    if not user.is_active:
+        return False
+    if user.is_superuser:
+        return True
+
+    # If the user is the target of a project removal notification, they are authorized to receive it
+    if event_type == "project_member_removed" and str(user.id) == str(
+        payload.get("target_user_id")
+    ):
+        return True
+
+    from organizations.models import OrganizationMembership
+
+    if organization_id:
+        is_org_member = OrganizationMembership.objects.filter(
+            user=user, organization_id=organization_id, is_deleted=False
+        ).exists()
+        if not is_org_member:
+            return False
+
+    if project_id:
+        from organizations.services import PermissionService
+        from projects.models import ProjectMember
+
+        is_proj_member = ProjectMember.objects.filter(
+            user=user, project_id=project_id, is_active=True, is_deleted=False
+        ).exists()
+        if is_proj_member:
+            return True
+
+        # Org managers with project.manage or org.manage_settings are also authorized for project events
+        if organization_id and (
+            PermissionService.has_permission(user, "project.manage", organization_id)
+            or PermissionService.has_permission(user, "org.manage_settings", organization_id)
+        ):
+            return True
+
+        return False
+
+    return True
 
 
 _TEMPLATE_VARIABLE = re.compile(r"{{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*}}")

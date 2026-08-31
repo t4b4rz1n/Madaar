@@ -1,19 +1,19 @@
-export interface Role {
-  id: number;
-  name: string;
-}
+export type { Role, Permission } from "../../roles/types";
+
 
 export interface User {
-  id: number;
+  id: string;  // UUID
   username: string;
   email: string;
   first_name: string;
   last_name: string;
   is_active: boolean;
   is_staff: boolean;
-  role_id: number | null;
-  profile_image: string | null;
+  role_id: string | null;  // UUID
+  role_name?: string | null;
+  avatar: string | null;
 }
+
 
 export interface UserFormData {
   username: string;
@@ -23,7 +23,7 @@ export interface UserFormData {
   last_name: string;
   is_active: boolean;
   is_staff: boolean;
-  role_id: number | null;
+  role_id: string | null;  // UUID
 }
 
 export interface UserUpdateData {
@@ -33,5 +33,5 @@ export interface UserUpdateData {
   last_name: string;
   is_active: boolean;
   is_staff: boolean;
-  role_id: number | null;
+  role_id: string | null;  // UUID
 }

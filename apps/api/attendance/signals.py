@@ -48,7 +48,6 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
             TimeOffRequest.Type.SICK,
             TimeOffRequest.Type.HOURLY,
         ]:
-            # Custom logic for leaves. Can be tracking absent minutes or leaving it as is.
             pass
 
         attendance.save(update_fields=["overtime_minutes"])
@@ -59,24 +58,18 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
 
     if created:
         # 14. leave_requested
-        # Target: Organization Owners and Admins
-        from organizations.models import OrganizationMembership
-
-        managers = OrganizationMembership.objects.filter(
-            organization=instance.organization,
-            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
-        ).values_list("user_id", flat=True)
-
-        if managers:
-            EventDispatcher.dispatch(
-                event_type="leave_requested",
-                payload={
-                    "target_user_ids": [str(m) for m in managers],
-                    "organization_id": str(instance.organization_id),
-                    "user_name": user_name,
-                    "leave_type": leave_type_label,
-                },
-            )
+        # ✅ Now uses permission-based resolution: notify all users with leave.approve permission
+        # instead of hardcoded OWNER/ADMIN role names.
+        # This means any custom role with leave.approve will also receive the notification.
+        EventDispatcher.dispatch(
+            event_type="leave_requested",
+            payload={
+                "organization_id": str(instance.organization_id),
+                "requester_id": str(instance.user_id),
+                "user_name": user_name,
+                "leave_type": leave_type_label,
+            },
+        )
     else:
         # 15. leave_resolved
         old_status = getattr(instance, "__original_status", None)
@@ -99,34 +92,27 @@ def handle_approved_timeoff(sender, instance, created, **kwargs):
 def notify_timer_started(sender, instance, created, **kwargs):
     """
     16. timer_started
+    ✅ Now uses permission-based resolution via the automations catalog:
+    The catalog's default_recipients for timer_started are
+    [HAS_PERM_ORG_MANAGE, HAS_PERM_PROJECT_MANAGE], so no need to manually
+    resolve managers here — just dispatch the event and let rules.py handle it.
     """
     if created and instance.is_active:
         user_name = instance.user.get_full_name() or instance.user.username
-        task_title = instance.task.title if instance.task else "کار عمومی"
+        task_title = instance.task.title if instance.task else "General Work"
 
-        managers = []
+        project_id = None
+        org_id = None
         if instance.task and instance.task.project:
-            org_id = instance.task.project.organization_id
-            from organizations.models import OrganizationMembership
+            project_id = str(instance.task.project_id)
+            org_id = str(instance.task.project.organization_id)
 
-            managers = OrganizationMembership.objects.filter(
-                organization_id=org_id,
-                role__in=[
-                    OrganizationMembership.Role.OWNER,
-                    OrganizationMembership.Role.ADMIN,
-                    OrganizationMembership.Role.TEAM_LEAD,
-                ],
-            ).values_list("user_id", flat=True)
-
-        if managers:
-            EventDispatcher.dispatch(
-                event_type="timer_started",
-                payload={
-                    "target_user_ids": [str(m) for m in set(managers)],
-                    "project_id": str(instance.task.project_id)
-                    if instance.task and instance.task.project_id
-                    else None,
-                    "user_name": user_name,
-                    "task_title": task_title,
-                },
-            )
+        EventDispatcher.dispatch(
+            event_type="timer_started",
+            payload={
+                "organization_id": org_id,
+                "project_id": project_id,
+                "user_name": user_name,
+                "task_title": task_title,
+            },
+        )
