@@ -125,7 +125,7 @@ const NotificationsPage = () => {
               setViewMode={setViewMode}
               className="w-auto"
             />
-            <PermissionGuard permissions={["notifications.send"]}>
+            <PermissionGuard permissions={["org.manage_settings"]}>
               <button
                 className="btn btn-primary rounded-xl"
                 onClick={openSendModal}

@@ -1,7 +1,8 @@
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import type { RouteObject } from "react-router-dom";
-import { StaffRoute } from "../../../core/router/StaffRoute";
-import { UserRoute } from "../../../core/router/UserRoute";
+import { Navigate } from "react-router-dom";
+import { PermissionGuard } from "../../auth/components/PermissionGuard";
+import PageLoader from "../../../components/PageLoader";
 
 const DashboardPage = lazy(() => import("../pages/DashboardPage"));
 const UserDashboardPage = lazy(() => import("../pages/UserDashboardPage"));
@@ -9,27 +10,46 @@ const ManagerDashboardPage = lazy(() => import("../pages/ManagerDashboardPage"))
 
 export const dashboardRoutes: RouteObject[] = [
   {
+    // صفحه داشبورد ادمین: نیاز به پرمیشن مدیریت کلی سازمان
     path: "admin",
     element: (
-      <StaffRoute>
-        <DashboardPage />
-      </StaffRoute>
+      <Suspense fallback={<PageLoader />}>
+        <PermissionGuard
+          permissions={["org.manage_settings"]}
+          fallback={<Navigate to="/dashboard" replace />}
+        >
+          <DashboardPage />
+        </PermissionGuard>
+      </Suspense>
     ),
   },
   {
+    // داشبورد شخصی: همه کاربران لاگین‌شده
     path: "dashboard",
     element: (
-      <UserRoute>
+      <Suspense fallback={<PageLoader />}>
         <UserDashboardPage />
-      </UserRoute>
+      </Suspense>
     ),
   },
   {
+    // صفحه مدیریت: نیاز به یکی از پرمیشن‌های مدیریتی
     path: "manager",
     element: (
-      <StaffRoute>
-        <ManagerDashboardPage />
-      </StaffRoute>
+      <Suspense fallback={<PageLoader />}>
+        <PermissionGuard
+          permissions={[
+            "report.view",
+            "attendance.view_all",
+            "org.manage_members",
+            "finance.view_reports",
+            "org.manage_settings",
+          ]}
+          fallback={<Navigate to="/dashboard" replace />}
+        >
+          <ManagerDashboardPage />
+        </PermissionGuard>
+      </Suspense>
     ),
   },
 ];
