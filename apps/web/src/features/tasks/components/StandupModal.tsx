@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
+import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -94,6 +96,20 @@ export const StandupModal: React.FC<StandupModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Lock body scroll to prevent layout shift (scrollbar jump) when modal opens
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    document.body.style.overflow = 'hidden';
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, [isOpen]);
+
   const projectsQuery = useQuery({
     queryKey: ['projects-for-standup'],
     queryFn: () => getProjects(),
@@ -109,7 +125,6 @@ export const StandupModal: React.FC<StandupModalProps> = ({
       : format(parsed, 'EEEE, MMMM d, yyyy');
   }, [targetDate]);
 
-  if (!isOpen) return null;
 
   const onSubmit = async (data: StandupFormData) => {
     const resolvedProjectId = projectId ?? data.projectId;
@@ -136,16 +151,41 @@ export const StandupModal: React.FC<StandupModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs"
-      onClick={readOnly ? undefined : onClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        className="w-full max-w-md overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+          onClick={readOnly ? undefined : onClose}
+          role="dialog"
+          aria-modal="true"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: 'easeOut' }}
+        >
+          {/* Backdrop blur layer */}
+          <motion.div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          />
+
+          {/* Modal Card */}
+          <motion.div
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 14 }}
+            transition={{
+              type: 'spring',
+              stiffness: 380,
+              damping: 30,
+              mass: 0.8,
+            }}
+          >
         {/* Header */}
         <div className="relative flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary/90 to-primary text-primary-content">
           <div className="flex items-center gap-3">
@@ -406,8 +446,10 @@ export const StandupModal: React.FC<StandupModalProps> = ({
             </div>
           )}
         </form>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

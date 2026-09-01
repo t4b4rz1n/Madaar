@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import ThemeToggle from "../../components/ThemeToggle";
 import { motionTokens } from "../../core/config/designTokens";
 import { NotificationCenter } from "./NotificationCenter";
+import { usePermissions } from "../auth/hooks/usePermissions";
 
 const headerVariants = {
   hidden: { y: -100, opacity: 0 },
@@ -30,6 +31,9 @@ export const Header = ({
   onCommandMenuClick,
   breadcrumbs,
 }: HeaderProps) => {
+  const { hasAnyPermission } = usePermissions();
+  const canViewNotifications = hasAnyPermission(["notification.view", "org.manage_settings"]);
+
   return (
     <motion.header
       variants={headerVariants}
@@ -87,9 +91,10 @@ export const Header = ({
           <span className="hidden sm:inline">Search</span>
           <kbd className="hidden rounded-md border border-base-content/10 bg-base-200 px-1.5 py-0.5 text-[0.65rem] sm:inline">⌘K</kbd>
         </button>
-        <NotificationCenter />
+        {canViewNotifications && <NotificationCenter />}
         <ThemeToggle />
       </div>
     </motion.header>
   );
 };
+

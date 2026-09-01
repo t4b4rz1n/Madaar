@@ -1,9 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight2, Notification as NotificationIcon } from "iconsax-reactjs";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { usePermissions } from "../auth/hooks/usePermissions";
-import { useNotificationHistory } from "../notifications/hooks/useNotifications";
+import {
+  useMarkAllNotificationsSeen,
+  useNotificationHistory,
+  useUnreadNotifications,
+} from "../notifications/hooks/useNotifications";
 import type { Notification } from "../notifications/types";
 import { motionTokens } from "../../core/config/designTokens";
 
@@ -22,18 +25,29 @@ const formatNotificationDate = (date: string) => {
 export const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { hasAllPermissions } = usePermissions();
-  const canViewNotifications = hasAllPermissions(["notification.view"]);
-  const params = useMemo(
-    () => new URLSearchParams({ page: "1", page_size: "6", ordering: "-created_at" }),
-    [],
-  );
+
+  // Use unread-only query for the badge count — works for all users, no permission gate
+  const { data: unreadData } = useUnreadNotifications();
+  const unreadCount = unreadData?.total_results ?? (unreadData?.results?.length ?? 0);
+
+  // Fetch last 6 notifications for the dropdown preview
+  const params = useRef(
+    new URLSearchParams({ page: "1", page_size: "6", ordering: "-created_at" }),
+  ).current;
   const { data, isLoading, isError } = useNotificationHistory(params, {
-    enabled: canViewNotifications,
+    enabled: isOpen,
   });
 
+  const { mutate: markAllSeen } = useMarkAllNotificationsSeen();
+
   const notifications = (data?.results ?? []) as Notification[];
-  const unreadCount = notifications.filter((notification) => !notification.seen).length;
+
+  // Mark all as seen when dropdown opens and there are unread notifications
+  useEffect(() => {
+    if (isOpen && unreadCount > 0) {
+      markAllSeen();
+    }
+  }, [isOpen, unreadCount, markAllSeen]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -94,9 +108,7 @@ export const NotificationCenter = () => {
             </div>
 
             <div className="max-h-[min(24rem,55vh)] overflow-y-auto p-2">
-              {!canViewNotifications ? (
-                <EmptyState text="Notifications are not available for this account." />
-              ) : isLoading ? (
+              {isLoading ? (
                 <div className="space-y-2 p-2" aria-label="Loading notifications">
                   {[1, 2, 3].map((item) => (
                     <div key={item} className="h-16 animate-pulse rounded-xl bg-base-200" />
@@ -133,30 +145,23 @@ export const NotificationCenter = () => {
 const NotificationRow = ({ notification }: { notification: Notification }) => {
   const content = (
     <>
-      <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${notification.seen ? "bg-base-content/15" : "bg-primary"}`} />
+      <span
+        className={`mt-1 h-2 w-2 shrink-0 rounded-full ${notification.seen ? "bg-success" : "bg-primary"
+          }`}
+      />
       <span className="min-w-0 flex-1">
         <span className="block text-sm leading-6 text-base-content/80">{notification.text}</span>
         <span className="mt-1 block text-[0.68rem] text-base-content/45">
           {formatNotificationDate(notification.created_at)}
         </span>
       </span>
-      {notification.link && <ArrowRight2 size={15} className="shrink-0 text-base-content/35" />}
     </>
   );
 
-  if (!notification.link) {
-    return <div className="flex gap-3 rounded-xl px-3 py-3">{content}</div>;
-  }
-
   return (
-    <a
-      href={notification.link}
-      target="_blank"
-      rel="noreferrer"
-      className="motion-interactive flex gap-3 rounded-xl px-3 py-3 hover:bg-base-200"
-    >
+    <div className="flex gap-3 rounded-xl px-3 py-3">
       {content}
-    </a>
+    </div>
   );
 };
 

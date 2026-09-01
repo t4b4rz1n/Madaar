@@ -1,14 +1,13 @@
 import { motion } from "framer-motion";
 import { Notification as NotificationIcon, Send } from "iconsax-reactjs";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../../components/Pagination";
 import { ViewSwitcher } from "../../../components/ViewSwitcher";
 import { NotificationHistoryList } from "../components/NotificationHistoryList";
-import { NotificationsToolbar } from "../components/NotificationsToolbar"; // Import Toolbar
+import { NotificationsToolbar } from "../components/NotificationsToolbar";
 import { SendNotificationModal } from "../components/SendNotificationModal";
-import { useNotificationHistory } from "../hooks/useNotifications";
-// import { useAuthStore } from "../../auth/store/authStore";
+import { useMarkAllNotificationsSeen, useNotificationHistory, useUnreadNotifications } from "../hooks/useNotifications";
 import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const containerVariants = {
@@ -24,7 +23,19 @@ const NotificationsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  // const isStaff = useAuthStore((state) => state.user?.is_staff === true);
+
+  const { data: unreadData } = useUnreadNotifications();
+  const unreadCount = unreadData?.total_results ?? (unreadData?.results?.length ?? 0);
+  const { mutate: markAllSeen } = useMarkAllNotificationsSeen();
+
+  // Mark all as seen when the page mounts and there are unread notifications
+  useEffect(() => {
+    if (unreadCount > 0) {
+      markAllSeen();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const {
     data: notificationsResponse,
     isLoading,

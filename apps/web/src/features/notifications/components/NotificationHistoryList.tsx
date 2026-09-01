@@ -1,16 +1,12 @@
 import { motion } from "framer-motion";
 import {
   Calendar,
-  Copy,
   Eye,
   EyeSlash,
-  Link as LinkIcon,
   Notification as NotificationIcon,
-  TickCircle,
 } from "iconsax-reactjs";
-import { useState } from "react";
-import { toast } from "sonner";
 import { formatDate } from "../../../utils/formatDate";
+import { useMarkNotificationSeen } from "../hooks/useNotifications";
 import type { Notification as NotificationType } from "../types";
 
 interface NotificationHistoryListProps {
@@ -27,16 +23,11 @@ export const NotificationHistoryList = ({
   isError,
   viewMode,
 }: NotificationHistoryListProps) => {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { mutate: markSeen } = useMarkNotificationSeen();
 
-  const handleCopyLink = async (link: string, notificationId: string) => {
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopiedId(notificationId);
-      toast.success("Link copied to clipboard");
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch {
-      toast.error("Failed to copy link");
+  const handleCardClick = (notification: NotificationType) => {
+    if (!notification.seen) {
+      markSeen(notification.id);
     }
   };
 
@@ -72,7 +63,6 @@ export const NotificationHistoryList = ({
               <div className="h-3 bg-base-content/10 rounded w-full" />
               <div className="h-3 bg-base-content/10 rounded w-[90%]" />
             </div>
-            <div className="h-14 bg-base-content/5 rounded-xl border border-base-content/5 mb-4" />
             <div className="flex items-center justify-between pt-4 border-t border-base-content/5 mt-auto">
               <div className="h-3 bg-base-content/10 rounded w-16" />
               <div className="h-6 bg-base-content/10 rounded w-14" />
@@ -121,7 +111,8 @@ export const NotificationHistoryList = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
-              className="group relative bg-base-100 rounded-2xl border border-base-content/10 p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full"
+              onClick={() => handleCardClick(notification)}
+              className="group relative bg-base-100 rounded-2xl border border-base-content/10 p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full cursor-pointer"
             >
               {!notification.seen && (
                 <span className="absolute top-5 right-5 w-2.5 h-2.5 bg-warning rounded-full ring-4 ring-warning/20 animate-pulse" />
@@ -129,11 +120,10 @@ export const NotificationHistoryList = ({
 
               <div className="flex items-center gap-3 mb-4">
                 <div
-                  className={`p-2.5 rounded-xl ${
-                    notification.seen
-                      ? "bg-base-200 text-base-content/50"
+                  className={`p-2.5 rounded-xl ${notification.seen
+                      ? "bg-success/10 text-success"
                       : "bg-primary/10 text-primary"
-                  }`}
+                    }`}
                 >
                   <NotificationIcon variant="Bold" className="w-6 h-6" />
                 </div>
@@ -148,66 +138,10 @@ export const NotificationHistoryList = ({
                 </div>
               </div>
 
-              <div className="mb-5 grow">
+              <div className="mb-4 grow">
                 <p className="text-base-content/80 text-sm leading-relaxed line-clamp-3">
                   {notification.text}
                 </p>
-              </div>
-
-              <div className="mb-4">
-                {notification.link ? (
-                  <div className="group/link flex items-center gap-3 p-3 bg-base-200/40 border border-base-content/5 rounded-xl hover:bg-base-200/70 transition-colors">
-                    <div className="p-2 bg-base-100 rounded-lg shadow-sm text-primary">
-                      <LinkIcon size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-base-content/70 mb-0.5">
-                        Attached Link
-                      </p>
-                      <a
-                        href={notification.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary truncate block hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {notification.link}
-                      </a>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyLink(notification.link!, notification.id);
-                      }}
-                      className="p-2 hover:bg-base-100 rounded-lg text-base-content/60 hover:text-primary transition-colors"
-                      title="Copy Link"
-                    >
-                      {copiedId === notification.id ? (
-                        <TickCircle
-                          size={18}
-                          className="text-success"
-                          variant="Bold"
-                        />
-                      ) : (
-                        <Copy size={18} />
-                      )}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 p-3 bg-base-100 border border-base-content/5 border-dashed rounded-xl select-none opacity-80">
-                    <div className="p-2 bg-base-200 rounded-lg text-base-content/30">
-                      <LinkIcon size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-base-content/40 mb-0.5">
-                        Attachment
-                      </p>
-                      <p className="text-xs text-base-content/40 italic">
-                        No link attached
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-base-content/5 mt-auto">
@@ -215,11 +149,10 @@ export const NotificationHistoryList = ({
                   ID: #{notification.id.substring(0, 6)}
                 </span>
                 <div
-                  className={`text-xs px-2 py-1 rounded-md font-medium ${
-                    notification.seen
-                      ? "text-base-content/50 bg-base-200"
+                  className={`text-xs px-2 py-1 rounded-md font-medium ${notification.seen
+                      ? "text-success bg-success/10"
                       : "text-warning bg-warning/10"
-                  }`}
+                    }`}
                 >
                   {notification.seen ? "Read" : "Unread"}
                 </div>
@@ -241,9 +174,6 @@ export const NotificationHistoryList = ({
                     Message
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                    Link
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
                     Status
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
@@ -258,17 +188,17 @@ export const NotificationHistoryList = ({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="hover:bg-base-200 transition-all duration-200 group"
+                    onClick={() => handleCardClick(notif)}
+                    className="hover:bg-base-200 transition-all duration-200 group cursor-pointer"
                   >
-                    {/* Type Column (Icon + Title) */}
+                    {/* Type Column */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-2 rounded-lg shrink-0 ${
-                            notif.seen
-                              ? "bg-base-200 text-base-content/40"
+                          className={`p-2 rounded-lg shrink-0 ${notif.seen
+                              ? "bg-success/10 text-success"
                               : "bg-primary/10 text-primary"
-                          }`}
+                            }`}
                         >
                           <NotificationIcon size={20} variant="Bold" />
                         </div>
@@ -287,44 +217,13 @@ export const NotificationHistoryList = ({
                       </div>
                     </td>
 
-                    {/* Link Column */}
-                    <td className="px-6 py-4">
-                      {notif.link ? (
-                        <div className="flex items-center gap-2">
-                          <a
-                            href={notif.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline truncate max-w-[150px]"
-                          >
-                            {notif.link}
-                          </a>
-                          <button
-                            onClick={() =>
-                              handleCopyLink(notif.link!, notif.id)
-                            }
-                            className="p-1.5 hover:bg-base-200 rounded-lg text-base-content/40 hover:text-primary transition-colors"
-                          >
-                            {copiedId === notif.id ? (
-                              <TickCircle size={14} className="text-success" />
-                            ) : (
-                              <Copy size={14} />
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-base-content/40">-</span>
-                      )}
-                    </td>
-
                     {/* Status Column */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                          notif.seen
-                            ? "bg-base-200 text-base-content/50 border-base-content/10"
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${notif.seen
+                            ? "bg-success/10 text-success border-success/20"
                             : "bg-warning/10 text-warning border-warning/20"
-                        }`}
+                          }`}
                       >
                         {notif.seen ? (
                           <Eye size={14} className="mr-1.5" />
