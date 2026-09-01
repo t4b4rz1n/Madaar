@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
@@ -90,15 +92,27 @@ class StaffTeamViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Team.objects.filter(is_deleted=False, parent_team__isnull=True).select_related(
+        queryset = Team.objects.filter(
+            is_deleted=False, parent_team__isnull=True
+        ).select_related(
             "organization"
         )
         if not (user.is_staff or user.is_superuser):
             org_ids = user.org_memberships.filter(is_deleted=False).values_list(
                 "organization_id", flat=True
             )
-            qs = qs.filter(organization_id__in=org_ids)
-        return qs.order_by("-created_at")
+            queryset = queryset.filter(organization_id__in=org_ids)
+
+        organization_id = self.request.query_params.get("organization_id")
+        if organization_id:
+            try:
+                UUID(organization_id)
+            except (ValueError, AttributeError, TypeError):
+                pass
+            else:
+                queryset = queryset.filter(organization_id=organization_id)
+
+        return queryset.order_by("-created_at")
 
 
 
