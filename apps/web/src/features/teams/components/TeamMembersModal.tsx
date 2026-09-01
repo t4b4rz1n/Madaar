@@ -105,7 +105,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
   };
 
   const availableUsers = users.filter(
-    (u) => !members?.some((m) => m.user === u.id)
+    (u) => !members?.some((m) => String(m.user) === String(u.id))
   );
 
   const memberCount = members?.length ?? 0;

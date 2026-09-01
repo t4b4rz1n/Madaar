@@ -435,7 +435,7 @@ export let mockTeams: Team[] = [
     id: 1,
     name: "Technical & Development",
     description: "Frontend and backend development team of the Modares system",
-    lead_id: 2, // Sara (currently can have developer or team lead role)
+    lead_id: "2", // Sara (currently can have developer or team lead role)
     is_active: true,
     created_at: "2026-01-01T12:00:00Z",
   },
@@ -443,7 +443,7 @@ export let mockTeams: Team[] = [
     id: 2,
     name: "Support & Operations",
     description: "Technical user support and system monitoring",
-    lead_id: 3, // Jim Raynor
+    lead_id: "3", // Jim Raynor
     is_active: true,
     created_at: "2026-02-15T09:30:00Z",
   },
