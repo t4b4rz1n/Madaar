@@ -8,8 +8,6 @@ import { useCreateTeam, useUpdateTeam } from "../hooks/useTeams";
 import { TeamForm } from "./TeamForm";
 import type { TeamWithDetails } from "../types";
 import * as z from "zod";
-import { useQuery } from "@tanstack/react-query";
-import { getOrganizations } from "../../organizations/api/organizationsApi";
 
 const backdropVariants = { hidden: { opacity: 0 }, visible: { opacity: 1 } };
 const modalVariants = {
@@ -29,26 +27,20 @@ interface CreateEditTeamModalProps {
   isOpen: boolean;
   onClose: () => void;
   team?: TeamWithDetails | null;
+  organizationId: string;
 }
 
 export const CreateEditTeamModal = ({
   isOpen,
   onClose,
   team,
+  organizationId,
 }: CreateEditTeamModalProps) => {
   const isEditMode = !!team;
 
   // استفاده از هوک‌های مجزا به جای useTeams
   const createTeam = useCreateTeam();
   const updateTeam = useUpdateTeam();
-
-  const { data: organizations } = useQuery({
-    queryKey: ["organizations"],
-    queryFn: getOrganizations,
-    enabled: isOpen,
-    staleTime: 60_000,
-  });
-  const currentOrgId = organizations?.[0]?.id;
 
   const {
     control,
@@ -84,7 +76,7 @@ export const CreateEditTeamModal = ({
       if (isEditMode && team) {
         await updateTeam.mutateAsync({ id: team.id, data });
       } else {
-        await createTeam.mutateAsync({ ...data, organization: currentOrgId });
+        await createTeam.mutateAsync({ ...data, organization: organizationId });
       }
       onClose();
     } catch {
@@ -138,7 +130,7 @@ export const CreateEditTeamModal = ({
 
             <div className="flex-1 overflow-y-auto px-6 pt-6">
               <form id="team-form" onSubmit={onSubmit}>
-                <TeamForm control={control} errors={errors} organizationId={currentOrgId} />
+                <TeamForm control={control} errors={errors} organizationId={organizationId} />
               </form>
             </div>
 

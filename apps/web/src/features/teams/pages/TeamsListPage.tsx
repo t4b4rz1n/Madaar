@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Add } from "iconsax-reactjs";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getOrganizations } from "../../organizations/api/organizationsApi";
@@ -53,7 +53,25 @@ export default function TeamsListPage() {
     queryFn: getOrganizations,
     staleTime: 60_000,
   });
-  const currentOrgName = organizations?.[0]?.name;
+  const organizationId = searchParams.get("organization_id");
+
+  useEffect(() => {
+    if (organizations?.length && !searchParams.get("organization_id")) {
+      setSearchParams(
+        (prev) => {
+          const newParams = new URLSearchParams(prev);
+          newParams.set("organization_id", String(organizations[0].id));
+          return newParams;
+        },
+        { replace: true },
+      );
+    }
+  }, [organizations, searchParams, setSearchParams]);
+
+  const currentOrganization = organizations?.find(
+    (o) => String(o.id) === organizationId,
+  );
+  const currentOrgName = currentOrganization?.name;
 
   // Delete team state
   const [deleteModalState, setDeleteModalState] = useState<{
@@ -248,6 +266,8 @@ export default function TeamsListPage() {
             onSearch={handleSearch}
             onSortChange={handleSort}
             onFilterChange={handleFilter}
+            organizations={organizations}
+            currentOrganizationId={organizationId ?? ""}
           />
         </motion.div>
 
@@ -305,6 +325,7 @@ export default function TeamsListPage() {
         isOpen={canManageTeams && modalState.open}
         onClose={handleCloseModal}
         team={modalState.team}
+        organizationId={organizationId || String(organizations?.[0]?.id ?? "")}
       />
       <TeamMembersModal
         team={selectedMemberTeam}
