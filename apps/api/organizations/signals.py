@@ -78,9 +78,12 @@ _DEFAULT_ROLE_PERMISSIONS = {
 
 @receiver(post_save, sender=Organization, dispatch_uid="ensure_owner_membership_uid")
 def ensure_owner_membership(sender, instance, created, **kwargs):
+    if getattr(instance, "is_deleted", False):
+        return
+
+    created_roles = {}
     if created:
         # Create default roles for the new organization
-        created_roles = {}
         for role_name, perm_codes in _DEFAULT_ROLE_PERMISSIONS.items():
             role, r_created = Role.objects.get_or_create(
                 organization=instance,
@@ -96,20 +99,33 @@ def ensure_owner_membership(sender, instance, created, **kwargs):
             created_roles[role_name] = role
 
     if instance.owner:
+        # Clean up stale active memberships left behind in soft-deleted
+        # organizations before restoring/creating the owner's membership.
+        OrganizationMembership.all_objects.filter(
+            user=instance.owner,
+            is_deleted=False,
+            organization__is_deleted=True,
+        ).update(is_deleted=True)
+
         if created:
             # Suppress the member added notification for the owner when the org is just created
             instance._is_new_org_creation = True
 
-        membership, membership_created = OrganizationMembership.objects.get_or_create(
+        membership = OrganizationMembership.all_objects.filter(
             user=instance.owner,
             organization=instance,
-            defaults={"role": OrganizationMembership.Role.OWNER},
-        )
+        ).first()
 
-        # Force the text role to OWNER if they were previously something else
-        if not membership_created and membership.role != OrganizationMembership.Role.OWNER:
+        if membership:
+            membership.is_deleted = False
             membership.role = OrganizationMembership.Role.OWNER
-            membership.save(update_fields=["role"])
+            membership.save(update_fields=["is_deleted", "role", "updated_at"])
+        else:
+            OrganizationMembership.objects.create(
+                user=instance.owner,
+                organization=instance,
+                role=OrganizationMembership.Role.OWNER,
+            )
 
         # Assign dynamic 'Owner' role if it exists (for new orgs it was just created)
         if created and "Owner" in created_roles:

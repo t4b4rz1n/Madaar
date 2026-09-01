@@ -1,6 +1,7 @@
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from django_filters.rest_framework import DjangoFilterBackend
-from organizations.models import OrganizationMembership
+
 from rest_framework import status, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
@@ -8,6 +9,7 @@ from rest_framework.response import Response
 
 from accounts.models import User
 from common.utils.mixins import FieldFilterOverviewMixin
+from organizations.models import OrganizationMembership
 
 from .filters import UserFilter
 from .permissions import CanManageUsers
@@ -28,7 +30,12 @@ class UserViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
         qs = super().get_queryset().prefetch_related("org_memberships__dynamic_roles")
         unassigned = self.request.query_params.get("unassigned")
         if unassigned and unassigned.lower() in ("true", "1"):
-            qs = qs.exclude(org_memberships__is_deleted=False)
+            active_membership = OrganizationMembership.objects.filter(
+                user_id=OuterRef("pk"),
+                is_deleted=False,
+                organization__is_deleted=False,
+            )
+            qs = qs.filter(~Exists(active_membership))
 
         if user.is_staff or user.is_superuser:
             return qs

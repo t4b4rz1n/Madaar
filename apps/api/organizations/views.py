@@ -1,16 +1,17 @@
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Organization
-from .models import OrganizationMembership
+from .models import Organization, OrganizationMembership, Team, TeamMembership
 from .permissions import CanManageOrganization
-from .serializers import AddOrgMemberSerializer
-from .serializers import OrganizationMemberSerializer
-from .serializers import OrganizationSerializer
+from .serializers import (
+    AddOrgMemberSerializer,
+    OrganizationMemberSerializer,
+    OrganizationSerializer,
+)
 
 
 class CanCreateOrganization(permissions.BasePermission):
@@ -72,7 +73,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Organization.objects.annotate(
+        queryset = Organization.objects.filter(is_deleted=False).annotate(
             member_count=Count(
                 "memberships",
                 filter=Q(memberships__is_deleted=False),
@@ -132,9 +133,46 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        has_active_org = OrganizationMembership.objects.filter(
+            user=request.user,
+            is_deleted=False,
+            organization__is_deleted=False,
+        ).exists()
+        if has_active_org:
+            return Response(
+                {"detail": "User already belongs to an active organization."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        OrganizationMembership.all_objects.filter(
+            user=request.user,
+            is_deleted=False,
+            organization__is_deleted=True,
+        ).update(is_deleted=True)
+
         organization = serializer.save(owner=request.user)
         response_serializer = self.get_serializer(self.get_queryset().get(pk=organization.pk))
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        organization = self.get_object()
+
+        with transaction.atomic():
+            OrganizationMembership.objects.filter(organization=organization).update(is_deleted=True)
+            TeamMembership.objects.filter(team__organization=organization).update(is_deleted=True)
+            Team.objects.filter(organization=organization).update(is_deleted=True)
+
+            # Cascade soft-delete projects safely
+            try:
+                from projects.models import Project
+                Project.objects.filter(organization=organization).update(is_deleted=True)
+            except (ImportError, AttributeError):
+                pass
+
+            Organization.objects.filter(pk=organization.pk).update(is_deleted=True)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["get", "post"], url_path="members")
     def members(self, request, pk=None):
@@ -155,27 +193,43 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             user_id = serializer.validated_data["user_id"]
             role_id = serializer.validated_data.get("role_id") or OrganizationMembership.Role.EMPLOYEE
 
-            with transaction.atomic():
-                # Look up existing membership including soft-deleted records
-                membership = OrganizationMembership.all_objects.filter(
-                    organization=organization, user_id=user_id
-                ).first()
-
-                if membership:
-                    # Restore soft-deleted membership
-                    membership.is_deleted = False
-                    membership.role = role_id
-                    membership.invited_by = request.user if request.user.is_authenticated else None
-                    membership.save()
-                    created = False
-                else:
-                    membership = OrganizationMembership.objects.create(
+            try:
+                with transaction.atomic():
+                    if OrganizationMembership.objects.filter(
                         user_id=user_id,
-                        organization=organization,
-                        role=role_id,
-                        invited_by=request.user if request.user.is_authenticated else None,
-                    )
-                    created = True
+                        is_deleted=False,
+                        organization__is_deleted=False,
+                    ).exclude(organization=organization).exists():
+                        return Response(
+                            {"detail": "User already belongs to another active organization."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    # Look up existing membership including soft-deleted records
+                    membership = OrganizationMembership.all_objects.filter(
+                        organization=organization, user_id=user_id
+                    ).first()
+
+                    if membership:
+                        # Restore soft-deleted membership
+                        membership.is_deleted = False
+                        membership.role = role_id
+                        membership.invited_by = request.user if request.user.is_authenticated else None
+                        membership.save()
+                        created = False
+                    else:
+                        membership = OrganizationMembership.objects.create(
+                            user_id=user_id,
+                            organization=organization,
+                            role=role_id,
+                            invited_by=request.user if request.user.is_authenticated else None,
+                        )
+                        created = True
+            except IntegrityError:
+                return Response(
+                    {"detail": "User already belongs to another active organization."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             response_serializer = OrganizationMemberSerializer(membership)
             status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK

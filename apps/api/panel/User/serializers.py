@@ -1,9 +1,9 @@
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
-from organizations.models import Organization, OrganizationMembership
 from rest_framework import serializers
 
 from accounts.models import User
+from organizations.models import Organization, OrganizationMembership
 
 
 def _extract_org_id(request):
@@ -101,7 +101,14 @@ class UserListSerializer(serializers.ModelSerializer):
         return None
 
     def get_organization(self, obj):
-        membership = obj.org_memberships.filter(is_deleted=False).first()
+        membership = (
+            obj.org_memberships.filter(
+                is_deleted=False,
+                organization__is_deleted=False,
+            )
+            .select_related("organization")
+            .first()
+        )
         if membership:
             return {
                 "id": str(membership.organization.id),
