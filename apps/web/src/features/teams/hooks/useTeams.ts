@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { teamsApi } from "../api/teamsApi";
-import type { AddTeamMemberPayload, SquadFormData, TeamFormData } from "../types";
+import type { AddTeamMemberPayload, TeamFormData } from "../types";
 
 export const useTeams = (params: URLSearchParams) => {
   const serializedParams = params.toString();
@@ -94,105 +94,6 @@ export const useDeleteTeam = () => {
   });
 };
 
-export const useSquads = (teamId?: number) => {
-  return useQuery({
-    queryKey: ["squads", teamId],
-    queryFn: async () => {
-      const response = await teamsApi.getSquads(
-        teamId !== undefined ? { team_id: teamId } : undefined,
-      );
-
-      return response.data.results;
-    },
-    enabled: !!teamId,
-  });
-};
-
-export const useCreateSquad = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: SquadFormData) => teamsApi.createSquad(data),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["squads"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["teams"],
-        }),
-      ]);
-
-      toast.success("Squad created successfully");
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to create squad";
-
-      toast.error(errorMessage);
-    },
-  });
-};
-
-export const useUpdateSquad = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<SquadFormData> }) =>
-      teamsApi.updateSquad(id, data),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["squads"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["teams"],
-        }),
-      ]);
-
-      toast.success("Squad updated successfully");
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to update squad";
-
-      toast.error(errorMessage);
-    },
-  });
-};
-
-export const useDeleteSquad = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: number) => teamsApi.deleteSquad(id),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["squads"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["teams"],
-        }),
-      ]);
-
-      toast.success("Squad deleted successfully");
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to delete squad";
-
-      toast.error(errorMessage);
-    },
-  });
-};
-
 export const useTeamMembers = (teamId?: number) => {
   return useQuery({
     queryKey: ["teams", teamId, "members"],
@@ -212,8 +113,8 @@ export const useAddTeamMember = () => {
     mutationFn: (payload: AddTeamMemberPayload) => teamsApi.addTeamMember(payload),
     onSuccess: async (_data, variables) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["teams", variables.team, "members"] }),
-        queryClient.invalidateQueries({ queryKey: ["teams", variables.team] }),
+        queryClient.invalidateQueries({ queryKey: ["teams", variables.teamId, "members"] }),
+        queryClient.invalidateQueries({ queryKey: ["teams", variables.teamId] }),
         queryClient.invalidateQueries({ queryKey: ["teams"] }),
         queryClient.invalidateQueries({ queryKey: ["organizations"] }),
       ]);
@@ -246,8 +147,7 @@ export const useRemoveTeamMember = () => {
     },
     onError: (error: any) => {
       const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
+        error?.response?.data?.message || error?.response?.data?.detail || error?.message ||
         "Failed to remove member";
       toast.error(errorMessage);
     },

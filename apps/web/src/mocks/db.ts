@@ -1,6 +1,6 @@
 import type { User } from "../features/users/types";
 import type { Discount } from "../features/discounts/types";
-import type { Team, Squad } from "../features/teams/types";
+import type { Team } from "../features/teams/types";
 import type { Notification } from "../features/notifications/types";
 import type { UserProfile } from "../features/profile/types";
 import type {
@@ -449,33 +449,6 @@ export let mockTeams: Team[] = [
   },
 ];
 
-export let mockSquads: Squad[] = [
-  {
-    id: 1,
-    team_id: 1,
-    name: "Frontend Development",
-    description: "Implementing user interface with React and Tailwind CSS",
-    is_active: true,
-    created_at: "2026-01-02T10:00:00Z",
-  },
-  {
-    id: 2,
-    team_id: 1,
-    name: "Backend Development",
-    description: "Implementing services with Django and Docker",
-    is_active: true,
-    created_at: "2026-01-03T11:00:00Z",
-  },
-  {
-    id: 3,
-    team_id: 2,
-    name: "Level 1 Support",
-    description: "Initial response to user tickets",
-    is_active: true,
-    created_at: "2026-02-16T08:00:00Z",
-  },
-];
-
 export let mockProjects: Project[] = [
   {
     id: "1",
@@ -789,7 +762,7 @@ export const db = {
       return newTeam;
     },
     update: (id: number, updates: Partial<Team>) => {
-      const idx = mockTeams.findIndex((t) => t.id === id);
+  const idx = mockTeams.findIndex((t) => t.id === id);
       if (idx !== -1) {
         mockTeams[idx] = {
           ...mockTeams[idx],
@@ -803,44 +776,7 @@ export const db = {
     delete: (id: number) => {
       const initialLength = mockTeams.length;
       mockTeams = mockTeams.filter((t) => t.id !== id);
-      mockSquads = mockSquads.filter((s) => s.team_id !== id);
       return mockTeams.length < initialLength;
-    },
-  },
-  squads: {
-    getAll: () => mockSquads,
-    getByTeamId: (teamId: number) =>
-      mockSquads.filter((s) => s.team_id === teamId),
-    getById: (id: number) => mockSquads.find((s) => s.id === id),
-    create: (squad: Omit<Squad, "id">) => {
-      const nextId =
-        mockSquads.length > 0
-          ? Math.max(...mockSquads.map((s) => s.id)) + 1
-          : 1;
-      const newSquad = {
-        ...squad,
-        id: nextId,
-        created_at: new Date().toISOString(),
-      };
-      mockSquads.unshift(newSquad);
-      return newSquad;
-    },
-    update: (id: number, updates: Partial<Squad>) => {
-      const idx = mockSquads.findIndex((s) => s.id === id);
-      if (idx !== -1) {
-        mockSquads[idx] = {
-          ...mockSquads[idx],
-          ...updates,
-          updated_at: new Date().toISOString(),
-        };
-        return mockSquads[idx];
-      }
-      return null;
-    },
-    delete: (id: number) => {
-      const initialLength = mockSquads.length;
-      mockSquads = mockSquads.filter((s) => s.id !== id);
-      return mockSquads.length < initialLength;
     },
   },
   // اضافه کردن این بخش به داخل شیء db

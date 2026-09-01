@@ -17,9 +17,6 @@ class PanelTeamTestCase(APITestCase):
         )
         self.org = Organization.objects.create(name="Test Org", slug="test-org", owner=self.user)
         self.team = Team.objects.create(name="Backend Devs", organization=self.org)
-        self.squad = Team.objects.create(
-            name="Core Squad", organization=self.org, parent_team=self.team
-        )
         self.client.force_authenticate(user=self.user)
 
     def test_list_teams_success(self):
@@ -31,20 +28,6 @@ class PanelTeamTestCase(APITestCase):
         self.assertTrue(json_data["status"])
         self.assertIn("results", json_data["data"])
         self.assertEqual(json_data["data"]["results"][0]["name"], self.team.name)
-
-    def test_list_squads_success(self):
-        url = reverse("staff-squads-list")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        json_data = response.json()
-        self.assertTrue(json_data["status"])
-        squads = (
-            json_data["data"]["results"]
-            if isinstance(json_data["data"], dict) and "results" in json_data["data"]
-            else json_data["data"]
-        )
-        self.assertEqual(squads[0]["name"], self.squad.name)
 
     def test_create_team(self):
         url = reverse("staff-teams-list")

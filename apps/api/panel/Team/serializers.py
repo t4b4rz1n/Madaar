@@ -15,7 +15,6 @@ class TeamSerializer(serializers.ModelSerializer):
     lead_id = serializers.SerializerMethodField()
     leader_details = serializers.SerializerMethodField()
     organization_id = serializers.UUIDField(read_only=True)
-    squads_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Team
@@ -29,7 +28,6 @@ class TeamSerializer(serializers.ModelSerializer):
             "organization_id",
             "lead_id",
             "leader_details",
-            "squads_count",
             "created_at",
             "updated_at",
         )
@@ -37,7 +35,6 @@ class TeamSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
             "updated_at",
-            "squads_count",
             "lead_id",
             "leader_details",
         )
@@ -60,9 +57,6 @@ class TeamSerializer(serializers.ModelSerializer):
         if membership and membership.user:
             return LeaderDetailsSerializer(membership.user).data
         return None
-
-    def get_squads_count(self, obj):
-        return Team.objects.filter(parent_team=obj, is_deleted=False).count()
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -136,44 +130,13 @@ class TeamMembershipSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at", "updated_at")
 
     def get_user_details(self, obj):
-        if obj.user:
-            return LeaderDetailsSerializer(obj.user).data
-        return None
-
-
-class SquadSerializer(serializers.ModelSerializer):
-    team_id = serializers.UUIDField(source="parent_team_id", required=False)
-    is_active = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Team
-        fields = (
-            "id",
-            "team_id",
-            "name",
-            "description",
-            "is_active",
-            "created_at",
-            "updated_at",
-        )
-        read_only_fields = ("id", "created_at", "updated_at")
-
-    def get_is_active(self, obj):
-        return not obj.is_deleted
-
-    def create(self, validated_data):
-        request = self.context.get("request")
-        team_id = request.data.get("team_id") if request else None
-        validated_data.pop("is_active", None)
-
-        if team_id:
-            parent_team = Team.objects.filter(id=team_id).first()
-            if parent_team:
-                validated_data["parent_team"] = parent_team
-                validated_data["organization"] = parent_team.organization
-
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        validated_data.pop("is_active", None)
-        return super().update(instance, validated_data)
+        user = obj.get("user") if isinstance(obj, dict) else getattr(obj, "user", None)
+        if user is None:
+            return None
+        return {
+            "id": str(user.id),
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+        }

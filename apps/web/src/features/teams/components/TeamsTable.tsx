@@ -1,4 +1,4 @@
-import { Edit2, People, Profile2User, Setting3, Trash, User } from "iconsax-reactjs";
+import { Edit2, People, Profile2User, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
 
 interface TeamsTableProps {
@@ -6,7 +6,6 @@ interface TeamsTableProps {
   isLoading: boolean;
   isError: boolean;
   onEdit: (team: TeamWithDetails) => void;
-  onManageSquads?: (team: TeamWithDetails) => void;
   onManageMembers?: (team: TeamWithDetails) => void;
   onDelete: (team: TeamWithDetails) => void;
   canManage: boolean;
@@ -17,7 +16,6 @@ export const TeamsTable = ({
   isLoading,
   isError,
   onEdit,
-  onManageSquads,
   onManageMembers,
   onDelete,
   canManage,
@@ -30,7 +28,6 @@ export const TeamsTable = ({
             <tr>
               <th>Team Name</th>
               <th>Leader</th>
-              <th>Squads</th>
               <th>Status</th>
               <th>Created At</th>
               {canManage && <th className="text-end">Actions</th>}
@@ -44,9 +41,6 @@ export const TeamsTable = ({
                 </td>
                 <td>
                   <div className="h-4 bg-base-content/10 rounded-sm w-28"></div>
-                </td>
-                <td>
-                  <div className="h-4 bg-base-content/10 rounded-sm w-12"></div>
                 </td>
                 <td>
                   <div className="h-5 bg-base-content/10 rounded-xl w-16"></div>
@@ -93,14 +87,13 @@ export const TeamsTable = ({
   return (
     <div className="overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100">
       <table className="table table-zebra w-full">
-        <thead>
-          <tr className="border-b border-base-content/10 text-base-content/70">
-            <th>Team Name</th>
-            <th>Leader</th>
-            <th>Squads</th>
-            <th>Status</th>
-            <th>Created At</th>
-            {canManage && <th className="text-end">Actions</th>}
+          <thead>
+            <tr className="border-b border-base-content/10 text-base-content/70">
+              <th>Team Name</th>
+              <th>Leader</th>
+              <th>Status</th>
+              <th>Created At</th>
+              {canManage && <th className="text-end">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -139,9 +132,6 @@ export const TeamsTable = ({
                 </div>
               </td>
               <td>
-                <span className="font-mono text-sm">{team.squads_count ?? 0}</span>
-              </td>
-              <td>
                 <span
                   className={`badge badge-sm rounded-lg ${
                     team.is_active
@@ -166,16 +156,6 @@ export const TeamsTable = ({
                     >
                       <User size={14} />
                       <span className="hidden sm:inline">Members</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onManageSquads?.(team)}
-                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:text-primary hover:bg-primary/10"
-                      title="Manage Squads"
-                    >
-                      <Setting3 size={14} />
-                      <span className="hidden sm:inline">Squads</span>
-                      <span className="badge badge-xs badge-ghost font-mono">{team.squads_count ?? 0}</span>
                     </button>
                     <button
                       onClick={() => onEdit(team)}
