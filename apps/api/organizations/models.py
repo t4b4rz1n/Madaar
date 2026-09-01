@@ -60,7 +60,8 @@ class Team(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "name"],
-                name="unique_team_org_name",
+                condition=models.Q(is_deleted=False),
+                name="unique_team_org_name_active",
             )
         ]
 
@@ -145,7 +146,8 @@ class TeamMembership(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "team"],
-                name="unique_team_membership_user_team",
+                condition=models.Q(is_deleted=False),
+                name="unique_team_membership_user_team_active",
             )
         ]
 

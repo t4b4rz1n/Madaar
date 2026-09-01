@@ -10,7 +10,6 @@ import { Pagination } from "../../../components/Pagination";
 import { ViewSwitcher } from "../../../components/ViewSwitcher";
 import { CreateEditTeamModal } from "../components/CreateEditTeamModal";
 import { TeamMembersModal } from "../components/TeamMembersModal";
-import { TeamSquadsModal } from "../components/TeamSquadsModal";
 import { TeamsGrid } from "../components/TeamsGrid";
 import { TeamsTable } from "../components/TeamsTable";
 import { TeamsToolbar } from "../components/TeamsToolbar";
@@ -46,7 +45,6 @@ export default function TeamsListPage() {
     open: boolean;
     team: TeamWithDetails | null;
   }>({ open: false, team: null });
-  const [selectedSquadTeam, setSelectedSquadTeam] = useState<Team | null>(null);
   const [selectedMemberTeam, setSelectedMemberTeam] = useState<Team | null>(null);
 
   // Organization context
@@ -166,14 +164,6 @@ export default function TeamsListPage() {
     setModalState({ open: false, team: null });
   };
 
-  const handleManageSquads = (team: TeamWithDetails) => {
-    setSelectedSquadTeam(team);
-  };
-
-  const handleCloseSquadModal = () => {
-    setSelectedSquadTeam(null);
-  };
-
   const handleManageMembers = (team: TeamWithDetails) => {
     setSelectedMemberTeam(team);
   };
@@ -230,7 +220,7 @@ export default function TeamsListPage() {
               </span>
             </div>
             <p className="mt-1 text-xs font-medium text-base-content/50">
-              Manage and structure organizational teams and squads.
+              Manage and structure organizational teams.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -278,7 +268,6 @@ export default function TeamsListPage() {
                   isLoading={showLoading}
                   isError={isError}
                   onEdit={handleEditTeam}
-                  onManageSquads={handleManageSquads}
                   onManageMembers={handleManageMembers}
                   onDelete={handleDeleteTeam}
                   canManage={canManageTeams}
@@ -289,7 +278,6 @@ export default function TeamsListPage() {
                   isLoading={showLoading}
                   isError={isError}
                   onEdit={handleEditTeam}
-                  onManageSquads={handleManageSquads}
                   onManageMembers={handleManageMembers}
                   onDelete={handleDeleteTeam}
                   canManage={canManageTeams}
@@ -317,12 +305,6 @@ export default function TeamsListPage() {
         isOpen={canManageTeams && modalState.open}
         onClose={handleCloseModal}
         team={modalState.team}
-      />
-      <TeamSquadsModal
-        team={selectedSquadTeam}
-        isOpen={selectedSquadTeam !== null}
-        onClose={handleCloseSquadModal}
-        onManageMembers={handleManageMembers}
       />
       <TeamMembersModal
         team={selectedMemberTeam}

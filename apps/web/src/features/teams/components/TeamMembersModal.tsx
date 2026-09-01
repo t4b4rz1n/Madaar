@@ -62,7 +62,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
     if (!team || !selectedUserId) return;
     try {
       await addMember.mutateAsync({
-        team: team.id,
+        teamId: team.id,
         user: selectedUserId,
         role: selectedRole,
       });

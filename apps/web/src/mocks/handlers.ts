@@ -6,7 +6,7 @@ import type { NotificationFormData } from "../features/notifications/types";
 // import type { ProfileUpdateData } from "../features/profile/types";
 import type { Ticket, TicketFormData } from "../features/tickets/types";
 import { getApiUrl } from "../core/api/config";
-import type { TeamFormData, SquadFormData } from "../features/teams/types";
+import type { TeamFormData } from "../features/teams/types";
 import type { EmployeeDashboard } from "../features/dashboard/types";
 import type { ManagerDashboard, ManagerMemberDetail } from "../features/dashboard/types";
 import type { TimeOffRequest } from "../features/attendance/types";
@@ -1258,18 +1258,16 @@ export const handlers = [
       });
     }
 
-    // Enrich with lead info, squad count, and member count
+    // Enrich with lead info, and member count
     const detailedTeams = teams.map((team) => {
       const lead = team.lead_id ? db.users.getById(team.lead_id) : null;
-      const squadsCount = db.squads.getByTeamId(team.id).length;
-      // Team members are simulated based on users in this team's squads or the team lead
+      // Team members are simulated based on the team lead
       // For simplicity, we currently simulate member count using other filters or a fixed number
       const membersCount = lead ? 3 : 0;
 
       return {
         ...team,
         lead,
-        squads_count: squadsCount,
         members_count: membersCount,
       };
     });
@@ -1358,111 +1356,11 @@ export const handlers = [
 
     return HttpResponse.json({
       status: true,
-      message: "Team and its sub-squads deleted successfully",
+      message: "Team deleted successfully",
       data: {},
     });
   }),
 
-  // --- Squads MSW Handlers ---
-  http.get("*/panel/squads/", ({ request }) => {
-    const url = new URL(request.url);
-    const teamId = url.searchParams.get("team_id");
-
-    let squads = [...db.squads.getAll()];
-
-    if (teamId) {
-      squads = squads.filter((s) => s.team_id === Number(teamId));
-    }
-
-    return HttpResponse.json({
-      status: true,
-      message: "Success",
-      data: squads,
-    });
-  }),
-
-  http.post("*/panel/squads/", async ({ request }) => {
-    const data = (await request.json()) as SquadFormData;
-
-    const exists = db.squads
-      .getAll()
-      .some(
-        (s) =>
-          s.team_id === data.team_id &&
-          s.name.toLowerCase() === data.name.trim().toLowerCase(),
-      );
-
-    if (exists) {
-      return HttpResponse.json(
-        {
-          status: false,
-          message: "A squad with this name already exists in this team",
-          data: {},
-        },
-        { status: 400 },
-      );
-    }
-
-    const newSquad = db.squads.create({
-      team_id: data.team_id,
-      name: data.name.trim(),
-      description: data.description || "",
-      is_active: Boolean(data.is_active),
-    });
-
-    return HttpResponse.json({
-      status: true,
-      message: "Squad created successfully",
-      data: newSquad,
-    });
-  }),
-
-  http.patch("*/panel/squads/:id/", async ({ params, request }) => {
-    const id = Number(params.id);
-    const data = (await request.json()) as Partial<SquadFormData>;
-
-    const updated = db.squads.update(id, data);
-
-    if (!updated) {
-      return HttpResponse.json(
-        {
-          status: false,
-          message: "Squad not found",
-          data: {},
-        },
-        { status: 404 },
-      );
-    }
-
-    return HttpResponse.json({
-      status: true,
-      message: "Squad updated successfully",
-      data: updated,
-    });
-  }),
-
-  http.delete("*/panel/squads/:id/", ({ params }) => {
-    const id = Number(params.id);
-    const success = db.squads.delete(id);
-
-    if (!success) {
-      return HttpResponse.json(
-        {
-          status: false,
-          message: "Squad not found",
-          errors: null,
-          data: null,
-        },
-        { status: 404 },
-      );
-    }
-
-    return HttpResponse.json({
-      status: true,
-      message: "Squad deleted successfully",
-      data: null,
-    });
-  }),
   // ==========================================
   // --- Projects MSW Handlers ---
   // ==========================================

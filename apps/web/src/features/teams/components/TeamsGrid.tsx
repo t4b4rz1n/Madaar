@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit2, People, Profile2User, Setting3, Trash, User } from "iconsax-reactjs";
+import { Edit2, People, Profile2User, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
 
 interface TeamsGridProps {
@@ -7,7 +7,6 @@ interface TeamsGridProps {
   isLoading: boolean;
   isError: boolean;
   onEdit: (team: TeamWithDetails) => void;
-  onManageSquads?: (team: TeamWithDetails) => void;
   onManageMembers?: (team: TeamWithDetails) => void;
   onDelete: (team: TeamWithDetails) => void;
   canManage: boolean;
@@ -31,7 +30,6 @@ export const TeamsGrid = ({
   isLoading,
   isError,
   onEdit,
-  onManageSquads,
   onManageMembers,
   onDelete,
   canManage,
@@ -134,18 +132,13 @@ export const TeamsGrid = ({
                       ? `${team.leader_details.first_name} ${team.leader_details.last_name}`
                       : "Not assigned"}
                   </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm text-base-content/80">
-                <People size={16} className="text-base-content/50" />
-                <span className="font-medium">Squads Count:</span>
-                <span className="font-mono text-sm">{team.squads_count ?? 0}</span>
               </div>
             </div>
-          </div>
 
-          <div className="px-6 pb-6 pt-3 flex items-end bg-base-200/20 rounded-b-2xl border-t border-base-content/5">
+         </div>
+         </div>
+
+         <div className="px-6 pb-6 pt-3 flex items-end bg-base-200/20 rounded-b-2xl border-t border-base-content/5">
             <div className="text-xs text-base-content/50">
               {new Date(team.created_at ?? "").toLocaleDateString()}
             </div>
@@ -159,16 +152,6 @@ export const TeamsGrid = ({
                 >
                   <User size={14} />
                   <span className="hidden sm:inline">Members</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onManageSquads?.(team)}
-                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-base-content/60 hover:text-primary hover:bg-primary/10 motion-interactive"
-                  title="Manage Squads"
-                >
-                  <Setting3 size={14} />
-                  <span className="hidden sm:inline">Squads</span>
-                  <span className="badge badge-xs badge-ghost font-mono">{team.squads_count ?? 0}</span>
                 </button>
                 <button
                   onClick={() => onEdit(team)}
