@@ -1,5 +1,14 @@
 import { AnimatePresence, motion } from "motion/react";
-import { Add, ArrowLeft, People, User, Trash } from "iconsax-reactjs";
+import {
+  Add,
+  ArrowLeft,
+  Briefcase,
+  FolderFavorite,
+  People,
+  Profile2User,
+  User,
+  Trash,
+} from "iconsax-reactjs";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -11,6 +20,12 @@ import {
 } from "../api/organizationsApi";
 import { CreateOrgMemberModal } from "../components/CreateOrgMemberModal";
 import type { OrganizationMember } from "../types";
+import { teamsApi } from "../../teams/api/teamsApi";
+import * as projectsApi from "../../projects/api/projectsApi";
+import { CreateEditTeamModal } from "../../teams/components/CreateEditTeamModal";
+import { CreateEditProjectModal } from "../../projects/components/CreateEditProjectModal";
+import type { TeamWithDetails } from "../../teams/types";
+import type { Project } from "../../projects/types";
 
 const getUserDisplayName = (member: OrganizationMember): string => {
   const fullName = member.full_name?.trim();
@@ -31,6 +46,8 @@ export default function OrganizationDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isCreateMemberOpen, setIsCreateMemberOpen] = useState(false);
+  const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<OrganizationMember | null>(null);
 
   const { data: organization, isLoading: isOrgLoading } = useQuery({
@@ -42,6 +59,24 @@ export default function OrganizationDetailPage() {
   const { data: members = [], isLoading: isMembersLoading } = useQuery({
     queryKey: ["organization-members", orgId],
     queryFn: () => getMembers(orgId!),
+    enabled: Boolean(orgId),
+  });
+
+  const { data: teams = [], isLoading: isTeamsLoading } = useQuery<TeamWithDetails[]>({
+    queryKey: ["teams", { organization_id: orgId }],
+    queryFn: async () => {
+      const response = await teamsApi.getTeams({ organization_id: orgId });
+      return response.data?.results ?? [];
+    },
+    enabled: Boolean(orgId),
+  });
+
+  const { data: projects = [], isLoading: isProjectsLoading } = useQuery<Project[]>({
+    queryKey: ["projects", { organization: orgId }],
+    queryFn: () =>
+      projectsApi.getProjects({ organization: orgId } as Parameters<
+        typeof projectsApi.getProjects
+      >[0]),
     enabled: Boolean(orgId),
   });
 
@@ -128,14 +163,32 @@ export default function OrganizationDetailPage() {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsCreateMemberOpen(true)}
-            className="btn btn-primary btn-sm rounded-xl gap-2"
-          >
-            <Add size={16} />
-            Create member
-          </button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCreateMemberOpen(true)}
+              className="btn btn-primary btn-sm rounded-xl gap-2"
+            >
+              <Add size={16} />
+              Create member
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCreateTeamOpen(true)}
+              className="btn btn-outline btn-sm rounded-xl gap-2"
+            >
+              <Profile2User size={16} />
+              Create team
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCreateProjectOpen(true)}
+              className="btn btn-outline btn-sm rounded-xl gap-2"
+            >
+              <FolderFavorite size={16} />
+              Create project
+            </button>
+          </div>
         </div>
       </div>
 
@@ -212,6 +265,125 @@ export default function OrganizationDetailPage() {
         )}
       </div>
 
+      {/* Teams section */}
+      <div className="madaar-surface mt-6 rounded-2xl border border-base-content/10 bg-base-100">
+        <div className="flex items-center justify-between border-b border-base-content/10 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <Profile2User size={18} className="text-base-content/45" />
+            <h2 className="text-lg font-semibold">Teams</h2>
+            <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-base-content/55">
+              {teams.length}
+            </span>
+          </div>
+        </div>
+        {isTeamsLoading ? (
+          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="h-32 animate-pulse rounded-xl bg-base-200/70" />
+            ))}
+          </div>
+        ) : teams.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-base-content/45">
+              <Profile2User size={24} />
+            </div>
+            <p className="text-sm text-base-content/55">No teams found in this organization</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+            <AnimatePresence mode="popLayout">
+              {teams.map((team) => {
+                const leader = team.leader_details;
+                const memberCount = (team as TeamWithDetails & { member_count?: number; members_count?: number }).member_count
+                  ?? (team as TeamWithDetails & { members_count?: number }).members_count;
+                return (
+                  <motion.div
+                    layout
+                    key={team.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="madaar-surface rounded-xl border border-base-content/10 bg-base-100 p-4 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{team.name}</p>
+                        <p className="mt-1 line-clamp-2 text-xs text-base-content/50">
+                          {team.description || "No description provided"}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        team.is_active ? "bg-success/10 text-success" : "bg-base-200 text-base-content/50"
+                      }`}>
+                        {team.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between text-xs text-base-content/50">
+                      <span>
+                        Leader: {leader ? `${leader.first_name} ${leader.last_name}`.trim() : "Unassigned"}
+                      </span>
+                      {memberCount !== undefined && <span>{memberCount} members</span>}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+
+      {/* Projects section */}
+      <div className="madaar-surface mt-6 rounded-2xl border border-base-content/10 bg-base-100">
+        <div className="flex items-center justify-between border-b border-base-content/10 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <Briefcase size={18} className="text-base-content/45" />
+            <h2 className="text-lg font-semibold">Projects</h2>
+            <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-base-content/55">
+              {projects.length}
+            </span>
+          </div>
+        </div>
+        {isProjectsLoading ? (
+          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="h-36 animate-pulse rounded-xl bg-base-200/70" />
+            ))}
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-base-content/45">
+              <FolderFavorite size={24} />
+            </div>
+            <p className="text-sm text-base-content/55">No projects found in this organization</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+            <AnimatePresence mode="popLayout">
+              {projects.map((project) => (
+                <motion.div
+                  layout
+                  key={project.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="madaar-surface rounded-xl border border-base-content/10 bg-base-100 p-4 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="truncate text-sm font-semibold">{project.name}</p>
+                    <span className="badge badge-sm shrink-0 capitalize">{project.status_display || project.status}</span>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs text-base-content/55">
+                    {project.description || "No description provided"}
+                  </p>
+                  <div className="mt-4 flex items-center justify-between text-xs text-base-content/50">
+                    <span>{project.deadline ? `Due ${new Date(project.deadline).toLocaleDateString()}` : "No deadline"}</span>
+                    {project.progress_percentage !== undefined && <span>{project.progress_percentage}% complete</span>}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+
       {isCreateMemberOpen && (
         <CreateOrgMemberModal
           orgId={orgId!}
@@ -219,6 +391,16 @@ export default function OrganizationDetailPage() {
           onClose={() => setIsCreateMemberOpen(false)}
         />
       )}
+      <CreateEditTeamModal
+        isOpen={isCreateTeamOpen}
+        onClose={() => setIsCreateTeamOpen(false)}
+        organizationId={orgId!}
+      />
+      <CreateEditProjectModal
+        isOpen={isCreateProjectOpen}
+        onClose={() => setIsCreateProjectOpen(false)}
+        project={null}
+      />
 
       {/* Remove Confirmation Dialog */}
       <AnimatePresence>

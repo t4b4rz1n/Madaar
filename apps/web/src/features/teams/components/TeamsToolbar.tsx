@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDown2,
   ArrowUp2,
+  Building3,
   Filter,
   SearchNormal1,
   Sort,
@@ -15,6 +16,8 @@ interface ToolbarProps {
   onSearch: (query: string) => void;
   onSortChange: (sortKey: string) => void;
   onFilterChange: (filters: Record<string, string>) => void;
+  organizations?: Array<{ id: string | number; name: string }>;
+  currentOrganizationId?: string;
 }
 
 type SortKey = "name" | "created_at";
@@ -29,8 +32,10 @@ export const TeamsToolbar = ({
   onSearch,
   onSortChange,
   onFilterChange,
+  organizations,
+  currentOrganizationId = "",
 }: ToolbarProps) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // استیت محلی فیلد جست‌وجو برای اعمال Debounce
   const [searchQuery, setSearchQuery] = useState(
@@ -79,6 +84,14 @@ export const TeamsToolbar = ({
   const handleActiveFilterChange = (value: string) => {
     onFilterChange({
       is_active: value,
+    });
+  };
+
+  const handleOrganizationChange = (value: string) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("organization_id", value);
+      return newParams;
     });
   };
 
@@ -171,6 +184,33 @@ export const TeamsToolbar = ({
                       <option value="false">Inactive Only</option>
                     </select>
                   </label>
+
+                  {organizations?.length ? (
+                    <label className="form-control w-full">
+                      <div className="label pb-1">
+                        <span className="label-text flex items-center gap-1.5 text-xs font-semibold">
+                          <Building3 size={14} />
+                          Organization
+                        </span>
+                      </div>
+                      <select
+                        className="select select-sm w-full border-base-300 !shadow-none"
+                        value={currentOrganizationId}
+                        onChange={(e) =>
+                          handleOrganizationChange(e.target.value)
+                        }
+                      >
+                        {organizations.map((organization) => (
+                          <option
+                            key={organization.id}
+                            value={organization.id}
+                          >
+                            {organization.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                 </div>
               </motion.div>
             )}
