@@ -22,7 +22,7 @@ export const TeamsTable = ({
 }: TeamsTableProps) => {
   if (isLoading) {
     return (
-      <div className="overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100">
+      <div className="madaar-surface overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100/80 shadow-madaar-card">
         <table className="table w-full">
           <thead>
             <tr>
@@ -85,10 +85,10 @@ export const TeamsTable = ({
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100">
-      <table className="table table-zebra w-full">
+    <div className="madaar-surface overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100/90 shadow-madaar-card">
+      <table className="table w-full">
           <thead>
-            <tr className="border-b border-base-content/10 text-base-content/70">
+            <tr className="border-b border-base-content/10 bg-base-200/35 text-xs uppercase tracking-wider text-base-content/55">
               <th>Team Name</th>
               <th>Leader</th>
               <th>Status</th>
@@ -100,7 +100,7 @@ export const TeamsTable = ({
           {teams.map((team) => (
             <tr
               key={team.id}
-              className="hover:bg-base-200/50 transition-colors"
+              className="border-base-content/5 transition-colors hover:bg-base-200/45"
             >
               <td className="font-semibold text-base-content">
                 <div>
@@ -151,7 +151,7 @@ export const TeamsTable = ({
                     <button
                       type="button"
                       onClick={() => onManageMembers?.(team)}
-                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:text-primary hover:bg-primary/10"
+                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:bg-primary/10 hover:text-primary"
                       title="Manage Members"
                     >
                       <User size={14} />

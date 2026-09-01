@@ -131,20 +131,20 @@ export default function OrganizationDetailPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="space-y-6 px-1 pb-10 sm:px-0">
       {/* Back button */}
       <button
         type="button"
         onClick={() => navigate("/organizations")}
-        className="btn btn-ghost btn-sm mb-6 rounded-lg gap-2 ps-0 text-base-content/60 hover:text-base-content"
+        className="btn btn-ghost btn-sm rounded-lg gap-2 ps-0 text-base-content/60 hover:bg-base-200 hover:text-base-content"
       >
         <ArrowLeft size={16} />
         Back to organizations
       </button>
 
       {/* Organization header */}
-      <div className="madaar-surface mb-6 rounded-2xl border border-base-content/10 bg-base-100 p-6">
-        <div className="flex items-start justify-between gap-4">
+      <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 p-5 shadow-madaar-card backdrop-blur-xl sm:p-6">
+        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
           <div className="flex min-w-0 items-center gap-4">
             <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
               <People size={28} />
@@ -163,11 +163,11 @@ export default function OrganizationDetailPage() {
               )}
             </div>
           </div>
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:justify-end lg:w-auto">
             <button
               type="button"
               onClick={() => setIsCreateMemberOpen(true)}
-              className="btn btn-primary btn-sm rounded-xl gap-2"
+              className="btn btn-primary btn-sm rounded-xl gap-2 shadow-sm shadow-primary/15"
             >
               <Add size={16} />
               Create member
@@ -193,8 +193,8 @@ export default function OrganizationDetailPage() {
       </div>
 
       {/* Members section */}
-      <div className="madaar-surface rounded-2xl border border-base-content/10 bg-base-100">
-        <div className="flex items-center justify-between border-b border-base-content/10 px-6 py-4">
+      <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-madaar-card">
+        <div className="flex items-center justify-between border-b border-base-content/10 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-2">
             <User size={18} className="text-base-content/45" />
             <h2 className="text-lg font-semibold">Members</h2>
@@ -205,7 +205,7 @@ export default function OrganizationDetailPage() {
         </div>
 
         {isMembersLoading ? (
-          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
@@ -223,7 +223,7 @@ export default function OrganizationDetailPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
             <AnimatePresence mode="popLayout">
               {members.map((member) => (
                 <motion.div
@@ -232,7 +232,7 @@ export default function OrganizationDetailPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  className="madaar-surface group relative flex items-center gap-4 rounded-xl border border-base-content/10 bg-base-100 p-4 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
+                  className="madaar-surface group relative flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-madaar-raised"
                 >
                   <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                     {getInitials(getUserDisplayName(member))}
@@ -253,7 +253,7 @@ export default function OrganizationDetailPage() {
                   <button
                     type="button"
                     onClick={() => setMemberToRemove(member)}
-                    className="btn btn-ghost btn-square btn-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-error/60 hover:text-error hover:bg-error/10"
+                    className="btn btn-ghost btn-square btn-sm rounded-xl text-error/60 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-error/10 hover:text-error"
                     title="Remove from organization"
                   >
                     <Trash size={16} />
@@ -266,8 +266,8 @@ export default function OrganizationDetailPage() {
       </div>
 
       {/* Teams section */}
-      <div className="madaar-surface mt-6 rounded-2xl border border-base-content/10 bg-base-100">
-        <div className="flex items-center justify-between border-b border-base-content/10 px-6 py-4">
+      <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-madaar-card">
+        <div className="flex items-center justify-between border-b border-base-content/10 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-2">
             <Profile2User size={18} className="text-base-content/45" />
             <h2 className="text-lg font-semibold">Teams</h2>
@@ -277,7 +277,7 @@ export default function OrganizationDetailPage() {
           </div>
         </div>
         {isTeamsLoading ? (
-          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
             {[1, 2, 3].map((item) => (
               <div key={item} className="h-32 animate-pulse rounded-xl bg-base-200/70" />
             ))}
@@ -290,7 +290,7 @@ export default function OrganizationDetailPage() {
             <p className="text-sm text-base-content/55">No teams found in this organization</p>
           </div>
         ) : (
-          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
             <AnimatePresence mode="popLayout">
               {teams.map((team) => {
                 const leader = team.leader_details;
@@ -302,7 +302,7 @@ export default function OrganizationDetailPage() {
                     key={team.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="madaar-surface rounded-xl border border-base-content/10 bg-base-100 p-4 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
+                    className="madaar-surface rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-madaar-raised"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -332,8 +332,8 @@ export default function OrganizationDetailPage() {
       </div>
 
       {/* Projects section */}
-      <div className="madaar-surface mt-6 rounded-2xl border border-base-content/10 bg-base-100">
-        <div className="flex items-center justify-between border-b border-base-content/10 px-6 py-4">
+      <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-madaar-card">
+        <div className="flex items-center justify-between border-b border-base-content/10 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-2">
             <Briefcase size={18} className="text-base-content/45" />
             <h2 className="text-lg font-semibold">Projects</h2>
@@ -343,7 +343,7 @@ export default function OrganizationDetailPage() {
           </div>
         </div>
         {isProjectsLoading ? (
-          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
             {[1, 2, 3].map((item) => (
               <div key={item} className="h-36 animate-pulse rounded-xl bg-base-200/70" />
             ))}
@@ -356,7 +356,7 @@ export default function OrganizationDetailPage() {
             <p className="text-sm text-base-content/55">No projects found in this organization</p>
           </div>
         ) : (
-          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
             <AnimatePresence mode="popLayout">
               {projects.map((project) => (
                 <motion.div
@@ -413,7 +413,7 @@ export default function OrganizationDetailPage() {
             initial="hidden"
             animate="visible"
             exit="hidden"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 backdrop-blur-md sm:p-4"
             onClick={() => setMemberToRemove(null)}
           >
             <motion.div
@@ -425,7 +425,7 @@ export default function OrganizationDetailPage() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="w-full max-w-md rounded-2xl border border-base-content/10 bg-base-100 p-6 shadow-xl"
+              className="madaar-surface w-full max-w-md rounded-[24px] border border-base-content/10 bg-base-100/95 p-5 shadow-madaar-floating backdrop-blur-xl sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
@@ -443,7 +443,7 @@ export default function OrganizationDetailPage() {
                   from this organization? This action cannot be undone.
                 </p>
               </div>
-              <div className="mt-6 flex justify-end gap-3">
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setMemberToRemove(null)}

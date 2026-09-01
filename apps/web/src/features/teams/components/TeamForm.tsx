@@ -24,7 +24,7 @@ export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="space-y-4 flex flex-col mb-8"
+      className="mb-8 flex flex-col space-y-5"
     >
       <Controller
         name="lead_id"
@@ -43,7 +43,7 @@ export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => 
                 onChange={(e) =>
                   field.onChange(e.target.value === "" ? null : e.target.value)
                 }
-                className={`select select-bordered w-full rounded-xl pl-10 ${
+                className={`select select-bordered w-full rounded-xl bg-base-200/40 pl-10 focus:border-primary focus:outline-none ${
                   errors.lead_id ? "select-error" : ""
                 }`}
                 disabled={isLoadingUsers}
@@ -103,7 +103,7 @@ export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => 
               <textarea
                 {...field}
                 placeholder="What does this team do?"
-                className={`textarea textarea-bordered w-full pl-10 min-h-[100px] ${
+                className={`textarea textarea-bordered min-h-[100px] w-full bg-base-200/40 pl-10 focus:border-primary focus:outline-none ${
                   errors.description ? "textarea-error" : ""
                 }`}
               />

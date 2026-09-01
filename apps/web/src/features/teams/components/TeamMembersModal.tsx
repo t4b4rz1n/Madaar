@@ -118,16 +118,16 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
           initial="hidden"
           animate="visible"
           exit="hidden"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 backdrop-blur-md sm:p-4"
           onClick={onClose}
         >
           <motion.div
             variants={modalVariants}
-            className="relative w-full max-w-2xl bg-base-100 rounded-2xl shadow-xl m-4 max-h-[90vh] flex flex-col"
+            className="madaar-surface relative m-0 flex max-h-[min(90vh,44rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl sm:m-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-6 flex-shrink-0 border-b border-base-content/10">
+            <div className="flex-shrink-0 border-b border-base-content/10 bg-base-200/20 p-5 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
@@ -153,7 +153,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
             </div>
 
             {/* Body */}
-            <div className="p-6 flex-1 overflow-y-auto min-h-[200px] max-h-[500px]">
+            <div className="min-h-[200px] max-h-[500px] flex-1 overflow-y-auto p-5 sm:p-6">
               {isLoading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, i) => (
@@ -190,7 +190,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                   {members?.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-base-200/30 hover:bg-base-200/50 transition-colors group"
+                      className="group flex items-center gap-3 rounded-2xl border border-base-content/5 bg-base-200/25 p-3 transition-colors hover:bg-base-200/50"
                     >
                       <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
                         {member.user_details?.avatar ? (
@@ -236,12 +236,12 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
 
               {/* Add Member Section */}
               {!isLoading && !isError && (
-                <div className="mt-6 pt-6 border-t border-base-content/10">
+                <div className="mt-6 border-t border-base-content/10 pt-6">
                   <h4 className="font-semibold text-sm text-base-content mb-4 flex items-center gap-2">
                     <Add size={16} className="text-primary" />
                     Add New Member
                   </h4>
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
                     <div className="relative flex-1">
                       <select
                         value={selectedUserId}
@@ -298,7 +298,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
             </div>
 
             {/* Footer */}
-            <div className="p-6 flex-shrink-0 border-t border-base-content/10 bg-base-200/30 rounded-b-2xl">
+            <div className="flex-shrink-0 border-t border-base-content/10 bg-base-200/30 p-5 sm:p-6">
               <span className="text-xs text-base-content/50">
                 {memberCount} member{memberCount !== 1 ? "s" : ""}
               </span>

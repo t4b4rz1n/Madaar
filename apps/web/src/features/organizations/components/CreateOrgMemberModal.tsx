@@ -207,16 +207,16 @@ export const CreateOrgMemberModal = ({
           initial="hidden"
           animate="visible"
           exit="hidden"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 backdrop-blur-md sm:p-4"
           onClick={handleClose}
         >
           <motion.div
             variants={modalVariants}
-            className="relative w-full max-w-xl bg-base-100 rounded-2xl shadow-xl m-4 max-h-[90vh] flex flex-col"
+            className="madaar-surface relative m-0 flex max-h-[min(90vh,48rem)] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl sm:m-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-6 flex-shrink-0 border-b border-base-content/10">
+            <div className="flex-shrink-0 border-b border-base-content/10 bg-base-200/20 p-5 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
@@ -234,7 +234,7 @@ export const CreateOrgMemberModal = ({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="p-2 hover:bg-base-content/10 rounded-lg transition-colors"
+                    className="btn btn-ghost btn-square btn-sm rounded-xl text-base-content/50 hover:bg-base-200 hover:text-base-content"
                   disabled={isLoading}
                 >
                   <CloseCircle className="w-6 h-6 text-base-content/60" />
@@ -242,7 +242,7 @@ export const CreateOrgMemberModal = ({
               </div>
 
               {/* Segmented Tabs */}
-              <div className="mt-5 flex gap-1 rounded-xl bg-base-200/60 p-1 backdrop-blur-xl">
+              <div className="mt-5 flex flex-col gap-1 rounded-xl bg-base-200/60 p-1 backdrop-blur-xl sm:flex-row">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.key;
@@ -252,7 +252,7 @@ export const CreateOrgMemberModal = ({
                       type="button"
                       onClick={() => handleTabChange(tab.key)}
                       disabled={isLoading}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                         isActive
                           ? "bg-base-100 text-base-content shadow-sm backdrop-blur-xl"
                           : "text-base-content/50 hover:text-base-content/80"
@@ -267,7 +267,7 @@ export const CreateOrgMemberModal = ({
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-6 pt-6">
+            <div className="flex-1 overflow-y-auto px-5 pt-5 sm:px-6 sm:pt-6">
               {/* --- Add Existing User Tab --- */}
               {activeTab === "add_existing" && (
                 <div className="space-y-5">
@@ -597,8 +597,8 @@ export const CreateOrgMemberModal = ({
             </div>
 
             {/* Footer */}
-            <div className="p-6 flex-shrink-0 border-t border-base-content/10 bg-base-200/30 rounded-b-2xl">
-              <div className="flex justify-end gap-3">
+            <div className="flex-shrink-0 border-t border-base-content/10 bg-base-200/30 p-5 sm:p-6">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={handleClose}
