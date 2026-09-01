@@ -3,8 +3,7 @@ from rest_framework import serializers
 
 from accounts.models import User
 
-from .models import Organization
-from .models import OrganizationMembership
+from .models import Organization, OrganizationMembership
 
 
 class OrganizationOwnerSerializer(serializers.ModelSerializer):
@@ -130,7 +129,7 @@ class AddOrgMemberSerializer(serializers.Serializer):
         try:
             user = User.objects.get(pk=value)
         except User.DoesNotExist:
-            raise serializers.ValidationError("User not found.")
+            raise serializers.ValidationError("User not found.") from None
 
         if not user.is_active:
             raise serializers.ValidationError("User is not active.")

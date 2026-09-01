@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
 
 from common.utils.mixins import FieldFilterOverviewMixin
-from organizations.models import Team, OrganizationMembership, TeamMembership
+from organizations.models import OrganizationMembership, Team, TeamMembership
 from organizations.services import PermissionService
 
 from .serializers import TeamMembershipSerializer, TeamSerializer

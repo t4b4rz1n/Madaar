@@ -50,7 +50,6 @@ class UserListSerializer(serializers.ModelSerializer):
         ref_name = "users_panel"
 
     def _get_active_membership_and_role(self, obj):
-        from organizations.models import Organization
 
         request = self.context.get("request")
         raw_org_id = _extract_org_id(request)
@@ -152,7 +151,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_organization_id(self, value):
-        from organizations.models import Organization, OrganizationMembership
         from django.utils.translation import gettext_lazy as _
         if value is None:
             return value
@@ -185,10 +183,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        from django.db import transaction
 
         from automations.events import EventDispatcher
-        from organizations.models import Organization, OrganizationMembership, Role
+        from organizations.models import Organization, Role
         from organizations.services import PermissionService
 
         request = self.context.get("request")
@@ -332,9 +329,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-        from django.db import transaction
 
-        from organizations.models import Organization, OrganizationMembership, Role
+        from organizations.models import Organization, Role
 
         request = self.context.get("request")
         actor = (
