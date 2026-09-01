@@ -36,11 +36,11 @@ export const TeamsGrid = ({
 }: TeamsGridProps) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="card bg-base-100 border border-base-content/10 p-6 space-y-4 animate-pulse rounded-2xl"
+            className="madaar-surface space-y-4 rounded-2xl border border-base-content/10 bg-base-100/80 p-5 shadow-madaar-card animate-pulse"
           >
             <div className="h-6 bg-base-content/10 rounded-sm w-2/3"></div>
             <div className="h-4 bg-base-content/10 rounded-sm w-full"></div>
@@ -83,15 +83,15 @@ export const TeamsGrid = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
     >
       {teams.map((team) => (
         <motion.div
           key={team.id}
           variants={cardVariants}
-          className="card bg-base-100 border border-base-content/10 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 rounded-2xl group flex flex-col justify-between"
+          className="madaar-surface group flex flex-col justify-between rounded-2xl border border-base-content/10 bg-base-100/90 shadow-madaar-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-madaar-raised"
         >
-          <div className="p-6">
+          <div className="p-5 sm:p-6">
             <div className="flex justify-between items-start gap-4">
               <h3 className="font-bold text-lg text-base-content group-hover:text-primary transition-colors duration-200 line-clamp-1">
                 {team.name}
@@ -138,7 +138,7 @@ export const TeamsGrid = ({
          </div>
          </div>
 
-         <div className="px-6 pb-6 pt-3 flex items-end bg-base-200/20 rounded-b-2xl border-t border-base-content/5">
+         <div className="flex items-end justify-between gap-3 rounded-b-2xl border-t border-base-content/5 bg-base-200/20 px-5 pb-5 pt-3 sm:px-6 sm:pb-6">
             <div className="text-xs text-base-content/50">
               {new Date(team.created_at ?? "").toLocaleDateString()}
             </div>

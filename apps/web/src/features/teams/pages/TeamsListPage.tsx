@@ -215,15 +215,15 @@ export default function TeamsListPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="bg-base-100 min-h-[calc(100vh-121px)] backdrop-blur-lg border border-base-content/10 rounded-2xl p-4 sm:p-6 flex flex-col"
+        className="madaar-surface min-h-[calc(100vh-121px)] rounded-[24px] border border-base-content/10 bg-base-100/85 p-4 shadow-madaar-card backdrop-blur-xl sm:p-6"
       >
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+          className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center"
         >
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
                 Teams
               </h1>
@@ -241,7 +241,7 @@ export default function TeamsListPage() {
               Manage and structure organizational teams.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
             <ViewSwitcher
               viewMode={viewMode}
               setViewMode={setViewMode}
@@ -251,7 +251,7 @@ export default function TeamsListPage() {
               <button
                 type="button"
                 onClick={handleCreateTeam}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
+                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 transition hover:bg-primary/90 sm:h-9"
               >
                 <Add size={16} />
                 <span>New Team</span>
@@ -261,7 +261,7 @@ export default function TeamsListPage() {
         </motion.div>
 
         {/* Toolbar */}
-        <motion.div variants={itemVariants} className="mt-6">
+        <motion.div variants={itemVariants} className="mt-6 relative z-20">
           <TeamsToolbar
             onSearch={handleSearch}
             onSortChange={handleSort}

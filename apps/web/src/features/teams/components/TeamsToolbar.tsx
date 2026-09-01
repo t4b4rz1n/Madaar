@@ -7,6 +7,7 @@ import {
   SearchNormal1,
   Sort,
 } from "iconsax-reactjs";
+import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import InputField from "../../../components/InputField";
@@ -42,6 +43,15 @@ export const TeamsToolbar = ({
     () => searchParams.get("search") || "",
   );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [filterPopoverPosition, setFilterPopoverPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+  const [sortPopoverPosition, setSortPopoverPosition] = useState({
+    top: 0,
+    left: 0,
+  });
 
   // سینک فیلترها با URL (تک‌منبع حقیقت)
   const activeFilter = searchParams.get("is_active") || "";
@@ -59,6 +69,9 @@ export const TeamsToolbar = ({
   }, [searchParams]);
 
   const filterRef = useRef<HTMLDivElement>(null);
+  const filterPopoverRef = useRef<HTMLDivElement>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
+  const sortPopoverRef = useRef<HTMLDivElement>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const onSearchRef = useRef(onSearch);
@@ -107,12 +120,84 @@ export const TeamsToolbar = ({
   };
 
   useEffect(() => {
+    const updateFilterPopoverPosition = () => {
+      if (!filterRef.current) return;
+
+      const triggerRect = filterRef.current.getBoundingClientRect();
+      const popoverWidth = 288;
+      const viewportPadding = 16;
+
+      setFilterPopoverPosition({
+        top: triggerRect.bottom + 8,
+        left: Math.max(
+          viewportPadding,
+          Math.min(
+            triggerRect.right - popoverWidth,
+            window.innerWidth - popoverWidth - viewportPadding,
+          ),
+        ),
+      });
+    };
+
+    if (isFilterOpen) {
+      updateFilterPopoverPosition();
+      window.addEventListener("resize", updateFilterPopoverPosition);
+      window.addEventListener("scroll", updateFilterPopoverPosition, true);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateFilterPopoverPosition);
+      window.removeEventListener("scroll", updateFilterPopoverPosition, true);
+    };
+  }, [isFilterOpen]);
+
+  useEffect(() => {
+    const updateSortPopoverPosition = () => {
+      if (!sortRef.current) return;
+
+      const triggerRect = sortRef.current.getBoundingClientRect();
+      const popoverWidth = 192;
+      const viewportPadding = 16;
+
+      setSortPopoverPosition({
+        top: triggerRect.bottom + 8,
+        left: Math.max(
+          viewportPadding,
+          Math.min(
+            triggerRect.right - popoverWidth,
+            window.innerWidth - popoverWidth - viewportPadding,
+          ),
+        ),
+      });
+    };
+
+    if (isSortOpen) {
+      updateSortPopoverPosition();
+      window.addEventListener("resize", updateSortPopoverPosition);
+      window.addEventListener("scroll", updateSortPopoverPosition, true);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateSortPopoverPosition);
+      window.removeEventListener("scroll", updateSortPopoverPosition, true);
+    };
+  }, [isSortOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         filterRef.current &&
-        !filterRef.current.contains(event.target as Node)
+        !filterRef.current.contains(event.target as Node) &&
+        !filterPopoverRef.current?.contains(event.target as Node)
       ) {
         setIsFilterOpen(false);
+      }
+      if (
+        sortRef.current &&
+        !sortRef.current.contains(event.target as Node) &&
+        !sortPopoverRef.current?.contains(event.target as Node)
+      ) {
+        setIsSortOpen(false);
       }
     };
 
@@ -127,24 +212,24 @@ export const TeamsToolbar = ({
   )?.label;
 
   const buttonBaseClass =
-    "btn btn-ghost rounded-xl hover:bg-primary/10 hover:text-primary border-none";
+    "btn btn-ghost rounded-xl border-none text-base-content/65 transition hover:bg-primary/10 hover:text-primary";
 
   const hasActiveFilters = Boolean(activeFilter);
 
   return (
-    <div className="flex w-full flex-col items-center gap-3 rounded-2xl border border-base-content/10 bg-linear-to-r from-base-100 to-base-200/40 p-2 md:flex-row">
-      <div className="grow w-full">
+    <div className="madaar-surface flex w-full flex-col items-stretch gap-2 rounded-2xl border border-base-content/10 bg-base-100/75 p-2 shadow-madaar-card md:flex-row md:items-center">
+      <div className="w-full grow">
         <InputField
           name="search"
           placeholder="Search teams..."
           icon={<SearchNormal1 size={18} />}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          classNameInput="!bg-transparent !shadow-none"
+          classNameInput="!border-transparent !bg-transparent !shadow-none focus:!border-primary/30"
         />
       </div>
 
-      <div className="flex items-center gap-1 rounded-xl border border-base-content/10 p-1">
+      <div className="flex w-full items-center gap-1 rounded-xl border border-base-content/10 bg-base-200/35 p-1 md:w-auto">
         <div className="relative" ref={filterRef}>
           <button
             type="button"
@@ -159,68 +244,79 @@ export const TeamsToolbar = ({
             <span className="hidden sm:inline">Filter</span>
           </button>
 
-          <AnimatePresence>
-            {isFilterOpen && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="absolute left-0 top-full z-30 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-box border border-base-content/10 bg-base-100 p-4 shadow-lg"
-              >
-                <div className="flex flex-col space-y-4">
-                  <label className="form-control w-full">
-                    <div className="label pb-1">
-                      <span className="label-text text-xs font-semibold">
-                        Status
-                      </span>
-                    </div>
-                    <select
-                      className="select select-sm w-full border-base-300 !shadow-none"
-                      value={activeFilter}
-                      onChange={(e) => handleActiveFilterChange(e.target.value)}
-                    >
-                      <option value="">All Teams</option>
-                      <option value="true">Active Only</option>
-                      <option value="false">Inactive Only</option>
-                    </select>
-                  </label>
+          {typeof document !== "undefined" &&
+            createPortal(
+              <AnimatePresence>
+                {isFilterOpen && (
+                  <motion.div
+                    ref={filterPopoverRef}
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    style={{
+                      top: filterPopoverPosition.top,
+                      left: filterPopoverPosition.left,
+                    }}
+                    className="fixed z-50 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-base-content/10 bg-base-100/95 p-4 shadow-madaar-floating backdrop-blur-xl"
+                  >
+                    <div className="flex flex-col space-y-4">
+                      <label className="form-control w-full">
+                        <div className="label pb-1">
+                          <span className="label-text text-xs font-semibold">
+                            Status
+                          </span>
+                        </div>
+                        <select
+                          className="select select-sm w-full border-base-300 !shadow-none"
+                          value={activeFilter}
+                          onChange={(e) =>
+                            handleActiveFilterChange(e.target.value)
+                          }
+                        >
+                          <option value="">All Teams</option>
+                          <option value="true">Active Only</option>
+                          <option value="false">Inactive Only</option>
+                        </select>
+                      </label>
 
-                  {organizations?.length ? (
-                    <label className="form-control w-full">
-                      <div className="label pb-1">
-                        <span className="label-text flex items-center gap-1.5 text-xs font-semibold">
-                          <Building3 size={14} />
-                          Organization
-                        </span>
-                      </div>
-                      <select
-                        className="select select-sm w-full border-base-300 !shadow-none"
-                        value={currentOrganizationId}
-                        onChange={(e) =>
-                          handleOrganizationChange(e.target.value)
-                        }
-                      >
-                        {organizations.map((organization) => (
-                          <option
-                            key={organization.id}
-                            value={organization.id}
+                      {organizations?.length ? (
+                        <label className="form-control w-full">
+                          <div className="label pb-1">
+                            <span className="label-text flex items-center gap-1.5 text-xs font-semibold">
+                              <Building3 size={14} />
+                              Organization
+                            </span>
+                          </div>
+                          <select
+                            className="select select-sm w-full border-base-300 !shadow-none"
+                            value={currentOrganizationId}
+                            onChange={(e) =>
+                              handleOrganizationChange(e.target.value)
+                            }
                           >
-                            {organization.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : null}
-                </div>
-              </motion.div>
+                            {organizations.map((organization) => (
+                              <option
+                                key={organization.id}
+                                value={organization.id}
+                              >
+                                {organization.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>,
+              document.body,
             )}
-          </AnimatePresence>
         </div>
 
-        <div className="dropdown dropdown-end">
+        <div className="relative" ref={sortRef}>
           <button
             type="button"
-            tabIndex={0}
+            onClick={() => setIsSortOpen((prev) => !prev)}
             className={`${buttonBaseClass} flex-nowrap`}
           >
             <Sort size={18} />
@@ -229,18 +325,42 @@ export const TeamsToolbar = ({
             </span>
           </button>
 
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-[1] mt-2 w-48 rounded-box border border-base-content/10 bg-base-100 p-2 shadow-lg menu"
-          >
-            {sortOptions.map((opt) => (
-              <li key={opt.key} onClick={() => handleSortKeyChange(opt.key)}>
-                <a className={sortConfig.key === opt.key ? "active" : ""}>
-                  {opt.label}
-                </a>
-              </li>
-            ))}
-          </ul>
+          {typeof document !== "undefined" &&
+            createPortal(
+              <AnimatePresence>
+                {isSortOpen && (
+                  <motion.div
+                    ref={sortPopoverRef}
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    style={{
+                      top: sortPopoverPosition.top,
+                      left: sortPopoverPosition.left,
+                    }}
+                    className="fixed z-50 w-48 max-w-[calc(100vw-2rem)] rounded-2xl border border-base-content/10 bg-base-100/95 p-2 shadow-madaar-floating backdrop-blur-xl"
+                  >
+                    <ul className="menu w-full">
+                      {sortOptions.map((opt) => (
+                        <li
+                          key={opt.key}
+                          onClick={() => handleSortKeyChange(opt.key)}
+                        >
+                          <a
+                            className={
+                              sortConfig.key === opt.key ? "active" : ""
+                            }
+                          >
+                            {opt.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>,
+              document.body,
+            )}
         </div>
 
         <button

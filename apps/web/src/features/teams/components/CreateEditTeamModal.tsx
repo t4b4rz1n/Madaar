@@ -94,15 +94,15 @@ export const CreateEditTeamModal = ({
           initial="hidden"
           animate="visible"
           exit="hidden"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 backdrop-blur-md sm:p-4"
           onClick={onClose}
         >
           <motion.div
             variants={modalVariants}
-            className="relative w-full max-w-lg bg-base-100 rounded-2xl shadow-xl m-4 max-h-[90vh] flex flex-col"
+            className="madaar-surface relative m-0 flex max-h-[min(90vh,44rem)] w-full max-w-lg flex-col overflow-hidden rounded-[24px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl sm:m-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 flex-shrink-0 border-b border-base-content/10">
+            <div className="flex-shrink-0 border-b border-base-content/10 bg-base-200/20 p-5 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
@@ -121,21 +121,21 @@ export const CreateEditTeamModal = ({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-base-content/10 rounded-lg transition-colors"
+                  className="btn btn-ghost btn-square btn-sm rounded-xl text-base-content/50 hover:bg-base-200 hover:text-base-content"
                 >
                   <CloseCircle className="w-6 h-6 text-base-content/60" />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 pt-6">
+            <div className="flex-1 overflow-y-auto px-5 pt-5 sm:px-6 sm:pt-6">
               <form id="team-form" onSubmit={onSubmit}>
                 <TeamForm control={control} errors={errors} organizationId={organizationId} />
               </form>
             </div>
 
-            <div className="p-6 flex-shrink-0 border-t border-base-content/10 bg-base-200/30 rounded-b-2xl text-right">
-              <div className="flex justify-end gap-3">
+            <div className="flex-shrink-0 border-t border-base-content/10 bg-base-200/30 p-5 text-right sm:p-6">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={onClose}
