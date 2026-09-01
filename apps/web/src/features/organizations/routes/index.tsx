@@ -5,6 +5,7 @@ import { PermissionGuard } from "../../auth/components/PermissionGuard";
 import PageLoader from "../../../components/PageLoader";
 
 const OrganizationsPage = lazy(() => import("../pages/OrganizationsPage"));
+const OrganizationDetailPage = lazy(() => import("../pages/OrganizationDetailPage"));
 
 export const organizationsRoutes: RouteObject[] = [
   {
@@ -25,5 +26,9 @@ export const organizationsRoutes: RouteObject[] = [
         </PermissionGuard>
       </Suspense>
     ),
+  },
+  {
+    path: "organizations/:orgId",
+    element: <OrganizationDetailPage />,
   },
 ];

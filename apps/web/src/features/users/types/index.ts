@@ -24,6 +24,7 @@ export interface UserFormData {
   is_active: boolean;
   is_staff: boolean;
   role_id: string | null;  // UUID
+  organization_id?: string;
 }
 
 export interface UserUpdateData {

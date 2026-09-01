@@ -1,5 +1,6 @@
 import ApiService from "../../../core/api/apiService";
-import type { Organization, OrganizationPayload } from "../types";
+import type { Organization, OrganizationMember, OrganizationPayload } from "../types";
+import type { User } from "../../users/types";
 
 const unwrap = <T>(response: unknown): T => {
   const value = response as { data?: unknown } | null;
@@ -36,4 +37,24 @@ export const updateOrganization = async (
 
 export const deleteOrganization = async (id: string): Promise<void> => {
   await ApiService.delete(`/organizations/${id}/`);
+};
+
+export const getOrganizationDetails = async (orgId: string): Promise<Organization> => {
+  const response = await ApiService.get<Organization>(`/organizations/${orgId}/`);
+  return unwrap<Organization>(response);
+};
+
+export const getOrganizationMembers = async (orgId: string): Promise<OrganizationMember[]> => {
+  const response = await ApiService.getList<User>(`panel/users/?organization_id=${orgId}`);
+  return (response.data?.results ?? []).map((user) => ({
+    id: user.id,
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      profile_image: user.profile_image,
+    },
+  }));
 };

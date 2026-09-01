@@ -29,3 +29,17 @@ export interface OrganizationPayload {
   description?: string;
   status: OrganizationStatus;
 }
+
+export interface OrganizationMember {
+  id: number;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    profile_image: string | null;
+  };
+  role?: string;
+  joined_at?: string;
+}

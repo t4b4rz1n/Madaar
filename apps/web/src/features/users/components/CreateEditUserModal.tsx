@@ -20,12 +20,16 @@ interface CreateEditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user?: User | null;
+  organizationId?: string;
+  onSuccess?: () => void;
 }
 
 export const CreateEditUserModal = ({
   isOpen,
   onClose,
   user,
+  organizationId,
+  onSuccess,
 }: CreateEditUserModalProps) => {
   const isEditMode = !!user;
   const schema = isEditMode ? updateUserSchema : createUserSchema;
@@ -98,6 +102,7 @@ export const CreateEditUserModal = ({
         {
           onSuccess: () => {
             onClose();
+            onSuccess?.();
           },
         },
       );
@@ -114,12 +119,14 @@ export const CreateEditUserModal = ({
       is_active: !!data.is_active,
       is_staff: !!data.is_staff,
       role_id: data.role_id ?? null,
+      organization_id: organizationId,
     };
 
 
     createMutation.mutate(createPayload, {
       onSuccess: () => {
         onClose();
+        onSuccess?.();
       },
     });
   });
