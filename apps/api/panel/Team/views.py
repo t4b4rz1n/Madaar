@@ -92,9 +92,7 @@ class StaffTeamViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Team.objects.filter(
-            is_deleted=False, parent_team__isnull=True
-        ).select_related(
+        queryset = Team.objects.filter(is_deleted=False, parent_team__isnull=True).select_related(
             "organization"
         )
         if not (user.is_staff or user.is_superuser):
@@ -113,7 +111,6 @@ class StaffTeamViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
                 queryset = queryset.filter(organization_id=organization_id)
 
         return queryset.order_by("-created_at")
-
 
 
 class StaffTeamMembershipViewSet(viewsets.ModelViewSet):
@@ -139,7 +136,9 @@ class StaffTeamMembershipViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         team_id = self.request.data.get("team")
-        team = Team.objects.filter(id=team_id, is_deleted=False).select_related("organization").first()
+        team = (
+            Team.objects.filter(id=team_id, is_deleted=False).select_related("organization").first()
+        )
         if not team:
             raise ValidationError({"team": "Team not found."})
         user_id = self.request.data.get("user_id") or self.request.data.get("user")

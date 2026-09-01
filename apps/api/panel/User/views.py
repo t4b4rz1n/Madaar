@@ -94,4 +94,7 @@ class UserViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
                 instance.memberships.all().delete()
             # Direct database hard delete to ensure DB record removal
             User.objects.filter(pk=user_id).delete()
-        return Response({"status": True, "message": "User deleted successfully", "data": None}, status=status.HTTP_200_OK)
+        return Response(
+            {"status": True, "message": "User deleted successfully", "data": None},
+            status=status.HTTP_200_OK,
+        )

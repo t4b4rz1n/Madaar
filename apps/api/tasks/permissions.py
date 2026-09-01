@@ -254,10 +254,9 @@ class IsBoardPermission(BaseMadaarPermission):
                 return True
             from organizations.services import PermissionService
 
-            return (
-                PermissionService.has_permission(request.user, "board.view", org_id)
-                or PermissionService.has_permission(request.user, "task.view", org_id)
-            )
+            return PermissionService.has_permission(
+                request.user, "board.view", org_id
+            ) or PermissionService.has_permission(request.user, "task.view", org_id)
 
         org_id = extract_organization_id(request)
         if org_id:
@@ -279,10 +278,9 @@ class IsBoardPermission(BaseMadaarPermission):
                 return True
             from organizations.services import PermissionService
 
-            return (
-                PermissionService.has_permission(request.user, "board.view", org_id)
-                or PermissionService.has_permission(request.user, "task.view", org_id)
-            )
+            return PermissionService.has_permission(
+                request.user, "board.view", org_id
+            ) or PermissionService.has_permission(request.user, "task.view", org_id)
 
         if hasattr(obj, "created_by") and obj.created_by == request.user:
             return True
@@ -311,10 +309,9 @@ class IsTaskStatusPermission(BaseMadaarPermission):
                 return True
             from organizations.services import PermissionService
 
-            return (
-                PermissionService.has_permission(request.user, "board.view", org_id)
-                or PermissionService.has_permission(request.user, "task.view", org_id)
-            )
+            return PermissionService.has_permission(
+                request.user, "board.view", org_id
+            ) or PermissionService.has_permission(request.user, "task.view", org_id)
 
         org_id = extract_organization_id(request)
         if org_id:
@@ -336,10 +333,9 @@ class IsTaskStatusPermission(BaseMadaarPermission):
                 return True
             from organizations.services import PermissionService
 
-            return (
-                PermissionService.has_permission(request.user, "board.view", org_id)
-                or PermissionService.has_permission(request.user, "task.view", org_id)
-            )
+            return PermissionService.has_permission(
+                request.user, "board.view", org_id
+            ) or PermissionService.has_permission(request.user, "task.view", org_id)
 
         if hasattr(obj, "board") and obj.board and obj.board.created_by == request.user:
             return True
@@ -368,10 +364,9 @@ class IsTaskPermission(BaseMadaarPermission):
                 return True
             from organizations.services import PermissionService
 
-            return (
-                PermissionService.has_permission(request.user, "task.view", org_id)
-                or PermissionService.has_permission(request.user, "task.manage_all", org_id)
-            )
+            return PermissionService.has_permission(
+                request.user, "task.view", org_id
+            ) or PermissionService.has_permission(request.user, "task.manage_all", org_id)
 
         org_id = extract_organization_id(request)
         if org_id:
@@ -393,10 +388,9 @@ class IsTaskPermission(BaseMadaarPermission):
                 return True
             from organizations.services import PermissionService
 
-            return (
-                PermissionService.has_permission(request.user, "task.view", org_id)
-                or PermissionService.has_permission(request.user, "task.manage_all", org_id)
-            )
+            return PermissionService.has_permission(
+                request.user, "task.view", org_id
+            ) or PermissionService.has_permission(request.user, "task.manage_all", org_id)
 
         org_id = extract_organization_id(obj)
         if org_id:

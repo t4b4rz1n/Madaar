@@ -16,7 +16,6 @@ class UserFilter(filters.FilterSet):
             org_memberships__is_deleted=False,
         ).distinct()
 
-
     class Meta:
         model = User
         fields = {

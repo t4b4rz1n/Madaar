@@ -50,7 +50,6 @@ class UserListSerializer(serializers.ModelSerializer):
         ref_name = "users_panel"
 
     def _get_active_membership_and_role(self, obj):
-
         request = self.context.get("request")
         raw_org_id = _extract_org_id(request)
         actor = (
@@ -121,9 +120,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         write_only=True, required=True, style={"input_type": "password"}
     )
     email = serializers.EmailField(required=True)
-    organization_id = serializers.UUIDField(
-        required=False, write_only=True, allow_null=True
-    )
+    organization_id = serializers.UUIDField(required=False, write_only=True, allow_null=True)
     role_id = serializers.CharField(write_only=True, required=False, allow_null=True)
 
     class Meta:
@@ -152,6 +149,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     def validate_organization_id(self, value):
         from django.utils.translation import gettext_lazy as _
+
         if value is None:
             return value
 
@@ -183,7 +181,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-
         from automations.events import EventDispatcher
         from organizations.models import Organization, Role
         from organizations.services import PermissionService
@@ -230,13 +227,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
             if org:
                 request_user = getattr(self.context.get("request"), "user", None)
                 invited_by = (
-                    request_user
-                    if request_user and request_user.is_authenticated
-                    else None
+                    request_user if request_user and request_user.is_authenticated else None
                 )
                 membership, created_mem = OrganizationMembership.objects.get_or_create(
-                    user=user, organization=org, is_deleted=False,
-                    defaults={"invited_by": invited_by}
+                    user=user,
+                    organization=org,
+                    is_deleted=False,
+                    defaults={"invited_by": invited_by},
                 )
                 role_obj = None
                 if role_id:
@@ -329,7 +326,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-
         from organizations.models import Organization, Role
 
         request = self.context.get("request")

@@ -73,23 +73,27 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Organization.objects.filter(is_deleted=False).annotate(
-            member_count=Count(
-                "memberships",
-                filter=Q(memberships__is_deleted=False),
-                distinct=True,
-            ),
-            team_count=Count(
-                "teams",
-                filter=Q(teams__parent_team__isnull=True, teams__is_deleted=False),
-                distinct=True,
-            ),
-            project_count=Count(
-                "projects",
-                filter=Q(projects__is_deleted=False),
-                distinct=True,
-            ),
-        ).select_related("owner")
+        queryset = (
+            Organization.objects.filter(is_deleted=False)
+            .annotate(
+                member_count=Count(
+                    "memberships",
+                    filter=Q(memberships__is_deleted=False),
+                    distinct=True,
+                ),
+                team_count=Count(
+                    "teams",
+                    filter=Q(teams__parent_team__isnull=True, teams__is_deleted=False),
+                    distinct=True,
+                ),
+                project_count=Count(
+                    "projects",
+                    filter=Q(projects__is_deleted=False),
+                    distinct=True,
+                ),
+            )
+            .select_related("owner")
+        )
 
         if user.is_staff or user.is_superuser:
             return queryset
@@ -166,6 +170,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             # Cascade soft-delete projects safely
             try:
                 from projects.models import Project
+
                 Project.objects.filter(organization=organization).update(is_deleted=True)
             except (ImportError, AttributeError):
                 pass
@@ -179,10 +184,14 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         organization = self.get_object()
 
         if request.method == "GET":
-            memberships = OrganizationMembership.objects.filter(
-                organization=organization,
-                is_deleted=False,
-            ).select_related("user").order_by("-created_at")
+            memberships = (
+                OrganizationMembership.objects.filter(
+                    organization=organization,
+                    is_deleted=False,
+                )
+                .select_related("user")
+                .order_by("-created_at")
+            )
             serializer = OrganizationMemberSerializer(memberships, many=True)
             return Response(serializer.data)
 
@@ -191,15 +200,21 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
 
             user_id = serializer.validated_data["user_id"]
-            role_id = serializer.validated_data.get("role_id") or OrganizationMembership.Role.EMPLOYEE
+            role_id = (
+                serializer.validated_data.get("role_id") or OrganizationMembership.Role.EMPLOYEE
+            )
 
             try:
                 with transaction.atomic():
-                    if OrganizationMembership.objects.filter(
-                        user_id=user_id,
-                        is_deleted=False,
-                        organization__is_deleted=False,
-                    ).exclude(organization=organization).exists():
+                    if (
+                        OrganizationMembership.objects.filter(
+                            user_id=user_id,
+                            is_deleted=False,
+                            organization__is_deleted=False,
+                        )
+                        .exclude(organization=organization)
+                        .exists()
+                    ):
                         return Response(
                             {"detail": "User already belongs to another active organization."},
                             status=status.HTTP_400_BAD_REQUEST,
@@ -214,7 +229,9 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                         # Restore soft-deleted membership
                         membership.is_deleted = False
                         membership.role = role_id
-                        membership.invited_by = request.user if request.user.is_authenticated else None
+                        membership.invited_by = (
+                            request.user if request.user.is_authenticated else None
+                        )
                         membership.save()
                         created = False
                     else:
@@ -245,9 +262,13 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        membership = OrganizationMembership.all_objects.filter(
-            organization=organization,
-        ).filter(Q(user_id=user_id) | Q(id=user_id)).first()
+        membership = (
+            OrganizationMembership.all_objects.filter(
+                organization=organization,
+            )
+            .filter(Q(user_id=user_id) | Q(id=user_id))
+            .first()
+        )
 
         if membership:
             membership.is_deleted = True
