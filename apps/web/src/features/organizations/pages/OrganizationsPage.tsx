@@ -27,15 +27,21 @@ const statusLabels: Record<OrganizationStatus, string> = {
 
 const emptyForm = (): OrganizationPayload => ({ name: "", slug: "", description: "", status: "active" });
 
-const getErrorMessage = (error: any, fallback: string) => {
-  const data = error?.response?.data;
-  if (typeof data?.detail === "string") return data.detail;
-  if (typeof data?.message === "string") return data.message;
+const getErrorMessage = (error: any, fallback: string): string => {
+  const data = error?.response?.data ?? error?.data ?? error;
+  if (typeof data === "string" && data.trim()) return data;
+  if (typeof data?.detail === "string" && data.detail.trim()) return data.detail;
+  if (typeof data?.message === "string" && data.message.trim()) return data.message;
   if (data && typeof data === "object") {
-    const first = Object.values(data).flat()[0];
-    if (typeof first === "string") return first;
+    for (const key of Object.keys(data)) {
+      const val = data[key];
+      if (typeof val === "string" && val.trim()) return val;
+      if (Array.isArray(val) && val.length > 0 && typeof val[0] === "string") {
+        return val[0];
+      }
+    }
   }
-  return fallback;
+  return error?.message || fallback;
 };
 
 function OrganizationFormModal({
@@ -112,6 +118,7 @@ export default function OrganizationsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [modalOrganization, setModalOrganization] = useState<Organization | null | undefined>(undefined);
+  const [deletingOrg, setDeletingOrg] = useState<Organization | null>(null);
   const organizationsQuery = useQuery({ queryKey: ["organizations"], queryFn: getOrganizations });
 
   const saveMutation = useMutation({
@@ -132,9 +139,15 @@ export default function OrganizationsPage() {
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
       queryClient.invalidateQueries({ queryKey: ["project-organizations"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setDeletingOrg(null);
       toast.success("Organization removed");
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Could not remove the organization.")),
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Could not remove the organization."));
+      setDeletingOrg(null);
+    },
   });
 
   const organizations = useMemo(() => organizationsQuery.data || [], [organizationsQuery.data]);
@@ -143,9 +156,18 @@ export default function OrganizationsPage() {
     members: organizations.reduce((total, organization) => total + (organization.member_count || 0), 0),
   }), [organizations]);
 
-  const removeOrganization = (organization: Organization) => {
-    if (window.confirm(`Remove ${organization.name}? This will hide it and its projects from the workspace.`)) deleteMutation.mutate(organization.id);
-  };
+  useEffect(() => {
+    if (!deletingOrg) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !deleteMutation.isPending) setDeletingOrg(null);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deletingOrg, deleteMutation.isPending]);
+
+  const removeOrganization = (organization: Organization) => setDeletingOrg(organization);
 
   return (
     <div className="min-h-[calc(100vh-121px)] space-y-6 pb-10">
@@ -161,6 +183,69 @@ export default function OrganizationsPage() {
       {organizationsQuery.isLoading ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-56 animate-pulse rounded-2xl bg-base-200/70" />)}</div> : organizationsQuery.isError ? <div className="madaar-surface rounded-2xl border border-error/20 bg-error/5 p-8 text-center"><p className="font-semibold text-error">Organizations could not be loaded.</p><button type="button" onClick={() => organizationsQuery.refetch()} className="btn btn-sm btn-ghost mt-3 rounded-lg">Try again</button></div> : organizations.length === 0 ? <div className="madaar-surface rounded-[28px] border border-dashed border-base-content/15 bg-base-100 px-6 py-16 text-center"><div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><People size={28} /></div><h2 className="text-xl font-semibold">Create your first organization</h2><p className="mx-auto mt-2 max-w-md text-sm text-base-content/55">An organization is the foundation for projects, people and team workflows.</p><button type="button" onClick={() => setModalOrganization(null)} className="btn btn-primary mt-6 rounded-xl"><Add size={18} /> Create organization</button></div> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"><AnimatePresence mode="popLayout">{organizations.map((organization) => <motion.article layout key={organization.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} onClick={() => navigate(`/organizations/${organization.id}`)} className="madaar-surface cursor-pointer rounded-2xl border border-base-content/10 bg-base-100 p-5 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"><div className="flex items-start justify-between gap-4"><div className="flex min-w-0 items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><People size={21} /></span><div className="min-w-0"><h2 className="truncate text-lg font-semibold">{organization.name}</h2><p className="truncate text-xs text-base-content/45">/{organization.slug}</p></div></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${statusStyles[organization.status]}`}>{statusLabels[organization.status]}</span></div><p className="mt-5 min-h-10 line-clamp-2 text-sm leading-6 text-base-content/60">{organization.description || "No description added yet."}</p><div className="mt-5 grid grid-cols-3 gap-3 border-y border-base-content/10 py-4 text-sm"><div><p className="text-xs text-base-content/45">Members</p><p className="mt-1 font-semibold">{organization.member_count || 0}</p></div><div><p className="text-xs text-base-content/45">Teams</p><p className="mt-1 font-semibold">{organization.team_count || 0}</p></div><div><p className="text-xs text-base-content/45">Projects</p><p className="mt-1 font-semibold">{organization.project_count || 0}</p></div></div><div className="mt-4 flex items-center justify-between gap-3"><button type="button" onClick={(e) => { e.stopPropagation(); navigate("/projects"); }} className="btn btn-ghost btn-sm rounded-lg text-primary"><Folder2 size={15} /> Projects</button><div className="flex items-center gap-1"><button type="button" onClick={(e) => { e.stopPropagation(); setModalOrganization(organization); }} className="btn btn-ghost btn-square btn-sm rounded-lg" aria-label={`Edit ${organization.name}`}><Edit2 size={16} /></button><button type="button" onClick={(e) => { e.stopPropagation(); removeOrganization(organization); }} disabled={deleteMutation.isPending} className="btn btn-ghost btn-square btn-sm rounded-lg text-error/70" aria-label={`Remove ${organization.name}`}><Trash size={16} /></button></div></div></motion.article>)}</AnimatePresence></div>}
 
       {modalOrganization !== undefined && <OrganizationFormModal organization={modalOrganization} onClose={() => setModalOrganization(undefined)} onSubmit={(payload) => saveMutation.mutate({ organization: modalOrganization, payload })} isPending={saveMutation.isPending} />}
+
+      <AnimatePresence>
+        {deletingOrg && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[130] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+            onMouseDown={() => {
+              if (!deleteMutation.isPending) setDeletingOrg(null);
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+              className="madaar-surface w-full max-w-md rounded-[28px] border border-base-content/10 bg-base-100 p-7 shadow-2xl"
+              onMouseDown={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-organization-title"
+              aria-describedby="delete-organization-description"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-error/10 text-error">
+                  <Trash size={28} />
+                </div>
+                <h2 id="delete-organization-title" className="text-xl font-semibold tracking-tight text-base-content">
+                  Delete Organization
+                </h2>
+                <p className="mt-1 text-sm font-medium text-base-content/50" lang="fa" dir="rtl">
+                  حذف سازمان
+                </p>
+                <p id="delete-organization-description" className="mt-4 text-sm leading-6 text-base-content/60">
+                  Are you sure you want to remove <span className="font-semibold text-base-content">{deletingOrg.name}</span>? This will hide it and its projects from the workspace.
+                </p>
+              </div>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 border-t border-base-content/10 pt-5 sm:flex-row">
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => setDeletingOrg(null)}
+                  disabled={deleteMutation.isPending}
+                  className="btn btn-ghost flex-1 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteMutation.mutate(deletingOrg.id)}
+                  disabled={deleteMutation.isPending}
+                  className="btn btn-error flex-1 gap-2 rounded-xl text-error-content"
+                >
+                  {deleteMutation.isPending ? <span className="loading loading-spinner loading-xs" /> : <Trash size={18} />}
+                  <span>{deleteMutation.isPending ? "Deleting..." : "Delete"}</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

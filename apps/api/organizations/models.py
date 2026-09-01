@@ -110,7 +110,12 @@ class OrganizationMembership(BaseModel):
             models.UniqueConstraint(
                 fields=["user", "organization"],
                 name="unique_org_membership_user_org",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(is_deleted=False),
+                name="unique_active_organization_membership_per_user",
+            ),
         ]
 
     def __str__(self):

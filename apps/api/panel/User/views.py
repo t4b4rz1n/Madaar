@@ -1,14 +1,14 @@
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from django_filters.rest_framework import DjangoFilterBackend
-from organizations.models import OrganizationMembership
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
 
 from accounts.models import User
 from common.utils.mixins import FieldFilterOverviewMixin
+from organizations.models import OrganizationMembership
 
 from .filters import UserFilter
 from .serializers import UserCreateSerializer, UserListSerializer, UserUpdateSerializer
@@ -27,9 +27,12 @@ class UserViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
         queryset = User.objects.all().order_by("-date_joined")
         unassigned = self.request.query_params.get("unassigned")
         if unassigned and unassigned.lower() in ("true", "1"):
-            queryset = queryset.exclude(
-                org_memberships__is_deleted=False
+            active_membership = OrganizationMembership.objects.filter(
+                user_id=OuterRef("pk"),
+                is_deleted=False,
+                organization__is_deleted=False,
             )
+            queryset = queryset.filter(~Exists(active_membership))
         return queryset
 
     def get_serializer_class(self):

@@ -7,21 +7,37 @@ from organizations.models import Organization, OrganizationMembership
 
 @receiver(post_save, sender=Organization, dispatch_uid="ensure_owner_membership_uid")
 def ensure_owner_membership(sender, instance, created, **kwargs):
+    if getattr(instance, "is_deleted", False):
+        return
+
     if instance.owner:
+        # Clean up stale active memberships left behind in soft-deleted
+        # organizations before restoring/creating the owner's membership.
+        OrganizationMembership.all_objects.filter(
+            user=instance.owner,
+            is_deleted=False,
+            organization__is_deleted=True,
+        ).update(is_deleted=True)
+
         if created:
             # Suppress the member added notification for the owner when the org is just created
             instance._is_new_org_creation = True
 
-        membership, membership_created = OrganizationMembership.objects.get_or_create(
+        membership = OrganizationMembership.all_objects.filter(
             user=instance.owner,
             organization=instance,
-            defaults={"role": OrganizationMembership.Role.OWNER},
-        )
+        ).first()
 
-        # Force the role to OWNER if they were previously something else
-        if not membership_created and membership.role != OrganizationMembership.Role.OWNER:
+        if membership:
+            membership.is_deleted = False
             membership.role = OrganizationMembership.Role.OWNER
-            membership.save(update_fields=["role"])
+            membership.save(update_fields=["is_deleted", "role", "updated_at"])
+        else:
+            OrganizationMembership.objects.create(
+                user=instance.owner,
+                organization=instance,
+                role=OrganizationMembership.Role.OWNER,
+            )
 
     # Notify superusers when a new organization is created
     if created:
