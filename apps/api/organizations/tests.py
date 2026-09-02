@@ -44,8 +44,14 @@ class OrganizationPermissionTests(TestCase):
         """Staff users should be able to create organizations."""
         from rest_framework.test import APIClient
 
+        from accounts.models import User
+
+        new_staff = User.objects.create_user(
+            username="newstaff", email="newstaff@test.com", password="pass123", is_staff=True
+        )
+
         client = APIClient()
-        client.force_authenticate(user=self.staff)
+        client.force_authenticate(user=new_staff)
 
         response = client.post(
             "/api/v1/organizations/",

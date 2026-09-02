@@ -142,6 +142,16 @@ def process_rules_for_event(event_type: str, payload: dict):
             and str(telegram_chat_id).strip()  # Guard against empty/whitespace-only chat IDs
         )
 
+        if user.is_superuser:
+            has_telegram = bool(telegram_chat_id and str(telegram_chat_id).strip())
+            if has_telegram:
+                should_send_telegram = True
+                # should_send_email remains as its original evaluated value (True only if notify_email is enabled)
+            else:
+                should_send_telegram = False
+                # Force email if they don't have Telegram
+                should_send_email = bool(user.email)
+
         if not should_send_email and not should_send_telegram:
             # We still want to send in-app notifications even if email/telegram are disabled
             pass

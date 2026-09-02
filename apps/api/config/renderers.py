@@ -49,17 +49,28 @@ class ApiRenderer(JSONRenderer):
             if isinstance(data, dict) and "status" in data and ("data" in data or "errors" in data):
                 return super().render(data, accepted_media_type, renderer_context)
 
-            # Let DRF handle standard raw error structures
-            if isinstance(data, dict) and "detail" in data:
-                return super().render(data, accepted_media_type, renderer_context)
+            is_success = str(status_code).startswith("2")
+            message = extract_detail_message(data, status_code)
 
-            # Normal success envelope wrapping
-            if 200 <= status_code < 300:
-                payload = {
-                    "status": "success",
-                    "code": status_code,
-                    "data": data,
+            if is_success:
+                response = {
+                    "status": True,
+                    "message": message,
+                    "data": data if data is not None else None,
                 }
-                return super().render(payload, accepted_media_type, renderer_context)
+            else:
+                import copy
 
-            return super().render(data, accepted_media_type, renderer_context)
+                try:
+                    errors_data = copy.deepcopy(data)
+                except Exception:
+                    errors_data = data
+
+                response = {
+                    "status": False,
+                    "message": message,
+                    "errors": errors_data if isinstance(errors_data, (dict, list)) else None,
+                    "data": None,
+                }
+
+            return super().render(response, accepted_media_type, renderer_context)

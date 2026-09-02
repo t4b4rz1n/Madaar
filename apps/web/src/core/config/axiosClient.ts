@@ -33,7 +33,7 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 const getApiUrl = (): string =>
-  (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
+  (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, "");
 
 // Request interceptor: reads access token directly from Zustand memory state
 axiosClient.interceptors.request.use(
