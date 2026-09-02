@@ -90,6 +90,14 @@ export const drawerItems: DrawerItem[] = [
     ],
     isPrimary: true,
   },
+  {
+    title: "Team Lead Dashboard",
+    link: "team-lead",
+    section: "Workspace",
+    icon: <Chart21 variant="Outline" />,
+    permissions: ["report.view", "attendance.view_all", "org.manage_members"],
+    isPrimary: true,
+  },
 
   // Admin & Settings Navigation (Settings Modal & Command Menu)
   {
