@@ -121,7 +121,7 @@ def ensure_owner_membership(sender, instance, created, **kwargs):
             membership.role = OrganizationMembership.Role.OWNER
             membership.save(update_fields=["is_deleted", "role", "updated_at"])
         else:
-            OrganizationMembership.objects.create(
+            membership = OrganizationMembership.objects.create(
                 user=instance.owner,
                 organization=instance,
                 role=OrganizationMembership.Role.OWNER,
