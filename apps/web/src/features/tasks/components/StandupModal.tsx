@@ -1,14 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { Calendar, CloseCircle, Trash, Clock, TaskSquare, Danger } from 'iconsax-reactjs';
-import { createStandup, updateStandup, deleteStandup } from '../api/tasksApi';
-import { getProjects } from '../../projects/api/projectsApi';
-import { STANDUP_STRINGS as S } from '../constants/standupStrings';
+import { motion, AnimatePresence } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import {
+  Calendar,
+  CloseCircle,
+  Trash,
+  Clock,
+  TaskSquare,
+  Danger,
+} from "iconsax-reactjs";
+import { createStandup, updateStandup, deleteStandup } from "../api/tasksApi";
+import { getProjects } from "../../projects/api/projectsApi";
+import { STANDUP_STRINGS as S } from "../constants/standupStrings";
 
 interface StandupModalProps {
   isOpen: boolean;
@@ -37,8 +44,8 @@ interface StandupFormData {
 
 const todayIso = (): string => {
   const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
   return `${now.getFullYear()}-${month}-${day}`;
 };
 
@@ -68,20 +75,20 @@ export const StandupModal: React.FC<StandupModalProps> = ({
     formState: { errors, isSubmitting },
   } = useForm<StandupFormData>({
     defaultValues: {
-      projectId: projectId ?? '',
-      hoursWorked: initial?.hoursWorked ?? '',
-      todayWork: initial?.todayWork ?? '',
-      blockers: initial?.blockers ?? '',
+      projectId: projectId ?? "",
+      hoursWorked: initial?.hoursWorked ?? "",
+      todayWork: initial?.todayWork ?? "",
+      blockers: initial?.blockers ?? "",
     },
   });
 
   useEffect(() => {
     if (isOpen) {
       reset({
-        projectId: projectId ?? '',
-        hoursWorked: initial?.hoursWorked ?? '',
-        todayWork: initial?.todayWork ?? '',
-        blockers: initial?.blockers ?? '',
+        projectId: projectId ?? "",
+        hoursWorked: initial?.hoursWorked ?? "",
+        todayWork: initial?.todayWork ?? "",
+        blockers: initial?.blockers ?? "",
       });
       setConfirmDelete(false);
     }
@@ -90,10 +97,10 @@ export const StandupModal: React.FC<StandupModalProps> = ({
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   // Lock body scroll to prevent layout shift (scrollbar jump) when modal opens
@@ -111,18 +118,21 @@ export const StandupModal: React.FC<StandupModalProps> = ({
   }, [isOpen]);
 
   const projectsQuery = useQuery({
-    queryKey: ['projects-for-standup'],
+    queryKey: ["projects-for-standup"],
     queryFn: () => getProjects(),
     enabled: isOpen && needsProjectPicker,
   });
 
-  const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
+  const projects = useMemo(
+    () => projectsQuery.data ?? [],
+    [projectsQuery.data],
+  );
 
   const dateLabel = useMemo(() => {
     const parsed = new Date(`${targetDate}T00:00:00`);
     return Number.isNaN(parsed.getTime())
       ? targetDate
-      : format(parsed, 'EEEE, MMMM d, yyyy');
+      : format(parsed, "EEEE, MMMM d, yyyy");
   }, [targetDate]);
 
 
@@ -132,7 +142,11 @@ export const StandupModal: React.FC<StandupModalProps> = ({
       const payload = {
         projectId: resolvedProjectId,
         date: targetDate,
-        hoursWorked: Math.round(Number(hideHours ? initial?.hoursWorked ?? 0 : data.hoursWorked) * 100) / 100,
+        hoursWorked:
+          Math.round(
+            Number(hideHours ? (initial?.hoursWorked ?? 0) : data.hoursWorked) *
+              100,
+          ) / 100,
         todayWork: data.todayWork.trim(),
         blockers: data.blockers,
       };
@@ -142,10 +156,13 @@ export const StandupModal: React.FC<StandupModalProps> = ({
         await createStandup(payload);
       }
       toast.success(S.toastSavedSuccess);
-      onSaved?.();
-      onClose();
+      if (onSaved) {
+        onSaved();
+      } else {
+        onClose();
+      }
     } catch (error) {
-      console.error('Failed to save standup', error);
+      console.error("Failed to save standup", error);
       toast.error(S.toastSaveFailed);
     }
   };
@@ -193,9 +210,11 @@ export const StandupModal: React.FC<StandupModalProps> = ({
               <Calendar size={18} />
             </div>
             <div>
-              <h2 className="text-base font-bold tracking-tight">{S.modalTitle}</h2>
+              <h2 className="text-base font-bold tracking-tight">
+                {S.modalTitle}
+              </h2>
               <p className="text-[11px] text-primary-content/80 font-medium">
-                {memberName ? `${memberName} · ` : ''}
+                {memberName ? `${memberName} · ` : ""}
                 {dateLabel}
               </p>
             </div>
@@ -229,10 +248,10 @@ export const StandupModal: React.FC<StandupModalProps> = ({
               </label>
               <select
                 className={`w-full h-9.5 rounded-xl border bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 transition-all ${
-                  errors.projectId ? 'border-error' : 'border-base-content/10'
+                  errors.projectId ? "border-error" : "border-base-content/10"
                 }`}
                 disabled={readOnly || projectsQuery.isLoading}
-                {...register('projectId', { required: S.projectRequired })}
+                {...register("projectId", { required: S.projectRequired })}
               >
                 <option value="" disabled hidden>
                   {S.selectProjectPlaceholder}
@@ -244,7 +263,9 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                 ))}
               </select>
               {errors.projectId && (
-                <p className="mt-1 text-[11px] text-error font-medium">{errors.projectId.message}</p>
+                <p className="mt-1 text-[11px] text-error font-medium">
+                  {errors.projectId.message}
+                </p>
               )}
             </div>
           )}
@@ -254,7 +275,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
               <div className="rounded-xl border border-base-content/8 bg-base-200/40 p-3">
                 <div className="flex items-center gap-2 text-primary font-bold mb-1">
                   <Clock size={15} />
-                  <span>{S.hoursWorkedToday.replace(' *', '')}</span>
+                  <span>{S.hoursWorkedToday.replace(" *", "")}</span>
                 </div>
                 <p className="text-sm font-extrabold text-base-content ms-6">
                   {initial?.hoursWorked || 0} Hours
@@ -265,9 +286,12 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                 <div className="rounded-xl border border-base-content/8 bg-base-200/40 p-3">
                   <div className="flex items-center gap-2 text-primary font-bold mb-1">
                     <TaskSquare size={15} />
-                    <span>{S.whatDidYouDoToday.replace(' *', '')}</span>
+                    <span>{S.whatDidYouDoToday.replace(" *", "")}</span>
                   </div>
-                  <p dir="auto" className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6">
+                  <p
+                    dir="auto"
+                    className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6"
+                  >
                     {initial.todayWork}
                   </p>
                 </div>
@@ -279,7 +303,10 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                     <Danger size={15} />
                     <span>{S.blockers}</span>
                   </div>
-                  <p dir="auto" className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6">
+                  <p
+                    dir="auto"
+                    className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6"
+                  >
                     {initial.blockers}
                   </p>
                 </div>
@@ -299,7 +326,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                       <button
                         key={h}
                         type="button"
-                        onClick={() => setValue('hoursWorked', String(h))}
+                        onClick={() => setValue("hoursWorked", String(h))}
                         className="flex-1 rounded-lg py-1 text-[10px] font-bold bg-base-200/50 text-base-content/60 hover:bg-primary/15 hover:text-primary transition-all border border-transparent hover:border-primary/20"
                       >
                         {h} Hours
@@ -317,16 +344,23 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                     disabled={readOnly}
                     autoFocus
                     className={`w-full h-9.5 rounded-xl border bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 transition-all ${
-                      errors.hoursWorked ? 'border-error' : 'border-base-content/10'
+                      errors.hoursWorked
+                        ? "border-error"
+                        : "border-base-content/10"
                     }`}
-                    {...register('hoursWorked', {
+                    {...register("hoursWorked", {
                       required: S.hoursRequired,
-                      min: { value: 0, message: 'Hours cannot be negative' },
-                      max: { value: 24, message: 'Hours cannot exceed 24 per day' },
+                      min: { value: 0, message: "Hours cannot be negative" },
+                      max: {
+                        value: 24,
+                        message: "Hours cannot exceed 24 per day",
+                      },
                     })}
                   />
                   {errors.hoursWorked && (
-                    <p className="mt-1 text-[11px] text-error font-medium">{errors.hoursWorked.message}</p>
+                    <p className="mt-1 text-[11px] text-error font-medium">
+                      {errors.hoursWorked.message}
+                    </p>
                   )}
                 </div>
               )}
@@ -341,12 +375,14 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                   placeholder={S.whatDidYouDoTodayPlaceholder}
                   disabled={readOnly}
                   className={`w-full rounded-xl border bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-base-content/35 ${
-                    errors.todayWork ? 'border-error' : 'border-base-content/10'
+                    errors.todayWork ? "border-error" : "border-base-content/10"
                   }`}
-                  {...register('todayWork', { required: S.todayWorkRequired })}
+                  {...register("todayWork", { required: S.todayWorkRequired })}
                 />
                 {errors.todayWork && (
-                  <p className="mt-1 text-[11px] text-error font-medium">{errors.todayWork.message}</p>
+                  <p className="mt-1 text-[11px] text-error font-medium">
+                    {errors.todayWork.message}
+                  </p>
                 )}
               </div>
 
@@ -360,7 +396,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                   placeholder={S.blockersPlaceholder}
                   disabled={readOnly}
                   className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-base-content/35"
-                  {...register('blockers')}
+                  {...register("blockers")}
                 />
               </div>
             </>
@@ -431,7 +467,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                       }}
                       className="h-7 px-3 rounded-lg bg-red-500 text-xs font-bold text-white shadow-xs hover:bg-red-600 transition-all"
                     >
-                      {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                      {isDeleting ? "Deleting..." : "Yes, Delete"}
                     </button>
                     <button
                       type="button"

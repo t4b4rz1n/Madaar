@@ -257,16 +257,17 @@ class EmployeeDashboardService:
         )
 
     @staticmethod
-    def _get_today_standup(user, today_start, today_end):
+    def _get_today_standup(user, today_local_date):
         return (
             AsyncStandup.objects.filter(
                 user=user,
                 is_deleted=False,
-                date=today_start.date(),
+                date=today_local_date,
             )
             .order_by("-created_at")
             .values(
                 "id",
+                "project_id",
                 "date",
                 "hours_worked",
                 "today_work",
@@ -277,12 +278,12 @@ class EmployeeDashboardService:
         )
 
     @staticmethod
-    def _get_weekly_time_summary(user, week_start, week_end):
+    def _get_weekly_time_summary(user, week_start_date, week_end_date):
         result = TimeLog.objects.filter(
             user=user,
             is_deleted=False,
-            date__gte=week_start.date(),
-            date__lte=week_end.date(),
+            date__gte=week_start_date,
+            date__lte=week_end_date,
             is_active=False,
             project__is_deleted=False,
         ).aggregate(
@@ -323,8 +324,8 @@ class EmployeeDashboardService:
         )
 
     @staticmethod
-    def _get_attendance_status(user, today_start):
-        today_date = today_start.date()
+    def _get_attendance_status(user, today_local_date):
+        today_date = today_local_date
         attendance = (
             Attendance.objects.filter(
                 user=user,
@@ -412,15 +413,19 @@ class EmployeeDashboardService:
         now = timezone.now()  # exact UTC moment — used as overdue boundary
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
+        user_tz = zoneinfo.ZoneInfo(tz_name)
+        today_local_date = today_start.astimezone(user_tz).date()
+        week_start_date = week_start.astimezone(user_tz).date()
+        week_end_date = week_end.astimezone(user_tz).date()
 
         result = {
             "upcoming_tasks": list(cls._get_upcoming_tasks(user, now)),
             "overdue_tasks": list(cls._get_overdue_tasks(user, now)),
             "blocked_tasks": list(cls._get_blocked_tasks(user)),
-            "today_standup": cls._get_today_standup(user, today_start, today_end),
-            "weekly_time": cls._get_weekly_time_summary(user, week_start, week_end),
+            "today_standup": cls._get_today_standup(user, today_local_date),
+            "weekly_time": cls._get_weekly_time_summary(user, week_start_date, week_end_date),
             "active_projects": list(cls._get_active_projects(user)),
-            "attendance_today": cls._get_attendance_status(user, today_start),
+            "attendance_today": cls._get_attendance_status(user, today_local_date),
             "active_timers": list(cls._get_active_timers(user)),
             "upcoming_milestones": list(cls._get_upcoming_milestones(user)),
             # Stubs for future modules
@@ -550,14 +555,14 @@ class ManagerDashboardService:
         }
 
     @staticmethod
-    def _get_work_hours(member_ids, week_start, week_end):
+    def _get_work_hours(member_ids, week_start_date, week_end_date):
         return list(
             TimeLog.objects.filter(
                 user_id__in=member_ids,
                 is_deleted=False,
                 is_active=False,
-                date__gte=week_start.date(),
-                date__lte=week_end.date(),
+                date__gte=week_start_date,
+                date__lte=week_end_date,
                 project__is_deleted=False,
             )
             .annotate(
@@ -579,8 +584,8 @@ class ManagerDashboardService:
         )
 
     @staticmethod
-    def _get_members_attendance(member_ids, today_start):
-        today_date = today_start.date()
+    def _get_members_attendance(member_ids, today_local_date):
+        today_date = today_local_date
         return list(
             Attendance.objects.filter(
                 user_id__in=member_ids,
@@ -749,13 +754,17 @@ class ManagerDashboardService:
         now = timezone.now()
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
+        user_tz = zoneinfo.ZoneInfo(tz_name)
+        today_local_date = today_start.astimezone(user_tz).date()
+        week_start_date = week_start.astimezone(user_tz).date()
+        week_end_date = week_end.astimezone(user_tz).date()
 
         result = {
             "team_member_count": len(member_ids),
             "task_stats": cls._get_task_stats(member_ids),
             "overdue_summary": cls._get_overdue_tasks(member_ids, now),
-            "work_hours": cls._get_work_hours(member_ids, week_start, week_end),
-            "members_attendance": cls._get_members_attendance(member_ids, today_start),
+            "work_hours": cls._get_work_hours(member_ids, week_start_date, week_end_date),
+            "members_attendance": cls._get_members_attendance(member_ids, today_local_date),
             "project_summary": cls._get_project_summary(member_ids),
         }
 
@@ -771,6 +780,9 @@ class ManagerDashboardService:
         now = timezone.now()
         today_start, _ = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
+        user_tz = zoneinfo.ZoneInfo(tz_name)
+        week_start_date = week_start.astimezone(user_tz).date()
+        week_end_date = week_end.astimezone(user_tz).date()
 
         from accounts.models import User
 
@@ -806,8 +818,8 @@ class ManagerDashboardService:
                         user_id=OuterRef("id"),
                         is_deleted=False,
                         is_active=False,
-                        date__gte=week_start.date(),
-                        date__lte=week_end.date(),
+                        date__gte=week_start_date,
+                        date__lte=week_end_date,
                         project__is_deleted=False,
                     )
                     .values("user_id")
@@ -877,7 +889,7 @@ class ExecutiveDashboardService:
         }
 
     @staticmethod
-    def _get_resource_utilization(org_id, week_start, week_end):
+    def _get_resource_utilization(org_id, week_start, week_end, week_start_date, week_end_date):
         from organizations.models import OrganizationMembership
 
         member_count = OrganizationMembership.objects.filter(
@@ -888,8 +900,8 @@ class ExecutiveDashboardService:
             project__organization_id=org_id,
             is_deleted=False,
             is_active=False,
-            date__gte=week_start.date(),
-            date__lte=week_end.date(),
+            date__gte=week_start_date,
+            date__lte=week_end_date,
             project__is_deleted=False,
         ).aggregate(
             total_seconds=Sum("duration_seconds"),
@@ -900,8 +912,8 @@ class ExecutiveDashboardService:
         active_workers = work_data["active_workers"] or 0
 
         # Calculate business days in the week range
-        current = week_start.date()
-        end = min(week_end.date(), timezone.now().date())
+        current = week_start_date
+        end = min(week_end_date, timezone.now().astimezone(zoneinfo.ZoneInfo("UTC")).date())
         business_days = get_business_days(current, end)
 
         # Get expected daily hours for the organization
@@ -956,8 +968,8 @@ class ExecutiveDashboardService:
         }
 
     @staticmethod
-    def _get_project_health(org_id, today_start):
-        today_date = today_start.date()
+    def _get_project_health(org_id, today_local_date):
+        today_date = today_local_date
 
         projects = (
             Project.objects.filter(
@@ -1104,11 +1116,17 @@ class ExecutiveDashboardService:
 
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
+        user_tz = zoneinfo.ZoneInfo(tz_name)
+        today_local_date = today_start.astimezone(user_tz).date()
+        week_start_date = week_start.astimezone(user_tz).date()
+        week_end_date = week_end.astimezone(user_tz).date()
 
         result = {
             "company_overview": cls._get_company_overview(org_id),
-            "resource_utilization": cls._get_resource_utilization(org_id, week_start, week_end),
-            "project_health": cls._get_project_health(org_id, today_start),
+            "resource_utilization": cls._get_resource_utilization(
+                org_id, week_start, week_end, week_start_date, week_end_date
+            ),
+            "project_health": cls._get_project_health(org_id, today_local_date),
             "financial_summary": cls._get_financial_summary(org_id),
         }
 

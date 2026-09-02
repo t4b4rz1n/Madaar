@@ -54,6 +54,7 @@ class ActiveTimerSerializer(serializers.Serializer):
 
 class StandupSummarySerializer(serializers.Serializer):
     id = serializers.UUIDField()
+    project = serializers.UUIDField(source="project_id")
     date = serializers.DateField()
     hours_worked = serializers.DecimalField(max_digits=5, decimal_places=2)
     today_work = serializers.CharField()
@@ -78,7 +79,7 @@ class EmployeeDashboardSerializer(serializers.Serializer):
     weekly_time = TimeSummarySerializer()
     active_projects = ActiveProjectSerializer(many=True)
     attendance_today = AttendanceStatusSerializer(allow_null=True)
-    active_timer = ActiveTimerSerializer(allow_null=True)
+    active_timers = ActiveTimerSerializer(many=True)
     upcoming_milestones = MilestoneSummarySerializer(many=True)
     # Stubs for future modules
     points = serializers.IntegerField(allow_null=True)
