@@ -30,7 +30,6 @@ import { formatDate } from "../../../utils/formatDate";
 import { useDebounce } from "../../../hooks/useDebounce";
 import type { TicketTypeItem } from "../types";
 import { usePermissions } from "../../auth/hooks/usePermissions";
-import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -240,14 +239,14 @@ export default function TicketsListPage() {
     icon: React.ReactNode;
     count?: number;
   }[] = [
-    {
-      id: "tickets",
-      label: "Tickets",
-      icon: <Messages size={16} />,
-      count: totalResults || undefined,
-    },
-    ...(isManager
-      ? [
+      {
+        id: "tickets",
+        label: "Tickets",
+        icon: <Messages size={16} />,
+        count: totalResults || undefined,
+      },
+      ...(isManager
+        ? [
           {
             id: "categories" as const,
             label: "Categories",
@@ -255,8 +254,8 @@ export default function TicketsListPage() {
             count: catTotalResults || undefined,
           },
         ]
-      : []),
-  ];
+        : []),
+    ];
 
   return (
     <>
@@ -290,16 +289,14 @@ export default function TicketsListPage() {
           </div>
           <div className="flex items-center gap-2">
             {activeTab === "tickets" ? (
-              <PermissionGuard permissions={["tickets.manage"]}>
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(true)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
-                >
-                  <Add size={16} />
-                  <span>Create Ticket</span>
-                </button>
-              </PermissionGuard>
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
+              >
+                <Add size={16} />
+                <span>Create Ticket</span>
+              </button>
             ) : isManager ? (
               <button
                 type="button"
@@ -321,11 +318,10 @@ export default function TicketsListPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === tab.id
                       ? "bg-primary text-primary-content shadow-xs"
                       : "text-base-content/55 hover:bg-base-200 hover:text-base-content"
-                  }`}
+                    }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
