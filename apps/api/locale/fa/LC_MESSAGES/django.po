@@ -173,6 +173,12 @@ msgstr "عضو جدید در سازمان"
 msgid " <b>New member added to organization!</b>\n\n Organization: <b>{org_name}</b>\n New member: {member_name}\n Role: {role}"
 msgstr " <b>عضو جدید به سازمان اضافه شد!</b>\n\n سازمان: <b>{org_name}</b>\n عضو جدید: {member_name}\n نقش: {role}"
 
+msgid "Added to organization"
+msgstr "عضویت در سازمان"
+
+msgid " <b>You have been added to a new organization!</b>\n\n You are now a member of <b>{org_name}</b> as a <b>{role}</b>."
+msgstr " <b>شما به یک سازمان جدید اضافه شدید!</b>\n\n شما اکنون با نقش <b>{role}</b> در سازمان <b>{org_name}</b> عضو هستید."
+
 msgid "New Board Created"
 msgstr "بورد جدید ساخته شد"
 

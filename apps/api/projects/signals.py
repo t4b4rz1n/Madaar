@@ -34,6 +34,9 @@ def notify_project_member_added_or_changed(sender, instance, created, **kwargs):
         project.owner.get_full_name() or project.owner.username if project.owner else "System"
     )
 
+    if getattr(instance, "_skip_project_member_added_signal", False):
+        return
+
     if created and instance.user:
         EventDispatcher.dispatch(
             event_type="project_created",

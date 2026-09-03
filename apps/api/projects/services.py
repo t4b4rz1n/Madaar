@@ -144,14 +144,17 @@ class ProjectService:
             members_to_add.add(project.owner)
 
         for member_user in members_to_add:
-            ProjectMember.objects.get_or_create(
-                project=project,
-                user=member_user,
-                defaults={
-                    "allocation_percentage": 100,
-                    "is_active": True,
-                },
-            )
+            mem = ProjectMember.objects.filter(project=project, user=member_user).first()
+            if not mem:
+                mem = ProjectMember(
+                    project=project,
+                    user=member_user,
+                    allocation_percentage=100,
+                    is_active=True,
+                )
+                if member_user == actor:
+                    mem._skip_project_member_added_signal = True
+                mem.save()
 
         _ActivityLogger.log(
             project=project,

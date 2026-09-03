@@ -600,6 +600,19 @@ def _fmt_member_added_to_org(p):
     )
 
 
+def _fmt_you_added_to_org(p):
+    return (
+        _("Added to organization"),
+        _(
+            " <b>You have been added to a new organization!</b>\n\n"
+            " You are now a member of <b>{org_name}</b> as a <b>{role}</b>."
+        ).format(
+            org_name=p.get("org_name", "—"),
+            role=p.get("role", "—"),
+        ),
+    )
+
+
 def _fmt_board_created(p):
     return (
         _("New Board Created"),
@@ -658,6 +671,7 @@ _MESSAGE_FORMATTERS = {
     "project_budget_set": _fmt_project_budget_set,
     "member_added_to_project": _fmt_member_added_to_project,
     "member_added_to_org": _fmt_member_added_to_org,
+    "you_added_to_org": _fmt_you_added_to_org,
     "board_created": _fmt_board_created,
     "milestone_created": _fmt_milestone_created,
     "task_created": _fmt_task_created,

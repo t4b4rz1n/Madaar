@@ -302,16 +302,23 @@ AUTOMATION_EVENT_CATALOG = (
     ),
     _event(
         "member_added_to_org",
-        _("Member added to organization"),
-        _(
-            "A user is added to an organization — the new member, admins and superusers are notified."
-        ),
-        [Recipient.TARGET_USERS, Recipient.SUPERUSERS, Recipient.HAS_PERM_ORG_MANAGE],
+        _("Member added to organization (admin view)"),
+        _("A user is added to an organization — admins and superusers are notified."),
+        [Recipient.SUPERUSERS, Recipient.HAS_PERM_ORG_MANAGE],
         allowed_recipients=[
-            Recipient.TARGET_USERS,
             Recipient.SUPERUSERS,
             Recipient.HAS_PERM_ORG_MANAGE,
         ],
+    ),
+    _event(
+        "you_added_to_org",
+        _("You joined an organization"),
+        _("A user is notified when they are added to an organization."),
+        [Recipient.TARGET_USERS],
+        allowed_recipients=[
+            Recipient.TARGET_USERS,
+        ],
+        mandatory_recipients=[Recipient.TARGET_USERS],
     ),
     # ── Owner-specific events ──────────────────────────────────────────────
     _event(
