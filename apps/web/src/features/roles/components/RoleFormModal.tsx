@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { Permission, Role, RoleFormData, RoleUpdateData } from "../types";
 import { usePermissions } from "../hooks/useRoles";
+import { useOrganizations } from "../../organizations/hooks/useOrganizations";
+import type { Organization } from "../../organizations/types";
 
 type RoleFormValues = {
   name: string;
   description: string;
   permissions: string[];
+  organization_id: string;
 };
 
 type RoleFormModalProps = {
@@ -17,6 +20,11 @@ type RoleFormModalProps = {
   isPending?: boolean;
   onClose: () => void;
   onSubmit: (data: RoleFormData | RoleUpdateData) => void;
+  /** If provided, locks the organization field to this org and hides the dropdown */
+  lockedOrganizationId?: string;
+  lockedOrganizationName?: string;
+  /** If true, shows org selector (for superuser/owner use cases) */
+  showOrgSelector?: boolean;
 };
 
 export const RoleFormModal: React.FC<RoleFormModalProps> = ({
@@ -27,9 +35,15 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
   isPending = false,
   onClose,
   onSubmit,
+  lockedOrganizationId,
+  lockedOrganizationName,
+  showOrgSelector = false,
 }) => {
   // Load permissions dynamically from the backend
   const { data: permissionsData, isLoading: isLoadingPerms } = usePermissions();
+
+  // Load organizations for the selector (only when showOrgSelector is true)
+  const { data: organizations = [] } = useOrganizations();
 
   const allPermissionIds = useMemo(
     () => (permissionsData?.permissions || []).map((p: Permission) => p.code),
@@ -61,6 +75,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
       name: "",
       description: "",
       permissions: [],
+      organization_id: lockedOrganizationId ?? "",
     },
   });
 
@@ -83,18 +98,20 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
       name: initialRole?.name ?? "",
       description: initialRole?.description ?? "",
       permissions: initialRole?.permissions ?? [],
+      organization_id: lockedOrganizationId ?? "",
     });
 
     setTimeout(() => {
       isFirstRender.current = false;
     }, 0);
-  }, [initialRole, isOpen, reset]);
+  }, [initialRole, isOpen, reset, lockedOrganizationId]);
 
   const submitHandler: SubmitHandler<RoleFormValues> = (values) => {
     onSubmit({
       name: values.name,
       description: values.description,
       permissions: values.permissions,
+      organization_id: values.organization_id || lockedOrganizationId,
     });
   };
 
@@ -136,6 +153,48 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit(submitHandler)} className="mt-6 space-y-6">
+          {/* Organization field */}
+          {lockedOrganizationId ? (
+            /* Locked: show read-only chip */
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-medium">Organization</span>
+              </label>
+              <div className="flex items-center gap-2 rounded-2xl border border-base-300 bg-base-200/60 px-4 py-2.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-3">
+                    <path fillRule="evenodd" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z" clipRule="evenodd" />
+                  </svg>
+                  {lockedOrganizationName || lockedOrganizationId}
+                </span>
+                <span className="text-xs text-base-content/40">Locked to this organization</span>
+              </div>
+            </div>
+          ) : showOrgSelector ? (
+            /* Selector: dropdown for superuser / owner */
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-medium">Organization</span>
+              </label>
+              <select
+                {...register("organization_id", { required: "Please select an organization" })}
+                className="select select-bordered w-full rounded-2xl"
+              >
+                <option value="">Select organization…</option>
+                {(organizations as Organization[]).map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+              {errors.organization_id && (
+                <span className="mt-1 text-xs text-error">
+                  {errors.organization_id.message}
+                </span>
+              )}
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="form-control w-full sm:col-span-2">
               <label className="label">

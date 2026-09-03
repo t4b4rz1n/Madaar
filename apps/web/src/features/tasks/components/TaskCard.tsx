@@ -393,10 +393,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shrink-0">
                       {(user.first_name?.[0] || user.full_name?.[0] || user.username?.[0] || user.email?.[0] || "?").toUpperCase()}
                     </span>
-                    <span className="truncate">
-                      {user.first_name || user.last_name
-                        ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
-                        : user.full_name || user.username || user.email || "Unknown Member"}
+                    <span className="truncate flex items-center gap-1">
+                      <span>
+                        {user.first_name || user.last_name
+                          ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+                          : user.full_name || user.username || user.email || "Unknown Member"}
+                      </span>
+                      {user.username && (
+                        <span className="text-[9px] text-base-content/40 font-normal">
+                          (@{user.username})
+                        </span>
+                      )}
                     </span>
                   </button>
                 );

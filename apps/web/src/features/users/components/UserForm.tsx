@@ -114,13 +114,14 @@ export const UserForm = ({
           name="role_id"
           control={control}
           render={({ field }) => (
-            <label className="form-control w-full">
-              <div className="label mb-2">
+            <div className="form-control w-full">
+              <label className="label mb-2" htmlFor="user-form-role">
                 <span className="label-text font-semibold">User Role</span>
-              </div>
+              </label>
 
               <div className="relative">
                 <select
+                  id="user-form-role"
                   name={field.name}
                   ref={field.ref}
                   value={field.value ?? ""}
@@ -153,7 +154,7 @@ export const UserForm = ({
                   {errors.role_id.message}
                 </span>
               )}
-            </label>
+            </div>
           )}
         />
       </div>
