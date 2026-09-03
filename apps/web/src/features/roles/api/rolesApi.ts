@@ -12,6 +12,8 @@ export type GetRolesParams = {
   page_size?: number;
   search?: string;
   ordering?: string;
+  organization_id?: string;
+  organization?: string;
 };
 
 export type PermissionsResponse = {

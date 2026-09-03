@@ -23,13 +23,7 @@ import InputField from "../../../components/InputField";
 import type { UserFormData } from "../../users/types";
 import type { User as UserType } from "../../users/types";
 
-const MEMBERSHIP_ROLES = [
-  { value: "admin", label: "Admin" },
-  { value: "team_lead", label: "Team Lead" },
-  { value: "employee", label: "Employee" },
-  { value: "hr", label: "Human Resources" },
-  { value: "accountant", label: "Accountant" },
-];
+
 
 const backdropVariants = { hidden: { opacity: 0 }, visible: { opacity: 1 } };
 const modalVariants = {
@@ -49,7 +43,7 @@ const createOrgMemberSchema = z.object({
     .regex(/[0-9]/, "Must contain at least one number"),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
-  role_id: z.union([z.string(), z.number()]).nullable().optional(),
+  role_id: z.string().nullable().optional(),
 });
 
 type OrgMemberFormData = z.infer<typeof createOrgMemberSchema>;
@@ -79,7 +73,9 @@ export const CreateOrgMemberModal = ({
     data: unassignedUsers = [],
     isLoading: isLoadingUsers,
   } = useUnassignedUsers();
-  const { data: rolesData, isLoading: isLoadingRoles } = useRoles();
+  const { data: rolesData, isLoading: isLoadingRoles } = useRoles(
+    orgId ? { organization_id: orgId } : undefined,
+  );
   const roles = rolesData?.results ?? [];
 
   const addExistingMutation = useMutation({
@@ -208,12 +204,13 @@ export const CreateOrgMemberModal = ({
           animate="visible"
           exit="hidden"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 backdrop-blur-md sm:p-4"
-          onClick={handleClose}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
         >
           <motion.div
             variants={modalVariants}
             className="madaar-surface relative m-0 flex max-h-[min(90vh,48rem)] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl sm:m-4"
-            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex-shrink-0 border-b border-base-content/10 bg-base-200/20 p-5 sm:p-6">
@@ -397,9 +394,9 @@ export const CreateOrgMemberModal = ({
                         className="select select-bordered w-full rounded-xl pl-10"
                     >
                         <option value="">Select a role</option>
-                        {MEMBERSHIP_ROLES.map((role) => (
-                          <option key={role.value} value={role.value}>
-                            {role.label}
+                        {roles.map((role) => (
+                          <option key={role.id} value={String(role.id)}>
+                            {role.name}
                           </option>
                         ))}
                       </select>
@@ -419,10 +416,10 @@ export const CreateOrgMemberModal = ({
                       name="first_name"
                       control={control}
                       render={({ field }) => (
-                        <label className="form-control w-full">
-                          <div className="label mb-2">
+                        <div className="form-control w-full">
+                          <label className="label mb-2">
                             <span className="label-text font-semibold">First Name</span>
-                          </div>
+                          </label>
                           <InputField
                             {...field}
                             value={field.value ?? ""}
@@ -434,7 +431,7 @@ export const CreateOrgMemberModal = ({
                               {errors.first_name.message}
                             </span>
                           )}
-                        </label>
+                        </div>
                       )}
                     />
 
@@ -442,10 +439,10 @@ export const CreateOrgMemberModal = ({
                       name="last_name"
                       control={control}
                       render={({ field }) => (
-                        <label className="form-control w-full">
-                          <div className="label mb-2">
+                        <div className="form-control w-full">
+                          <label className="label mb-2">
                             <span className="label-text font-semibold">Last Name</span>
-                          </div>
+                          </label>
                           <InputField
                             {...field}
                             value={field.value ?? ""}
@@ -457,7 +454,7 @@ export const CreateOrgMemberModal = ({
                               {errors.last_name.message}
                             </span>
                           )}
-                        </label>
+                        </div>
                       )}
                     />
                   </div>
@@ -467,12 +464,12 @@ export const CreateOrgMemberModal = ({
                       name="username"
                       control={control}
                       render={({ field }) => (
-                        <label className="form-control w-full">
-                          <div className="label mb-2">
+                        <div className="form-control w-full">
+                          <label className="label mb-2">
                             <span className="label-text font-semibold">
                               Username <span className="text-error">*</span>
                             </span>
-                          </div>
+                          </label>
                           <InputField
                             {...field}
                             value={field.value ?? ""}
@@ -485,7 +482,7 @@ export const CreateOrgMemberModal = ({
                               {errors.username.message}
                             </span>
                           )}
-                        </label>
+                        </div>
                       )}
                     />
 
@@ -493,12 +490,12 @@ export const CreateOrgMemberModal = ({
                       name="email"
                       control={control}
                       render={({ field }) => (
-                        <label className="form-control w-full">
-                          <div className="label mb-2">
+                        <div className="form-control w-full">
+                          <label className="label mb-2">
                             <span className="label-text font-semibold">
                               Email <span className="text-error">*</span>
                             </span>
-                          </div>
+                          </label>
                           <InputField
                             {...field}
                             value={field.value ?? ""}
@@ -511,7 +508,7 @@ export const CreateOrgMemberModal = ({
                               {errors.email.message}
                             </span>
                           )}
-                        </label>
+                        </div>
                       )}
                     />
                   </div>
@@ -521,12 +518,12 @@ export const CreateOrgMemberModal = ({
                       name="password"
                       control={control}
                       render={({ field }) => (
-                        <label className="form-control w-full">
-                          <div className="label mb-2">
+                        <div className="form-control w-full">
+                          <label className="label mb-2">
                             <span className="label-text font-semibold">
                               Password <span className="text-error">*</span>
                             </span>
-                          </div>
+                          </label>
                           <InputField
                             type="password"
                             {...field}
@@ -544,7 +541,7 @@ export const CreateOrgMemberModal = ({
                               At least 8 characters with upper, lower, and numbers
                             </span>
                           )}
-                        </label>
+                        </div>
                       )}
                     />
 
@@ -552,21 +549,21 @@ export const CreateOrgMemberModal = ({
                       name="role_id"
                       control={control}
                       render={({ field }) => (
-                        <label className="form-control w-full">
-                          <div className="label mb-2">
+                        <div className="form-control w-full">
+                          <label className="label mb-2" htmlFor="create-org-member-role">
                             <span className="label-text font-semibold">User Role</span>
-                          </div>
+                          </label>
                           <div className="relative">
                             <select
+                              id="create-org-member-role"
                               name={field.name}
                               ref={field.ref}
                               value={field.value ?? ""}
                               onBlur={field.onBlur}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value === "" ? null : Number(e.target.value),
-                                )
-                              }
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? null : val);
+                              }}
                               className={`select select-bordered w-full rounded-xl pl-10 ${
                                 errors.role_id ? "select-error" : ""
                               }`}
@@ -588,7 +585,7 @@ export const CreateOrgMemberModal = ({
                               {errors.role_id.message}
                             </span>
                           )}
-                        </label>
+                        </div>
                       )}
                     />
                   </div>

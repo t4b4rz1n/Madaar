@@ -8,14 +8,15 @@ import {
 } from "../api/rolesApi";
 import type { ApiResponseList } from "../../../core/api/apiService";
 import type { PermissionsResponse, Role, RoleFormData, RoleUpdateData } from "../types";
+import type { GetRolesParams } from "../api/rolesApi";
 
 const ROLES_QUERY_KEY = ["roles"] as const;
 const PERMISSIONS_QUERY_KEY = ["roles", "permissions"] as const;
 
-export const useRoles = () => {
+export const useRoles = (params?: GetRolesParams) => {
   return useQuery<ApiResponseList<Role>>({
-    queryKey: ROLES_QUERY_KEY,
-    queryFn: () => getRoles(),
+    queryKey: params ? [...ROLES_QUERY_KEY, params] : ROLES_QUERY_KEY,
+    queryFn: () => getRoles(params),
   });
 };
 

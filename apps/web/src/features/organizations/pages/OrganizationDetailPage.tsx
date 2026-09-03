@@ -6,6 +6,7 @@ import {
   FolderFavorite,
   People,
   Profile2User,
+  Shield,
   User,
   Trash,
 } from "iconsax-reactjs";
@@ -187,6 +188,14 @@ export default function OrganizationDetailPage() {
             >
               <FolderFavorite size={16} />
               Create project
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/organizations/${orgId}/roles`)}
+              className="btn btn-outline btn-sm rounded-xl gap-2"
+            >
+              <Shield size={16} />
+              Roles Management
             </button>
           </div>
         </div>

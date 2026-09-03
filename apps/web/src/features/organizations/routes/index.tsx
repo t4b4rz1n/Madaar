@@ -6,6 +6,7 @@ import PageLoader from "../../../components/PageLoader";
 
 const OrganizationsPage = lazy(() => import("../pages/OrganizationsPage"));
 const OrganizationDetailPage = lazy(() => import("../pages/OrganizationDetailPage"));
+const OrgRolesPage = lazy(() => import("../../roles/pages/OrgRolesPage"));
 
 export const organizationsRoutes: RouteObject[] = [
   {
@@ -29,6 +30,24 @@ export const organizationsRoutes: RouteObject[] = [
   },
   {
     path: "organizations/:orgId",
-    element: <OrganizationDetailPage />,
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <OrganizationDetailPage />
+      </Suspense>
+    ),
+  },
+  {
+    // صفحه مدیریت رول‌های سازمان - org-scoped roles
+    path: "organizations/:orgId/roles",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PermissionGuard
+          permissions={["org.manage_roles", "role.view"]}
+          fallback={<Navigate to="/dashboard" replace />}
+        >
+          <OrgRolesPage />
+        </PermissionGuard>
+      </Suspense>
+    ),
   },
 ];
