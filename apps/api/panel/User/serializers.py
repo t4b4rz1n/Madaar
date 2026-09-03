@@ -361,7 +361,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 if raw_org_id:
                     org = Organization.objects.filter(id=raw_org_id, is_deleted=False).first()
 
-                if not org and actor:
+                if not org and actor and not actor.is_superuser:
                     actor_mem = (
                         actor.org_memberships.filter(is_deleted=False)
                         .select_related("organization")

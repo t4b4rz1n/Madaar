@@ -1,19 +1,19 @@
 /**
  * TeamLeadDashboardPage.tsx
  * -------------------------
- * داشبورد مستقل برای نقش Team Lead.
+ * Independent dashboard for Team Lead role.
  *
- * داده: GET /api/v1/reports/manager/dashboard/
- *   → team_id پاس نمی‌شود؛ بکاند خودش تیم‌های lead کاربر را پیدا می‌کند.
- *   → error 403: error state مناسب نمایش داده می‌شود.
+ * Data: GET /api/v1/reports/manager/dashboard/
+ *   → team_id is not passed; backend finds the user's lead teams.
+ *   → error 403: appropriate error state is shown.
  *
- * طراحی: همان design language پروژه (madaar-surface, DaisyUI tokens,
- *   iconsax-reactjs, Framer Motion) — بدون اختراع کامپوننت جدید.
+ * Design: Same design language (madaar-surface, DaisyUI tokens,
+ *   iconsax-reactjs, Framer Motion) — no new components.
  *
- * ⚠️ بدهی فنی (ثبت‌شده):
- *   - متن‌ها hardcode هستند (i18n در پروژه پیاده‌سازی نشده).
- *   - کامپوننت‌های inline (MetricCard, SectionHeading, ...) باید در
- *     آینده به /src/components/ui منتقل شوند.
+ * ⚠️ Technical debt (recorded):
+ *   - Texts are hardcoded (i18n is not implemented).
+ *   - Inline components should be moved to /src/components/ui in the future.
+ *
  */
 
 import { motion } from "framer-motion";
@@ -70,7 +70,7 @@ const formatTime = (isoString: string | null | undefined) => {
 };
 
 const formatDate = (value: string | null | undefined) => {
-  if (!value) return "بدون مهلت";
+  if (!value) return "No deadline";
   return new Intl.DateTimeFormat("fa-IR", {
     month: "short",
     day: "numeric",
@@ -85,7 +85,7 @@ const getInitials = (
   `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || fallback;
 
 /**
- * نگاشت رنگی project.status — از مقادیر واقعی بکاند (Project.Status)
+ * Color mapping for project.status — from backend real values (Project.Status)
  * "draft" | "active" | "on_hold" | "completed" | "archived"
  */
 const getProjectStatusStyle = (
@@ -93,15 +93,15 @@ const getProjectStatusStyle = (
 ): { label: string; tone: "success" | "warning" | "error" | "neutral" } => {
   switch (status) {
     case "active":
-      return { label: "فعال", tone: "success" };
+      return { label: "Active", tone: "success" };
     case "completed":
-      return { label: "تکمیل‌شده", tone: "success" };
+      return { label: "Completed", tone: "success" };
     case "on_hold":
-      return { label: "متوقف", tone: "warning" };
+      return { label: "On Hold", tone: "warning" };
     case "draft":
-      return { label: "پیش‌نویس", tone: "neutral" };
+      return { label: "Draft", tone: "neutral" };
     case "archived":
-      return { label: "آرشیو", tone: "neutral" };
+      return { label: "Archived", tone: "neutral" };
     default:
       return { label: status, tone: "neutral" };
   }
@@ -117,7 +117,7 @@ const getProjectProgress = (project: ManagerProjectSummary) =>
 const panelClass = "madaar-surface overflow-hidden";
 const spring = { type: "spring" as const, stiffness: 360, damping: 32, bounce: 0 };
 
-// ─── Sub-components (inline — بدهی فنی: باید به /components/ui منتقل شوند) ──
+// ─── Sub-components (inline — Technical debt: should be moved to /components/ui) ──
 
 const MetricCard = ({
   label,
@@ -202,11 +202,11 @@ const AttendancePanel = ({
 }) => (
   <section className={panelClass}>
     <SectionHeading
-      title="حضور و غیاب اعضا"
-      description="وضعیت ورود/خروج امروز"
+      title="Member Attendance"
+      description="Today's Check-in/Check-out status"
       action={
         <span className="text-[11px] font-bold text-base-content/35">
-          امروز
+          Today
         </span>
       }
     />
@@ -214,7 +214,7 @@ const AttendancePanel = ({
       <div className="px-5 pb-6">
         <div className="rounded-2xl bg-base-200/60 p-4 text-center">
           <p className="text-sm font-semibold text-base-content/45">
-            اطلاعات حضور ثبت نشده است.
+            No attendance information recorded.
           </p>
         </div>
       </div>
@@ -247,13 +247,13 @@ const AttendancePanel = ({
               <div className="flex shrink-0 items-center gap-3 text-xs">
                 {member.is_remote && (
                   <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-black text-secondary">
-                    دورکاری
+                    Remote
                   </span>
                 )}
                 {!isPresent ? (
                   <span className="flex items-center gap-1 text-base-content/40">
                     <CloseCircle size={14} />
-                    غایب
+                    Absent
                   </span>
                 ) : isOut ? (
                   <span className="flex items-center gap-1 text-base-content/50">
@@ -263,7 +263,7 @@ const AttendancePanel = ({
                 ) : (
                   <span className="flex items-center gap-1 text-success">
                     <Activity size={14} />
-                    از {formatTime(member.check_in)}
+                    Since {formatTime(member.check_in)}
                   </span>
                 )}
               </div>
@@ -285,7 +285,7 @@ const WorkHoursPanel = ({
   overdueByMember: ManagerDashboard["overdue_summary"]["by_member"];
 }) => {
   const maxSeconds = Math.max(...workHours.map((w) => w.total_seconds), 1);
-  // نگاشت username → count از overdue_summary.by_member (موجود در Response اصلی)
+  // Mapping username → count from overdue_summary.by_member (in main response)
   const overdueMap = new Map(
     overdueByMember.map((m) => [m.username, m.count])
   );
@@ -293,21 +293,21 @@ const WorkHoursPanel = ({
   return (
     <section className={panelClass}>
       <SectionHeading
-        title="ساعات کاری هفته"
-        description="زمان ثبت‌شده هر عضو در این هفته"
+        title="Weekly Work Hours"
+        description="Logged time per member this week"
         action={
           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-base-content/35">
             <Clock size={13} />
             {formatHours(
               workHours.reduce((s, w) => s + Number(w.total_seconds || 0), 0)
             )}{" "}
-            مجموع
+            Total
           </span>
         }
       />
       {workHours.length === 0 ? (
         <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">
-          هیچ ساعت کاری در این هفته ثبت نشده است.
+          No work hours recorded this week.
         </div>
       ) : (
         <div className="divide-y divide-base-content/8">
@@ -327,7 +327,7 @@ const WorkHoursPanel = ({
                       </p>
                       {overdueTasks > 0 && (
                         <p className="text-[10px] font-bold text-error">
-                          {overdueTasks} تسک معوق
+                          {overdueTasks} Overdue Tasks
                         </p>
                       )}
                     </div>
@@ -362,20 +362,20 @@ const ProjectSummaryPanel = ({
 }) => (
   <section className={panelClass}>
     <SectionHeading
-      title="وضعیت پروژه‌ها"
-      description="خلاصه پروژه‌های این تیم"
+      title="Project Status"
+      description="Summary of team projects"
       action={
         <Link
           to="/tasks"
           className="motion-interactive inline-flex items-center gap-1 text-xs font-black text-primary"
         >
-          فضای کاری <ArrowRight size={14} />
+          Workspace <ArrowRight size={14} />
         </Link>
       }
     />
     {projects.length === 0 ? (
       <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">
-        هیچ پروژه‌ای در این تیم ثبت نشده است.
+        No projects recorded in this team.
       </div>
     ) : (
       <div className="grid gap-3 px-5 pb-5">
@@ -411,9 +411,9 @@ const ProjectSummaryPanel = ({
                     {project.name}
                   </p>
                   <p className="mt-1 text-[11px] font-semibold text-base-content/40">
-                    مهلت {formatDate(project.deadline)} ·{" "}
-                    {project.active_member_count} نفر ·{" "}
-                    {project.done_tasks}/{project.total_tasks} تسک
+                    Deadline {formatDate(project.deadline)} ·{" "}
+                    {project.active_member_count} members ·{" "}
+                    {project.done_tasks}/{project.total_tasks} tasks
                   </p>
                 </div>
                 <span
@@ -436,7 +436,7 @@ const ProjectSummaryPanel = ({
               {project.total_time_seconds != null && (
                 <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-base-content/40">
                   <Timer1 size={12} />
-                  {formatHours(project.total_time_seconds)} ثبت‌شده
+                  {formatHours(project.total_time_seconds)} logged
                 </p>
               )}
             </motion.div>
@@ -456,16 +456,16 @@ const OverdueSummaryPanel = ({
 }) => (
   <section className={panelClass}>
     <SectionHeading
-      title="تسک‌های معوق"
-      description="اعضایی که تسک عقب‌افتاده دارند"
+      title="Overdue Tasks"
+      description="Members with overdue tasks"
       action={
         overdue.total_overdue > 0 ? (
           <span className="rounded-full bg-error/10 px-2.5 py-1 text-[11px] font-black text-error">
-            {overdue.total_overdue} تسک
+            {overdue.total_overdue} tasks
           </span>
         ) : (
           <span className="rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-black text-success">
-            همه آپ‌تودیت
+            All Up to Date
           </span>
         )
       }
@@ -475,10 +475,10 @@ const OverdueSummaryPanel = ({
         <div className="rounded-2xl bg-success/10 p-4">
           <div className="flex items-center gap-2 text-sm font-black text-success">
             <TickCircle size={18} />
-            هیچ تسک معوقی وجود ندارد
+            No overdue tasks
           </div>
           <p className="mt-1 text-xs font-semibold text-base-content/45">
-            تیم در زمان‌بندی حرکت می‌کند.
+            The team is moving on schedule.
           </p>
         </div>
       </div>
@@ -505,7 +505,7 @@ const OverdueSummaryPanel = ({
               </div>
             </div>
             <span className="shrink-0 rounded-full bg-error/10 px-2.5 py-1 text-xs font-black text-error">
-              {member.count} تسک
+              {member.count} tasks
             </span>
           </div>
         ))}
@@ -536,13 +536,13 @@ const TaskStatsPanel = ({
   return (
     <section className={panelClass}>
       <SectionHeading
-        title="توزیع تسک‌ها"
-        description="تقسیم‌بندی کارها بر اساس وضعیت"
+        title="Task Distribution"
+        description="Task breakdown by status"
       />
       <div className="px-5 pb-6">
         {taskStats.length === 0 ? (
           <p className="text-sm font-semibold text-base-content/45">
-            هیچ تسکی در این تیم وجود ندارد.
+            No tasks in this team.
           </p>
         ) : (
           <>
@@ -568,7 +568,7 @@ const TaskStatsPanel = ({
                       className={`h-2.5 w-2.5 shrink-0 rounded-full ${palette[idx % palette.length]}`}
                     />
                     <span className="truncate text-xs font-bold text-base-content/60">
-                      {stat.status_name || stat.status_code || "دسته‌بندی‌نشده"}
+                      {stat.status_name || stat.status_code || "Uncategorized"}
                     </span>
                   </div>
                   <span className="text-sm font-black text-base-content">
@@ -634,12 +634,12 @@ const TeamLeadDashboardPage = () => {
             <Danger size={24} />
           </div>
           <h1 className="mt-4 text-xl font-black text-base-content">
-            {isAccessDenied ? "دسترسی مجاز نیست" : "خطا در بارگذاری داشبورد"}
+            {isAccessDenied ? "Access Denied" : "Error Loading Dashboard"}
           </h1>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-base-content/55">
             {isAccessDenied
-              ? "این بخش فقط برای تیم‌لیدها قابل دسترسی است. اگر فکر می‌کنید اشتباهی رخ داده، با مدیر خود تماس بگیرید."
-              : "در دریافت اطلاعات خطایی رخ داد. لطفاً دوباره تلاش کنید."}
+              ? "This section is only accessible to authorized team members. If you believe this is a mistake, contact your manager."
+              : "An error occurred fetching data. Please try again."}
           </p>
           <div className="mt-5 flex items-center justify-center gap-3">
             <button
@@ -648,13 +648,13 @@ const TeamLeadDashboardPage = () => {
               className="motion-interactive inline-flex items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-4 py-2.5 text-xs font-black text-base-content/70 hover:border-primary/30 hover:text-primary"
             >
               <Refresh2 size={14} />
-              تلاش مجدد
+              Try Again
             </button>
             <Link
               to="/dashboard"
               className="motion-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-primary-content"
             >
-              داشبورد شخصی
+              Personal Dashboard
               <ArrowRight size={15} />
             </Link>
           </div>
@@ -692,19 +692,19 @@ const TeamLeadDashboardPage = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-primary">
             <Chart21 size={15} />
-            داشبورد تیم‌لید
+            Team Overview
           </div>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-base-content sm:text-4xl">
-            وضعیت تیم شما
+            Your Team Status
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/55 sm:text-base">
-            نمای کلی از حضور، کارها، و پیشرفت پروژه‌های تیمت.
+            Overview of attendance, tasks, and project progress of your team.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/55">
             <Activity size={15} className="text-success" />
-            داده زنده
+            Live Data
           </span>
           <button
             type="button"
@@ -714,10 +714,29 @@ const TeamLeadDashboardPage = () => {
             className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/60 hover:border-primary/30 hover:text-primary"
           >
             <Refresh2 size={15} />
-            به‌روزرسانی
+            Refresh
           </button>
         </div>
       </section>
+
+      {/* ─── Empty Team Banner ─── */}
+      {dashboard.team_member_count === 0 && (
+        <section
+          className={`${panelClass} flex items-center gap-4 bg-base-100 p-5 sm:p-6`}
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <People size={20} />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-base-content">
+              No team members assigned yet
+            </h2>
+            <p className="mt-0.5 text-xs text-base-content/55">
+              Team metrics and workload analytics will be populated automatically once members are assigned to your team.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* ─── Decision Banner ─── */}
       {dashboard.overdue_summary.total_overdue > 0 && (
@@ -730,20 +749,19 @@ const TeamLeadDashboardPage = () => {
             </div>
             <div>
               <p className="text-xs font-black uppercase tracking-[0.14em] text-error">
-                نیاز به توجه
+                Needs Attention
               </p>
               <h2 className="mt-1 text-lg font-black text-base-content">
-                {dashboard.overdue_summary.total_overdue} تسک از زمان‌بندی عقب
-                است
+                {dashboard.overdue_summary.total_overdue} tasks behind schedule
               </h2>
               <p className="mt-1 text-xs font-semibold text-base-content/50">
-                در بخش تسک‌های معوق جزئیات را ببینید.
+                See details in the overdue tasks section.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
             <Calendar size={15} />
-            به‌روز شده همین حالا
+            Updated just now
           </div>
         </section>
       )}
@@ -751,26 +769,26 @@ const TeamLeadDashboardPage = () => {
       {/* ─── KPI Cards ─── */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard
-          label="اعضای تیم"
+          label="Team Members"
           value={dashboard.team_member_count}
-          description="نفر در این تیم"
+          description="members in this team"
           icon={People}
           tone="primary"
         />
         <MetricCard
-          label="حضور امروز"
+          label="Today's Attendance"
           value={`${membersPresent} / ${dashboard.members_attendance.length}`}
-          description="نفر حاضر از کل"
+          description="present out of total"
           icon={Building}
           tone="success"
         />
         <MetricCard
-          label="تسک معوق"
+          label="Overdue Tasks"
           value={dashboard.overdue_summary.total_overdue}
           description={
             doneTasks > 0
-              ? `${doneTasks} از ${totalTasks} تسک تکمیل‌شده`
-              : `از مجموع ${totalTasks} تسک`
+              ? `${doneTasks} Since ${totalTasks} tasks Completed`
+              : `Since Total ${totalTasks} tasks`
           }
           icon={Danger}
           tone={dashboard.overdue_summary.total_overdue > 0 ? "warning" : "success"}
@@ -803,14 +821,14 @@ const TeamLeadDashboardPage = () => {
       <section className="flex items-center justify-between rounded-2xl border border-base-content/8 bg-base-200/40 px-5 py-3">
         <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
           <Timer1 size={14} />
-          مجموع ساعات کاری هفته تیم:
+          Total weekly work hours of the team:
           <span className="font-black text-base-content">
             {formatHours(totalWorkSeconds)}
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
           <TaskSquare size={14} />
-          {totalTasks} تسک · {doneTasks} تکمیل‌شده
+          {totalTasks} tasks · {doneTasks} Completed
         </div>
       </section>
     </motion.div>

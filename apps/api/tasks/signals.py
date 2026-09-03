@@ -47,6 +47,17 @@ def handle_task_automations(sender, instance, created, **kwargs):
         old_status = getattr(instance, "__original_status_code", None)
         old_finished = getattr(instance, "__original_is_finished", None)
 
+        if created:
+            EventDispatcher.dispatch(
+                event_type="task_created",
+                payload={
+                    "project_id": str(instance.project_id) if instance.project_id else None,
+                    "project_name": instance.project.name if instance.project_id else "—",
+                    "task_title": instance.title,
+                    "reporter_id": str(instance.reporter_id) if instance.reporter_id else None,
+                },
+            )
+
         # 7. task_assigned
         # Trigger if created with an assignee, OR if assignee was changed
         if instance.assignee_id and (created or old_assignee != instance.assignee_id):

@@ -36,6 +36,8 @@ export const useCreateRole = () => {
     mutationFn: (data: RoleFormData) => createRole(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["organization-members"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 };
@@ -48,6 +50,10 @@ export const useUpdateRole = () => {
       updateRole(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["organization-members"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: PERMISSIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["current-user-profile"] });
     },
   });
 };
@@ -59,6 +65,8 @@ export const useDeleteRole = () => {
     mutationFn: (id: string) => deleteRole(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["organization-members"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 };

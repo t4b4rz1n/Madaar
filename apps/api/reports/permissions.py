@@ -161,9 +161,11 @@ class IsManagerOrAbove(permissions.BasePermission):
             # Org admin/owner or user with executive report.view / org.manage_settings permission can view all teams
             if _is_org_admin_or_owner(user, org_id):
                 return True
-            if PermissionService.has_permission(
-                user, "report.view", org_id
-            ) or PermissionService.has_permission(user, "org.manage_settings", org_id):
+            if (
+                PermissionService.has_permission(user, "report.view", org_id)
+                or PermissionService.has_permission(user, "report.view_team_lead", org_id)
+                or PermissionService.has_permission(user, "org.manage_settings", org_id)
+            ):
                 return True
 
             # Team lead must lead this specific team
@@ -180,6 +182,9 @@ class IsManagerOrAbove(permissions.BasePermission):
             if (
                 PermissionService.has_permission(user, "project.manage", m.organization_id)
                 or PermissionService.has_permission(user, "report.view", m.organization_id)
+                or PermissionService.has_permission(
+                    user, "report.view_team_lead", m.organization_id
+                )
                 or PermissionService.has_permission(user, "org.manage_settings", m.organization_id)
             ):
                 return True

@@ -35,6 +35,8 @@ export const useCreateUser = () => {
     mutationFn: (data: UserFormData) => createUser(data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await queryClient.invalidateQueries({ queryKey: ["organization-members"] });
+      await queryClient.invalidateQueries({ queryKey: ["roles"] });
       toast.success("User created successfully");
     },
     onError: (error: any) => {
@@ -55,6 +57,9 @@ export const useUpdateUser = () => {
       updateUser(id, data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await queryClient.invalidateQueries({ queryKey: ["organization-members"] });
+      await queryClient.invalidateQueries({ queryKey: ["roles"] });
+      await queryClient.invalidateQueries({ queryKey: ["current-user-profile"] });
       toast.success("User updated successfully");
     },
     onError: (error: any) => {

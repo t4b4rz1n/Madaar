@@ -90,8 +90,9 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source="user.email", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     avatar = serializers.ImageField(source="user.avatar", read_only=True)
-    role_name = serializers.CharField(source="role", read_only=True)
-    role_display = serializers.CharField(source="get_role_display", read_only=True)
+    role_id = serializers.SerializerMethodField()
+    role_name = serializers.SerializerMethodField()
+    role_display = serializers.SerializerMethodField()
 
     class Meta:
         model = OrganizationMembership
@@ -103,14 +104,42 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
             "username",
             "avatar",
             "role",
+            "role_id",
             "role_name",
             "role_display",
             "created_at",
         )
         read_only_fields = fields
 
+    def _get_dynamic_role(self, obj):
+        if (
+            hasattr(obj, "_prefetched_objects_cache")
+            and "dynamic_roles" in obj._prefetched_objects_cache
+        ):
+            roles = [r for r in obj.dynamic_roles.all() if not getattr(r, "is_deleted", False)]
+            return roles[0] if roles else None
+        return obj.dynamic_roles.filter(is_deleted=False).first()
+
     def get_full_name(self, obj):
-        return obj.user.get_full_name()
+        return obj.user.get_full_name() if obj.user else ""
+
+    def get_role_id(self, obj):
+        dyn_role = self._get_dynamic_role(obj)
+        if dyn_role:
+            return str(dyn_role.id)
+        return obj.role
+
+    def get_role_name(self, obj):
+        dyn_role = self._get_dynamic_role(obj)
+        if dyn_role:
+            return dyn_role.name
+        return obj.role
+
+    def get_role_display(self, obj):
+        dyn_role = self._get_dynamic_role(obj)
+        if dyn_role:
+            return dyn_role.name
+        return obj.get_role_display()
 
 
 class AddOrgMemberSerializer(serializers.Serializer):

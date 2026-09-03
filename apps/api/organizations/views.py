@@ -190,6 +190,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                     is_deleted=False,
                 )
                 .select_related("user")
+                .prefetch_related("dynamic_roles")
                 .order_by("-created_at")
             )
             serializer = OrganizationMemberSerializer(memberships, many=True)

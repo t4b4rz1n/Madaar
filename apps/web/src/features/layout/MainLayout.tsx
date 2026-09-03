@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorFallback } from "../../components/ErrorFallback";
 import { useAuthStore } from "../auth/store/authStore";
 import { usePermissions } from "../auth/hooks/usePermissions";
+import { getProfileRequest } from "../auth/api/authApi";
 import { CommandMenu } from "./CommandMenu";
 import { drawerItems, getVisibleDrawerItems } from "./DrawerItems";
 import type { Breadcrumb } from "./Header";
@@ -15,10 +17,24 @@ export const MainLayout = () => {
   const { setSidebarOpen } = useLayoutStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const isStaff = user?.is_staff === true;
   const { pathname } = useLocation();
   const [isCommandMenuOpen, setCommandMenuOpen] = useState(false);
+
+  const { data: latestProfile } = useQuery({
+    queryKey: ["current-user-profile"],
+    queryFn: () => getProfileRequest(),
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60,
+  });
+
+  useEffect(() => {
+    if (latestProfile) {
+      updateUser(latestProfile);
+    }
+  }, [latestProfile, updateUser]);
 
   const commandItems = useMemo(
     () => getVisibleDrawerItems(user, hasAllPermissions, hasAnyPermission),

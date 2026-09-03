@@ -61,6 +61,7 @@ export const dashboardRoutes: RouteObject[] = [
       <Suspense fallback={<PageLoader />}>
         <PermissionGuard
           permissions={[
+            "report.view_team_lead",
             "report.view",
             "attendance.view_all",
             "org.manage_members",
