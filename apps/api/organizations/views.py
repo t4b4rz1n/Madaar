@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Organization, OrganizationMembership, Team, TeamMembership
+from .models import Organization, OrganizationMembership, Role, Team, TeamMembership
 from .permissions import CanManageOrganization
 from .serializers import (
     AddOrgMemberSerializer,
@@ -143,7 +143,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             is_deleted=False,
             organization__is_deleted=False,
         ).exists()
-        if has_active_org:
+        if has_active_org and not getattr(request.user, "is_superuser", False):
             return Response(
                 {"detail": "User already belongs to an active organization."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -200,9 +200,31 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
 
             user_id = serializer.validated_data["user_id"]
-            role_id = (
-                serializer.validated_data.get("role_id") or OrganizationMembership.Role.EMPLOYEE
-            )
+            raw_role = serializer.validated_data.get("role_id")
+
+            # Resolve Role object and map to valid OrganizationMembership.Role choice
+            role_obj = None
+            legacy_role = OrganizationMembership.Role.EMPLOYEE
+            if raw_role:
+                role_obj = (
+                    Role.objects.filter(
+                        id=raw_role, organization=organization, is_deleted=False
+                    ).first()
+                    or Role.objects.filter(
+                        name__iexact=str(raw_role), organization=organization, is_deleted=False
+                    ).first()
+                    or Role.objects.filter(id=raw_role, is_deleted=False).first()
+                )
+                if role_obj:
+                    name_lower = role_obj.name.lower().replace(" ", "_")
+                    if name_lower in [c[0] for c in OrganizationMembership.Role.choices]:
+                        legacy_role = name_lower
+                    elif "admin" in name_lower:
+                        legacy_role = OrganizationMembership.Role.ADMIN
+                    else:
+                        legacy_role = OrganizationMembership.Role.EMPLOYEE
+                elif raw_role in [c[0] for c in OrganizationMembership.Role.choices]:
+                    legacy_role = raw_role
 
             try:
                 with transaction.atomic():
@@ -228,19 +250,23 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                     if membership:
                         # Restore soft-deleted membership
                         membership.is_deleted = False
-                        membership.role = role_id
+                        membership.role = legacy_role
                         membership.invited_by = (
                             request.user if request.user.is_authenticated else None
                         )
                         membership.save()
+                        if role_obj:
+                            membership.dynamic_roles.set([role_obj])
                         created = False
                     else:
                         membership = OrganizationMembership.objects.create(
                             user_id=user_id,
                             organization=organization,
-                            role=role_id,
+                            role=legacy_role,
                             invited_by=request.user if request.user.is_authenticated else None,
                         )
+                        if role_obj:
+                            membership.dynamic_roles.set([role_obj])
                         created = True
             except IntegrityError:
                 return Response(

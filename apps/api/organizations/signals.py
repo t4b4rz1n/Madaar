@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from automations.events import EventDispatcher
@@ -146,13 +146,26 @@ def ensure_owner_membership(sender, instance, created, **kwargs):
         )
 
 
+@receiver(pre_save, sender=OrganizationMembership)
+def cache_previous_membership_state(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            old = OrganizationMembership.all_objects.get(pk=instance.pk)
+            instance.__original_is_deleted = old.is_deleted
+        except OrganizationMembership.DoesNotExist:
+            instance.__original_is_deleted = None
+
+
 @receiver(post_save, sender=OrganizationMembership, dispatch_uid="notify_member_added_to_org_uid")
 def notify_superusers_member_added_to_org(sender, instance, created, **kwargs):
     """Notify superusers and member when a new member is added to an organization."""
     if getattr(instance, "_skip_member_added_signal", False):
         return
 
-    if created and instance.user:
+    old_is_deleted = getattr(instance, "__original_is_deleted", False)
+    is_restored = not created and old_is_deleted and not instance.is_deleted
+
+    if (created or is_restored) and instance.user:
         org = instance.organization
         # Do not send "member added" if it's the owner being added during org creation
         if getattr(org, "_is_new_org_creation", False) and instance.user == org.owner:
@@ -161,13 +174,18 @@ def notify_superusers_member_added_to_org(sender, instance, created, **kwargs):
         member_name = instance.user.get_full_name() or instance.user.username
         dynamic_role = instance.dynamic_roles.first()
         role_display = dynamic_role.name if dynamic_role else instance.get_role_display()
+        payload = {
+            "target_user_id": str(instance.user.id),
+            "org_name": org.name,
+            "member_name": member_name,
+            "role": role_display,
+            "organization_id": str(org.id),
+        }
         EventDispatcher.dispatch(
             event_type="member_added_to_org",
-            payload={
-                "target_user_id": str(instance.user.id),
-                "org_name": org.name,
-                "member_name": member_name,
-                "role": role_display,
-                "organization_id": str(org.id),
-            },
+            payload=payload,
+        )
+        EventDispatcher.dispatch(
+            event_type="you_added_to_org",
+            payload=payload,
         )

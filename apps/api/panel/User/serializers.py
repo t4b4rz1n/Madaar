@@ -229,12 +229,19 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 invited_by = (
                     request_user if request_user and request_user.is_authenticated else None
                 )
-                membership, created_mem = OrganizationMembership.objects.get_or_create(
+                membership = OrganizationMembership.objects.filter(
                     user=user,
                     organization=org,
                     is_deleted=False,
-                    defaults={"invited_by": invited_by},
-                )
+                ).first()
+                if not membership:
+                    membership = OrganizationMembership(
+                        user=user,
+                        organization=org,
+                        invited_by=invited_by,
+                    )
+                    membership._skip_member_added_signal = True
+                    membership.save()
                 role_obj = None
                 if role_id:
                     role_obj = (
@@ -280,15 +287,20 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 # Dispatch member_added_to_org with the real dynamic role name and target user
                 try:
                     role_display = role_obj.name if role_obj else membership.get_role_display()
+                    payload = {
+                        "org_name": org.name,
+                        "member_name": user.get_full_name() or user.username,
+                        "role": role_display,
+                        "organization_id": str(org.id),
+                        "target_user_id": str(user.id),
+                    }
                     EventDispatcher.dispatch(
                         event_type="member_added_to_org",
-                        payload={
-                            "org_name": org.name,
-                            "member_name": user.get_full_name() or user.username,
-                            "role": role_display,
-                            "organization_id": str(org.id),
-                            "target_user_id": str(user.id),
-                        },
+                        payload=payload,
+                    )
+                    EventDispatcher.dispatch(
+                        event_type="you_added_to_org",
+                        payload=payload,
                     )
                 except Exception:
                     pass
