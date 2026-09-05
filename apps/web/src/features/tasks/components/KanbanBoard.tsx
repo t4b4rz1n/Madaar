@@ -782,9 +782,8 @@ export const KanbanBoard: React.FC = () => {
           activeTimer={activeTimers?.[0]}
         />
       ) : (
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full overflow-x-auto">
-            <div className="flex h-full items-stretch gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
+        <div className="flex-1 overflow-x-auto overflow-y-visible">
+          <div className="flex items-start gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
             <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -817,7 +816,7 @@ export const KanbanBoard: React.FC = () => {
                 <DroppableColumn
                   key={status.id}
                   id={`col-${status.id}`}
-                  className={`min-w-[282px] w-[282px] flex flex-col h-full bg-transparent transition-opacity ${
+                  className={`min-w-[282px] w-[282px] flex flex-col bg-transparent transition-opacity ${
                     isDoneColumn ? 'opacity-70 hover:opacity-100' : ''
                   }`}
                   header={
@@ -997,7 +996,7 @@ export const KanbanBoard: React.FC = () => {
                     </div>
                   }
                 >
-                  <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1">
+                  <div className="flex flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                     <SortableContext items={displayColumnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
                       {displayColumnTasks.map(task => (
                         <SortableTask
@@ -1178,7 +1177,6 @@ export const KanbanBoard: React.FC = () => {
         </DndContext>
       </div>
     </div>
-  </div>
   )}
 
       <TaskSheet
