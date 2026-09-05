@@ -782,7 +782,7 @@ export const KanbanBoard: React.FC = () => {
           activeTimer={activeTimers?.[0]}
         />
       ) : (
-        <div className="flex-1 overflow-x-auto overflow-y-visible">
+        <div className="custom-scrollbar flex-1 overflow-x-auto overflow-y-visible">
           <div className="flex items-start gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
             <DndContext
           sensors={sensors}
@@ -996,7 +996,7 @@ export const KanbanBoard: React.FC = () => {
                     </div>
                   }
                 >
-                  <div className="flex flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                  <div className="custom-scrollbar flex flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1 pr-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                     <SortableContext items={displayColumnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
                       {displayColumnTasks.map(task => (
                         <SortableTask
