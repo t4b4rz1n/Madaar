@@ -33,7 +33,7 @@ export const DroppableColumn: React.FC<DroppableColumnProps> = ({ id, children, 
       className={`${className || ''} ${isOver ? 'bg-primary/5 rounded-2xl border border-dashed border-primary/20 min-h-[150px]' : ''} transition-all duration-150`}
     >
       {/* Column Header acts as Drag Handle */}
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing select-none">
+      <div {...attributes} {...listeners} className="shrink-0 cursor-grab active:cursor-grabbing select-none">
         {header}
       </div>
       {children}

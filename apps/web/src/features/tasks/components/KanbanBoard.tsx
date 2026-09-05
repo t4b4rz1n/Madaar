@@ -782,8 +782,9 @@ export const KanbanBoard: React.FC = () => {
           activeTimer={activeTimers?.[0]}
         />
       ) : (
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
-          <div className="flex h-full items-start gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full overflow-x-auto">
+            <div className="flex h-full items-stretch gap-3 p-4 pb-4 sm:gap-4 sm:p-6">
             <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -816,7 +817,7 @@ export const KanbanBoard: React.FC = () => {
                 <DroppableColumn
                   key={status.id}
                   id={`col-${status.id}`}
-                  className={`min-w-[282px] w-[282px] flex flex-col h-fit max-h-full bg-transparent transition-opacity ${
+                  className={`min-w-[282px] w-[282px] flex flex-col h-full bg-transparent transition-opacity ${
                     isDoneColumn ? 'opacity-70 hover:opacity-100' : ''
                   }`}
                   header={
@@ -1177,6 +1178,7 @@ export const KanbanBoard: React.FC = () => {
         </DndContext>
       </div>
     </div>
+  </div>
   )}
 
       <TaskSheet
