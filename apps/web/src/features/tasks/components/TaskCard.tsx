@@ -349,7 +349,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <div
               className="fixed z-50 w-48 max-h-60 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[12px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
               style={{
-                top: assigneeTriggerRef.current.getBoundingClientRect().bottom + 4,
+                top: assigneeTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
+                  ? assigneeTriggerRef.current.getBoundingClientRect().top - 4
+                  : assigneeTriggerRef.current.getBoundingClientRect().bottom + 4,
+                transform: assigneeTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
+                  ? 'translateY(-100%)'
+                  : 'none',
                 left: assigneeTriggerRef.current.getBoundingClientRect().left,
               }}
               onClick={(e) => e.stopPropagation()}
@@ -428,7 +433,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <div
               className="fixed z-50 w-52 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[12px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
               style={{
-                top: menuTriggerRef.current.getBoundingClientRect().bottom + 4,
+                top: menuTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
+                  ? menuTriggerRef.current.getBoundingClientRect().top - 4
+                  : menuTriggerRef.current.getBoundingClientRect().bottom + 4,
+                transform: menuTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
+                  ? 'translateY(-100%)'
+                  : 'none',
                 left: menuTriggerRef.current.getBoundingClientRect().right - 208,
               }}
               onClick={(e) => e.stopPropagation()}
