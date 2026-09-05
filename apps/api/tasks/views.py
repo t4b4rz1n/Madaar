@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
+from config.pagination import DefaultPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
@@ -60,7 +60,7 @@ from .services import (
 class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
     permission_classes = [IsAuthenticated, IsBoardPermission]
-    pagination_class = PageNumberPagination
+    pagination_class = DefaultPagination
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
@@ -149,7 +149,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 class TaskStatusViewSet(viewsets.ModelViewSet):
     serializer_class = TaskStatusSerializer
     permission_classes = [IsAuthenticated, IsTaskStatusPermission]
-    pagination_class = PageNumberPagination
+    pagination_class = DefaultPagination
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
@@ -205,7 +205,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTaskPermission]
     serializer_class = TaskListSerializer
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    pagination_class = PageNumberPagination
+    pagination_class = DefaultPagination
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
@@ -484,7 +484,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 class TaskChecklistItemViewSet(viewsets.ModelViewSet):
     serializer_class = TaskChecklistItemSerializer
     permission_classes = [IsAuthenticated, IsTaskChecklistPermission]
-    pagination_class = PageNumberPagination
+    pagination_class = DefaultPagination
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
@@ -531,7 +531,7 @@ class TaskChecklistItemViewSet(viewsets.ModelViewSet):
 class TaskCommentViewSet(viewsets.ModelViewSet):
     serializer_class = TaskCommentSerializer
     permission_classes = [IsAuthenticated, IsTaskCommentPermission]
-    pagination_class = PageNumberPagination
+    pagination_class = DefaultPagination
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
@@ -581,7 +581,7 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
 
     serializer_class = AsyncStandupSerializer
     permission_classes = [IsAuthenticated, IsAsyncStandupPermission]
-    pagination_class = PageNumberPagination
+    pagination_class = DefaultPagination
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
