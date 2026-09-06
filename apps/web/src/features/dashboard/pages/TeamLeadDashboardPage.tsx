@@ -777,7 +777,7 @@ const TeamLeadDashboardPage = () => {
         />
         <MetricCard
           label="Today's Attendance"
-          value={`${membersPresent} / ${dashboard.members_attendance.length}`}
+          value={`${membersPresent} / ${dashboard.team_member_count}`}
           description="present out of total"
           icon={Building}
           tone="success"
@@ -786,9 +786,11 @@ const TeamLeadDashboardPage = () => {
           label="Overdue Tasks"
           value={dashboard.overdue_summary.total_overdue}
           description={
-            doneTasks > 0
-              ? `${doneTasks} Since ${totalTasks} tasks Completed`
-              : `Since Total ${totalTasks} tasks`
+            totalTasks > 0
+              ? doneTasks > 0
+                ? `${doneTasks} completed out of ${totalTasks} total tasks`
+                : `Out of ${totalTasks} total tasks`
+              : "No tasks assigned"
           }
           icon={Danger}
           tone={dashboard.overdue_summary.total_overdue > 0 ? "warning" : "success"}
