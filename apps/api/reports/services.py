@@ -731,7 +731,7 @@ class ManagerDashboardService:
 
         # Regular team-lead (not org admin): show only members of their teams
         managed_teams = cls.get_managed_team_ids(user)
-        return list(
+        team_members = list(
             TeamMembership.objects.filter(
                 team_id__in=managed_teams,
                 is_deleted=False,
@@ -739,6 +739,22 @@ class ManagerDashboardService:
             .values_list("user_id", flat=True)
             .distinct()
         )
+
+        # Also include members of projects owned by this user
+        owned_projects = list(
+            Project.objects.filter(owner=user, is_deleted=False).values_list("id", flat=True)
+        )
+        project_members = list(
+            ProjectMember.objects.filter(
+                project_id__in=owned_projects,
+                is_deleted=False,
+                is_active=True,
+            )
+            .values_list("user_id", flat=True)
+            .distinct()
+        )
+
+        return list(set(team_members + project_members))
 
     @classmethod
     def get_dashboard(cls, user, team_id=None, tz_name: str = "UTC") -> dict:

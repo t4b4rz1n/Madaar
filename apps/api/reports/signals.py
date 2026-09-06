@@ -166,6 +166,8 @@ def invalidate_on_project_member_change(sender, instance, **kwargs):
         if project:
             _invalidate_executive(project.organization_id)
             _invalidate_manager_org(project.organization_id)
+            if project.owner_id:
+                _bump_version(f"dashboard_version:mgr:user_{project.owner_id}")
 
 
 @receiver([post_save, post_delete], sender=OrganizationMembership)
