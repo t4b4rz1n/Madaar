@@ -22,6 +22,7 @@ _DEFAULT_ROLE_PERMISSIONS = {
         "attendance.view_all",
         "finance.manage",
         "finance.view_reports",
+        "report.view_team_lead",
     ],
     "Admin": [
         "notification.view",
@@ -47,6 +48,7 @@ _DEFAULT_ROLE_PERMISSIONS = {
         "task.create",
         "task.manage_all",
         "task.review",
+        "report.view_team_lead",
     ],
     "Hr": [
         "notification.view",

@@ -15,9 +15,9 @@ def seed_team_lead_permission(apps, schema_editor):
         perm.is_deleted = False
         perm.save()
 
-    # 2. Add to existing Admin, Owner, Team Lead roles
-    # The default roles are named "Owner", "Admin", "Team Lead"
-    target_roles = ["Owner", "Admin", "Team Lead"]
+    # 2. Add to existing Owner, Team Lead roles
+    # The default roles are named "Owner", "Team Lead"
+    target_roles = ["Owner", "Team Lead"]
     roles = Role.objects.filter(name__in=target_roles, is_deleted=False)
     for role in roles:
         role.permissions.add(perm)
