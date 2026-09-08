@@ -638,8 +638,8 @@ class TimesheetService:
         if is_org_admin:
             # Admins see everyone in the organization
             qs = TimeLog.objects.filter(
-                user__organization_memberships__organization=organization,
-                user__organization_memberships__is_deleted=False,
+                user__org_memberships__organization=organization,
+                user__org_memberships__is_deleted=False,
                 task__project__organization=organization,
                 date__range=(start_date, end_date),
                 is_deleted=False,
