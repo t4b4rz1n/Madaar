@@ -8,12 +8,12 @@ from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from config.pagination import DefaultPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from attendance.models import TimeLog
+from config.pagination import DefaultPagination
 from projects.models import Project, ProjectMember
 
 from .models import (
