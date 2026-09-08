@@ -36,11 +36,12 @@ import { useMemo } from "react";
 import type { ComponentType } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { getManagerDashboard } from "../api/dashboardApi";
+import { getManagerDashboard, getManagerMembers } from "../api/dashboardApi";
 import type {
   ManagerDashboard,
   ManagerProjectSummary,
   ManagerAttendance,
+  ManagerMemberDetail,
 } from "../types";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -192,6 +193,23 @@ const SectionHeading = ({
     {action}
   </div>
 );
+
+const MemberRow = ({ member, maxTasks, workSeconds }: { member: ManagerMemberDetail; maxTasks: number; workSeconds: number }) => {
+  const completion = member.total_tasks ? Math.round((member.done_tasks / member.total_tasks) * 100) : 0;
+  const workload = maxTasks ? Math.round((member.total_tasks / maxTasks) * 100) : 0;
+  return (
+    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid gap-3 border-t border-base-content/8 px-5 py-4 sm:grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem] sm:items-center">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-black text-primary">{getInitials(member.first_name, member.last_name, member.username?.[0]?.toUpperCase())}</div>
+        <div className="min-w-0"><p className="truncate text-sm font-bold text-base-content">{member.first_name || member.username} {member.last_name}</p><p className="truncate text-xs text-base-content/40">@{member.username}</p></div>
+      </div>
+      <div><div className="mb-1 flex items-center justify-between text-[11px] font-bold text-base-content/45"><span>Workload</span><span>{member.total_tasks} tasks</span></div><div className="h-2 overflow-hidden rounded-full bg-base-200"><motion.div initial={{ width: 0 }} animate={{ width: `${workload}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-primary" /></div></div>
+      <div className="text-start sm:text-end"><p className="text-sm font-black text-base-content">{completion}%</p><p className="text-[10px] font-bold text-base-content/40">done</p></div>
+      <div className="text-start sm:text-end"><p className={`text-sm font-black ${member.overdue_tasks > 0 ? "text-error" : "text-base-content"}`}>{member.overdue_tasks}</p><p className="text-[10px] font-bold text-base-content/40">overdue</p></div>
+      <div className="col-span-full flex items-center gap-1 text-[11px] font-semibold text-base-content/40 sm:col-auto sm:justify-end"><Timer1 size={13} /> {formatHours(workSeconds)}</div>
+    </motion.div>
+  );
+};
 
 // ─── Attendance Panel ─────────────────────────────────────────────────────────
 
@@ -617,7 +635,21 @@ const TeamLeadDashboardPage = () => {
     refetchInterval: 60_000,
   });
 
+  const membersQuery = useQuery<ManagerMemberDetail[]>({
+    queryKey: ["reports", "team-lead-members", timezone],
+    queryFn: () => getManagerMembers(null, timezone),
+    enabled: dashboardQuery.isSuccess,
+    staleTime: 30_000,
+  });
+
   const dashboard = dashboardQuery.data;
+  const members = membersQuery.data || [];
+  
+  const workHours = dashboard?.work_hours || [];
+  const maxTasks = Math.max(...members.map((m) => m.total_tasks), 1);
+  const workHoursByUser = new Map(
+    workHours.map((m) => [m.user_id.toString(), m.total_seconds])
+  );
 
   // ─── Loading state ──────────────────────────────────────────────────────────
   if (dashboardQuery.isLoading) return <TeamLeadDashboardSkeleton />;
@@ -795,6 +827,46 @@ const TeamLeadDashboardPage = () => {
           icon={Danger}
           tone={dashboard.overdue_summary.total_overdue > 0 ? "warning" : "success"}
         />
+      </section>
+
+      {/* ─── Team Overview ─── */}
+      <section className={panelClass}>
+        <SectionHeading
+          title="Team overview"
+          description="A quick read on delivery and capacity"
+          action={
+            <span className="text-[11px] font-bold text-base-content/35">
+              This week
+            </span>
+          }
+        />
+        <div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[10px] font-black uppercase tracking-wider text-base-content/35 sm:grid">
+          <span>Member</span>
+          <span>Workload</span>
+          <span className="text-end">Done</span>
+          <span className="text-end">Risk</span>
+          <span className="text-end">Focus</span>
+        </div>
+        {members.length === 0 ? (
+          <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">
+            No team members are visible in this scope.
+          </div>
+        ) : (
+          <div>
+            {members.slice(0, 8).map((member) => (
+              <MemberRow
+                key={member.id}
+                member={member}
+                maxTasks={maxTasks}
+                workSeconds={
+                  workHoursByUser.get(member.id.toString()) ||
+                  member.week_seconds ||
+                  0
+                }
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ─── Attendance + Work Hours ─── */}
