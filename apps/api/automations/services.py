@@ -39,6 +39,8 @@ class TelegramBotService:
 
     @classmethod
     def _update_user_language(cls, user, lang):
+        if lang:
+            translation.activate(lang)
         if user and hasattr(user, "work_style_profile"):
             wsp = user.work_style_profile
             if not wsp.has_set_language_manually and wsp.telegram_language != lang:
@@ -248,18 +250,17 @@ class TelegramBotService:
         """Handles /start — validates magic link token and links telegram account."""
         from accounts.models import WorkStyleProfile
 
+        if lang:
+            translation.activate(lang)
+
         user = cls._get_user_by_chat_id(chat_id)
         if user and not token:
             cls._handle_main_menu(chat_id, lang)
             return
 
         if not token:
-            msg = (
-                _(
-                    ' <b>Error:</b> Invalid connection link.\n\nPlease click on the "Connect to Telegram" button from your site dashboard to enter the bot.'
-                )
-                if lang == "fa"
-                else " <b>Error:</b> Invalid connection link.\n\nPlease click the 'Connect to Telegram' button from your website dashboard to enter the bot."
+            msg = _(
+                ' <b>Error:</b> Invalid connection link.\n\nPlease click on the "Connect to Telegram" button from your site dashboard to enter the bot.'
             )
             send_telegram_notification.delay(chat_id, msg)
             return
@@ -270,12 +271,8 @@ class TelegramBotService:
             .first()
         )
         if not wsp:
-            msg = (
-                _(
-                    " <b>The link has expired or is invalid!</b>\n\nPlease generate a new connection link from the website."
-                )
-                if lang == "fa"
-                else " <b>Link expired or invalid!</b>\n\nPlease generate a new connection link from the website."
+            msg = _(
+                " <b>The link has expired or is invalid!</b>\n\nPlease generate a new connection link from the website."
             )
             send_telegram_notification.delay(chat_id, msg)
             return
@@ -284,12 +281,8 @@ class TelegramBotService:
 
         existing_wsp = WorkStyleProfile.objects.filter(telegram_chat_id=chat_id).first()
         if existing_wsp and existing_wsp.id != wsp.id:
-            msg = (
-                _(
-                    " <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account in the Madaar system. Each Telegram account can only be connected to one site account."
-                )
-                if lang == "fa"
-                else " <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account. Each Telegram account can only be connected to one site account."
+            msg = _(
+                " <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account in the Madaar system. Each Telegram account can only be connected to one site account."
             )
             send_telegram_notification.delay(chat_id, msg)
             return
@@ -329,6 +322,9 @@ class TelegramBotService:
     @classmethod
     def _handle_help(cls, chat_id: str, lang: str, edit_message_id: int = None):
         """Handles /help — shows available commands."""
+        user = cls._get_user_by_chat_id(chat_id)
+        cls._update_user_language(user, lang)
+
         help_msg = _(
             " <b>Madaar Bot Help</b>\n\n"
             " /start — Connect user account\n"
@@ -349,6 +345,9 @@ class TelegramBotService:
     @classmethod
     def _handle_language_menu(cls, chat_id: str, lang: str, edit_message_id: int = None):
         """Shows language selection menu."""
+        user = cls._get_user_by_chat_id(chat_id)
+        cls._update_user_language(user, lang)
+
         msg = _(" <b>Language Selection</b>\n\nPlease select your preferred language:")
         keyboard = {
             "inline_keyboard": [
@@ -390,51 +389,27 @@ class TelegramBotService:
 
         if user and hasattr(user, "work_style_profile"):
             wsp = user.work_style_profile
-            if lang == "en":
-                tg_status = " Active" if wsp.notify_via_telegram else " Inactive"
-                email_status = " Active" if wsp.notify_via_email else " Inactive"
-                msg = (
-                    " <b>Account Status</b>\n\n"
-                    " <b>Name:</b> {name}\n"
-                    " <b>Email:</b> {email}\n\n"
-                    "<b>Notification Channels:</b>\n"
-                    "  Telegram: {tg_status}\n"
-                    "  Email: {email_status}"
-                ).format(
-                    name=user.get_full_name() or user.username,
-                    email=user.email,
-                    tg_status=tg_status,
-                    email_status=email_status,
-                )
-            else:
-                tg_status = " Active" if wsp.notify_via_telegram else " Inactive"
-                email_status = " Active" if wsp.notify_via_email else " Inactive"
-                msg = _(
-                    " <b>User Account Status</b>\n\n"
-                    " <b>Name:</b> {name}\n"
-                    " <b>Email:</b> {email}\n\n"
-                    "<b>Notification Channels:</b>\n"
-                    "  Telegram: {tg_status}\n"
-                    "  Email: {email_status}"
-                ).format(
-                    name=user.get_full_name() or user.username,
-                    email=user.email,
-                    tg_status=tg_status,
-                    email_status=email_status,
-                )
+            tg_status = _(" Active") if wsp.notify_via_telegram else _(" Inactive")
+            email_status = _(" Active") if wsp.notify_via_email else _(" Inactive")
+            msg = _(
+                " <b>User Account Status</b>\n\n"
+                " <b>Name:</b> {name}\n"
+                " <b>Email:</b> {email}\n\n"
+                "<b>Notification Channels:</b>\n"
+                "  Telegram: {tg_status}\n"
+                "  Email: {email_status}"
+            ).format(
+                name=user.get_full_name() or user.username,
+                email=user.email,
+                tg_status=tg_status,
+                email_status=email_status,
+            )
         else:
-            if lang == "en":
-                msg = (
-                    " <b>Connection Status:</b> Disconnected\n\n"
-                    "You have not connected your account yet.\n"
-                    "Send /start to connect."
-                )
-            else:
-                msg = _(
-                    " <b>Connection Status:</b> Disconnected\n\n"
-                    "You have not connected your user account yet.\n"
-                    "To connect, send the /start command."
-                )
+            msg = _(
+                " <b>Connection Status:</b> Disconnected\n\n"
+                "You have not connected your user account yet.\n"
+                "To connect, send the /start command."
+            )
         cls._send_or_edit(
             chat_id, msg, reply_markup=cls._back_to_menu_markup(), edit_message_id=edit_message_id
         )
@@ -475,7 +450,7 @@ class TelegramBotService:
                     "on_hold": "",
                     "completed": "",
                 }.get(p.status, "")
-                lines.append(f"{i}. {status_emoji} <b>{p.name}</b> — {p.get_status_display()}")
+                lines.append(f"{i}. {status_emoji} <b>{p.name}</b> — {_(p.get_status_display())}")
 
             lines.append(_("\n<i>Total: {count} projects</i>").format(count=len(memberships)))
             msg = "\n".join(lines)
@@ -588,7 +563,7 @@ class TelegramBotService:
             else:
                 member_orgs.append(
                     _(" You are a member of organization <b>{org}</b> ( Role: {role})").format(
-                        org=org.name, role=role_display
+                        org=org.name, role=_(role_display)
                     )
                 )
 
@@ -753,7 +728,7 @@ class TelegramBotService:
                     "on_hold": "",
                     "completed": "",
                 }.get(p.status, "")
-                lines.append(f"{i}. {status_emoji} <b>{p.name}</b> — {p.get_status_display()}")
+                lines.append(f"{i}. {status_emoji} <b>{p.name}</b> — {_(p.get_status_display())}")
 
             total_projects = Project.objects.filter(organization=org).count()
             lines.append(
@@ -838,7 +813,7 @@ class TelegramBotService:
         for i, m in enumerate(members, 1):
             name = m.user.get_full_name() or m.user.username if m.user else "—"
             role_display = m.get_role_display()
-            lines.append(f"{i}. <b>{name}</b> — {role_display}")
+            lines.append(f"{i}. <b>{name}</b> — {_(role_display)}")
 
         total_members = OrganizationMembership.objects.filter(organization=org).count()
         lines.append(
@@ -859,6 +834,9 @@ class TelegramBotService:
     def _handle_unknown(cls, chat_id: str, lang: str):
         """Handles unrecognized messages and tracks spam."""
         from django.core.cache import cache
+
+        if lang:
+            translation.activate(lang)
 
         spam_key = f"tg_spam_{chat_id}"
         ban_key = f"tg_ban_{chat_id}"
@@ -887,7 +865,7 @@ class TelegramBotService:
         if user:
             cls._update_user_language(user, lang)
             error_msg = _(
-                _(" <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:")
+                " <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:"
             )
             send_telegram_notification.delay(
                 chat_id, error_msg, reply_markup=cls._main_menu_markup(user)

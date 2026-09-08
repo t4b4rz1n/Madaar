@@ -33,6 +33,11 @@ if not User.objects.filter(username=username).exists():
 "
 fi
 
+echo "Compiling translation catalogs..."
+if [ -f "scripts/msgfmt.py" ] && [ -f "locale/fa/LC_MESSAGES/django.po" ]; then
+    python scripts/msgfmt.py -o locale/fa/LC_MESSAGES/django.mo locale/fa/LC_MESSAGES/django.po
+fi
+
 echo "Starting server..."
 if [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ] || [ "$DEBUG" = "1" ]; then
     echo "Running in development mode (runserver)..."

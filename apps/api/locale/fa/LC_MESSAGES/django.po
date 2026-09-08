@@ -281,50 +281,41 @@ msgstr " <b>لینک منقضی شده یا نامعتبر است!</b>\n\nلطف
 msgid " <b>Connection Error!</b>\n\nThis Telegram account is already connected to another user account in the Madaar system. Each Telegram account can only be connected to one site account."
 msgstr " <b>خطا در اتصال!</b>\n\nاین اکانت تلگرام شما قبلاً به یک حساب کاربری دیگر در سیستم مدار متصل شده است. هر حساب تلگرام فقط می‌تواند به یک اکانت سایت متصل باشد."
 
-msgid " <b>Hello dear {name}!</b>\n\n"
-msgstr " <b>سلام {name} عزیز!</b>\n\n"
-
-msgid " Your user account has been successfully connected to the <b>Madaar</b> bot.\n"
-msgstr " حساب کاربری شما با موفقیت به ربات <b>مدار</b> متصل شد.\n"
-
-msgid "From now on, your important work notifications will be sent here immediately.\n\n"
-msgstr "از این پس اعلان‌های مهم کاری شما بلافاصله اینجا ارسال خواهد شد.\n\n"
-
-msgid "Use the menu below:"
-msgstr "از منوی زیر استفاده کنید:"
+msgid ""
+" <b>Hello dear {name}!</b>\n\n"
+" Your user account has been successfully connected to the <b>Madaar</b> bot.\n"
+"From now on, your important work notifications will be sent here immediately.\n\n"
+"Use the menu below:"
+msgstr ""
+" <b>سلام {name} عزیز!</b>\n\n"
+" حساب کاربری شما با موفقیت به ربات <b>مدار</b> متصل شد.\n"
+"از این پس اعلان‌های مهم کاری شما بلافاصله اینجا ارسال خواهد شد.\n\n"
+"از منوی زیر استفاده کنید:"
 
 msgid "User"
 msgstr "کاربر"
 
-msgid " <b>Madaar Bot Main Menu</b>\n\n"
-msgstr " <b>منوی اصلی ربات مدار</b>\n\n"
+msgid " <b>Madaar Bot Main Menu</b>\n\nHello {name}! Use the buttons below:"
+msgstr " <b>منوی اصلی ربات مدار</b>\n\nسلام {name}! از دکمه‌های زیر استفاده کنید:"
 
-msgid "Hello {name}! Use the buttons below:"
-msgstr "سلام {name}! از دکمه‌های زیر استفاده کنید:"
-
-msgid " <b>Madaar Bot Help</b>\n\n"
-msgstr " <b>راهنمای ربات مدار</b>\n\n"
-
-msgid " /start — Connect user account\n"
-msgstr " /start — اتصال حساب کاربری\n"
-
-msgid " /status — Connection status\n"
-msgstr " /status — وضعیت اتصال\n"
-
-msgid " /myprojects — My projects list\n"
-msgstr " /myprojects — لیست پروژه‌های من\n"
-
-msgid " /mytasks — My tasks list\n"
-msgstr " /mytasks — لیست تسک‌های من\n"
-
-msgid " /myorg — My organization info\n"
-msgstr " /myorg — اطلاعات سازمان من\n"
-
-msgid " /help — Show this help message\n\n"
-msgstr " /help — نمایش همین راهنما\n\n"
-
-msgid "<i> This bot automatically sends your work notifications.</i>"
-msgstr "<i> این ربات به صورت خودکار اعلان‌های کاری شما را ارسال می‌کند.</i>"
+msgid ""
+" <b>Madaar Bot Help</b>\n\n"
+" /start — Connect user account\n"
+" /status — Connection status\n"
+" /myprojects — My projects list\n"
+" /mytasks — My tasks list\n"
+" /myorg — My organization info\n"
+" /help — Show this help message\n\n"
+"<i> This bot automatically sends your work notifications.</i>"
+msgstr ""
+" <b>راهنمای ربات مدار</b>\n\n"
+" /start — اتصال حساب کاربری\n"
+" /status — وضعیت اتصال\n"
+" /myprojects — لیست پروژه‌های من\n"
+" /mytasks — لیست تسک‌های من\n"
+" /myorg — اطلاعات سازمان من\n"
+" /help — نمایش همین راهنما\n\n"
+"<i> این ربات به صورت خودکار اعلان‌های کاری شما را ارسال می‌کند.</i>"
 
 msgid " <b>Language Selection</b>\n\nPlease select your preferred language:"
 msgstr " <b>انتخاب زبان / Language Selection</b>\n\nلطفاً زبان مورد نظر خود را انتخاب کنید:"
@@ -335,32 +326,29 @@ msgstr " فعال"
 msgid " Inactive"
 msgstr " غیرفعال"
 
-msgid " <b>User Account Status</b>\n\n"
-msgstr " <b>وضعیت حساب کاربری</b>\n\n"
+msgid ""
+" <b>User Account Status</b>\n\n"
+" <b>Name:</b> {name}\n"
+" <b>Email:</b> {email}\n\n"
+"<b>Notification Channels:</b>\n"
+"  Telegram: {tg_status}\n"
+"  Email: {email_status}"
+msgstr ""
+" <b>وضعیت حساب کاربری</b>\n\n"
+" <b>نام:</b> {name}\n"
+" <b>ایمیل:</b> {email}\n\n"
+"<b>کانال‌های اعلان:</b>\n"
+"  تلگرام: {tg_status}\n"
+"  ایمیل: {email_status}"
 
-msgid " <b>Name:</b> {name}\n"
-msgstr " <b>نام:</b> {name}\n"
-
-msgid " <b>Email:</b> {email}\n\n"
-msgstr " <b>ایمیل:</b> {email}\n\n"
-
-msgid "<b>Notification Channels:</b>\n"
-msgstr "<b>کانال‌های اعلان:</b>\n"
-
-msgid "  Telegram: {tg_status}\n"
-msgstr "  تلگرام: {tg_status}\n"
-
-msgid "  Email: {email_status}"
-msgstr "  ایمیل: {email_status}"
-
-msgid " <b>Connection Status:</b> Disconnected\n\n"
-msgstr " <b>وضعیت اتصال:</b> قطع\n\n"
-
-msgid "You have not connected your user account yet.\n"
-msgstr "شما هنوز حساب کاربری خود را متصل نکرده‌اید.\n"
-
-msgid "To connect, send the /start command."
-msgstr "برای اتصال، دستور /start را ارسال کنید."
+msgid ""
+" <b>Connection Status:</b> Disconnected\n\n"
+"You have not connected your user account yet.\n"
+"To connect, send the /start command."
+msgstr ""
+" <b>وضعیت اتصال:</b> قطع\n\n"
+"شما هنوز حساب کاربری خود را متصل نکرده‌اید.\n"
+"برای اتصال، دستور /start را ارسال کنید."
 
 msgid " Please connect your account with /start first."
 msgstr " ابتدا حساب خود را با /start متصل کنید."
@@ -404,44 +392,40 @@ msgstr " <b>سازمان‌های مرتبط با من</b>\n"
 msgid " Unauthorized access."
 msgstr " دسترسی غیرمجاز."
 
-msgid " <b>Superadmin Panel</b>\n\n"
-msgstr " <b>پنل ادمین کل سیستم (Superadmin)</b>\n\n"
+msgid ""
+" <b>Superadmin Panel</b>\n\n"
+" <b>Overall System Statistics:</b>\n\n"
+" <b>Number of Organizations:</b> {org_count}\n"
+" <b>Number of Users:</b> {user_count}\n"
+" <b>Number of Projects:</b> {project_count}\n\n"
+"<i>(Special Admin Access)</i>"
+msgstr ""
+" <b>پنل ادمین کل سیستم (Superadmin)</b>\n\n"
+" <b>آمار کل سیستم:</b>\n\n"
+" <b>تعداد سازمان‌ها:</b> {org_count}\n"
+" <b>تعداد کاربران:</b> {user_count}\n"
+" <b>تعداد پروژه‌ها:</b> {project_count}\n\n"
+"<i>(دسترسی ویژه ادمین)</i>"
 
-msgid " <b>Overall System Statistics:</b>\n\n"
-msgstr " <b>آمار کل سیستم:</b>\n\n"
+msgid ""
+" <b>Organization Admin Panel ({org})</b>\n\n"
+"Use the sections below to view the overall status of the organization:"
+msgstr ""
+" <b>پنل مدیریت سازمان ({org})</b>\n\n"
+"از بخش‌های زیر برای مشاهده وضعیت کلان سازمان استفاده کنید:"
 
-msgid " <b>Number of Organizations:</b> {org_count}\n"
-msgstr " <b>تعداد سازمان‌ها:</b> {org_count}\n"
-
-msgid " <b>Number of Users:</b> {user_count}\n"
-msgstr " <b>تعداد کاربران:</b> {user_count}\n"
-
-msgid " <b>Number of Projects:</b> {project_count}\n\n"
-msgstr " <b>تعداد پروژه‌ها:</b> {project_count}\n\n"
-
-msgid "<i>(Special Admin Access)</i>"
-msgstr "<i>(دسترسی ویژه ادمین)</i>"
-
-msgid " <b>Organization Admin Panel ({org})</b>\n\n"
-msgstr " <b>پنل مدیریت سازمان ({org})</b>\n\n"
-
-msgid "Use the sections below to view the overall status of the organization:"
-msgstr "از بخش‌های زیر برای مشاهده وضعیت کلان سازمان استفاده کنید:"
-
-msgid " <b>Organization Overall Dashboard</b>\n\n"
-msgstr " <b>داشبورد کلان سازمان</b>\n\n"
-
-msgid " <b>Organization Name:</b> {org}\n\n"
-msgstr " <b>نام سازمان:</b> {org}\n\n"
-
-msgid " <b>Number of Personnel:</b> {members} people\n"
-msgstr " <b>تعداد پرسنل:</b> {members} نفر\n"
-
-msgid " <b>Projects:</b> {projects} (Active: {active})\n"
-msgstr " <b>پروژه‌ها:</b> {projects} (فعال: {active})\n"
-
-msgid " <b>Open Tasks:</b> {tasks} tasks"
-msgstr " <b>تسک‌های باز:</b> {tasks} تسک"
+msgid ""
+" <b>Organization Overall Dashboard</b>\n\n"
+" <b>Organization Name:</b> {org}\n\n"
+" <b>Number of Personnel:</b> {members} people\n"
+" <b>Projects:</b> {projects} (Active: {active})\n"
+" <b>Open Tasks:</b> {tasks} tasks"
+msgstr ""
+" <b>داشبورد کلان سازمان</b>\n\n"
+" <b>نام سازمان:</b> {org}\n\n"
+" <b>تعداد پرسنل:</b> {members} نفر\n"
+" <b>پروژه‌ها:</b> {projects} (فعال: {active})\n"
+" <b>تسک‌های باز:</b> {tasks} تسک"
 
 msgid "No projects are registered in the organization."
 msgstr "هیچ پروژه‌ای در سازمان ثبت نشده است."
@@ -452,23 +436,20 @@ msgstr " <b>پروژه‌های سازمان ({org})</b>\n"
 msgid "\n<i>Showing {count} of {total} projects</i>"
 msgstr "\n<i>نمایش {count} از {total} پروژه</i>"
 
-msgid " <b>Organization Tasks Status</b>\n\n"
-msgstr " <b>وضعیت تسک‌های سازمان</b>\n\n"
-
-msgid " <b>Total Tasks:</b> {total}\n\n"
-msgstr " <b>مجموع کل تسک‌ها:</b> {total}\n\n"
-
-msgid " <b>Done:</b> {done} tasks\n"
-msgstr " <b>انجام شده:</b> {done} تسک\n"
-
-msgid " <b>In Progress:</b> {in_progress} tasks\n"
-msgstr " <b>در حال انجام:</b> {in_progress} تسک\n"
-
-msgid " <b>Waiting for Review:</b> {review} tasks\n"
-msgstr " <b>در انتظار بررسی:</b> {review} تسک\n"
-
-msgid " <b>Not Started (Todo):</b> {todo} tasks"
-msgstr " <b>شروع نشده (Todo):</b> {todo} تسک"
+msgid ""
+" <b>Organization Tasks Status</b>\n\n"
+" <b>Total Tasks:</b> {total}\n\n"
+" <b>Done:</b> {done} tasks\n"
+" <b>In Progress:</b> {in_progress} tasks\n"
+" <b>Waiting for Review:</b> {review} tasks\n"
+" <b>Not Started (Todo):</b> {todo} tasks"
+msgstr ""
+" <b>وضعیت تسک‌های سازمان</b>\n\n"
+" <b>مجموع کل تسک‌ها:</b> {total}\n\n"
+" <b>انجام شده:</b> {done} تسک\n"
+" <b>در حال انجام:</b> {in_progress} تسک\n"
+" <b>در انتظار بررسی:</b> {review} تسک\n"
+" <b>شروع نشده (Todo):</b> {todo} تسک"
 
 msgid " <b>Organization Members ({org})</b>\n"
 msgstr " <b>اعضای سازمان ({org})</b>\n"
@@ -476,17 +457,16 @@ msgstr " <b>اعضای سازمان ({org})</b>\n"
 msgid "\n<i>Showing {count} of {total} members</i>"
 msgstr "\n<i>نمایش {count} از {total} عضو</i>"
 
-msgid " <b>Your account is temporarily blocked!</b>\n\n"
-msgstr " <b>حساب شما موقتاً مسدود شد!</b>\n\n"
-
-msgid "Due to sending consecutive invalid messages (spam), your access to the bot "
-msgstr "به دلیل ارسال پیام‌های نامعتبر و پشت سر هم (اسپم)، دسترسی شما به ربات "
-
-msgid "is blocked for <b>5 minutes</b>.\n\n"
-msgstr "به مدت <b>۵ دقیقه</b> مسدود گردید.\n\n"
-
-msgid "Please only use bot menus and buttons after this time."
-msgstr "لطفاً پس از پایان این زمان، فقط از منوها و دکمه‌های ربات استفاده کنید."
+msgid ""
+" <b>Your account is temporarily blocked!</b>\n\n"
+"Due to sending consecutive invalid messages (spam), your access to the bot "
+"is blocked for <b>5 minutes</b>.\n\n"
+"Please only use bot menus and buttons after this time."
+msgstr ""
+" <b>حساب شما موقتاً مسدود شد!</b>\n\n"
+"به دلیل ارسال پیام‌های نامعتبر و پشت سر هم (اسپم)، دسترسی شما به ربات "
+"به مدت <b>۵ دقیقه</b> مسدود گردید.\n\n"
+"لطفاً پس از پایان این زمان، فقط از منوها و دکمه‌های ربات استفاده کنید."
 
 msgid " <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:"
 msgstr " <b>دستور نامعتبر!</b>\n\nمتوجه نشدم. لطفاً از دکمه‌های زیر استفاده کنید:"
@@ -505,3 +485,36 @@ msgstr " <b>سازمان من</b>\n\nشما هنوز عضو هیچ سازمان�
 
 msgid " <b>Invalid command!</b>\n\nFirst, connect your account using the /start command."
 msgstr " <b>دستور نامعتبر!</b>\n\nابتدا با دستور /start حساب خود را متصل کنید."
+
+msgid "Owner"
+msgstr "مالک"
+
+msgid "Admin"
+msgstr "ادمین"
+
+msgid "Team Lead"
+msgstr "سرپرست تیم"
+
+msgid "Employee"
+msgstr "کارمند"
+
+msgid "Human Resources"
+msgstr "منابع انسانی"
+
+msgid "Accountant"
+msgstr "حسابدار"
+
+msgid "Active"
+msgstr "فعال"
+
+msgid "Draft"
+msgstr "پیش‌نویس"
+
+msgid "On hold"
+msgstr "معلق"
+
+msgid "Completed"
+msgstr "تکمیل شده"
+
+msgid "Archived"
+msgstr "بایگانی شده"
