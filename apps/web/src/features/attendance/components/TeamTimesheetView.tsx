@@ -82,6 +82,7 @@ export const TeamTimesheetView: React.FC = () => {
           </button>
         </div>
       </div>
+      </div>
 
       <div className="p-0 overflow-x-auto">
         {isLoading ? (
