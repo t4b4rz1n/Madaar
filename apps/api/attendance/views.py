@@ -396,14 +396,19 @@ class TimesheetViewSet(viewsets.GenericViewSet):
     def weekly(self, request):
         date_str = request.query_params.get("week_start")
         if not date_str:
-            return Response({"error": "week_start is required"}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            date = datetime.date.fromisoformat(date_str)
-        except ValueError:
-            return Response(
-                {"error": "Invalid date format. Use YYYY-MM-DD."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            # Default to the start of the current week (Saturday)
+            today = timezone.localdate()
+            # weekday(): Mon=0 ... Sat=5, Sun=6  →  days since last Saturday
+            days_since_saturday = (today.weekday() - 5) % 7
+            date = today - datetime.timedelta(days=days_since_saturday)
+        else:
+            try:
+                date = datetime.date.fromisoformat(date_str)
+            except ValueError:
+                return Response(
+                    {"error": "Invalid date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         data = TimesheetService.get_weekly(request.user, date)
         return self.paginate_and_respond(data, TimesheetDailySerializer)

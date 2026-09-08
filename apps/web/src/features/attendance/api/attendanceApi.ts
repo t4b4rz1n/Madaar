@@ -197,10 +197,10 @@ export const deleteHoliday = async (id: number): Promise<void> => {
 
 // ================= Timesheets =================
 export const getMyWeeklyTimesheet = async (
-  date?: string,
+  weekStart?: string,
 ): Promise<TimesheetEntry[]> => {
-  const params = date ? { date } : {};
-  const res = await ApiService.get("/attendance/timesheets/my_weekly/", {
+  const params = weekStart ? { week_start: weekStart } : {};
+  const res = await ApiService.get("/attendance/timesheets/weekly/", {
     params,
   });
   return extractData<TimesheetEntry>(res);
@@ -210,7 +210,7 @@ export const getMyMonthlyTimesheet = async (
   year: number,
   month: number,
 ): Promise<TimesheetEntry[]> => {
-  const res = await ApiService.get("/attendance/timesheets/my_monthly/", {
+  const res = await ApiService.get("/attendance/timesheets/monthly/", {
     params: { year, month },
   });
   return extractData<TimesheetEntry>(res);

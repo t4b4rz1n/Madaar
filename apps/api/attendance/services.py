@@ -601,19 +601,23 @@ class TimesheetService:
 
     @staticmethod
     def get_daily(user, date):
-        return TimeLog.objects.filter(user=user, date=date).aggregate(
+        return TimeLog.objects.filter(user=user, date=date, is_deleted=False).aggregate(
             total_seconds=Sum("duration_seconds")
         )
 
     @staticmethod
     def get_weekly(user, week_start_date):
         week_end_date = week_start_date + datetime.timedelta(days=6)
-        qs = TimeLog.objects.filter(user=user, date__range=(week_start_date, week_end_date))
+        qs = TimeLog.objects.filter(
+            user=user,
+            date__range=(week_start_date, week_end_date),
+            is_deleted=False,
+        )
         return TimesheetService._aggregate(qs)
 
     @staticmethod
     def get_monthly(user, year, month):
-        qs = TimeLog.objects.filter(user=user, date__year=year, date__month=month)
+        qs = TimeLog.objects.filter(user=user, date__year=year, date__month=month, is_deleted=False)
         return TimesheetService._aggregate(qs)
 
     @staticmethod
