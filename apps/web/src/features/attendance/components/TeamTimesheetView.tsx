@@ -31,7 +31,7 @@ export const TeamTimesheetView: React.FC = () => {
   const userMap = new Map<string, { total: number, days: Record<string, number> }>();
 
   timesheet.forEach(entry => {
-    const username = entry.user__username || 'Unknown';
+    const username = entry.username || 'Unknown';
     if (!userMap.has(username)) {
       userMap.set(username, { total: 0, days: {} });
     }
