@@ -741,18 +741,12 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             entries = [entry for entry in entries if entry.user_id == user.id]
 
         if is_super or is_org_manager:
-            # Owners/admins see the complete list; superusers see project members.
-            if is_super:
-                member_users = User.objects.filter(
-                    project_memberships__project=project,
-                    project_memberships__is_active=True,
-                    project_memberships__is_deleted=False,
-                ).distinct()
-            else:
-                member_users = User.objects.filter(
-                    org_memberships__organization=project.organization,
-                    org_memberships__is_deleted=False,
-                ).distinct()
+            # Both superusers and organization managers see the project's active members.
+            member_users = User.objects.filter(
+                project_memberships__project=project,
+                project_memberships__is_active=True,
+                project_memberships__is_deleted=False,
+            ).distinct()
         else:
             member_users = User.objects.filter(id=user.id)
 

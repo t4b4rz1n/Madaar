@@ -629,9 +629,17 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
                             >
                               {displayName}
                             </p>
-                            <p className="text-[10px] font-medium text-base-content/40">
-                              {formatDecimalHours(total)}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-[10px] text-base-content/40">
+                              <span>{formatDecimalHours(total)}</span>
+                              {member.username && (
+                                <>
+                                  <span>•</span>
+                                  <span className="truncate" title={`@${member.username}`}>
+                                    @{member.username}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>

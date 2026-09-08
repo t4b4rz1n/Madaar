@@ -112,7 +112,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             qs = qs.filter(date__gte=date_from)
         if date_to:
             qs = qs.filter(date__lte=date_to)
-        return qs
+        return qs.order_by("-date", "-created_at")
 
     def perform_create(self, serializer):
         AttendanceService.save_manual_attendance(self.request.user, serializer.validated_data)

@@ -781,3 +781,109 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         task.refresh_from_db()
         self.assertEqual(task.status.code, "done")
         self.assertTrue(task.is_finished)
+
+
+class StandupGridTestCase(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.org = Organization.objects.create(name="Standup Org", slug="standup-org")
+
+        cls.owner_user = User.objects.create_user(
+            username="org_owner",
+            email="owner@example.com",
+            password="Password123!",
+        )
+        OrganizationMembership.objects.create(
+            user=cls.owner_user, organization=cls.org, role="owner"
+        )
+
+        cls.member_user = User.objects.create_user(
+            username="proj_member",
+            email="member@example.com",
+            password="Password123!",
+        )
+        OrganizationMembership.objects.create(
+            user=cls.member_user, organization=cls.org, role="employee"
+        )
+
+        cls.unrelated_org_user = User.objects.create_user(
+            username="unrelated_org_user",
+            email="unrelated@example.com",
+            password="Password123!",
+        )
+        OrganizationMembership.objects.create(
+            user=cls.unrelated_org_user, organization=cls.org, role="employee"
+        )
+
+        cls.superuser = User.objects.create_superuser(
+            username="super_admin",
+            email="super@example.com",
+            password="Password123!",
+        )
+
+        cls.project = Project.objects.create(
+            name="Alpha Project",
+            description="Alpha",
+            organization=cls.org,
+        )
+
+        # Only owner_user and member_user are project members
+        ProjectMember.objects.create(project=cls.project, user=cls.owner_user, is_active=True)
+        ProjectMember.objects.create(project=cls.project, user=cls.member_user, is_active=True)
+
+    def test_org_owner_sees_only_project_members_in_grid(self):
+        """Org owner should only see project members, not all organization members."""
+        self.client.force_authenticate(user=self.owner_user)
+        url = reverse("task-standup-grid")
+        res = self.client.get(url, {"project": str(self.project.id)})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        member_ids = {m["id"] for m in res.data["members"]}
+        self.assertIn(str(self.owner_user.id), member_ids)
+        self.assertIn(str(self.member_user.id), member_ids)
+        # Unrelated org user must NOT appear in the project standup grid
+        self.assertNotIn(str(self.unrelated_org_user.id), member_ids)
+
+    def test_superuser_sees_only_project_members_in_grid(self):
+        """Superuser should only see active project members in the grid."""
+        self.client.force_authenticate(user=self.superuser)
+        url = reverse("task-standup-grid")
+        res = self.client.get(url, {"project": str(self.project.id)})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        member_ids = {m["id"] for m in res.data["members"]}
+        self.assertIn(str(self.owner_user.id), member_ids)
+        self.assertIn(str(self.member_user.id), member_ids)
+        self.assertNotIn(str(self.unrelated_org_user.id), member_ids)
+
+    def test_user_with_logged_standup_included_even_if_not_current_member(self):
+        """If a user has a standup entry for the month, they are included via extra_users."""
+        now = timezone.localdate()
+        AsyncStandup.objects.create(
+            project=self.project,
+            user=self.unrelated_org_user,
+            date=now,
+            hours_worked=4,
+            today_work="Helped with bugfix",
+        )
+
+        self.client.force_authenticate(user=self.owner_user)
+        url = reverse("task-standup-grid")
+        res = self.client.get(url, {"project": str(self.project.id), "year": now.year, "month": now.month})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        member_ids = {m["id"] for m in res.data["members"]}
+        self.assertIn(str(self.unrelated_org_user.id), member_ids)
+
+    def test_non_member_forbidden_from_grid(self):
+        """Users outside the org and project should receive 403 Forbidden."""
+        outsider = User.objects.create_user(
+            username="outsider",
+            email="outsider@example.com",
+            password="Password123!",
+        )
+        self.client.force_authenticate(user=outsider)
+        url = reverse("task-standup-grid")
+        res = self.client.get(url, {"project": str(self.project.id)})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
