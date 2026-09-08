@@ -622,17 +622,42 @@ class TimesheetService:
 
     @staticmethod
     def get_team_timesheet(manager, organization, start_date, end_date):
-        managed_teams = list(
-            manager.team_memberships.filter(
-                role="lead", team__organization=organization
-            ).values_list("team_id", flat=True)
-        )
+        from organizations.models import OrganizationMembership
+        from django.db.models import Q
 
-        qs = TimeLog.objects.filter(
-            user__team_memberships__team_id__in=managed_teams,
-            task__project__organization=organization,
-            date__range=(start_date, end_date),
-        ).distinct()  # distinct() prevents duplicate rows when a user belongs to multiple teams
+        # Check if the manager is an admin/owner or has view_all permissions for this org
+        is_org_admin = OrganizationMembership.objects.filter(
+            user=manager,
+            organization_id=organization,
+            is_deleted=False,
+        ).filter(
+            Q(dynamic_roles__permissions__code__in=["attendance.view_all", "report.view"])
+            | Q(role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN])
+        ).exists()
+
+        if is_org_admin:
+            # Admins see everyone in the organization
+            qs = TimeLog.objects.filter(
+                user__organization_memberships__organization=organization,
+                user__organization_memberships__is_deleted=False,
+                task__project__organization=organization,
+                date__range=(start_date, end_date),
+                is_deleted=False,
+            ).distinct()
+        else:
+            # Regular team leads only see their managed teams
+            managed_teams = list(
+                manager.team_memberships.filter(
+                    role="lead", team__organization=organization
+                ).values_list("team_id", flat=True)
+            )
+            qs = TimeLog.objects.filter(
+                user__team_memberships__team_id__in=managed_teams,
+                task__project__organization=organization,
+                date__range=(start_date, end_date),
+                is_deleted=False,
+            ).distinct()
+
         return (
             qs.values("user__username", "date")
             .annotate(total_seconds=Sum("duration_seconds"))
