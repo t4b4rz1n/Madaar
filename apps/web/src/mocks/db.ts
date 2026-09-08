@@ -670,13 +670,13 @@ export const db = {
         sender: { username: "admin", is_staff: true },
         attachments: mediaUrl
           ? [
-              {
-                id: Date.now(),
-                file: mediaUrl,
-                file_type: "file",
-                created_at: new Date().toISOString(),
-              },
-            ]
+            {
+              id: Date.now(),
+              file: mediaUrl,
+              file_type: "file",
+              created_at: new Date().toISOString(),
+            },
+          ]
           : [],
         created_at: new Date().toISOString(),
       };
@@ -762,7 +762,7 @@ export const db = {
       return newTeam;
     },
     update: (id: number, updates: Partial<Team>) => {
-  const idx = mockTeams.findIndex((t) => t.id === id);
+      const idx = mockTeams.findIndex((t) => t.id === id);
       if (idx !== -1) {
         mockTeams[idx] = {
           ...mockTeams[idx],

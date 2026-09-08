@@ -192,10 +192,10 @@ export const handlers = [
             role_id: user.role_id ?? null,
             role: userRole
               ? {
-                  id: String(userRole.id),
-                  name: userRole.name,
-                  permissions: userRole.permissions,
-                }
+                id: String(userRole.id),
+                name: userRole.name,
+                permissions: userRole.permissions,
+              }
               : null,
             profile_image_url: user.avatar,
           },
