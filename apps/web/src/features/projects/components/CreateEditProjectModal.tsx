@@ -249,36 +249,20 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Project Name <span className="text-error">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                dir="auto"
-                required
-                placeholder="e.g. Madaar System"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Key Prefix
-              </label>
-              <input
-                type="text"
-                name="prefix"
-                maxLength={10}
-                placeholder="MAD"
-                value={formData.prefix}
-                onChange={handleChange}
-                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all uppercase placeholder:text-base-content/35"
-              />
-            </div>
+          <div>
+            <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+              Project Name <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              dir="auto"
+              required
+              placeholder="e.g. Madaar System"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+            />
           </div>
 
           <div>

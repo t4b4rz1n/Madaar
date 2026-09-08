@@ -45,15 +45,22 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
   // Load organizations for the selector (only when showOrgSelector is true)
   const { data: organizations = [] } = useOrganizations();
 
-  const allPermissionIds = useMemo(
-    () => (permissionsData?.permissions || []).map((p: Permission) => p.code),
+  // Permissions that are granted to all org members by default and should not appear in the role editor
+  const HIDDEN_PERMISSIONS = ["attendance.view"];
+
+  const filteredPermissions = useMemo(
+    () => (permissionsData?.permissions || []).filter((p: Permission) => !HIDDEN_PERMISSIONS.includes(p.code)),
     [permissionsData],
+  );
+
+  const allPermissionIds = useMemo(
+    () => filteredPermissions.map((p: Permission) => p.code),
+    [filteredPermissions],
   );
 
   // Group permissions by module for display
   const permissionsByModule = useMemo(() => {
-    if (!permissionsData?.permissions) return {};
-    return (permissionsData.permissions as Permission[]).reduce(
+    return filteredPermissions.reduce(
       (acc: Record<string, Permission[]>, perm: Permission) => {
         if (!acc[perm.module]) acc[perm.module] = [];
         acc[perm.module].push(perm);
@@ -61,7 +68,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
       },
       {} as Record<string, Permission[]>,
     );
-  }, [permissionsData]);
+  }, [filteredPermissions]);
 
   const {
     control,

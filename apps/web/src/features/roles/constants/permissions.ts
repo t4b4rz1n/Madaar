@@ -29,7 +29,6 @@ export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   { id: "board.manage", label: "Manage Boards & Columns", group: "TASKS" },
 
   // Attendance & Time-off
-  { id: "attendance.view", label: "View Personal Attendance", group: "ATTENDANCE" },
   { id: "attendance.view_all", label: "View All Attendances", group: "ATTENDANCE" },
   { id: "leave.approve", label: "Approve Leave Requests", group: "ATTENDANCE" },
 
