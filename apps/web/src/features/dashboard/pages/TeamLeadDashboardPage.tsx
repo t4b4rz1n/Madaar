@@ -19,6 +19,7 @@
 import { motion } from "framer-motion";
 import {
   Activity,
+  Add,
   ArrowRight,
   Building,
   Calendar,
@@ -26,6 +27,7 @@ import {
   Clock,
   Danger,
   People,
+  Profile2User,
   Refresh2,
   TaskSquare,
   Timer1,
@@ -751,160 +753,240 @@ const TeamLeadDashboardPage = () => {
         </div>
       </section>
 
-      {/* ─── Empty Team Banner ─── */}
-      {dashboard.team_member_count === 0 && (
-        <section
-          className={`${panelClass} flex items-center gap-4 bg-base-100 p-5 sm:p-6`}
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <People size={20} />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-base-content">
-              No team members assigned yet
-            </h2>
-            <p className="mt-0.5 text-xs text-base-content/55">
-              Team metrics and workload analytics will be populated automatically once members are assigned to your team.
-            </p>
-          </div>
-        </section>
-      )}
-
-      {/* ─── Decision Banner ─── */}
-      {dashboard.overdue_summary.total_overdue > 0 && (
-        <section
-          className={`${panelClass} flex flex-col gap-4 bg-gradient-to-br from-error/[0.06] via-base-100 to-base-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6`}
-        >
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-error/10 text-error">
-              <Danger size={19} />
+      {/* ─── No Team Empty State ─── */}
+      {dashboard.managed_team_count === 0 && (
+        <section className="mx-auto max-w-2xl py-6">
+          <div className={`${panelClass} overflow-hidden`}>
+            {/* Decorative gradient header */}
+            <div className="relative h-28 bg-gradient-to-br from-primary/20 via-primary/8 to-transparent">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
+              <div className="absolute left-6 top-1/2 -translate-y-1/2">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 ring-1 ring-primary/20 backdrop-blur-sm">
+                  <Profile2User size={26} className="text-primary" />
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-error">
-                Needs Attention
-              </p>
-              <h2 className="mt-1 text-lg font-black text-base-content">
-                {dashboard.overdue_summary.total_overdue} tasks behind schedule
+
+            <div className="px-6 pb-7 pt-5">
+              <h2 className="text-xl font-black tracking-tight text-base-content">
+                No Team Connected Yet
               </h2>
-              <p className="mt-1 text-xs font-semibold text-base-content/50">
-                See details in the overdue tasks section.
+              <p className="mt-2 text-sm leading-6 text-base-content/55">
+                To get started, create a team and assign members to it, or connect an existing team to the project.
               </p>
+
+              {/* Steps guide */}
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    step: "1",
+                    label: "Create a Team",
+                    desc: "Set up a team in your organization",
+                    tone: "primary",
+                  },
+                  {
+                    step: "2",
+                    label: "Add Members",
+                    desc: "Assign users to your team",
+                    tone: "secondary",
+                  },
+                  {
+                    step: "3",
+                    label: "Link to Project",
+                    desc: "Connect the team to your projects",
+                    tone: "success",
+                  },
+                ].map(({ step, label, desc, tone }) => (
+                  <div
+                    key={step}
+                    className={`rounded-2xl border bg-base-200/50 p-3.5 ${
+                      tone === "primary"
+                        ? "border-primary/20"
+                        : tone === "secondary"
+                          ? "border-secondary/20"
+                          : "border-success/20"
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black ${
+                        tone === "primary"
+                          ? "bg-primary/15 text-primary"
+                          : tone === "secondary"
+                            ? "bg-secondary/15 text-secondary"
+                            : "bg-success/15 text-success"
+                      }`}
+                    >
+                      {step}
+                    </span>
+                    <p className="mt-2 text-xs font-bold text-base-content">{label}</p>
+                    <p className="mt-0.5 text-[11px] text-base-content/50">{desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link
+                  to="/teams"
+                  className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-black text-primary-content shadow-md shadow-primary/20"
+                >
+                  <Add size={16} />
+                  Create or Manage Teams
+                </Link>
+                <Link
+                  to="/projects"
+                  className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-4 text-xs font-black text-base-content/70 hover:border-primary/30 hover:text-primary"
+                >
+                  <ArrowRight size={15} />
+                  View Projects
+                </Link>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
-            <Calendar size={15} />
-            Updated just now
-          </div>
         </section>
       )}
 
-      {/* ─── KPI Cards ─── */}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <MetricCard
-          label="Team Members"
-          value={dashboard.team_member_count}
-          description="members in this team"
-          icon={People}
-          tone="primary"
-        />
-        <MetricCard
-          label="Today's Attendance"
-          value={`${membersPresent} / ${dashboard.team_member_count}`}
-          description="present out of total"
-          icon={Building}
-          tone="success"
-        />
-        <MetricCard
-          label="Overdue Tasks"
-          value={dashboard.overdue_summary.total_overdue}
-          description={
-            totalTasks > 0
-              ? doneTasks > 0
-                ? `${doneTasks} completed out of ${totalTasks} total tasks`
-                : `Out of ${totalTasks} total tasks`
-              : "No tasks assigned"
-          }
-          icon={Danger}
-          tone={dashboard.overdue_summary.total_overdue > 0 ? "warning" : "success"}
-        />
-      </section>
+      {/* ─── Data Panels — only visible when a team exists ─── */}
+      {dashboard.managed_team_count > 0 && (
+        <>
+          {/* ─── Decision Banner ─── */}
+          {dashboard.overdue_summary.total_overdue > 0 && (
+            <section
+              className={`${panelClass} flex flex-col gap-4 bg-gradient-to-br from-error/[0.06] via-base-100 to-base-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-error/10 text-error">
+                  <Danger size={19} />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-error">
+                    Needs Attention
+                  </p>
+                  <h2 className="mt-1 text-lg font-black text-base-content">
+                    {dashboard.overdue_summary.total_overdue} tasks behind schedule
+                  </h2>
+                  <p className="mt-1 text-xs font-semibold text-base-content/50">
+                    See details in the overdue tasks section.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
+                <Calendar size={15} />
+                Updated just now
+              </div>
+            </section>
+          )}
 
-      {/* ─── Team Overview ─── */}
-      <section className={panelClass}>
-        <SectionHeading
-          title="Team overview"
-          description="A quick read on delivery and capacity"
-          action={
-            <span className="text-[11px] font-bold text-base-content/35">
-              This week
-            </span>
-          }
-        />
-        <div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[10px] font-black uppercase tracking-wider text-base-content/35 sm:grid">
-          <span>Member</span>
-          <span>Workload</span>
-          <span className="text-end">Done</span>
-          <span className="text-end">Risk</span>
-          <span className="text-end">Focus</span>
-        </div>
-        {members.length === 0 ? (
-          <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">
-            No team members are visible in this scope.
-          </div>
-        ) : (
-          <div>
-            {members.slice(0, 8).map((member) => (
-              <MemberRow
-                key={member.id}
-                member={member}
-                maxTasks={maxTasks}
-                workSeconds={
-                  workHoursByUser.get(member.id.toString()) ||
-                  member.week_seconds ||
-                  0
-                }
-              />
-            ))}
-          </div>
-        )}
-      </section>
+          {/* ─── KPI Cards ─── */}
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <MetricCard
+              label="Team Members"
+              value={dashboard.team_member_count}
+              description="members in this team"
+              icon={People}
+              tone="primary"
+            />
+            <MetricCard
+              label="Today's Attendance"
+              value={`${membersPresent} / ${dashboard.team_member_count}`}
+              description="present out of total"
+              icon={Building}
+              tone="success"
+            />
+            <MetricCard
+              label="Overdue Tasks"
+              value={dashboard.overdue_summary.total_overdue}
+              description={
+                totalTasks > 0
+                  ? doneTasks > 0
+                    ? `${doneTasks} completed out of ${totalTasks} total tasks`
+                    : `Out of ${totalTasks} total tasks`
+                  : "No tasks assigned"
+              }
+              icon={Danger}
+              tone={dashboard.overdue_summary.total_overdue > 0 ? "warning" : "success"}
+            />
+          </section>
 
-      {/* ─── Attendance + Work Hours ─── */}
-      <section className="grid gap-5 xl:grid-cols-2">
-        <AttendancePanel members={dashboard.members_attendance} />
-        <WorkHoursPanel
-          workHours={dashboard.work_hours}
-          overdueByMember={dashboard.overdue_summary.by_member}
-        />
-      </section>
+          {/* ─── Team Overview ─── */}
+          <section className={panelClass}>
+            <SectionHeading
+              title="Team overview"
+              description="A quick read on delivery and capacity"
+              action={
+                <span className="text-[11px] font-bold text-base-content/35">
+                  This week
+                </span>
+              }
+            />
+            <div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[10px] font-black uppercase tracking-wider text-base-content/35 sm:grid">
+              <span>Member</span>
+              <span>Workload</span>
+              <span className="text-end">Done</span>
+              <span className="text-end">Risk</span>
+              <span className="text-end">Focus</span>
+            </div>
+            {members.length === 0 ? (
+              <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">
+                No team members are visible in this scope.
+              </div>
+            ) : (
+              <div>
+                {members.slice(0, 8).map((member) => (
+                  <MemberRow
+                    key={member.id}
+                    member={member}
+                    maxTasks={maxTasks}
+                    workSeconds={
+                      workHoursByUser.get(member.id.toString()) ||
+                      member.week_seconds ||
+                      0
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </section>
 
-      {/* ─── Task Stats + Overdue Summary ─── */}
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <TaskStatsPanel taskStats={dashboard.task_stats} />
-        <OverdueSummaryPanel overdue={dashboard.overdue_summary} />
-      </section>
+          {/* ─── Attendance + Work Hours ─── */}
+          <section className="grid gap-5 xl:grid-cols-2">
+            <AttendancePanel members={dashboard.members_attendance} />
+            <WorkHoursPanel
+              workHours={dashboard.work_hours}
+              overdueByMember={dashboard.overdue_summary.by_member}
+            />
+          </section>
 
-      {/* ─── Project Summary ─── */}
-      {dashboard.project_summary.length > 0 && (
-        <section className="grid gap-5">
-          <ProjectSummaryPanel projects={dashboard.project_summary} />
-        </section>
+          {/* ─── Task Stats + Overdue Summary ─── */}
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+            <TaskStatsPanel taskStats={dashboard.task_stats} />
+            <OverdueSummaryPanel overdue={dashboard.overdue_summary} />
+          </section>
+
+          {/* ─── Project Summary ─── */}
+          {dashboard.project_summary.length > 0 && (
+            <section className="grid gap-5">
+              <ProjectSummaryPanel projects={dashboard.project_summary} />
+            </section>
+          )}
+
+          {/* ─── Weekly focus footer ─── */}
+          <section className="flex items-center justify-between rounded-2xl border border-base-content/8 bg-base-200/40 px-5 py-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
+              <Timer1 size={14} />
+              Total weekly work hours of the team:
+              <span className="font-black text-base-content">
+                {formatHours(totalWorkSeconds)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
+              <TaskSquare size={14} />
+              {totalTasks} tasks · {doneTasks} Completed
+            </div>
+          </section>
+        </>
       )}
-
-      {/* ─── Weekly focus footer ─── */}
-      <section className="flex items-center justify-between rounded-2xl border border-base-content/8 bg-base-200/40 px-5 py-3">
-        <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
-          <Timer1 size={14} />
-          Total weekly work hours of the team:
-          <span className="font-black text-base-content">
-            {formatHours(totalWorkSeconds)}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
-          <TaskSquare size={14} />
-          {totalTasks} tasks · {doneTasks} Completed
-        </div>
-      </section>
     </motion.div>
   );
 };

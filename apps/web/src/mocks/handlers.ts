@@ -109,6 +109,7 @@ export const handlers = [
   http.get(`${apiUrl}/reports/manager/dashboard/`, () => {
     const dashboard: ManagerDashboard = {
       team_member_count: 6,
+      managed_team_count: 2,
       task_stats: [
         { status_code: "todo", status_name: "To do", count: 12 },
         { status_code: "doing", status_name: "In progress", count: 7 },

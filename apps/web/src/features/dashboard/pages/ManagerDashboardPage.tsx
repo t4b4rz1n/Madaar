@@ -188,7 +188,35 @@ const ManagerDashboardPage = () => {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><MetricCard label="Team" value={dashboard.team_member_count} description="people in your scope" icon={People} tone="primary" /><MetricCard label="Open work" value={Math.max(0, totalTasks - doneTasks)} description={`${doneTasks} completed tasks`} icon={TaskSquare} tone="secondary" /><MetricCard label="Overdue" value={dashboard.overdue_summary.total_overdue} description="needs attention" icon={Danger} tone="warning" /><MetricCard label="Utilization" value={`${utilization}%`} description="based on weekly focus time" icon={Timer1} tone="success" /></section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.8fr)]"><section className={panelClass}><SectionHeading title="Team overview" description="A quick read on delivery and capacity" action={<span className="text-[11px] font-bold text-base-content/35">This week</span>} /><div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[10px] font-black uppercase tracking-wider text-base-content/35 sm:grid"><span>Member</span><span>Workload</span><span className="text-end">Done</span><span className="text-end">Risk</span><span className="text-end">Focus</span></div>{members.length === 0 ? <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">No team members are visible in this scope.</div> : <div>{members.slice(0, 8).map(member => <MemberRow key={member.id} member={member} maxTasks={maxTasks} workSeconds={workHoursByUser.get(member.id.toString()) || member.week_seconds || 0} />)}</div>}</section><ApprovalInbox requests={approvalQuery.data || []} isLoading={approvalQuery.isLoading} pendingId={approvalMutation.isPending ? approvalMutation.variables?.id || null : null} onApprove={id => approvalMutation.mutate({ id, action: "approve" })} onReject={id => approvalMutation.mutate({ id, action: "reject" })} /></section>
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.8fr)]">
+        <section className={panelClass}>
+          <SectionHeading title="Team overview" description="A quick read on delivery and capacity" action={<span className="text-[11px] font-bold text-base-content/35">This week</span>} />
+          {dashboard.managed_team_count === 0 ? (
+            <div className="px-5 pb-6">
+              <div className="flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/5 p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                  <People size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-base-content">No teams connected yet</p>
+                  <p className="mt-1 text-xs text-base-content/55">Create a team and assign members to it so this section can display workload, attendance and delivery analytics .</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link to="/teams" className="motion-interactive inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-black text-primary-content">
+                    <ArrowRight size={13} /> Manage Teams
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[10px] font-black uppercase tracking-wider text-base-content/35 sm:grid"><span>Member</span><span>Workload</span><span className="text-end">Done</span><span className="text-end">Risk</span><span className="text-end">Focus</span></div>
+              {members.length === 0 ? <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">No team members are visible in this scope.</div> : <div>{members.slice(0, 8).map(member => <MemberRow key={member.id} member={member} maxTasks={maxTasks} workSeconds={workHoursByUser.get(member.id.toString()) || member.week_seconds || 0} />)}</div>}
+            </>
+          )}
+        </section>
+        <ApprovalInbox requests={approvalQuery.data || []} isLoading={approvalQuery.isLoading} pendingId={approvalMutation.isPending ? approvalMutation.variables?.id || null : null} onApprove={id => approvalMutation.mutate({ id, action: "approve" })} onReject={id => approvalMutation.mutate({ id, action: "reject" })} />
+      </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]"><WorkloadPanel dashboard={dashboard} /><ProjectHealth projects={dashboard.project_summary} /></section>
     </motion.div>

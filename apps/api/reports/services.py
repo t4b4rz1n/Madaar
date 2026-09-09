@@ -775,6 +775,24 @@ class ManagerDashboardService:
 
         member_ids = cls._resolve_member_ids(user, team_id)
 
+        # Count actual managed teams (used by frontend to show empty-state
+        # when no real team exists, even if org members are visible).
+        if team_id:
+            managed_team_count = 1
+        elif user.is_staff or user.is_superuser:
+            from organizations.models import Team
+            managed_team_count = Team.objects.filter(is_deleted=False).count()
+        else:
+            admin_org_ids = cls._get_admin_org_ids(user)
+            if admin_org_ids:
+                from organizations.models import Team
+                managed_team_count = Team.objects.filter(
+                    organization_id__in=admin_org_ids,
+                    is_deleted=False,
+                ).count()
+            else:
+                managed_team_count = len(cls.get_managed_team_ids(user))
+
         now = timezone.now()
         today_start, today_end = get_user_today_range(tz_name)
         week_start, week_end = get_user_week_range(tz_name)
@@ -785,6 +803,7 @@ class ManagerDashboardService:
 
         result = {
             "team_member_count": len(member_ids),
+            "managed_team_count": managed_team_count,
             "task_stats": cls._get_task_stats(member_ids),
             "overdue_summary": cls._get_overdue_tasks(member_ids, now),
             "work_hours": cls._get_work_hours(member_ids, week_start_date, week_end_date),

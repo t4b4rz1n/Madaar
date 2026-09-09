@@ -105,6 +105,7 @@ export interface ManagerProjectSummary {
 
 export interface ManagerDashboard {
   team_member_count: number;
+  managed_team_count: number;
   task_stats: ManagerTaskStat[];
   overdue_summary: {
     total_overdue: number;
