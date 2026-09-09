@@ -47,6 +47,7 @@ export const KanbanBoard: React.FC = () => {
   const [activeColumn, setActiveColumn] = useState<any | null>(null);
 
   const selectedTaskIdParam = selectedTaskId;
+  const [focusDueDateOnOpen, setFocusDueDateOnOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'my-tasks' | 'blocked' | 'priority'>('all');
   const [focusMode, setFocusMode] = useState(false);
@@ -58,6 +59,12 @@ export const KanbanBoard: React.FC = () => {
   const setSelectedTaskForSheet = (task: Task | null) => {
     setSelectedTaskId(task ? task.id.toString() : null);
   };
+
+  const openTaskSheetWithDueDate = (task: Task) => {
+    setSelectedTaskId(task.id.toString());
+    setFocusDueDateOnOpen(true);
+  };
+
 
   // Add task state
 
@@ -1007,6 +1014,7 @@ export const KanbanBoard: React.FC = () => {
                           onStopTimer={handleStopTimer}
                           onToggleDone={handleToggleDone}
                           activeTimer={activeTimers.find(t => t.task?.toString() === task.id?.toString()) || null}
+                          onDueDateClick={() => openTaskSheetWithDueDate(task)}
                         />
                       ))}
                     </SortableContext>
@@ -1187,6 +1195,8 @@ export const KanbanBoard: React.FC = () => {
         onStopTimer={handleStopTimer}
         activeTimer={activeTimers.find(t => String(t.task) === selectedTaskIdParam) || null}
         focusMode={focusMode}
+        focusDueDate={focusDueDateOnOpen}
+        onFocusDueDateHandled={() => setFocusDueDateOnOpen(false)}
       />
     </div>
   );
