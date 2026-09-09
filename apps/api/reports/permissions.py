@@ -163,7 +163,6 @@ class IsManagerOrAbove(permissions.BasePermission):
                 return True
             if (
                 PermissionService.has_permission(user, "report.view", org_id)
-                or PermissionService.has_permission(user, "report.view_team_lead", org_id)
                 or PermissionService.has_permission(user, "org.manage_settings", org_id)
             ):
                 return True
