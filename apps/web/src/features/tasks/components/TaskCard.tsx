@@ -91,6 +91,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     mutationFn: () => deleteTask(task.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Task deleted");
     },
     onError: (error: any) =>
@@ -101,6 +102,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     mutationFn: (data: Partial<Task>) => updateTask(task.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["taskActivities", task.id] });
     },
     onError: (error: any) =>

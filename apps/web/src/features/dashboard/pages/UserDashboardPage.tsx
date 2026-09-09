@@ -61,6 +61,60 @@ const formatDecimalHours = (
   return `${h}h ${m}m`;
 };
 
+const ProgressRing = ({
+  radius,
+  stroke,
+  progress,
+  color,
+}: {
+  radius: number;
+  stroke: number;
+  progress: number;
+  color: string;
+}) => {
+  const normalizedRadius = radius - stroke * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = Math.max(0, circumference - (progress / 100) * circumference);
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg
+        height={radius * 2}
+        width={radius * 2}
+        className="transform -rotate-90"
+      >
+        <circle
+          stroke="currentColor"
+          fill="transparent"
+          strokeWidth={stroke}
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+          className="opacity-10"
+        />
+        <circle
+          stroke={color}
+          fill="transparent"
+          strokeWidth={stroke}
+          strokeDasharray={circumference + " " + circumference}
+          style={{ strokeDashoffset }}
+          strokeLinecap="round"
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+          className="transition-all duration-1000 ease-in-out"
+          filter={`drop-shadow(0 0 4px ${color}80)`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[11px] font-black text-base-content">
+          {Math.round(progress)}%
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export const UserDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
@@ -179,6 +233,7 @@ export const UserDashboardPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Timer started");
     },
     onError: () => toast.error("Could not start timer"),
@@ -189,6 +244,7 @@ export const UserDashboardPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Timer stopped");
     },
     onError: () => toast.error("Could not stop timer"),
@@ -200,6 +256,7 @@ export const UserDashboardPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Task marked as completed");
     },
     onError: () => toast.error("Could not mark task as completed"),
@@ -471,38 +528,57 @@ export const UserDashboardPage = () => {
               <div className="grid gap-3 sm:grid-cols-2">
                 {projectsData.slice(0, 4).map((p: any) => {
                   const color = p.color || "#6366f1";
-                  const bgGradient = color.startsWith("#")
-                    ? `linear-gradient(135deg, ${color}, ${color}cc)`
-                    : color;
 
                   return (
                     <div
                       key={p.id}
                       onClick={() => navigate(`/projects/${p.id}`)}
-                      className="group flex flex-col justify-between rounded-xl border border-base-content/6 p-3.5 cursor-pointer text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
-                      style={{ background: bgGradient }}
+                      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-base-content/10 bg-base-100/50 backdrop-blur-md p-5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-base-content/5"
                     >
-                      <div className="flex items-center justify-between">
-                        {p.prefix && (
-                          <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[9px] font-extrabold">
-                            {p.prefix}
-                          </span>
-                        )}
-                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
+                      {/* Decorative colored glow based on project color */}
+                      <div 
+                        className="absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40 pointer-events-none"
+                        style={{ backgroundColor: color }}
+                      />
+                      
+                      <div className="relative z-10 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          {p.prefix && (
+                            <span className="mb-2 inline-block rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm" style={{ backgroundColor: color }}>
+                              {p.prefix}
+                            </span>
+                          )}
+                          <h3
+                            dir="auto"
+                            className="text-base font-black text-base-content truncate"
+                            title={p.name}
+                          >
+                            {p.name}
+                          </h3>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-base-200 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-base-content/70">
                           {p.status}
                         </span>
                       </div>
 
-                      <h3
-                        dir="auto"
-                        className="mt-3 text-sm font-black truncate drop-shadow-xs"
-                      >
-                        {p.name}
-                      </h3>
+                      <div className="relative z-10 mt-6 flex items-end justify-between">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">
+                            Tasks Progress
+                          </span>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-black text-base-content">
+                              {Math.round(((p.task_count || 0) * (p.progress_percentage || 0)) / 100)}
+                            </span>
+                            <span className="text-[11px] font-bold text-base-content/40">
+                              / {p.task_count || 0} Done
+                            </span>
+                          </div>
+                        </div>
 
-                      <div className="mt-3 flex items-center justify-between text-[10px] font-bold opacity-80">
-                        <span>{p.task_count || 0} tasks</span>
-                        <span>{p.progress_percentage || 0}%</span>
+                        <div className="shrink-0">
+                          <ProgressRing radius={28} stroke={4} progress={p.progress_percentage || 0} color={color} />
+                        </div>
                       </div>
                     </div>
                   );
@@ -678,6 +754,7 @@ export const UserDashboardPage = () => {
           await updateTask(taskId, patch);
           queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
           queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
         }}
       />
     </motion.div>

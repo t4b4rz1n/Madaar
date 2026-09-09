@@ -172,6 +172,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     onSuccess: () => {
       toast.success("Manual time logged");
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["standup-grid"] });
       setIsManualTimeOpen(false);
       setManualHours("0");
@@ -262,6 +263,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
 
   const invalidateTaskDetails = () => {
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
     queryClient.invalidateQueries({ queryKey: ["taskChecklists", taskId] });
     queryClient.invalidateQueries({ queryKey: ["taskComments", taskId] });
     queryClient.invalidateQueries({ queryKey: ["taskActivities", taskId] });
