@@ -142,7 +142,6 @@ TEAM_LEAD_PERMISSIONS = [
     "role.view",
     "project.view",
     "project.create",
-    "project.manage",
     "task.view",
     "task.create",
     "task.manage_all",
@@ -151,10 +150,7 @@ TEAM_LEAD_PERMISSIONS = [
     "board.manage",
     "attendance.view",
     "attendance.view_all",
-    "leave.approve",
     "notification.view",
-    "automation.manage",
-    "report.view",
     "report.view_team_lead",
 ]
 
