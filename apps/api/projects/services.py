@@ -1,18 +1,3 @@
-"""
-projects/services.py
---------------------
-Business-logic layer for the projects application.
-
-Design principles
-~~~~~~~~~~~~~~~~~
-* Views and serializers MUST NOT contain business logic.
-* Every public method lives on a descriptive **service class**.
-* All mutating methods use ``@transaction.atomic`` so partial writes
-  never persist.
-* A ``ProjectActivity`` record is logged for every meaningful mutation.
-* Methods accept validated Python objects — never ``request`` objects —
-  so they are easy to call from management commands, Celery tasks or tests.
-"""
 
 from __future__ import annotations
 
@@ -89,6 +74,11 @@ class ProjectService:
                 distinct=True,
             ),
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False), distinct=True),
+            completed_task_count=Count(
+                "tasks",
+                filter=Q(tasks__is_deleted=False, tasks__is_finished=True),
+                distinct=True
+            ),
             milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False), distinct=True),
         )
 

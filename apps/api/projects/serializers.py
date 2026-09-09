@@ -70,8 +70,17 @@ class ProjectListSerializer(serializers.ModelSerializer):
     # Annotated counts — default=0 prevents crashes on non-annotated objects
     member_count = serializers.IntegerField(read_only=True, default=0)
     task_count = serializers.IntegerField(read_only=True, default=0)
+    completed_task_count = serializers.IntegerField(read_only=True, default=0)
+    progress_percentage = serializers.SerializerMethodField()
     milestone_count = serializers.IntegerField(read_only=True, default=0)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    def get_progress_percentage(self, obj):
+        total = getattr(obj, "task_count", 0)
+        completed = getattr(obj, "completed_task_count", 0)
+        if total > 0:
+            return round((completed / total) * 100)
+        return 0
 
     class Meta:
         model = Project
@@ -92,6 +101,8 @@ class ProjectListSerializer(serializers.ModelSerializer):
             "archived_at",
             "member_count",
             "task_count",
+            "completed_task_count",
+            "progress_percentage",
             "milestone_count",
             "created_at",
             "updated_at",
