@@ -157,10 +157,7 @@ class StaffTeamMembershipViewSet(viewsets.ModelViewSet):
         instance, _ = TeamMembership.objects.update_or_create(
             user_id=user_id,
             team=team,
-            defaults={
-                "role": serializer.validated_data.get("role", TeamMembership.Role.MEMBER),
-                "is_deleted": False,
-            },
+            defaults={"is_deleted": False},
         )
         serializer.instance = instance
 

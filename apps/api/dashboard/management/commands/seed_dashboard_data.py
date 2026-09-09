@@ -100,20 +100,19 @@ class Command(BaseCommand):
         for user, role in [
             (ali, OrganizationMembership.Role.ADMIN),
             (hamed, OrganizationMembership.Role.EMPLOYEE),
-            (manager, OrganizationMembership.Role.TEAM_LEAD),
+            (manager, OrganizationMembership.Role.EMPLOYEE),
         ]:
             OrganizationMembership.objects.get_or_create(
                 user=user, organization=org, defaults={"role": role}
             )
+            
+        self._team.leader = manager
+        self._team.save(update_fields=["leader"])
 
         # Team memberships
-        for user, role in [
-            (ali, TeamMembership.Role.MEMBER),
-            (hamed, TeamMembership.Role.MEMBER),
-            (manager, TeamMembership.Role.LEAD),
-        ]:
+        for user in [ali, hamed, manager]:
             TeamMembership.objects.get_or_create(
-                user=user, team=self._team, defaults={"role": role}
+                user=user, team=self._team
             )
 
     # ── project & board ──────────────────────────────────────────────

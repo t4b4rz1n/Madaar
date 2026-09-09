@@ -185,7 +185,7 @@ def test_manager_cache_invalidation_on_team_membership_change(clear_cache, users
     member = users["employee1"]
     team = TeamFactory()
     # initial membership – lead only
-    TeamMembershipFactory(user=lead, team=team, role=TeamMembership.Role.LEAD)
+    TeamMembershipFactory(user=lead, team=team)
     tz = "UTC"
     version_key = f"dashboard_version:mgr:team_{team.id}"
     # Read current version (may have been bumped by TeamMembershipFactory signal)
@@ -194,7 +194,7 @@ def test_manager_cache_invalidation_on_team_membership_change(clear_cache, users
     old_cache_key = f"reports:mgr:team_{team.id}:v{current_version}:tz_{tz}"
     assert cache.get(old_cache_key) is not None
     # add a regular member – triggers signal → bumps version
-    TeamMembershipFactory(user=member, team=team, role=TeamMembership.Role.MEMBER)
+    TeamMembershipFactory(user=member, team=team)
     # Version should have incremented
     new_version = cache.get(version_key, 1)
     assert new_version > current_version
@@ -283,7 +283,7 @@ def test_manager_team_lead_cache_unaffected_by_org_version_key(clear_cache, user
     team_version_before = cache.get(team_version_key, 1)
 
     member = users["employee2"]
-    TeamMembershipFactory(user=member, team=team, role=TeamMembership.Role.MEMBER)
+    TeamMembershipFactory(user=member, team=team)
 
     team_version_after = cache.get(team_version_key, 1)
     org_version_after = cache.get(org_version_key, 1)
@@ -1156,8 +1156,8 @@ class TestProjectSummaryInflation:
         manager = UserFactory()
         member = UserFactory()
         team = TeamFactory()
-        TeamMembershipFactory(user=manager, team=team, role=TeamMembership.Role.LEAD)
-        TeamMembershipFactory(user=member, team=team, role=TeamMembership.Role.MEMBER)
+        TeamMembershipFactory(user=manager, team=team)
+        TeamMembershipFactory(user=member, team=team)
 
         project = ProjectFactory()
         board = BoardFactory(project=project)
@@ -1373,7 +1373,7 @@ class TestManagerDashboardAdminAccess:
 
         org = OrganizationFactory()
         OrganizationMembershipFactory(
-            user=lead, organization=org, role=OrganizationMembership.Role.TEAM_LEAD
+            user=lead, organization=org, role=OrganizationMembership.Role.EMPLOYEE
         )
         OrganizationMembershipFactory(
             user=emp_in, organization=org, role=OrganizationMembership.Role.EMPLOYEE
@@ -1383,9 +1383,9 @@ class TestManagerDashboardAdminAccess:
         )
 
         # lead leads one team containing emp_in only
-        team = TeamFactory(organization=org)
-        TeamMembershipFactory(user=lead, team=team, role=TeamMembership.Role.LEAD)
-        TeamMembershipFactory(user=emp_in, team=team, role=TeamMembership.Role.MEMBER)
+        team = TeamFactory(organization=org, leader=lead)
+        TeamMembershipFactory(user=lead, team=team)
+        TeamMembershipFactory(user=emp_in, team=team)
         # emp_out is NOT in this team
 
         member_ids = ManagerDashboardService._resolve_member_ids(lead, team_id=None)

@@ -6,7 +6,6 @@ import {
   CloseCircle,
   People,
   Profile2User,
-  ArrowDown2,
   UserMinus,
 } from "iconsax-reactjs";
 import {
@@ -47,29 +46,26 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
   const users: User[] = usersResponse?.results ?? [];
 
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [selectedRole, setSelectedRole] = useState<string>("member");
   const [removingMember, setRemovingMember] = useState<TeamMember | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
       setSelectedUserId("");
-      setSelectedRole("member");
       setRemovingMember(null);
     }
   }, [isOpen]);
 
   const handleAddMember = async () => {
-    if (!team || !selectedUserId) return;
-    try {
-      await addMember.mutateAsync({
-        teamId: team.id,
-        user: selectedUserId,
-        role: selectedRole,
-      });
-      setSelectedUserId("");
-      setSelectedRole("member");
-    } catch {
-      // toast handled by hook
+    if (team && selectedUserId) {
+      try {
+        await addMember.mutateAsync({
+          teamId: team.id,
+          user: selectedUserId,
+        });
+        setSelectedUserId("");
+      } catch {
+        // toast handled by hook
+      }
     }
   };
 
@@ -86,23 +82,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
     }
   };
 
-  const getRoleBadgeClass = (role: string) => {
-    switch (role) {
-      case "lead":
-        return "badge-primary bg-primary/10 text-primary border-none";
-      default:
-        return "badge-ghost bg-base-200 text-base-content/60 border-none";
-    }
-  };
 
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case "lead":
-        return "Lead";
-      default:
-        return "Member";
-    }
-  };
 
   const availableUsers = users.filter(
     (u) => !members?.some((m) => String(m.user) === String(u.id))
@@ -216,11 +196,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                           {member.user_details?.email || ""}
                         </p>
                       </div>
-                      <span
-                        className={`badge badge-sm rounded-lg py-2 px-2 ${getRoleBadgeClass(member.role)}`}
-                      >
-                        {getRoleLabel(member.role)}
-                      </span>
+
                       <button
                         type="button"
                         onClick={() => setRemovingMember(member)}
@@ -264,19 +240,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                         <Profile2User size={18} />
                       </div>
                     </div>
-                    <div className="relative w-full sm:w-36">
-                      <select
-                        value={selectedRole}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="select select-bordered w-full rounded-xl appearance-none"
-                      >
-                        <option value="member">Member</option>
-                        <option value="lead">Lead</option>
-                      </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
-                        <ArrowDown2 size={16} />
-                      </div>
-                    </div>
+
                     <button
                       type="button"
                       onClick={handleAddMember}

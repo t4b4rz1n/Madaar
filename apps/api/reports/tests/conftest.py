@@ -46,7 +46,7 @@ def users():
 @pytest.fixture
 def org_data(users):
     org = OrganizationFactory(owner=users["org_owner"])
-    team_a = TeamFactory(organization=org)
+    team_a = TeamFactory(organization=org, leader=users["team_lead"])
     team_b = TeamFactory(organization=org)
 
     OrganizationMembershipFactory(
@@ -57,7 +57,7 @@ def org_data(users):
     OrganizationMembershipFactory(
         user=users["team_lead"],
         organization=org,
-        role=OrganizationMembership.Role.TEAM_LEAD,
+        role=OrganizationMembership.Role.EMPLOYEE,
     )
     OrganizationMembershipFactory(
         user=users["employee1"],
@@ -70,9 +70,9 @@ def org_data(users):
         role=OrganizationMembership.Role.EMPLOYEE,
     )
 
-    TeamMembershipFactory(user=users["team_lead"], team=team_a, role=TeamMembership.Role.LEAD)
-    TeamMembershipFactory(user=users["employee1"], team=team_a, role=TeamMembership.Role.MEMBER)
-    TeamMembershipFactory(user=users["employee2"], team=team_b, role=TeamMembership.Role.MEMBER)
+    TeamMembershipFactory(user=users["team_lead"], team=team_a)
+    TeamMembershipFactory(user=users["employee1"], team=team_a)
+    TeamMembershipFactory(user=users["employee2"], team=team_b)
 
     return {
         "org": org,

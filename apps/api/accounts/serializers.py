@@ -120,6 +120,16 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         except Exception:
             pass
 
+        try:
+            from organizations.models import Team
+            from organizations.constants import TEAM_LEAD_PERMISSIONS
+            if Team.objects.filter(leader=instance, is_deleted=False).exists():
+                for perm in TEAM_LEAD_PERMISSIONS:
+                    if perm not in user_permissions:
+                        user_permissions.append(perm)
+        except Exception:
+            pass
+
         can_manage_automations = bool(
             instance.is_staff
             or instance.is_superuser

@@ -444,12 +444,12 @@ class ManagerDashboardService:
 
     @staticmethod
     def get_managed_team_ids(user) -> list:
+        from organizations.models import Team
         return list(
-            TeamMembership.objects.filter(
-                user=user,
-                role=TeamMembership.Role.LEAD,
+            Team.objects.filter(
+                leader=user,
                 is_deleted=False,
-            ).values_list("team_id", flat=True)
+            ).values_list("id", flat=True)
         )
 
     @staticmethod

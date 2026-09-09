@@ -49,16 +49,7 @@ ROLE_PERMISSIONS_MAP = {
         "attendance.view_all",
         "finance.view_reports",
     ],
-    "team_lead": [
-        "notification.view",
-        "project.view",
-        "board.view",
-        "task.view",
-        "project.create",
-        "task.create",
-        "task.manage_all",
-        "task.review",
-    ],
+
     "hr": [
         "notification.view",
         "project.view",

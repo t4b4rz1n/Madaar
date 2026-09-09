@@ -77,7 +77,7 @@ class AttendanceBaseTestCase(APITestCase):
         OrganizationMembership.objects.create(
             user=cls.lead,
             organization=cls.org,
-            role=OrganizationMembership.Role.TEAM_LEAD,
+            role=OrganizationMembership.Role.EMPLOYEE,
         )
         OrganizationMembership.objects.create(
             user=cls.employee,
@@ -91,9 +91,9 @@ class AttendanceBaseTestCase(APITestCase):
         )
 
         # Teams
-        cls.team = Team.objects.create(name="Dev Team", organization=cls.org)
-        TeamMembership.objects.create(user=cls.lead, team=cls.team, role="lead")
-        TeamMembership.objects.create(user=cls.employee, team=cls.team, role="member")
+        cls.team = Team.objects.create(name="Dev Team", organization=cls.org, leader=cls.lead)
+        TeamMembership.objects.create(user=cls.lead, team=cls.team)
+        TeamMembership.objects.create(user=cls.employee, team=cls.team)
 
         # Projects and Tasks
         cls.project = Project.objects.create(

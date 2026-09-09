@@ -647,9 +647,9 @@ class TimesheetService:
         else:
             # Regular team leads only see their managed teams
             managed_teams = list(
-                manager.team_memberships.filter(
-                    role="lead", team__organization=organization
-                ).values_list("team_id", flat=True)
+                manager.led_teams.filter(
+                    organization=organization
+                ).values_list("id", flat=True)
             )
             qs = TimeLog.objects.filter(
                 user__team_memberships__team_id__in=managed_teams,

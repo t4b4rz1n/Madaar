@@ -102,22 +102,6 @@ COMPATIBILITY_ROLE_PERMISSIONS_MAP = {
         "automation.manage",
         "report.view",
     ],
-    "team_lead": [
-        "org.view",
-        "user.view",
-        "role.view",
-        "project.view",
-        "project.create",
-        "task.view",
-        "task.create",
-        "task.manage_all",
-        "task.review",
-        "board.view",
-        "board.manage",
-        "attendance.view",
-        "attendance.view_all",
-        "notification.view",
-    ],
     "employee": [
         "org.view",
         "user.view",
@@ -151,6 +135,29 @@ COMPATIBILITY_ROLE_PERMISSIONS_MAP = {
     ],
 }
 
+# Dynamically injected for users who are Team.leader
+TEAM_LEAD_PERMISSIONS = [
+    "org.view",
+    "user.view",
+    "role.view",
+    "project.view",
+    "project.create",
+    "project.manage",
+    "task.view",
+    "task.create",
+    "task.manage_all",
+    "task.review",
+    "board.view",
+    "board.manage",
+    "attendance.view",
+    "attendance.view_all",
+    "leave.approve",
+    "notification.view",
+    "automation.manage",
+    "report.view",
+    "report.view_team_lead",
+]
+
 # Standard Default Roles to Seed for Every Organization
 SYSTEM_DEFAULT_ROLES = [
     {
@@ -164,12 +171,6 @@ SYSTEM_DEFAULT_ROLES = [
         "description": "Administrative access to manage teams, projects, roles, and attendance.",
         "is_protected": True,
         "permissions": COMPATIBILITY_ROLE_PERMISSIONS_MAP["admin"],
-    },
-    {
-        "name": "Team Lead",
-        "description": "Can manage and review tasks, create boards, and approve team leaves.",
-        "is_protected": False,
-        "permissions": COMPATIBILITY_ROLE_PERMISSIONS_MAP["team_lead"],
     },
     {
         "name": "Employee",

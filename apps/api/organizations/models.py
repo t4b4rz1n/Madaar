@@ -42,6 +42,14 @@ class Team(BaseModel):
         on_delete=models.CASCADE,
         related_name="teams",
     )
+    leader = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="led_teams",
+        verbose_name="Team Lead",
+    )
     parent_team = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,
@@ -122,7 +130,6 @@ class OrganizationMembership(BaseModel):
     class Role(models.TextChoices):
         OWNER = "owner", "Owner"
         ADMIN = "admin", "Admin"
-        TEAM_LEAD = "team_lead", "Team Lead"
         EMPLOYEE = "employee", "Employee"
         HR = "hr", "Human Resources"
         ACCOUNTANT = "accountant", "Accountant"
@@ -175,10 +182,6 @@ class OrganizationMembership(BaseModel):
 
 
 class TeamMembership(BaseModel):
-    class Role(models.TextChoices):
-        LEAD = "lead", "Lead"
-        MEMBER = "member", "Member"
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -188,11 +191,6 @@ class TeamMembership(BaseModel):
         Team,
         on_delete=models.CASCADE,
         related_name="memberships",
-    )
-    role = models.CharField(
-        max_length=20,
-        choices=Role.choices,
-        default=Role.MEMBER,
     )
 
     class Meta:
@@ -209,7 +207,7 @@ class TeamMembership(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.user_id} - {self.team_id} ({self.role})"
+        return f"{self.user_id} - {self.team_id}"
 
 
 class OrganizationAuditLog(BaseModel):

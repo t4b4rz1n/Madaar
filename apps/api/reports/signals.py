@@ -40,12 +40,11 @@ def _invalidate_manager(user_id=None, team_id=None):
     """
     if team_id:
         _bump_version(f"dashboard_version:mgr:team_{team_id}")
-        # Bump the aggregate cache for all managers of this team
-        managers = TeamMembership.objects.filter(
-            team_id=team_id, role=TeamMembership.Role.LEAD, is_deleted=False
-        ).values_list("user_id", flat=True)
-        for mgr_id in managers:
-            _bump_version(f"dashboard_version:mgr:user_{mgr_id}")
+        # Bump the aggregate cache for the leader of this team
+        from organizations.models import Team
+        team = Team.objects.filter(id=team_id).first()
+        if team and team.leader_id:
+            _bump_version(f"dashboard_version:mgr:user_{team.leader_id}")
 
     if user_id:
         # User might be an employee in several teams. Bump those teams' versions.
@@ -54,12 +53,11 @@ def _invalidate_manager(user_id=None, team_id=None):
         )
         for t_id in teams:
             _bump_version(f"dashboard_version:mgr:team_{t_id}")
-            # Bump aggregate managers for these teams
-            managers = TeamMembership.objects.filter(
-                team_id=t_id, role=TeamMembership.Role.LEAD, is_deleted=False
-            ).values_list("user_id", flat=True)
-            for mgr_id in managers:
-                _bump_version(f"dashboard_version:mgr:user_{mgr_id}")
+            # Bump aggregate leader for these teams
+            from organizations.models import Team
+            team = Team.objects.filter(id=t_id).first()
+            if team and team.leader_id:
+                _bump_version(f"dashboard_version:mgr:user_{team.leader_id}")
 
         # Also bump the user's own aggregate view if they are a manager
         _bump_version(f"dashboard_version:mgr:user_{user_id}")
