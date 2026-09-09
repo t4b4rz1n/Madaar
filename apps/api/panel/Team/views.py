@@ -92,9 +92,17 @@ class StaffTeamViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Team.objects.filter(is_deleted=False, parent_team__isnull=True).select_related(
+        queryset = Team.objects.filter(parent_team__isnull=True).select_related(
             "organization"
         )
+        
+        is_active = self.request.query_params.get("is_active")
+        if is_active == "true":
+            queryset = queryset.filter(is_deleted=False)
+        elif is_active == "false":
+            queryset = queryset.filter(is_deleted=True)
+        # If not specified (e.g. "All Teams"), we don't filter by is_deleted to show all.
+        
         if not (user.is_staff or user.is_superuser):
             org_ids = user.org_memberships.filter(is_deleted=False).values_list(
                 "organization_id", flat=True
@@ -149,10 +157,7 @@ class StaffTeamMembershipViewSet(viewsets.ModelViewSet):
         instance, _ = TeamMembership.objects.update_or_create(
             user_id=user_id,
             team=team,
-            defaults={
-                "role": serializer.validated_data.get("role", TeamMembership.Role.MEMBER),
-                "is_deleted": False,
-            },
+            defaults={"is_deleted": False},
         )
         serializer.instance = instance
 

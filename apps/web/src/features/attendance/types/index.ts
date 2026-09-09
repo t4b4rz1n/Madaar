@@ -63,5 +63,5 @@ export interface Holiday {
 export interface TimesheetEntry {
   date: string;
   total_seconds: number;
-  user__username?: string;
+  username?: string;
 }

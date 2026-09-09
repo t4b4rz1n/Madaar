@@ -28,6 +28,7 @@ interface TaskCardProps {
   onMarkDone?: (taskId: string | number) => void;
   onToggleDone?: (taskId: string | number) => void;
   activeTimer?: TimeLog | null;
+  onDueDateClick?: () => void;
 }
 
 
@@ -51,6 +52,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onMarkDone,
   onToggleDone,
   activeTimer,
+  onDueDateClick,
 }) => {
   const currentUser = useAuthStore((state) => state.user);
   const { hasPermission, isStaff } = usePermissions();
@@ -505,23 +507,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       >
                         <Profile2User size={15} className="text-base-content/50" /> Change assignee
                       </button>
-                      <label className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 hover:bg-base-200">
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                        onClick={() => {
+                          closeMenu();
+                          onDueDateClick?.();
+                        }}
+                      >
                         <Calendar1 size={15} className="text-base-content/50" />
                         <span className="flex-1">Due date</span>
-                        <input
-                          type="date"
-                          value={task.due_date ? task.due_date.slice(0, 10) : ""}
-                          onChange={(e) => {
-                            updateMutation.mutate({
-                              due_date: e.target.value
-                                ? new Date(e.target.value).toISOString()
-                                : undefined,
-                            });
-                            closeMenu();
-                          }}
-                          className="w-3 opacity-0"
-                        />
-                      </label>
+                      </button>
                     </>
                   )}
 

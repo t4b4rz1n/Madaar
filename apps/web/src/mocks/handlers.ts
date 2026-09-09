@@ -109,6 +109,7 @@ export const handlers = [
   http.get(`${apiUrl}/reports/manager/dashboard/`, () => {
     const dashboard: ManagerDashboard = {
       team_member_count: 6,
+      managed_team_count: 2,
       task_stats: [
         { status_code: "todo", status_name: "To do", count: 12 },
         { status_code: "doing", status_name: "In progress", count: 7 },
@@ -192,10 +193,10 @@ export const handlers = [
             role_id: user.role_id ?? null,
             role: userRole
               ? {
-                  id: String(userRole.id),
-                  name: userRole.name,
-                  permissions: userRole.permissions,
-                }
+                id: String(userRole.id),
+                name: userRole.name,
+                permissions: userRole.permissions,
+              }
               : null,
             profile_image_url: user.avatar,
           },
@@ -1076,14 +1077,13 @@ export const handlers = [
       { id: "13", code: "task.review", name: "Review & Approve Tasks", module: "tasks" },
       { id: "14", code: "board.view", name: "View Kanban Boards", module: "tasks" },
       { id: "15", code: "board.manage", name: "Manage Boards & Columns", module: "tasks" },
-      { id: "16", code: "attendance.view", name: "View Personal Attendance", module: "attendance" },
-      { id: "17", code: "attendance.view_all", name: "View All Member Attendances", module: "attendance" },
-      { id: "18", code: "leave.approve", name: "Approve & Reject Leave Requests", module: "attendance" },
-      { id: "19", code: "finance.manage", name: "Manage Payroll & Financial Records", module: "billing" },
-      { id: "20", code: "finance.view_reports", name: "View Financial Reports", module: "billing" },
-      { id: "21", code: "notification.view", name: "View Notifications", module: "automations" },
-      { id: "22", code: "automation.manage", name: "Manage Automation Rules", module: "automations" },
-      { id: "23", code: "report.view", name: "View Executive & Manager Reports", module: "reports" },
+      { id: "16", code: "attendance.view_all", name: "View All Member Attendances", module: "attendance" },
+      { id: "17", code: "leave.approve", name: "Approve & Reject Leave Requests", module: "attendance" },
+      { id: "18", code: "finance.manage", name: "Manage Payroll & Financial Records", module: "billing" },
+      { id: "19", code: "finance.view_reports", name: "View Financial Reports", module: "billing" },
+      { id: "20", code: "notification.view", name: "View Notifications", module: "automations" },
+      { id: "21", code: "automation.manage", name: "Manage Automation Rules", module: "automations" },
+      { id: "22", code: "report.view", name: "View Executive & Manager Reports", module: "reports" },
     ];
     return HttpResponse.json({
       status: true,

@@ -75,10 +75,11 @@ for i, name in enumerate(team_names):
     org_members = [m.user for m in org.memberships.all()]
     if org_members:
         # First member is lead
-        TeamMembership.objects.get_or_create(user=org_members[0], team=team, role="lead")
-        # Rest are members
-        for member in org_members[1:]:
-            TeamMembership.objects.get_or_create(user=member, team=team, role="member")
+        team.leader = org_members[0]
+        team.save(update_fields=["leader"])
+        # Add everyone to team
+        for member in org_members:
+            TeamMembership.objects.get_or_create(user=member, team=team)
 
     teams.append(team)
 

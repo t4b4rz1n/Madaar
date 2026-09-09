@@ -106,7 +106,7 @@ services:
         VITE_API_TIMEOUT: "30000"
     container_name: madar_web
     ports:
-      - "3000:80"
+      - "3001:80"
     depends_on:
       - api
     restart: unless-stopped

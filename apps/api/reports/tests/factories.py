@@ -61,7 +61,6 @@ class TeamMembershipFactory(factory.django.DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     team = factory.SubFactory(TeamFactory)
-    role = TeamMembership.Role.MEMBER
 
 
 class ProjectFactory(factory.django.DjangoModelFactory):

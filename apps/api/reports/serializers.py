@@ -137,6 +137,7 @@ class ProjectSummarySerializer(serializers.Serializer):
 
 class ManagerDashboardSerializer(serializers.Serializer):
     team_member_count = serializers.IntegerField()
+    managed_team_count = serializers.IntegerField()
     task_stats = TaskStatSerializer(many=True)
     overdue_summary = OverdueSummarySerializer()
     work_hours = MemberWorkHoursSerializer(many=True)

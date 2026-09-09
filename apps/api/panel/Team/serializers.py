@@ -43,19 +43,11 @@ class TeamSerializer(serializers.ModelSerializer):
         return not obj.is_deleted
 
     def get_lead_id(self, obj):
-        membership = TeamMembership.objects.filter(
-            team=obj, role=TeamMembership.Role.LEAD, is_deleted=False
-        ).first()
-        return str(membership.user_id) if membership else None
+        return str(obj.leader_id) if obj.leader_id else None
 
     def get_leader_details(self, obj):
-        membership = (
-            TeamMembership.objects.filter(team=obj, role=TeamMembership.Role.LEAD, is_deleted=False)
-            .select_related("user")
-            .first()
-        )
-        if membership and membership.user:
-            return LeaderDetailsSerializer(membership.user).data
+        if obj.leader:
+            return LeaderDetailsSerializer(obj.leader).data
         return None
 
     def create(self, validated_data):
@@ -77,6 +69,9 @@ class TeamSerializer(serializers.ModelSerializer):
                             {"organization": "No organization found."}
                         )
 
+        if lead_id:
+            validated_data["leader_id"] = lead_id
+
         team = super().create(validated_data)
 
         if lead_id:
@@ -85,7 +80,7 @@ class TeamSerializer(serializers.ModelSerializer):
                 TeamMembership.objects.update_or_create(
                     team=team,
                     user=user,
-                    defaults={"role": TeamMembership.Role.LEAD, "is_deleted": False},
+                    defaults={"is_deleted": False},
                 )
 
         return team
@@ -94,21 +89,20 @@ class TeamSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         lead_id = request.data.get("lead_id") if request else None
         validated_data.pop("is_active", None)
+        
+        if lead_id is not None:
+            validated_data["leader_id"] = lead_id if lead_id else None
 
         team = super().update(instance, validated_data)
 
-        if lead_id is not None:
-            TeamMembership.objects.filter(team=team, role=TeamMembership.Role.LEAD).update(
-                role=TeamMembership.Role.MEMBER
-            )
-            if lead_id:
-                user = User.objects.filter(id=lead_id).first()
-                if user:
-                    TeamMembership.objects.update_or_create(
-                        team=team,
-                        user=user,
-                        defaults={"role": TeamMembership.Role.LEAD, "is_deleted": False},
-                    )
+        if lead_id:
+            user = User.objects.filter(id=lead_id).first()
+            if user:
+                TeamMembership.objects.update_or_create(
+                    team=team,
+                    user=user,
+                    defaults={"is_deleted": False},
+                )
 
         return team
 
@@ -123,7 +117,6 @@ class TeamMembershipSerializer(serializers.ModelSerializer):
             "team",
             "user",
             "user_details",
-            "role",
             "created_at",
             "updated_at",
         )

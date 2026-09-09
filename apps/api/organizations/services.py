@@ -62,6 +62,12 @@ class PermissionService:
             else:
                 user_perms.update(DEFAULT_ORG_PERMISSIONS)
 
+        # 3. Dynamic Team Leader Permissions
+        from .models import Team
+        from .constants import TEAM_LEAD_PERMISSIONS
+        if Team.objects.filter(leader=user, organization_id=organization_id, is_deleted=False).exists():
+            user_perms.update(TEAM_LEAD_PERMISSIONS)
+
         user._cached_user_org_perms[cache_key] = user_perms
         return user_perms
 

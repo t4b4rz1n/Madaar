@@ -13,9 +13,10 @@ interface SortableTaskProps {
   onMarkDone?: (taskId: string | number) => void;
   onToggleDone?: (taskId: string | number) => void;
   activeTimer?: TimeLog | null;
+  onDueDateClick?: () => void;
 }
 
-export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone, onToggleDone, activeTimer }) => {
+export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPlayTimer, onStopTimer, onMarkDone, onToggleDone, activeTimer, onDueDateClick }) => {
   const {
     attributes,
     listeners,
@@ -39,7 +40,7 @@ export const SortableTask: React.FC<SortableTaskProps> = ({ task, onClick, onPla
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onClick={onClick} onPlayTimer={onPlayTimer} onStopTimer={onStopTimer} onMarkDone={onMarkDone} onToggleDone={onToggleDone} activeTimer={activeTimer} />
+      <TaskCard task={task} onClick={onClick} onPlayTimer={onPlayTimer} onStopTimer={onStopTimer} onMarkDone={onMarkDone} onToggleDone={onToggleDone} activeTimer={activeTimer} onDueDateClick={onDueDateClick} />
     </div>
   );
 };

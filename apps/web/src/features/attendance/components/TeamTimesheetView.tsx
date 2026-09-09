@@ -31,7 +31,7 @@ export const TeamTimesheetView: React.FC = () => {
   const userMap = new Map<string, { total: number, days: Record<string, number> }>();
 
   timesheet.forEach(entry => {
-    const username = entry.user__username || 'Unknown';
+    const username = entry.username || 'Unknown';
     if (!userMap.has(username)) {
       userMap.set(username, { total: 0, days: {} });
     }
@@ -41,6 +41,7 @@ export const TeamTimesheetView: React.FC = () => {
   });
 
   const users = Array.from(userMap.entries()).map(([name, data]) => ({ name, ...data }));
+  const teamTotalSeconds = users.reduce((acc, user) => acc + user.total, 0);
 
   // Generate week dates for headers
   const weekDates = [...Array(7)].map((_, i) => addDays(currentWeek, i));
@@ -57,7 +58,19 @@ export const TeamTimesheetView: React.FC = () => {
           <div><h2 className="text-base font-semibold text-base-content">Team weekly timesheet</h2><p className="mt-1 text-xs text-base-content/45">Compare logged hours across the week.</p></div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 p-1">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          {users.length > 0 && (
+            <div className="flex items-center gap-2 rounded-xl border border-success/20 bg-success/5 px-3 py-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-success/70">
+                Team Total:
+              </span>
+              <span className="font-mono text-sm font-black text-success">
+                {formatDuration(teamTotalSeconds)}
+              </span>
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 p-1">
           <button type="button" onClick={prevWeek} className="grid size-8 place-items-center rounded-lg text-base-content/45 transition-colors hover:bg-base-100 hover:text-base-content">
             <ArrowLeft2 size={18} />
           </button>
@@ -68,6 +81,7 @@ export const TeamTimesheetView: React.FC = () => {
             <ArrowRight2 size={18} />
           </button>
         </div>
+      </div>
       </div>
 
       <div className="p-0 overflow-x-auto">

@@ -53,7 +53,7 @@ class AutomationRule(BaseModel):
         default=list,
         blank=True,
         help_text=_(
-            "List of recipient roles, e.g. ['owner', 'admins', 'team_leads', 'assignee', 'reporter']"
+            "List of recipient roles, e.g. ['owner', 'admins', 'assignee', 'reporter']"
         ),
     )
 

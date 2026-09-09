@@ -74,7 +74,7 @@ export const drawerItems: DrawerItem[] = [
     link: "attendance",
     section: "Workspace",
     icon: <Timer1 variant="Outline" />,
-    permissions: ["attendance.view", "attendance.view_all", "leave.approve"],
+    defaultForMembers: true,
     isPrimary: true,
   },
   {

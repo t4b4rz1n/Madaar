@@ -41,6 +41,8 @@ interface TaskSheetProps {
   onStopTimer?: (taskId: string | number) => void;
   activeTimer?: TimeLog | null;
   focusMode?: boolean;
+  focusDueDate?: boolean;
+  onFocusDueDateHandled?: () => void;
 }
 
 const spring = { type: "spring" as const, stiffness: 420, damping: 38, bounce: 0 };
@@ -84,12 +86,15 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   onStopTimer,
   activeTimer,
   focusMode = false,
+  focusDueDate = false,
+  onFocusDueDateHandled,
 }) => {
   const queryClient = useQueryClient();
   const titleRef = useRef<HTMLInputElement>(null);
   const sheetRef = useRef<HTMLElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dueDateInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState(task?.title || "");
   const [description, setDescription] = useState(task?.description || "");
@@ -242,12 +247,26 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     };
   }, [task, onClose]);
 
+  // Focus due date input when opened from the card menu's "Due date" action
+  useEffect(() => {
+    if (!focusDueDate || !task) return;
+    const timer = window.setTimeout(() => {
+      dueDateInputRef.current?.focus();
+      dueDateInputRef.current?.showPicker?.();
+      onFocusDueDateHandled?.();
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [focusDueDate, task, onFocusDueDateHandled]);
+
+
+
   const invalidateTaskDetails = () => {
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
     queryClient.invalidateQueries({ queryKey: ["taskChecklists", taskId] });
     queryClient.invalidateQueries({ queryKey: ["taskComments", taskId] });
     queryClient.invalidateQueries({ queryKey: ["taskActivities", taskId] });
   };
+
 
   const updateMutation = useMutation({
     mutationFn: (patch: Partial<Task>) => updateTask(task!.id, patch),
@@ -455,6 +474,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
             <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[11px] font-semibold text-base-content/70 hover:bg-base-200 transition">
               <Calendar size={13} className="me-1.5 text-base-content/45 shrink-0" />
               <input
+                ref={dueDateInputRef}
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => {

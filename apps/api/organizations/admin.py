@@ -14,10 +14,10 @@ class OrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ("name", "organization", "parent_team", "created_at")
+    list_display = ("name", "organization", "leader", "parent_team", "created_at")
     list_filter = ("organization", "parent_team")
     search_fields = ("name", "description", "organization__name")
-    raw_id_fields = ("organization", "parent_team")
+    raw_id_fields = ("organization", "parent_team", "leader")
 
 
 @admin.register(OrganizationMembership)
@@ -30,7 +30,7 @@ class OrganizationMembershipAdmin(admin.ModelAdmin):
 
 @admin.register(TeamMembership)
 class TeamMembershipAdmin(admin.ModelAdmin):
-    list_display = ("user", "team", "role", "created_at")
-    list_filter = ("role", "team")
+    list_display = ("user", "team", "created_at")
+    list_filter = ("team",)
     search_fields = ("user__username", "user__email", "team__name")
     raw_id_fields = ("user", "team")

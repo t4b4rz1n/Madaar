@@ -316,7 +316,7 @@ class TasksRBACTestCase(APITestCase):
         OrganizationMembership.objects.create(
             user=self.lead,
             organization=self.org,
-            role=OrganizationMembership.Role.TEAM_LEAD,
+            role=OrganizationMembership.Role.EMPLOYEE,
         )
 
         self.employee = User.objects.create_user("emp_user", "emp@test.com", "Pass123!")

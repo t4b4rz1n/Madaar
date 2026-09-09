@@ -11,7 +11,8 @@ import { TimeOffRequestForm } from '../components/TimeOffRequestForm';
 import { TimeOffRequestList } from '../components/TimeOffRequestList';
 import { HolidayCalendar } from '../components/HolidayCalendar';
 import { TeamTimesheetView } from '../components/TeamTimesheetView';
-import { getTasks } from '../../tasks/api/tasksApi';
+import { getTasks, getBoards } from '../../tasks/api/tasksApi';
+import { getProjects } from '../../projects/api/projectsApi';
 import { useTaskStore } from '../../tasks/store/useTaskStore';
 import type { Task } from '../../tasks/types';
 import { usePermissions } from '../../auth/hooks/usePermissions';
@@ -27,7 +28,7 @@ const tabs: { id: AttendanceTab; label: string; helper: string; icon: typeof Tim
 
 export const AttendancePage: React.FC = () => {
   const { activeOrganizationId, setActiveOrganization } = useAttendanceStore();
-  const { activeProjectId, activeBoardId } = useTaskStore();
+  const { activeProjectId, activeBoardId, setActiveProject, setActiveBoard } = useTaskStore();
   const [activeTab, setActiveTab] = useState<AttendanceTab>('overview');
 
   const { data: organizations = [] } = useQuery({
@@ -35,6 +36,42 @@ export const AttendancePage: React.FC = () => {
     queryFn: getOrganizations,
   });
 
+  // ── Project & Board selectors ──────────────────────────────────────────────
+  const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
+    queryKey: ['attendanceProjects'],
+    queryFn: () => getProjects(),
+  });
+
+  const { data: boards = [], isLoading: isLoadingBoards } = useQuery({
+    queryKey: ['attendanceBoards', activeProjectId],
+    queryFn: () => getBoards(activeProjectId!),
+    enabled: Boolean(activeProjectId),
+  });
+
+  // Auto-select first project if nothing is selected
+  useEffect(() => {
+    if (projects.length > 0 && !activeProjectId) {
+      setActiveProject(String(projects[0].id));
+    }
+  }, [projects, activeProjectId, setActiveProject]);
+
+  // Auto-select first board when project changes or boards load
+  useEffect(() => {
+    if (boards.length > 0 && !activeBoardId) {
+      setActiveBoard(String(boards[0].id));
+    }
+  }, [boards, activeBoardId, setActiveBoard]);
+
+  // Re-select first board when project changes (activeBoardId reset by store)
+  const prevProjectRef = React.useRef(activeProjectId);
+  useEffect(() => {
+    if (prevProjectRef.current !== activeProjectId) {
+      prevProjectRef.current = activeProjectId;
+      if (boards.length > 0) setActiveBoard(String(boards[0].id));
+    }
+  }, [activeProjectId, boards, setActiveBoard]);
+
+  // ── Tasks ──────────────────────────────────────────────────────────────────
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ['attendanceTasks', activeProjectId, activeBoardId],
     queryFn: () => getTasks(activeProjectId!, activeBoardId!, 100),
@@ -51,7 +88,6 @@ export const AttendancePage: React.FC = () => {
   }, [organizations, activeOrganizationId, setActiveOrganization]);
 
   const { hasAnyPermission } = usePermissions();
-  // مدیر بودن بر اساس پرمیشن واقعی، نه is_staff
   const isManager = hasAnyPermission(['attendance.view_all', 'leave.approve']);
   const visibleTabs = tabs.filter((tab) => tab.id !== 'team' || isManager);
   const activeTabMeta = visibleTabs.find((tab) => tab.id === activeTab) || visibleTabs[0];
@@ -71,7 +107,47 @@ export const AttendancePage: React.FC = () => {
               Track work hours, manage timesheets and time off requests.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+
+            {/* ── Project selector ── */}
+            <label className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-wider">
+                Project
+              </span>
+              <select
+                value={activeProjectId || ''}
+                onChange={(e) => {
+                  setActiveProject(e.target.value || null);
+                }}
+                disabled={isLoadingProjects}
+                className="h-8.5 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-semibold text-base-content outline-none focus:border-primary/40 disabled:opacity-50"
+              >
+                <option value="" disabled>Select project</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={String(p.id)}>{p.name}</option>
+                ))}
+              </select>
+            </label>
+
+            {/* ── Board selector ── */}
+            <label className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-wider">
+                Board
+              </span>
+              <select
+                value={activeBoardId || ''}
+                onChange={(e) => setActiveBoard(e.target.value || null)}
+                disabled={!activeProjectId || isLoadingBoards}
+                className="h-8.5 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-semibold text-base-content outline-none focus:border-primary/40 disabled:opacity-50"
+              >
+                <option value="" disabled>Select board</option>
+                {boards.map((b) => (
+                  <option key={b.id} value={String(b.id)}>{b.title}</option>
+                ))}
+              </select>
+            </label>
+
+            {/* ── Org selector (only if multiple orgs) ── */}
             {organizations.length > 1 ? (
               <label className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-wider">
@@ -82,13 +158,9 @@ export const AttendancePage: React.FC = () => {
                   onChange={(event) => setActiveOrganization(event.target.value)}
                   className="h-8.5 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-semibold text-base-content outline-none focus:border-primary/40"
                 >
-                  <option value="" disabled>
-                    Select org
-                  </option>
+                  <option value="" disabled>Select org</option>
                   {organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.name}
-                    </option>
+                    <option key={org.id} value={org.id}>{org.name}</option>
                   ))}
                 </select>
               </label>
@@ -152,3 +224,4 @@ export const AttendancePage: React.FC = () => {
 };
 
 export default AttendancePage;
+
