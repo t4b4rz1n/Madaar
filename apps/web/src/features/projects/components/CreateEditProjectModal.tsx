@@ -51,7 +51,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     name: "",
     organization_id: "",
     description: "",
-    prefix: "",
     color: PROJECT_COLORS[0].value,
     budget: "",
     budget_currency: "IRR",
@@ -71,7 +70,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             ? String(project.organization.id)
             : String(project.organization || ""),
         description: project.description || "",
-        prefix: project.prefix || "",
         color: sanitizeColor(project.color),
         budget: project.budget ? String(project.budget) : "",
         budget_currency: project.budget_currency || "IRR",
@@ -84,7 +82,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         name: "",
         organization_id: "",
         description: "",
-        prefix: "",
         color: PROJECT_COLORS[0].value,
         budget: "",
         budget_currency: "IRR",
@@ -131,7 +128,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       name: formData.name,
       organization_id: selectedOrgId,
       description: formData.description || undefined,
-      prefix: formData.prefix || undefined,
       color: sanitizeColor(formData.color),
       budget: formData.budget ? Number(formData.budget) : undefined,
       budget_currency: formData.budget_currency,
@@ -249,36 +245,20 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Project Name <span className="text-error">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                dir="auto"
-                required
-                placeholder="e.g. Madaar System"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Key Prefix
-              </label>
-              <input
-                type="text"
-                name="prefix"
-                maxLength={10}
-                placeholder="MAD"
-                value={formData.prefix}
-                onChange={handleChange}
-                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all uppercase placeholder:text-base-content/35"
-              />
-            </div>
+          <div>
+            <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+              Project Name <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              dir="auto"
+              required
+              placeholder="e.g. Madaar System"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+            />
           </div>
 
           <div>
@@ -294,6 +274,81 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
               onChange={handleChange}
               className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35 resize-none"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                Budget
+              </label>
+              <div className="flex">
+                <input
+                  type="number"
+                  name="budget"
+                  min="0"
+                  placeholder="0.00"
+                  value={formData.budget}
+                  onChange={handleChange}
+                  className="w-full h-9.5 rounded-l-xl border border-r-0 border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                />
+                <select
+                  name="budget_currency"
+                  value={formData.budget_currency}
+                  onChange={handleChange}
+                  className="h-9.5 rounded-r-xl border border-base-content/10 bg-base-200/50 px-2 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
+                >
+                  <option value="IRR">IRR</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </div>
+            {project && (
+              <div>
+                <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="on_hold">On Hold</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                Start Date
+              </label>
+              <input
+                type="date"
+                name="start_date"
+                value={formData.start_date}
+                onChange={handleChange}
+                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                Deadline
+              </label>
+              <input
+                type="date"
+                name="deadline"
+                value={formData.deadline}
+                onChange={handleChange}
+                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
+              />
+            </div>
           </div>
 
           {/* Color Theme Selector */}

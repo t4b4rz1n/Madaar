@@ -134,6 +134,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['activeTimers'] });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
@@ -154,6 +155,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 
@@ -183,6 +185,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       setAddingTaskToStatusId(null);
       setNewTaskTitle('');
       setNewTaskPriority('low');
@@ -230,6 +233,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['activeTimers'] });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
@@ -271,6 +275,7 @@ export const KanbanBoard: React.FC = () => {
         }));
       }
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['activeTimers'] });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['active-timer'] });
@@ -344,6 +349,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     }
   });
 

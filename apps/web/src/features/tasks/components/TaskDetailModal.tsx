@@ -92,6 +92,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       }
 
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       // Delay activity log refresh to ensure the backend signal + log write has completed
       // This is necessary because signals (e.g. Telegram notifications) may run synchronously
       // in EAGER mode and delay the DB commit of the activity log.
@@ -115,6 +116,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
     onError: (error: any) => {
       toast.error(error.message || error.response?.data?.detail || 'Failed to add comment.');
@@ -127,6 +129,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['taskChecklists', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       setNewChecklistText('');
       setIsAddingChecklist(false);
     },
@@ -142,6 +145,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['taskChecklists', task.id] });
       queryClient.invalidateQueries({ queryKey: ['taskActivities', task.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
     onError: (error: any) => {
       toast.error(error.message || error.response?.data?.detail || 'Failed to toggle checklist item.');
@@ -152,6 +156,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
     mutationFn: () => deleteTask(task.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       onClose();
     },
     onError: (error: any) => {
@@ -177,6 +182,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       setDeletingCommentId(null);
       queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
     onError: (error: any) => {
       toast.error(error.message || error.response?.data?.detail || 'Failed to delete comment.');

@@ -17,6 +17,7 @@ import {
   useProjectMilestones,
   useProjectActivities,
   useRemoveProjectMember,
+  useUpdateProject,
 } from "../hooks/useProjects";
 import type { ProjectMember, Milestone, ProjectActivity } from "../types";
 import { useTaskStore } from "../../tasks/store/useTaskStore";
@@ -70,7 +71,22 @@ const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
 ];
 
 export default function ProjectDetailsPage() {
-  const { id } = useParams<{ id: string }>();
+  
+  const updateProjectMutation = useUpdateProject();
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!project) return;
+    const newStatus = e.target.value as any;
+    updateProjectMutation.mutate({ id: project.id, data: { status: newStatus } }, {
+      onSuccess: () => {
+        toast.success("Project status updated.");
+      },
+      onError: () => {
+        toast.error("Failed to update status.");
+      }
+    });
+  };
+const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const setActiveProject = useTaskStore((state) => state.setActiveProject);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
@@ -190,13 +206,20 @@ export default function ProjectDetailsPage() {
               <h1 dir="auto" className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
                 {project.name}
               </h1>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold capitalize ${
+              <select
+                value={project.status}
+                onChange={handleStatusChange}
+                disabled={updateProjectMutation.isPending}
+                className={`cursor-pointer appearance-none rounded-full px-2.5 py-0.5 text-[10px] font-bold capitalize outline-none transition-all ${
                   statusStyles[project.status] || statusStyles.draft
                 }`}
               >
-                {project.status.replace("_", " ")}
-              </span>
+                <option value="draft">Draft</option>
+                <option value="active">Active</option>
+                <option value="on_hold">On Hold</option>
+                <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
+              </select>
             </div>
             {project.description && (
               <p dir="auto" className="mt-0.5 text-xs text-base-content/50 line-clamp-1">
