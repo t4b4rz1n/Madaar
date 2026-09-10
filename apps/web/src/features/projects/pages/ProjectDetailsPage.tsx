@@ -109,10 +109,10 @@ function StatusDropdown({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1 cursor-pointer appearance-none rounded-full px-2.5 py-0.5 text-[10px] font-bold capitalize outline-none transition-all ${statusStyles[currentStatus] || statusStyles.draft}`}
+        className={`inline-flex items-center gap-1.5 cursor-pointer appearance-none rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide outline-none transition-all hover:opacity-80 ${statusStyles[currentStatus] || statusStyles.draft}`}
       >
         {selectedOption.label}
-        <ArrowDown2 size={10} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ArrowDown2 size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence>
         {open && (

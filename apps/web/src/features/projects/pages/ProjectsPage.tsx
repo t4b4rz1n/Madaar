@@ -291,8 +291,7 @@ function ProjectCard({
       layout
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.25, type: "spring", bounce: 0.2 }}
       onClick={onClick}
       className="group relative cursor-pointer overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl"
     >
@@ -309,7 +308,7 @@ function ProjectCard({
             {project.name}
           </h2>
           <div className="flex items-center gap-2">
-            <span className={`rounded-lg px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cfg.bgClass} ${cfg.textColor}`}>
+            <span className={`rounded-lg px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${cfg.bgClass} ${cfg.textColor}`}>
               {cfg.label}
             </span>
             {canManage && (
