@@ -12,6 +12,7 @@ import {
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { Pie, PieChart, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import {
   archiveProject,
@@ -36,16 +37,6 @@ const statusConfig: Record<
   archived:  { label: "Archived",   bgClass: "bg-red-500/20 text-red-100" },
 };
 
-const presetColors = [
-  "linear-gradient(135deg, #b39ddb, #9fa8da)",
-  "linear-gradient(135deg, #81d4fa, #80cbc4)",
-  "linear-gradient(135deg, #a5d6a7, #c5e1a5)",
-  "linear-gradient(135deg, #ffcc80, #f48fb1)",
-  "linear-gradient(135deg, #ce93d8, #e1bee7)",
-  "linear-gradient(135deg, #90caf9, #b2dfdb)",
-  "linear-gradient(135deg, #ef9a9a, #ffcc80)",
-  "linear-gradient(135deg, #bcaaa4, #ffe0b2)",
-];
 
 // Dropdown menu for project card actions
 function ProjectActionMenu({
@@ -125,6 +116,123 @@ function ProjectActionMenu({
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+
+function ProjectCard({
+  project,
+  onEdit,
+  onDelete,
+  onComplete,
+  onArchive,
+  onClick,
+  canManage,
+}: {
+  project: Project;
+  onEdit: () => void;
+  onDelete: () => void;
+  onComplete: () => void;
+  onArchive: () => void;
+  onClick: () => void;
+  canManage: boolean;
+}) {
+  const cfg = statusConfig[project.status];
+  const taskCount = project.task_count || 0;
+  const memberCount = project.member_count ?? project.members_count ?? 0;
+
+  const progress = project.progress_percentage || 0;
+  const completedTasks = project.completed_task_count || 0;
+  const projectColor = project.color || "#6366f1";
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      onClick={onClick}
+      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl"
+    >
+      {/* Subtle Halo effect on the right side */}
+      <div 
+        className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-10 blur-[40px] pointer-events-none transition-opacity duration-300 group-hover:opacity-20"
+        style={{ backgroundColor: projectColor }}
+      />
+      
+      {/* Content wrapper to stay above the halo */}
+      <div className="relative z-10">
+        <div className="flex items-start justify-between gap-3">
+          <h2 dir="auto" className="flex-1 text-xl font-bold tracking-tight text-base-content">
+            {project.name}
+          </h2>
+          <div className="flex items-center gap-2">
+            <span className={`rounded-lg px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cfg.bgClass.replace(/text-\w+-\d+/, "text-base-content")}`}>
+              {cfg.label}
+            </span>
+            {canManage && (
+              <ProjectActionMenu
+                project={project}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onComplete={onComplete}
+                onArchive={onArchive}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-base-content/45">
+              Tasks Progress
+            </p>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-base-content">
+                {completedTasks}
+              </span>
+              <span className="text-sm font-medium text-base-content/50">
+                / {taskCount} Done
+              </span>
+            </div>
+          </div>
+
+          <div className="relative">
+            <ResponsiveContainer width={70} height={70}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { value: progress, fill: projectColor },
+                    { value: 100 - progress, fill: "color-mix(in srgb, currentColor 10%, transparent)" },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={24}
+                  outerRadius={32}
+                  startAngle={90}
+                  endAngle={-270}
+                  dataKey="value"
+                  strokeWidth={0}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs font-bold text-base-content">{progress}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 text-xs text-base-content/50">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span className="font-medium">{memberCount} members</span>
+        </div>
+      </div>
+    </motion.article>
   );
 }
 
@@ -269,7 +377,7 @@ export default function ProjectsPage() {
 
       {/* Grid of Simple Project Cards */}
       {projectsQuery.isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
             <div key={item} className="h-40 animate-pulse rounded-2xl bg-base-200/70" />
           ))}
@@ -307,76 +415,34 @@ export default function ProjectsPage() {
           )}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           <AnimatePresence mode="popLayout">
-            {projects.map((project, idx) => {
-              const rawColor = project.color || presetColors[idx % presetColors.length];
-              const bgGradient = rawColor.startsWith("#") ? `linear-gradient(135deg, ${rawColor}, ${rawColor}dd)` : rawColor;
-              const cfg = statusConfig[project.status];
-
-              return (
-                <motion.article
-                  layout
-                  key={project.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  onClick={() => openDetailsPage(project.id)}
-                  className="group relative flex h-40 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl p-4 text-center border border-base-content/6 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
-                  style={{ background: bgGradient }}
-                >
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition duration-300" />
-
-                  {/* Header: Status badge + Actions */}
-                  <div className="relative z-10 flex items-center justify-between">
-                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider backdrop-blur-xs ${cfg.bgClass}`}>
-                      {cfg.label}
-                    </span>
-
-                    {/* منوی اکشن - فقط برای مدیران */}
-                    {canManageProject && (
-                      <ProjectActionMenu
-                        project={project}
-                        onEdit={() => handleEditProject(project)}
-                        onDelete={() => handleDeleteClick(project)}
-                        onComplete={() =>
-                          lifecycleMutation.mutate({ id: project.id, action: "complete" })
-                        }
-                        onArchive={() =>
-                          lifecycleMutation.mutate({ id: project.id, action: "archive" })
-                        }
-                      />
-                    )}
-                  </div>
-
-                  {/* Large Centered Project Name */}
-                  <div className="relative z-10 my-auto flex flex-1 items-center justify-center px-3">
-                    <h2
-                      dir="auto"
-                      className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight text-center drop-shadow-md"
-                    >
-                      {project.name}
-                    </h2>
-                  </div>
-
-                  {/* Footer: Tasks & Members info */}
-                  <div className="relative z-10 flex items-center justify-between text-[10px] font-bold text-white/80">
-                    <span>{project.task_count || 0} tasks</span>
-                    <span>{project.member_count ?? project.members_count ?? 0} members</span>
-                  </div>
-                </motion.article>
-              );
-            })}
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onEdit={() => handleEditProject(project)}
+                onDelete={() => handleDeleteClick(project)}
+                onComplete={() =>
+                  lifecycleMutation.mutate({ id: project.id, action: "complete" })
+                }
+                onArchive={() =>
+                  lifecycleMutation.mutate({ id: project.id, action: "archive" })
+                }
+                onClick={() => openDetailsPage(project.id)}
+                canManage={canManageProject}
+              />
+            ))}
           </AnimatePresence>
 
-          {/* کارت اضافه کردن پروژه - فقط برای کاربران با پرمیشن */}
+          {/* Add New Project Card */}
           {canCreateProject && (
             <button
               type="button"
               onClick={handleCreateProject}
-              className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-base-content/15 bg-base-100/50 text-base-content/40 transition hover:border-base-content/25 hover:bg-base-100 hover:text-base-content"
+              className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-base-content/15 bg-base-100 text-base-content/40 transition-all hover:border-primary/30 hover:bg-base-content/5 hover:text-primary"
             >
-              <Add size={24} />
+              <Add size={28} />
               <span className="text-sm font-bold">New Project</span>
             </button>
           )}
