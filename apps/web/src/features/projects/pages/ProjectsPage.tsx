@@ -1,5 +1,7 @@
-import { AnimatePresence, motion } from "framer-motion";
 import {
+AnimatePresence, motion } from "framer-motion";
+import {
+  FilterSearch,
   Add,
   Archive,
   Edit2,
@@ -35,6 +37,80 @@ const statusConfig: Record<
   completed: { label: "Completed",  bgClass: "bg-blue-500/20", textColor: "text-blue-600" },
   archived:  { label: "Archived",   bgClass: "bg-red-500/20", textColor: "text-red-600" },
 };
+
+
+const statusFilterOptions = [
+  { value: "all", label: "All Projects" },
+  { value: "active", label: "Active" },
+  { value: "draft", label: "Draft" },
+  { value: "on_hold", label: "On Hold" },
+  { value: "completed", label: "Completed" },
+  { value: "archived", label: "Archived" },
+];
+
+function StatusFilterDropdown({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selectedOption = statusFilterOptions.find((opt) => opt.value === value) || statusFilterOptions[0];
+
+  // Close on outside click
+  useMemo(() => {
+    const listener = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", listener);
+    return () => document.removeEventListener("mousedown", listener);
+  }, []);
+
+  return (
+    <div className="relative z-20" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex h-9.5 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3.5 text-xs font-semibold text-base-content transition-all hover:border-primary/30"
+      >
+        <FilterSearch size={15} className="text-base-content/60" />
+        <span>{selectedOption.label}</span>
+        <ArrowDown2 size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-11 min-w-[160px] rounded-xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl"
+          >
+            {statusFilterOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition-colors hover:bg-base-content/5 ${
+                  value === opt.value ? "bg-primary/10 font-bold text-primary" : "font-medium text-base-content"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 const ProgressRing = ({
   radius,
@@ -277,6 +353,7 @@ export default function ProjectsPage() {
   const canManageProject = hasAnyPermission(["project.manage"]);
 
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -312,10 +389,13 @@ export default function ProjectsPage() {
     onError: () => toast.error("Could not update project status."),
   });
 
-  const projects = useMemo(
-    () => projectsQuery.data || [],
-    [projectsQuery.data],
-  );
+  const projects = useMemo(() => {
+    let list = projectsQuery.data || [];
+    if (statusFilter !== "all") {
+      list = list.filter((p) => p.status === statusFilter);
+    }
+    return list;
+  }, [projectsQuery.data, statusFilter]);
 
   const openDetailsPage = (projectId: string | number) => {
     navigate(`/projects/${projectId}`);
@@ -393,6 +473,7 @@ export default function ProjectsPage() {
               </button>
             )}
           </label>
+          <StatusFilterDropdown value={statusFilter} onChange={setStatusFilter} />
           {/* دکمه New Project - فقط برای کاربران با پرمیشن */}
           {canCreateProject && (
             <button
@@ -432,11 +513,11 @@ export default function ProjectsPage() {
           </div>
           <h2 className="text-xl font-semibold">No projects found</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-base-content/55">
-            {search
-              ? `No projects matching "${search}"`
+            {search || statusFilter !== "all"
+              ? `No projects matching your filters`
               : "Create your first project to get started."}
           </p>
-          {!search && (
+          {!search && statusFilter === "all" && (
             <button
               type="button"
               onClick={handleCreateProject}
