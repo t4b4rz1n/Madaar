@@ -333,12 +333,12 @@ class ProjectMemberService:
             from organizations.models import TeamMembership
 
             team_memberships = TeamMembership.objects.filter(team=team, is_deleted=False).select_related("user")
-            
+
             # Optimization: Fetch existing project member user IDs to avoid N+1 queries
             existing_user_ids = set(
                 ProjectMember.objects.filter(
-                    project=project, 
-                    user__in=[tm.user_id for tm in team_memberships], 
+                    project=project,
+                    user__in=[tm.user_id for tm in team_memberships],
                     is_deleted=False
                 ).values_list("user_id", flat=True)
             )

@@ -32,7 +32,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import permissions
 from rest_framework.exceptions import ParseError
 
-from organizations.models import OrganizationMembership, TeamMembership
+from organizations.models import OrganizationMembership
 from organizations.services import PermissionService
 
 

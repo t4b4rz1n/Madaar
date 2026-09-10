@@ -17,7 +17,6 @@ from .factories import (
     TaskFactory,
     TaskStatusFactory,
     TeamFactory,
-    TeamMembership,
     TeamMembershipFactory,
     UserFactory,
 )

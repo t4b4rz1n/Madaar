@@ -2,14 +2,13 @@ from typing import Union
 
 from django.contrib.auth import get_user_model
 
-from organizations.models import OrganizationMembership
-
-User = get_user_model()
-
 from organizations.constants import (
     COMPATIBILITY_ROLE_PERMISSIONS_MAP,
     DEFAULT_ORG_PERMISSIONS,
 )
+from organizations.models import OrganizationMembership
+
+User = get_user_model()
 
 
 class PermissionService:
