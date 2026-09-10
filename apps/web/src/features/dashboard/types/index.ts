@@ -1,6 +1,8 @@
 export interface EmployeeTaskSummary {
   id: string;
   title: string;
+  description?: string | null;
+  is_overdue?: boolean;
   priority: "low" | "medium" | "high" | "critical" | string | null;
   due_date: string | null;
   status_name: string | null;
@@ -59,6 +61,8 @@ export interface EmployeeDashboard {
   upcoming_milestones: Array<{
     id: string;
     title: string;
+  description?: string | null;
+  is_overdue?: boolean;
     status: string;
     target_date: string;
     project_name: string;
