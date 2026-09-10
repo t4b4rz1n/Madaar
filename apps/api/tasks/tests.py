@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 
 from attendance.models import TimeLog
 from organizations.models import Organization, OrganizationMembership
-from projects.models import Project, ProjectMember
+from projects.models import Project, ProjectActivity, ProjectMember
 from tasks.cascade_services import TaskCascadeService
 from tasks.models import (
     AsyncStandup,
@@ -289,7 +289,7 @@ class ChecklistAndCommentTestCase(APITestCase):
         self.assertFalse(TaskChecklistItem.objects.filter(id=item_id).exists())
 
         logs = ProjectActivity.objects.filter(entity_type="task", entity_id=str(self.task.id))
-        actions = [log.action for log in logs]
+        actions = [log.metadata.get("action", "") for log in logs]
         self.assertTrue(any("Added checklist" in a for a in actions))
         self.assertTrue(any("Deleted checklist" in a for a in actions))
 
@@ -527,7 +527,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         self.assertEqual(task.reporter, self.user)
         activities = ProjectActivity.objects.filter(entity_type="task", entity_id=str(task.id))
         self.assertTrue(activities.exists())
-        self.assertIn("Task created", activities.first().action)
+        self.assertIn("Task created", activities.first().metadata.get("action", ""))
 
     def test_move_task_requires_timer_for_done(self):
         """A task without a timer CAN be moved to Done (limitation removed)."""
