@@ -12,7 +12,6 @@ import {
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Pie, PieChart, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import {
   archiveProject,
@@ -30,11 +29,65 @@ const statusConfig: Record<
   ProjectStatus,
   { label: string; bgClass: string }
 > = {
-  active:    { label: "Active",     bgClass: "bg-emerald-500/20 text-emerald-100" },
-  draft:     { label: "Draft",      bgClass: "bg-white/20 text-white" },
-  on_hold:   { label: "On Hold",    bgClass: "bg-amber-500/20 text-amber-100" },
-  completed: { label: "Completed",  bgClass: "bg-blue-500/20 text-blue-100" },
-  archived:  { label: "Archived",   bgClass: "bg-red-500/20 text-red-100" },
+  active:    { label: "Active",     bgClass: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-100" },
+  draft:     { label: "Draft",      bgClass: "bg-base-content/10 text-base-content/70" },
+  on_hold:   { label: "On Hold",    bgClass: "bg-amber-500/20 text-amber-700 dark:text-amber-100" },
+  completed: { label: "Completed",  bgClass: "bg-blue-500/20 text-blue-700 dark:text-blue-100" },
+  archived:  { label: "Archived",   bgClass: "bg-red-500/20 text-red-700 dark:text-red-100" },
+};
+
+const ProgressRing = ({
+  radius,
+  stroke,
+  progress,
+  color,
+}: {
+  radius: number;
+  stroke: number;
+  progress: number;
+  color: string;
+}) => {
+  const normalizedRadius = radius - stroke * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = Math.max(0, circumference - (progress / 100) * circumference);
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg
+        height={radius * 2}
+        width={radius * 2}
+        className="transform -rotate-90"
+      >
+        <circle
+          stroke="currentColor"
+          fill="transparent"
+          strokeWidth={stroke}
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+          className="opacity-10 text-base-content"
+        />
+        <circle
+          stroke={color}
+          fill="transparent"
+          strokeWidth={stroke}
+          strokeDasharray={circumference + " " + circumference}
+          style={{ strokeDashoffset }}
+          strokeLinecap="round"
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+          className="transition-all duration-1000 ease-in-out"
+          filter={`drop-shadow(0 0 4px ${color}80)`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xs font-black text-base-content">
+          {Math.round(progress)}%
+        </span>
+      </div>
+    </div>
+  );
 };
 
 
@@ -167,7 +220,7 @@ function ProjectCard({
             {project.name}
           </h2>
           <div className="flex items-center gap-2">
-            <span className={`rounded-lg px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cfg.bgClass.replace(/text-\w+-\d+/, "text-base-content")}`}>
+            <span className={`rounded-lg px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cfg.bgClass}`}>
               {cfg.label}
             </span>
             {canManage && (
@@ -197,28 +250,8 @@ function ProjectCard({
             </div>
           </div>
 
-          <div className="relative">
-            <ResponsiveContainer width={70} height={70}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { value: progress, fill: projectColor },
-                    { value: 100 - progress, fill: "color-mix(in srgb, currentColor 10%, transparent)" },
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={24}
-                  outerRadius={32}
-                  startAngle={90}
-                  endAngle={-270}
-                  dataKey="value"
-                  strokeWidth={0}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-bold text-base-content">{progress}%</span>
-            </div>
+          <div className="relative shrink-0">
+            <ProgressRing radius={30} stroke={4} progress={progress} color={projectColor} />
           </div>
         </div>
 
