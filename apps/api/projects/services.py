@@ -73,9 +73,13 @@ class ProjectService:
                 filter=Q(members__is_deleted=False),
                 distinct=True,
             ),
-            task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
-            completed_task_count=Count("tasks", filter=Q(tasks__is_deleted=False, tasks__is_finished=True)),
-            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False)),
+            task_count=Count("tasks", filter=Q(tasks__is_deleted=False), distinct=True),
+            completed_task_count=Count(
+                "tasks",
+                filter=Q(tasks__is_deleted=False, tasks__is_finished=True),
+                distinct=True
+            ),
+            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False), distinct=True),
         )
 
     @classmethod
