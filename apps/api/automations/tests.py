@@ -272,4 +272,3 @@ class TelegramBotLocalizationTests(TestCase):
         msg = mock_send_or_edit.call_args[0][1]
         self.assertIn("My Projects", msg)
         self.assertIn("You are currently not a member of any active project", msg)
-

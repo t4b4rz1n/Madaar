@@ -419,7 +419,6 @@ class TaskComment(BaseModel):
         return f"Comment {self.id} on Task {self.task_id}"
 
 
-
 class AsyncStandup(BaseModel):
     """
     Daily standup report by team members, tied to a Project.

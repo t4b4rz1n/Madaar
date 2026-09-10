@@ -4,7 +4,7 @@ from .models import (
     AsyncStandup,
     Board,
     Task,
-        TaskChecklistItem,
+    TaskChecklistItem,
     TaskComment,
     TaskStatus,
 )
