@@ -52,6 +52,7 @@ export interface Project {
   members_count?: number;
   teams_count?: number;
   task_count?: number;
+  completed_task_count?: number;
   milestone_count?: number;
   created_at?: string;
   updated_at?: string;
