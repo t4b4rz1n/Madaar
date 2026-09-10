@@ -4,8 +4,7 @@ from .models import (
     AsyncStandup,
     Board,
     Task,
-    TaskActivityLog,
-    TaskChecklistItem,
+        TaskChecklistItem,
     TaskComment,
     TaskStatus,
 )
@@ -155,25 +154,6 @@ class TaskCommentAdmin(admin.ModelAdmin):
     list_filter = ("is_deleted",)
     raw_id_fields = ("task", "author")
     search_fields = ("task__title", "author__username", "content")
-
-    def get_queryset(self, request):
-        return self.model.all_objects.all()
-
-    def delete_model(self, request, obj):
-        obj.hard_delete()
-
-    def delete_queryset(self, request, queryset):
-        for obj in queryset:
-            obj.hard_delete()
-
-
-@admin.register(TaskActivityLog)
-class TaskActivityLogAdmin(admin.ModelAdmin):
-    list_display = ("task", "board", "actor", "action", "created_at")
-    list_select_related = ("task", "board", "actor")
-    list_filter = ("created_at", "is_deleted")
-    raw_id_fields = ("task", "board", "actor")
-    search_fields = ("task__title", "board__title", "actor__username", "action")
 
     def get_queryset(self, request):
         return self.model.all_objects.all()

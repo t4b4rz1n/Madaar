@@ -20,7 +20,7 @@ from .models import (
     AsyncStandup,
     Board,
     Task,
-    TaskActivityLog,
+    
     TaskChecklistItem,
     TaskComment,
     TaskStatus,
@@ -33,12 +33,14 @@ from .permissions import (
     IsTaskPermission,
     IsTaskStatusPermission,
 )
+from projects.serializers import ProjectActivitySerializer
+from projects.models import ProjectActivity
 from .serializers import (
     AsyncStandupSerializer,
     BoardReorderSerializer,
     BoardSerializer,
     StatusReorderSerializer,
-    TaskActivityLogSerializer,
+    
     TaskChecklistItemSerializer,
     TaskCommentSerializer,
     TaskCreateUpdateSerializer,
@@ -134,14 +136,14 @@ class BoardViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="activities")
     def activities(self, request, pk=None):
         board = self.get_object()
-        logs = TaskActivityLog.objects.filter(board=board).select_related("board", "actor")
+        logs = ProjectActivity.objects.filter(entity_type=ProjectActivity.EntityType.BOARD, entity_id=str(board.id)).select_related("actor")
         page = self.paginate_queryset(logs)
         if page is not None:
-            serializer = TaskActivityLogSerializer(page, many=True, context={"request": request})
+            serializer = ProjectActivitySerializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
         return Response(
-            TaskActivityLogSerializer(logs, many=True, context={"request": request}).data
+            ProjectActivitySerializer(logs, many=True, context={"request": request}).data
         )
 
 
@@ -426,14 +428,14 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="activities")
     def activities(self, request, pk=None):
         task = self.get_object()
-        logs = TaskActivityLog.objects.filter(task=task).select_related("board", "actor")
+        logs = ProjectActivity.objects.filter(entity_type=ProjectActivity.EntityType.TASK, entity_id=str(task.id)).select_related("actor")
         page = self.paginate_queryset(logs)
         if page is not None:
-            serializer = TaskActivityLogSerializer(page, many=True, context={"request": request})
+            serializer = ProjectActivitySerializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
         return Response(
-            TaskActivityLogSerializer(logs, many=True, context={"request": request}).data
+            ProjectActivitySerializer(logs, many=True, context={"request": request}).data
         )
 
     @action(detail=True, methods=["get"], url_path="subtasks")

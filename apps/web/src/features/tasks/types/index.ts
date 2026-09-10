@@ -16,13 +16,17 @@ export interface PaginatedResponse<T> {
 }
 
 export interface TaskActivityLog {
-  id: number;
-  task: number;
-  board?: number;
-  board_detail?: any;
+  id: string;
+  project: string;
+  event_type: string;
+  entity_type: string;
+  entity_id: string;
   actor: number;
   actor_detail?: User;
-  action: string;
+  metadata?: {
+    action?: string;
+    [key: string]: any;
+  };
   created_at: string;
 }
 

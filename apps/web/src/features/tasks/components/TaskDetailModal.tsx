@@ -209,7 +209,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
 
   const timeline = [
     ...comments.map((c: any) => ({ ...c, type: 'comment' })),
-    ...activities.filter((a: any) => a.action !== 'Added a comment.').map((a: any) => ({ ...a, type: 'activity' }))
+    ...activities.filter((a: any) => a.metadata?.action !== 'Added a comment.').map((a: any) => ({ ...a, type: 'activity' }))
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const visibleTimeline = showActivityDetails ? timeline : timeline.filter(t => t.type === 'comment');
@@ -676,7 +676,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                         ) : (
                           <div className="pt-1 text-[13px]">
                             <span className="font-bold text-white/90 mr-1.5">{name}</span>
-                            <span className="text-white/70">{item.action}</span>
+                            <span className="text-white/70">{item.metadata?.action || item.event_type}</span>
                             <span className="text-white/40 ml-2 text-[11px]">{format(new Date(item.created_at || Date.now()), 'MMM d, p')}</span>
                           </div>
                         )}

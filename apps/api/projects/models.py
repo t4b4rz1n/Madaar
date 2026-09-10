@@ -298,14 +298,23 @@ class ProjectActivity(BaseModel):
         MILESTONE_UPDATED = "milestone_updated", _("Milestone updated")
         MILESTONE_COMPLETED = "milestone_completed", _("Milestone completed")
         MILESTONE_DELETED = "milestone_deleted", _("Milestone deleted")
+        BOARD_CREATED = "board_created", _("Board created")
+        BOARD_UPDATED = "board_updated", _("Board updated")
+        BOARD_DELETED = "board_deleted", _("Board deleted")
+        STATUS_ADDED = "status_added", _("Status added")
+        STATUS_REMOVED = "status_removed", _("Status removed")
         TASK_CREATED = "task_created", _("Task created")
         TASK_UPDATED = "task_updated", _("Task updated")
         TASK_COMPLETED = "task_completed", _("Task completed")
+        TASK_DELETED = "task_deleted", _("Task deleted")
+        TASK_COMMENT_ADDED = "task_comment_added", _("Task comment added")
+        TASK_CHECKLIST_UPDATED = "task_checklist_updated", _("Task checklist updated")
 
     class EntityType(models.TextChoices):
         PROJECT = "project", _("Project")
         MEMBER = "member", _("Member")
         MILESTONE = "milestone", _("Milestone")
+        BOARD = "board", _("Board")
         TASK = "task", _("Task")
 
     project = models.ForeignKey(

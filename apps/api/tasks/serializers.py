@@ -11,7 +11,6 @@ from .models import (
     AsyncStandup,
     Board,
     Task,
-    TaskActivityLog,
     TaskChecklistItem,
     TaskComment,
     TaskStatus,
@@ -159,29 +158,6 @@ class TaskCommentSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-
-class TaskActivityLogSerializer(serializers.ModelSerializer):
-    actor_detail = UserMinimalSerializer(source="actor", read_only=True)
-    board_detail = serializers.SerializerMethodField()
-
-    class Meta:
-        model = TaskActivityLog
-        fields = (
-            "id",
-            "task",
-            "board",
-            "board_detail",
-            "actor",
-            "actor_detail",
-            "action",
-            "created_at",
-        )
-        read_only_fields = ("id", "task", "board", "actor", "action", "created_at")
-
-    def get_board_detail(self, obj):
-        if obj.board:
-            return BoardMinimalSerializer(obj.board).data
-        return None
 
 
 class TaskListSerializer(serializers.ModelSerializer):

@@ -246,14 +246,17 @@ class TimeLogService:
                     _start_timer_local.in_start_timer = False
 
         # Log activity
-        from tasks.models import TaskActivityLog
+        from projects.models import ProjectActivity
 
-        TaskActivityLog.objects.create(
-            task=task,
-            board=task.status.board if task.status else None,
-            actor=user,
-            action="Started time tracking timer",
-        )
+        if task.status and task.status.board and task.status.board.project:
+            ProjectActivity.objects.create(
+                project=task.status.board.project,
+                event_type=ProjectActivity.EventType.TASK_UPDATED,
+                entity_type=ProjectActivity.EntityType.TASK,
+                entity_id=str(task.id),
+                actor=user,
+                metadata={"action": "Started time tracking timer"},
+            )
 
         return timer
 
@@ -400,14 +403,17 @@ class TimeLogService:
         )
 
         # Log activity
-        from tasks.models import TaskActivityLog
+        from projects.models import ProjectActivity
 
-        TaskActivityLog.objects.create(
-            task=timer.task,
-            board=timer.task.status.board if timer.task.status else None,
-            actor=user,
-            action=f"Stopped timer after {timer.duration_seconds} seconds",
-        )
+        if timer.task.status and timer.task.status.board and timer.task.status.board.project:
+            ProjectActivity.objects.create(
+                project=timer.task.status.board.project,
+                event_type=ProjectActivity.EventType.TASK_UPDATED,
+                entity_type=ProjectActivity.EntityType.TASK,
+                entity_id=str(timer.task.id),
+                actor=user,
+                metadata={"action": f"Stopped timer after {timer.duration_seconds} seconds"},
+            )
 
         # auto_move=True means this is a system-triggered stop (e.g., drag to Review/Done).
         # auto_move=False means the user manually pressed Stop → task stays in current status.
