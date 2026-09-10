@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
   TaskSquare,
@@ -266,8 +266,8 @@ export const UserDashboardPage = () => {
   const allTasks: EmployeeTaskSummary[] = useMemo(() => {
     if (!dashboard) return [];
     return [
-      ...(dashboard.overdue_tasks || []),
-      ...(dashboard.upcoming_tasks || []),
+      ...(dashboard.overdue_tasks?.map((t: EmployeeTaskSummary) => ({ ...t, is_overdue: true })) || []),
+      ...(dashboard.upcoming_tasks?.map((t: EmployeeTaskSummary) => ({ ...t, is_overdue: false })) || []),
     ];
   }, [dashboard]);
 
@@ -438,64 +438,15 @@ export const UserDashboardPage = () => {
                   );
 
                   return (
-                    <div
-                      key={t.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-base-content/6 bg-base-200/40 py-2.5 px-3 text-xs transition-all hover:bg-base-200/70"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => markDoneMutation.mutate(String(t.id))}
-                          className="size-4.5 rounded-md border border-base-content/20 bg-base-100 hover:border-primary shrink-0 transition"
-                          title="Mark complete"
-                        />
-                        <div className="min-w-0">
-                          <p
-                            dir="auto"
-                            onClick={() => setSelectedTaskId(String(t.id))}
-                            className="font-bold text-base-content hover:text-primary cursor-pointer truncate"
-                          >
-                            {t.title}
-                          </p>
-                          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-base-content/45">
-                            {t.project_name && (
-                              <span className="font-semibold text-primary">
-                                {t.project_name}
-                              </span>
-                            )}
-                            {t.priority && (
-                              <span className="capitalize font-semibold text-amber-600">
-                                • {t.priority}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {isRunningTimer ? (
-                          <button
-                            type="button"
-                            onClick={() => stopTimerMutation.mutate(undefined)}
-                            className="inline-flex h-7 items-center gap-1 rounded-lg bg-red-500/10 px-2.5 text-[11px] font-bold text-red-500 hover:bg-red-500/20"
-                          >
-                            <Stop size={12} variant="Bold" />
-                            <span>Stop</span>
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              startTimerMutation.mutate(String(t.id))
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-[11px] font-bold text-primary hover:bg-primary/20"
-                          >
-                            <Play size={12} variant="Bold" />
-                            <span>Focus</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    <DashboardTaskCard
+                       key={t.id}
+                       task={t}
+                       isRunningTimer={isRunningTimer || false}
+                       onMarkDone={(id) => markDoneMutation.mutate(id)}
+                       onStartTimer={(id) => startTimerMutation.mutate(id)}
+                       onStopTimer={() => stopTimerMutation.mutate(undefined)}
+                       onClickTitle={(id) => setSelectedTaskId(id)}
+                    />
                   );
                 })}
               </div>
@@ -762,3 +713,143 @@ export const UserDashboardPage = () => {
 };
 
 export default UserDashboardPage;
+
+function DashboardTaskCard({
+  task,
+  isRunningTimer,
+  onMarkDone,
+  onStartTimer,
+  onStopTimer,
+  onClickTitle,
+}: {
+  task: EmployeeTaskSummary;
+  isRunningTimer: boolean;
+  onMarkDone: (id: string) => void;
+  onStartTimer: (id: string) => void;
+  onStopTimer: () => void;
+  onClickTitle: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const isOverdue = task.is_overdue;
+  
+  return (
+    <motion.div
+      layout
+      className="group relative overflow-hidden rounded-xl border border-base-content/6 bg-base-200/40 hover:bg-base-200/70 transition-all"
+    >
+      <div className="flex items-center justify-between gap-3 px-3 py-2.5 relative z-10 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+         {/* Checkbox and Title */}
+         <div className="flex items-center gap-3 min-w-0">
+           <button
+             type="button"
+             onClick={(e) => { e.stopPropagation(); onMarkDone(String(task.id)); }}
+             className={`size-4.5 rounded-md border shrink-0 transition ${
+                isOverdue ? "border-red-500/30 bg-base-100 hover:border-red-500" : "border-base-content/20 bg-base-100 hover:border-primary"
+             }`}
+             title="Mark complete"
+           />
+           <div className="min-w-0">
+             <div className="flex items-center gap-2">
+               <p
+                 dir="auto"
+                 onClick={(e) => { e.stopPropagation(); onClickTitle(String(task.id)); }}
+                 className="font-bold truncate hover:underline text-base-content hover:text-primary"
+               >
+                 {task.title}
+               </p>
+             </div>
+             
+             <div className="mt-0.5 flex items-center gap-2 text-[10px] text-base-content/45">
+               {task.project_name && (
+                 <span className="font-semibold text-primary">
+                   {task.project_name}
+                 </span>
+               )}
+               {task.priority && (
+                 <span className="capitalize font-semibold text-amber-600">
+                   • {task.priority}
+                 </span>
+               )}
+               {task.due_date && (
+                 <div className="flex items-center gap-1 font-semibold ml-1">
+                   <Clock size={10} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
+                   <span className={isOverdue ? "text-red-500" : "text-base-content/50"}>
+                     {new Date(task.due_date).toLocaleDateString()}
+                   </span>
+                 </div>
+               )}
+             </div>
+           </div>
+         </div>
+
+         {/* Timer and Expand indicator */}
+         <div className="flex items-center gap-2 shrink-0">
+           <div onClick={(e) => e.stopPropagation()}>
+             {isRunningTimer ? (
+                <button
+                  type="button"
+                  onClick={() => onStopTimer()}
+                  className="inline-flex h-7 items-center gap-1 rounded-lg bg-red-500/10 px-2.5 text-[11px] font-bold text-red-500 hover:bg-red-500/20"
+                >
+                  <Stop size={12} variant="Bold" />
+                  <span>Stop</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onStartTimer(String(task.id))}
+                  className="inline-flex h-7 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-[11px] font-bold text-primary hover:bg-primary/20"
+                >
+                  <Play size={12} variant="Bold" />
+                  <span>Focus</span>
+                </button>
+              )}
+            </div>
+            
+            <div className={`p-1 rounded-lg transition-colors ${expanded ? "bg-base-content/10" : "hover:bg-base-content/5"}`}>
+              <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                 <ArrowRight size={14} className="text-base-content/50" />
+              </motion.div>
+            </div>
+         </div>
+      </div>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-base-content/5"
+          >
+            <div className="p-3 pt-2 text-xs text-base-content/70 flex flex-col gap-2 relative z-10">
+               {task.description ? (
+                 <p dir="auto" className="line-clamp-3 text-base-content/60 leading-relaxed">{task.description}</p>
+               ) : (
+                 <p className="italic text-base-content/40">No additional details provided.</p>
+               )}
+               
+               <div className="flex items-center gap-4 mt-1 pt-2 border-t border-base-content/5">
+                 {task.due_date && (
+                   <div className="flex items-center gap-1 text-[10px]">
+                     <Clock size={12} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
+                     <span className={isOverdue ? "text-red-500 font-bold" : "text-base-content/50 font-medium"}>
+                       Due: {new Date(task.due_date).toLocaleDateString()}
+                     </span>
+                   </div>
+                 )}
+                 {task.status_name && (
+                   <div className="flex items-center gap-1 text-[10px]">
+                     <div className="size-1.5 rounded-full bg-primary" />
+                     <span className="font-medium">{task.status_name}</span>
+                   </div>
+                 )}
+               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}

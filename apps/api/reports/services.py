@@ -185,6 +185,7 @@ class EmployeeDashboardService:
             .values(
                 "id",
                 "title",
+                "description",
                 "priority",
                 "due_date",
                 "status_name",
@@ -218,6 +219,7 @@ class EmployeeDashboardService:
             .values(
                 "id",
                 "title",
+                "description",
                 "priority",
                 "due_date",
                 "status_name",
