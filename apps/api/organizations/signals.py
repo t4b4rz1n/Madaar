@@ -44,7 +44,6 @@ _DEFAULT_ROLE_PERMISSIONS = {
         "project.view",
         "board.view",
         "task.view",
-        "project.create",
         "task.create",
         "task.manage_all",
         "task.review",
