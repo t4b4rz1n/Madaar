@@ -78,12 +78,10 @@ class BoardService:
         if actor and boards_to_update:
             first_board = boards_to_update[0]
             ProjectActivity.objects.create(
-                project=board.project
-                if "board" in locals() and hasattr(board, "project")
-                else (first_board.project if "first_board" in locals() else None),
+                project=first_board.project,
                 event_type=ProjectActivity.EventType.BOARD_UPDATED,
                 entity_type=ProjectActivity.EntityType.BOARD,
-                entity_id=str(board.id if "board" in locals() else first_board.id),
+                entity_id=str(first_board.id),
                 actor=actor,
                 metadata={
                     "action": Truncator(
@@ -132,12 +130,10 @@ class TaskStatusService:
 
         if actor:
             ProjectActivity.objects.create(
-                project=board.project
-                if "board" in locals() and hasattr(board, "project")
-                else (first_board.project if "first_board" in locals() else None),
+                project=board.project,
                 event_type=ProjectActivity.EventType.BOARD_UPDATED,
                 entity_type=ProjectActivity.EntityType.BOARD,
-                entity_id=str(board.id if "board" in locals() else first_board.id),
+                entity_id=str(board.id),
                 actor=actor,
                 metadata={
                     "action": Truncator(
@@ -162,12 +158,10 @@ class TaskStatusService:
 
         if actor:
             ProjectActivity.objects.create(
-                project=board.project
-                if "board" in locals() and hasattr(board, "project")
-                else (first_board.project if "first_board" in locals() else None),
+                project=board.project,
                 event_type=ProjectActivity.EventType.BOARD_UPDATED,
                 entity_type=ProjectActivity.EntityType.BOARD,
-                entity_id=str(board.id if "board" in locals() else first_board.id),
+                entity_id=str(board.id),
                 actor=actor,
                 metadata={
                     "action": Truncator(
@@ -202,12 +196,10 @@ class TaskStatusService:
 
         if actor:
             ProjectActivity.objects.create(
-                project=board.project
-                if "board" in locals() and hasattr(board, "project")
-                else (first_board.project if "first_board" in locals() else None),
+                project=board.project,
                 event_type=ProjectActivity.EventType.BOARD_UPDATED,
                 entity_type=ProjectActivity.EntityType.BOARD,
-                entity_id=str(board.id if "board" in locals() else first_board.id),
+                entity_id=str(board.id),
                 actor=actor,
                 metadata={
                     "action": Truncator(

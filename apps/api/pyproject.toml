@@ -6,6 +6,8 @@ exclude = [
     ".github",
     "__pycache__",
     "venv",
+    ".venv",
+    "node_modules",
     "migrations",
     "manage.py",
 ]
