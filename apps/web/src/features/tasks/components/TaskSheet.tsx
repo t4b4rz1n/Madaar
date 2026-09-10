@@ -932,7 +932,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   {activities.map((act) => (
                     <div key={act.id} className="relative">
                       <span className="absolute -left-[25px] top-1 size-2 rounded-full bg-primary" />
-                      <p className="text-xs font-semibold text-base-content">{act.action}</p>
+                      <p className="text-xs font-semibold text-base-content">{act.metadata?.action || act.event_type}</p>
                       <p className="text-[10px] text-base-content/40">
                         {act.actor_detail?.first_name || act.actor_detail?.username || "System"} ·{" "}
                         {formatRelativeDate(act.created_at)}

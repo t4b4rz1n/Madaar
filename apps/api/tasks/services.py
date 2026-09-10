@@ -4,10 +4,11 @@ from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from projects.models import ProjectActivity
 from .models import (
     Board,
     Task,
-    TaskActivityLog,
+    
     TaskChecklistItem,
     TaskComment,
     TaskStatus,
@@ -76,12 +77,15 @@ class BoardService:
 
         if actor and boards_to_update:
             first_board = boards_to_update[0]
-            TaskActivityLog.objects.create(
-                board=first_board,
+            ProjectActivity.objects.create(
+                project=board.project if 'board' in locals() and hasattr(board, 'project') else (first_board.project if 'first_board' in locals() else None),
+                event_type=ProjectActivity.EventType.BOARD_UPDATED,
+                entity_type=ProjectActivity.EntityType.BOARD,
+                entity_id=str(board.id if 'board' in locals() else first_board.id),
                 actor=actor,
-                action=Truncator(
+                metadata={"action": Truncator(
                     str(_("Reordered boards in project '%(project)s'") % {"project": project.name})
-                ).chars(255),
+                ).chars(255)},
             )
 
 
@@ -120,12 +124,15 @@ class TaskStatusService:
         )
 
         if actor:
-            TaskActivityLog.objects.create(
-                board=board,
+            ProjectActivity.objects.create(
+                project=board.project if 'board' in locals() and hasattr(board, 'project') else (first_board.project if 'first_board' in locals() else None),
+                event_type=ProjectActivity.EventType.BOARD_UPDATED,
+                entity_type=ProjectActivity.EntityType.BOARD,
+                entity_id=str(board.id if 'board' in locals() else first_board.id),
                 actor=actor,
-                action=Truncator(str(_("Added status '%(name)s' to board") % {"name": name})).chars(
+                metadata={"action": Truncator(str(_("Added status '%(name)s' to board") % {"name": name})).chars(
                     255
-                ),
+                )},
             )
 
         return status_obj
@@ -143,12 +150,15 @@ class TaskStatusService:
         TaskCascadeService.soft_delete_status(status_obj)
 
         if actor:
-            TaskActivityLog.objects.create(
-                board=board,
+            ProjectActivity.objects.create(
+                project=board.project if 'board' in locals() and hasattr(board, 'project') else (first_board.project if 'first_board' in locals() else None),
+                event_type=ProjectActivity.EventType.BOARD_UPDATED,
+                entity_type=ProjectActivity.EntityType.BOARD,
+                entity_id=str(board.id if 'board' in locals() else first_board.id),
                 actor=actor,
-                action=Truncator(
+                metadata={"action": Truncator(
                     str(_("Removed status '%(name)s' from board") % {"name": name})
-                ).chars(255),
+                ).chars(255)},
             )
 
     @staticmethod
@@ -176,12 +186,15 @@ class TaskStatusService:
                 TaskStatus.objects.bulk_update(statuses_to_update, ["order"])
 
         if actor:
-            TaskActivityLog.objects.create(
-                board=board,
+            ProjectActivity.objects.create(
+                project=board.project if 'board' in locals() and hasattr(board, 'project') else (first_board.project if 'first_board' in locals() else None),
+                event_type=ProjectActivity.EventType.BOARD_UPDATED,
+                entity_type=ProjectActivity.EntityType.BOARD,
+                entity_id=str(board.id if 'board' in locals() else first_board.id),
                 actor=actor,
-                action=Truncator(
+                metadata={"action": Truncator(
                     str(_("Reordered statuses on board '%(board)s'") % {"board": board.title})
-                ).chars(255),
+                ).chars(255)},
             )
 
 
@@ -303,11 +316,14 @@ class TaskService:
         )
 
         # Log activity
-        TaskActivityLog.objects.create(
-            task=task,
-            actor=reporter,
-            action=str(_("Task created: %(title)s") % {"title": task.title}),
-        )
+        ProjectActivity.objects.create(
+                project=task.status.board.project if task.status and task.status.board else (task.project if hasattr(task, 'project') else None),
+                event_type=ProjectActivity.EventType.TASK_CREATED,
+                entity_type=ProjectActivity.EntityType.TASK,
+                entity_id=str(task.id),
+                actor=reporter,
+                metadata={"action": str(_("Task created: %(title)s") % {"title": task.title})},
+            )
 
         return task
 
@@ -387,10 +403,13 @@ class TaskService:
         if changes:
             task.save()
             action_desc = ", ".join(changes)
-            TaskActivityLog.objects.create(
-                task=task,
+            ProjectActivity.objects.create(
+                project=task.status.board.project if task.status and task.status.board else None,
+                event_type=ProjectActivity.EventType.TASK_UPDATED,
+                entity_type=ProjectActivity.EntityType.TASK,
+                entity_id=str(task.id),
                 actor=actor,
-                action=Truncator(action_desc).chars(255),
+                metadata={"action": Truncator(action_desc).chars(255)},
             )
 
         return task
@@ -508,10 +527,13 @@ class TaskService:
             task.save()
 
         if action_parts:
-            TaskActivityLog.objects.create(
-                task=task,
+            ProjectActivity.objects.create(
+                project=task.status.board.project if task.status and task.status.board else None,
+                event_type=ProjectActivity.EventType.TASK_UPDATED,
+                entity_type=ProjectActivity.EntityType.TASK,
+                entity_id=str(task.id),
                 actor=actor,
-                action=Truncator(" | ".join(action_parts)).chars(255),
+                metadata={"action": Truncator(" | ".join(action_parts)).chars(255)},
             )
 
         return task
@@ -528,11 +550,13 @@ class TaskService:
 
         TaskCascadeService.soft_delete_task(task)
 
-        TaskActivityLog.objects.create(
-            task=task,
-            board=board,
+        ProjectActivity.objects.create(
+            project=board.project if board else None,
+            event_type=ProjectActivity.EventType.TASK_DELETED,
+            entity_type=ProjectActivity.EntityType.TASK,
+            entity_id=str(task.id),
             actor=actor,
-            action=Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255),
+            metadata={"action": Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255)},
         )
 
     @staticmethod
@@ -571,12 +595,15 @@ class ChecklistService:
             is_completed=False,
         )
         if actor:
-            TaskActivityLog.objects.create(
-                task=task,
+            ProjectActivity.objects.create(
+                project=task.status.board.project if task.status and task.status.board else None,
+                event_type=ProjectActivity.EventType.TASK_UPDATED,
+                entity_type=ProjectActivity.EntityType.TASK,
+                entity_id=str(task.id),
                 actor=actor,
-                action=Truncator(
+                metadata={"action": Truncator(
                     str(_("Added checklist item: %(desc)s") % {"desc": description})
-                ).chars(255),
+                ).chars(255)},
             )
         return item
 
@@ -588,15 +615,18 @@ class ChecklistService:
 
         status_str = _("completed") if item.is_completed else _("uncompleted")
         if actor:
-            TaskActivityLog.objects.create(
-                task=item.task,
+            ProjectActivity.objects.create(
+                project=item.task.status.board.project if item.task.status and item.task.status.board else None,
+                event_type=ProjectActivity.EventType.TASK_CHECKLIST_UPDATED,
+                entity_type=ProjectActivity.EntityType.TASK,
+                entity_id=str(item.task.id),
                 actor=actor,
-                action=Truncator(
+                metadata={"action": Truncator(
                     str(
                         _("Marked checklist '%(desc)s' as %(status)s")
                         % {"desc": item.description, "status": status_str}
                     )
-                ).chars(255),
+                ).chars(255)},
             )
         return item
 
@@ -609,12 +639,15 @@ class ChecklistService:
         item.save(update_fields=["is_deleted"])
 
         if actor:
-            TaskActivityLog.objects.create(
-                task=task,
+            ProjectActivity.objects.create(
+                project=task.status.board.project if task.status and task.status.board else None,
+                event_type=ProjectActivity.EventType.TASK_UPDATED,
+                entity_type=ProjectActivity.EntityType.TASK,
+                entity_id=str(task.id),
                 actor=actor,
-                action=Truncator(str(_("Deleted checklist item: %(desc)s") % {"desc": desc})).chars(
+                metadata={"action": Truncator(str(_("Deleted checklist item: %(desc)s") % {"desc": desc})).chars(
                     255
-                ),
+                )},
             )
 
 
@@ -636,10 +669,13 @@ class CommentService:
             attached_file=attached_file,
         )
 
-        TaskActivityLog.objects.create(
-            task=task,
+        ProjectActivity.objects.create(
+            project=task.status.board.project if task.status and task.status.board else None,
+            event_type=ProjectActivity.EventType.TASK_COMMENT_ADDED,
+            entity_type=ProjectActivity.EntityType.TASK,
+            entity_id=str(task.id),
             actor=author,
-            action=Truncator(str(_("Added a comment."))).chars(255),
+            metadata={"action": Truncator(str(_("Added a comment."))).chars(255)},
         )
 
         return comment

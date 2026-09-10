@@ -15,7 +15,7 @@ from tasks.models import (
     AsyncStandup,
     Board,
     Task,
-    TaskActivityLog,
+     
     TaskChecklistItem,
     TaskComment,
     TaskStatus,
@@ -289,7 +289,7 @@ class ChecklistAndCommentTestCase(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(TaskChecklistItem.objects.filter(id=item_id).exists())
 
-        logs = TaskActivityLog.objects.filter(task=self.task)
+        logs = ProjectActivity.objects.filter(entity_type="task", entity_id=str(self.task.id))
         actions = [log.action for log in logs]
         self.assertTrue(any("Added checklist" in a for a in actions))
         self.assertTrue(any("Deleted checklist" in a for a in actions))
@@ -526,7 +526,7 @@ class TaskCRUDAndProgressTestCase(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         task = Task.objects.get(id=res.data["id"])
         self.assertEqual(task.reporter, self.user)
-        activities = TaskActivityLog.objects.filter(task=task)
+        activities = ProjectActivity.objects.filter(entity_type="task", entity_id=str(task.id))
         self.assertTrue(activities.exists())
         self.assertIn("Task created", activities.first().action)
 

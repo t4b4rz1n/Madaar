@@ -419,49 +419,6 @@ class TaskComment(BaseModel):
         return f"Comment {self.id} on Task {self.task_id}"
 
 
-class TaskActivityLog(BaseModel):
-    """Audit trail for task and board actions."""
-
-    task = models.ForeignKey(
-        Task,
-        on_delete=models.SET_NULL,
-        related_name="activity_logs",
-        verbose_name=_("Task"),
-        null=True,
-        blank=True,
-    )
-    board = models.ForeignKey(
-        Board,
-        on_delete=models.SET_NULL,
-        related_name="activity_logs",
-        verbose_name=_("Board"),
-        null=True,
-        blank=True,
-    )
-    actor = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name="task_activities",
-        verbose_name=_("Actor"),
-        null=True,
-        blank=True,
-    )
-    action = models.CharField(_("Action"), max_length=255)
-
-    class Meta:
-        verbose_name = _("Task Activity Log")
-        verbose_name_plural = _("Task Activity Logs")
-        ordering = ["-created_at"]
-        indexes = [models.Index(fields=["task", "-created_at"], name="activity_task_created_idx")]
-
-    def __str__(self):
-        target = (
-            f"Task {self.task_id}"
-            if self.task_id
-            else (f"Board {self.board_id}" if self.board_id else "Global")
-        )
-        return f"{target} - {self.action} @ {self.created_at}"
-
 
 class AsyncStandup(BaseModel):
     """
