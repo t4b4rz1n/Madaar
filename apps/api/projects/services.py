@@ -338,6 +338,32 @@ class ProjectMemberService:
             },
         )
         logger.info("Member %s added to project %s (by %s)", member.pk, project.pk, actor)
+
+        if team and not user:
+            from organizations.models import TeamMembership
+
+            team_memberships = TeamMembership.objects.filter(team=team, is_deleted=False).select_related("user")
+            
+            # Optimization: Fetch existing project member user IDs to avoid N+1 queries
+            existing_user_ids = set(
+                ProjectMember.objects.filter(
+                    project=project, 
+                    user__in=[tm.user_id for tm in team_memberships], 
+                    is_deleted=False
+                ).values_list("user_id", flat=True)
+            )
+
+            for tm in team_memberships:
+                if tm.user_id not in existing_user_ids:
+                    cls.add(
+                        project=project,
+                        actor=actor,
+                        validated_data={
+                            "user": tm.user,
+                            "allocation_percentage": validated_data.get("allocation_percentage", 100),
+                        },
+                    )
+
         return cls.get_by_pk(member.pk)
 
     @classmethod
