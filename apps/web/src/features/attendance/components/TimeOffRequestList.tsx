@@ -27,7 +27,7 @@ const RejectModal: React.FC<RejectModalProps> = ({ requestId, onConfirm, onClose
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"  />
 
       {/* Modal */}
       <div className="relative w-full max-w-md rounded-2xl border border-base-content/10 bg-base-100 shadow-2xl">
@@ -104,7 +104,7 @@ const CancelModal: React.FC<CancelModalProps> = ({ requestId, onConfirm, onClose
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"  />
 
       {/* Modal */}
       <div className="relative w-full max-w-sm rounded-2xl border border-base-content/10 bg-base-100 shadow-2xl">

@@ -151,7 +151,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs"
-      onMouseDown={onClose}
+      
     >
       <div
         className="w-full max-w-md overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
