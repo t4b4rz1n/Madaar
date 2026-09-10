@@ -431,7 +431,7 @@ export const UserDashboardPage = () => {
                 No active tasks assigned to you right now.
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-base-content/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-base-content/20">
                 {allTasks.map((t: EmployeeTaskSummary) => {
                   const isRunningTimer = dashboard?.active_timers?.some(
                     (at) => String(at.task_id) === String(t.id),
@@ -440,7 +440,7 @@ export const UserDashboardPage = () => {
                   return (
                     <div
                       key={t.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-base-content/6 bg-base-200/40 p-3 text-xs transition-all hover:bg-base-200/70"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-base-content/6 bg-base-200/40 py-2.5 px-3 text-xs transition-all hover:bg-base-200/70"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <button
@@ -508,7 +508,7 @@ export const UserDashboardPage = () => {
               <div className="flex items-center gap-2">
                 <Briefcase size={16} className="text-primary" />
                 <h2 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                  Active Projects ({projectsData.length})
+                  Active Projects ({projectsData.filter((p: any) => p.status === "active").length})
                 </h2>
               </div>
               <Link
@@ -520,13 +520,13 @@ export const UserDashboardPage = () => {
               </Link>
             </div>
 
-            {projectsData.length === 0 ? (
+            {projectsData.filter((p: any) => p.status === "active").length === 0 ? (
               <div className="py-8 text-center text-xs text-base-content/40">
                 No active projects assigned yet.
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
-                {projectsData.slice(0, 4).map((p: any) => {
+                {projectsData.filter((p: any) => p.status === "active").slice(0, 4).map((p: any) => {
                   const color = p.color || "#6366f1";
 
                   return (
