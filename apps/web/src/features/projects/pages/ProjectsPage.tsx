@@ -2,6 +2,7 @@ import {
 AnimatePresence, motion } from "framer-motion";
 import {
   FilterSearch,
+  ArrowDown2,
   Add,
   Archive,
   Edit2,
@@ -11,7 +12,7 @@ import {
   Trash,
   CloseCircle,
 } from "iconsax-reactjs";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -154,6 +155,7 @@ const ProgressRing = ({
           cx={radius}
           cy={radius}
           className="transition-all duration-1000 ease-in-out"
+          filter={`drop-shadow(0 0 4px ${color}80)`}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -183,6 +185,18 @@ function ProjectActionMenu({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
   return (
     <div className="relative z-20" ref={ref} onClick={(e) => e.stopPropagation()}>
       <button
@@ -198,7 +212,6 @@ function ProjectActionMenu({
       <AnimatePresence>
         {open && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -276,9 +289,10 @@ function ProjectCard({
   return (
     <motion.article
       layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.2 }}
       onClick={onClick}
       className="group relative cursor-pointer overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl"
     >
@@ -529,7 +543,7 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {projects.map((project) => (
               <ProjectCard
                 key={project.id}
@@ -550,14 +564,15 @@ export default function ProjectsPage() {
 
           {/* Add New Project Card */}
           {canCreateProject && (
-            <button
+            <motion.button
+              layout
               type="button"
               onClick={handleCreateProject}
               className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-base-content/15 bg-base-100 text-base-content/40 transition-all hover:border-primary/30 hover:bg-base-content/5 hover:text-primary"
             >
               <Add size={28} />
               <span className="text-sm font-bold">New Project</span>
-            </button>
+            </motion.button>
           )}
         </div>
       )}
