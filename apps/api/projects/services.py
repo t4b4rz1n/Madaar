@@ -84,8 +84,8 @@ class ProjectService:
         qs = Project.all_objects.all() if include_deleted else Project.objects.all()
         return qs.select_related("organization", "owner").annotate(
             member_count=Count(
-                "members__user",
-                filter=Q(members__is_deleted=False, members__user__isnull=False),
+                "members",
+                filter=Q(members__is_deleted=False),
                 distinct=True,
             ),
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
@@ -355,13 +355,16 @@ class ProjectMemberService:
 
             for tm in team_memberships:
                 if tm.user_id not in existing_user_ids:
+                    user_data = validated_data.copy()
+                    user_data.pop("team", None)
+                    user_data["user"] = tm.user
+                    if "allocation_percentage" not in user_data:
+                        user_data["allocation_percentage"] = 100
+
                     cls.add(
                         project=project,
                         actor=actor,
-                        validated_data={
-                            "user": tm.user,
-                            "allocation_percentage": validated_data.get("allocation_percentage", 100),
-                        },
+                        validated_data=user_data,
                     )
 
         return cls.get_by_pk(member.pk)
