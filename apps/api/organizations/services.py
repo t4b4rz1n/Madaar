@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from organizations.constants import (
     COMPATIBILITY_ROLE_PERMISSIONS_MAP,
     DEFAULT_ORG_PERMISSIONS,
+    TEAM_LEAD_PERMISSIONS,
 )
 from organizations.models import OrganizationMembership
 
@@ -63,8 +64,10 @@ class PermissionService:
 
         # 3. Dynamic Team Leader Permissions
         from .models import Team
-        from .constants import TEAM_LEAD_PERMISSIONS
-        if Team.objects.filter(leader=user, organization_id=organization_id, is_deleted=False).exists():
+
+        if Team.objects.filter(
+            leader=user, organization_id=organization_id, is_deleted=False
+        ).exists():
             user_perms.update(TEAM_LEAD_PERMISSIONS)
 
         user._cached_user_org_perms[cache_key] = user_perms

@@ -5,11 +5,11 @@ from datetime import timedelta
 import django
 from django.utils import timezone
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
-
 from projects.models import Project
 from tasks.models import Board, Task, TaskStatus
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+django.setup()
 
 def run_seed_tasks():
     # Only get the 3 projects we created previously

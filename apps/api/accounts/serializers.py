@@ -2,6 +2,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
+from organizations.constants import TEAM_LEAD_PERMISSIONS
+from organizations.models import OrganizationMembership, Team
+from organizations.services import (
+    COMPATIBILITY_ROLE_PERMISSIONS_MAP,
+    DEFAULT_ORG_PERMISSIONS,
+)
+
 User = get_user_model()
 
 
@@ -77,12 +84,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         user_role_name = None
 
         try:
-            from organizations.models import OrganizationMembership
-            from organizations.services import (
-                COMPATIBILITY_ROLE_PERMISSIONS_MAP,
-                DEFAULT_ORG_PERMISSIONS,
-            )
-
             memberships = list(
                 OrganizationMembership.objects.filter(user=instance, is_deleted=False)
                 .prefetch_related("dynamic_roles__permissions")
@@ -121,8 +122,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             pass
 
         try:
-            from organizations.models import Team
-            from organizations.constants import TEAM_LEAD_PERMISSIONS
             if Team.objects.filter(leader=instance, is_deleted=False).exists():
                 for perm in TEAM_LEAD_PERMISSIONS:
                     if perm not in user_permissions:

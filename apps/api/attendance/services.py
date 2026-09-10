@@ -628,8 +628,9 @@ class TimesheetService:
 
     @staticmethod
     def get_team_timesheet(manager, organization, start_date, end_date):
-        from organizations.models import OrganizationMembership
         from django.db.models import Q
+
+        from organizations.models import OrganizationMembership
 
         # Check if the manager is an admin/owner or has view_all permissions for this org
         is_org_admin = OrganizationMembership.objects.filter(
