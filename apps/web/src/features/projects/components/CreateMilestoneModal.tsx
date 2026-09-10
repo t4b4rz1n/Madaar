@@ -68,7 +68,7 @@ export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
-      onMouseDown={onClose}
+      
     >
       <div
         className="madaar-surface w-full max-w-lg rounded-[28px] border border-base-content/10 bg-base-100 p-6 shadow-2xl animate-in fade-in zoom-in duration-200 sm:p-7"

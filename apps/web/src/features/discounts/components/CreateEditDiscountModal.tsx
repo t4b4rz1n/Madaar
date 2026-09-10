@@ -105,7 +105,7 @@ export const CreateEditDiscountModal = ({
           animate="visible"
           exit="hidden"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={onClose}
+          
         >
           <motion.div
             variants={modalVariants}

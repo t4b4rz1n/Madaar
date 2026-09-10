@@ -356,14 +356,6 @@ const OrgRolesPage = () => {
               </button>
             </div>
           </div>
-
-          <form
-            method="dialog"
-            className="modal-backdrop"
-            onClick={closeDeleteModal}
-          >
-            <button aria-label="Close modal">close</button>
-          </form>
         </dialog>
       )}
     </div>

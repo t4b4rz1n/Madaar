@@ -237,7 +237,6 @@ export const AutomationsPage = () => {
             </footer>
           </form>
         </div>
-        <form method="dialog" className="modal-backdrop"><button>Close</button></form>
       </dialog>
     </motion.div>
   );

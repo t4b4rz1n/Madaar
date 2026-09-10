@@ -211,7 +211,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   const isLoading = updateMutation.isPending || addCommentMutation.isPending || addChecklistMutation.isPending || toggleChecklistMutation.isPending || deleteMutation.isPending;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-[#0F172A]/80 backdrop-blur-sm p-4 pt-12 overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-[#0F172A]/80 backdrop-blur-sm p-4 pt-12 overflow-y-auto" >
       <div className="flex flex-col items-center w-full max-w-[900px]">
 
         {/* Modal Container */}

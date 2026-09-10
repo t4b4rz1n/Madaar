@@ -84,12 +84,12 @@ class ProjectService:
         qs = Project.all_objects.all() if include_deleted else Project.objects.all()
         return qs.select_related("organization", "owner").annotate(
             member_count=Count(
-                "members__user",
-                filter=Q(members__is_deleted=False, members__user__isnull=False),
+                "members",
+                filter=Q(members__is_deleted=False),
                 distinct=True,
             ),
-            task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
-            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False)),
+            task_count=Count("tasks", filter=Q(tasks__is_deleted=False), distinct=True),
+            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False), distinct=True),
         )
 
     @classmethod
@@ -338,6 +338,35 @@ class ProjectMemberService:
             },
         )
         logger.info("Member %s added to project %s (by %s)", member.pk, project.pk, actor)
+
+        if team and not user:
+            from organizations.models import TeamMembership
+
+            team_memberships = TeamMembership.objects.filter(team=team, is_deleted=False).select_related("user")
+            
+            # Optimization: Fetch existing project member user IDs to avoid N+1 queries
+            existing_user_ids = set(
+                ProjectMember.objects.filter(
+                    project=project, 
+                    user__in=[tm.user_id for tm in team_memberships], 
+                    is_deleted=False
+                ).values_list("user_id", flat=True)
+            )
+
+            for tm in team_memberships:
+                if tm.user_id not in existing_user_ids:
+                    user_data = validated_data.copy()
+                    user_data.pop("team", None)
+                    user_data["user"] = tm.user
+                    if "allocation_percentage" not in user_data:
+                        user_data["allocation_percentage"] = 100
+
+                    cls.add(
+                        project=project,
+                        actor=actor,
+                        validated_data=user_data,
+                    )
+
         return cls.get_by_pk(member.pk)
 
     @classmethod

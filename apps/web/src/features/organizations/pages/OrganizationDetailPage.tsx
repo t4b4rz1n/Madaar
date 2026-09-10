@@ -423,7 +423,6 @@ export default function OrganizationDetailPage() {
             animate="visible"
             exit="hidden"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 backdrop-blur-md sm:p-4"
-            onClick={() => setMemberToRemove(null)}
           >
             <motion.div
               variants={{
