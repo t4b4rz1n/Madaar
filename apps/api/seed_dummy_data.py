@@ -4,7 +4,7 @@ import random
 import django
 
 # Setup Django if run directly
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 from django.contrib.auth import get_user_model
@@ -20,9 +20,15 @@ DEFAULT_PASSWORD = "Password123!"
 
 # 1. Create 9 Users (3x previous)
 user_base_names = [
-    ("john", "doe"), ("jane", "smith"), ("ali", "reza"),
-    ("sara", "connor"), ("michael", "scott"), ("dwight", "schrute"),
-    ("jim", "halpert"), ("pam", "beesly"), ("kevin", "malone")
+    ("john", "doe"),
+    ("jane", "smith"),
+    ("ali", "reza"),
+    ("sara", "connor"),
+    ("michael", "scott"),
+    ("dwight", "schrute"),
+    ("jim", "halpert"),
+    ("pam", "beesly"),
+    ("kevin", "malone"),
 ]
 
 users = []
@@ -32,7 +38,7 @@ for first, last in user_base_names:
     email = f"{first}@example.com"
     user, created = User.objects.get_or_create(
         username=username,
-        defaults={"email": email, "first_name": first.capitalize(), "last_name": last.capitalize()}
+        defaults={"email": email, "first_name": first.capitalize(), "last_name": last.capitalize()},
     )
     if created:
         user.set_password(DEFAULT_PASSWORD)
@@ -43,13 +49,20 @@ for u in users:
     print(f"- Username: {u.username} | Password: {DEFAULT_PASSWORD}")
 
 # 2. Create 6 Organizations (3x previous)
-org_names = ["Tech Corp", "Design Studio", "Marketing Hub", "DevOps Ninjas", "AI Research", "Security Pros"]
+org_names = [
+    "Tech Corp",
+    "Design Studio",
+    "Marketing Hub",
+    "DevOps Ninjas",
+    "AI Research",
+    "Security Pros",
+]
 organizations = []
 
 print("\nCreating Organizations...")
 for i, name in enumerate(org_names):
     slug = name.lower().replace(" ", "-")
-    owner = users[i] # Assign first 6 users as owners
+    owner = users[i]  # Assign first 6 users as owners
     org, _ = Organization.objects.get_or_create(name=name, slug=slug, defaults={"owner": owner})
 
     # Add owner
@@ -83,7 +96,14 @@ for i, name in enumerate(team_names):
     teams.append(team)
 
 # 4. Create 6 Projects (3x previous)
-project_names = ["Madaar API", "Website Redesign", "Ad Campaign", "Server Migration", "NLP Engine", "Pentesting"]
+project_names = [
+    "Madaar API",
+    "Website Redesign",
+    "Ad Campaign",
+    "Server Migration",
+    "NLP Engine",
+    "Pentesting",
+]
 projects = []
 
 print("Creating Projects...")
@@ -104,29 +124,46 @@ statuses = []
 print("Creating Boards and Statuses...")
 for proj in projects:
     board, _ = Board.objects.get_or_create(title=f"Sprint 1 - {proj.name}", project=proj)
-    status_todo, _ = TaskStatus.objects.get_or_create(board=board, code="todo", defaults={"name": "To Do", "order": 1})
-    status_doing, _ = TaskStatus.objects.get_or_create(board=board, code="doing", defaults={"name": "Doing", "order": 2})
-    status_done, _ = TaskStatus.objects.get_or_create(board=board, code="done", defaults={"name": "Done", "order": 3})
+    status_todo, _ = TaskStatus.objects.get_or_create(
+        board=board, code="todo", defaults={"name": "To Do", "order": 1}
+    )
+    status_doing, _ = TaskStatus.objects.get_or_create(
+        board=board, code="doing", defaults={"name": "Doing", "order": 2}
+    )
+    status_done, _ = TaskStatus.objects.get_or_create(
+        board=board, code="done", defaults={"name": "Done", "order": 3}
+    )
 
     boards.append(board)
     statuses.append((status_todo, status_doing, status_done))
 
 # 6. Create 12 Tasks (3x previous)
 task_titles = [
-    "Setup Authentication", "Create User Models", "Design Homepage", "Design Dashboard",
-    "SEO Optimization", "Social Media Plan", "Setup CI/CD", "Dockerize App",
-    "Train Transformer", "Data Cleaning", "Scan Vulnerabilities", "Fix XSS Bug"
+    "Setup Authentication",
+    "Create User Models",
+    "Design Homepage",
+    "Design Dashboard",
+    "SEO Optimization",
+    "Social Media Plan",
+    "Setup CI/CD",
+    "Dockerize App",
+    "Train Transformer",
+    "Data Cleaning",
+    "Scan Vulnerabilities",
+    "Fix XSS Bug",
 ]
 
 print("Creating Tasks...")
 for i, title in enumerate(task_titles):
-    proj = projects[i // 2] # 2 tasks per project
+    proj = projects[i // 2]  # 2 tasks per project
     proj_members = [pm.user for pm in proj.members.exclude(user__isnull=True)]
     assignee = random.choice(proj_members) if proj_members else proj.owner
 
     proj_statuses = statuses[i // 2]
-    status = random.choice(proj_statuses) # Random status
+    status = random.choice(proj_statuses)  # Random status
 
-    Task.objects.get_or_create(title=title, project=proj, defaults={"status": status, "assignee": assignee})
+    Task.objects.get_or_create(
+        title=title, project=proj, defaults={"status": status, "assignee": assignee}
+    )
 
 print("\nDummy data creation complete!")

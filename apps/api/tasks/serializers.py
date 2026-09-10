@@ -159,7 +159,6 @@ class TaskCommentSerializer(serializers.ModelSerializer):
         return attrs
 
 
-
 class TaskListSerializer(serializers.ModelSerializer):
     status_detail = TaskStatusSerializer(source="status", read_only=True, allow_null=True)
     assignee_detail = UserMinimalSerializer(source="assignee", read_only=True)

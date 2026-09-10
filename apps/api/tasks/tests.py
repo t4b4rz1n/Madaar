@@ -15,7 +15,6 @@ from tasks.models import (
     AsyncStandup,
     Board,
     Task,
-     
     TaskChecklistItem,
     TaskComment,
     TaskStatus,
@@ -869,7 +868,9 @@ class StandupGridTestCase(APITestCase):
 
         self.client.force_authenticate(user=self.owner_user)
         url = reverse("task-standup-grid")
-        res = self.client.get(url, {"project": str(self.project.id), "year": now.year, "month": now.month})
+        res = self.client.get(
+            url, {"project": str(self.project.id), "year": now.year, "month": now.month}
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
         member_ids = {m["id"] for m in res.data["members"]}
@@ -886,4 +887,3 @@ class StandupGridTestCase(APITestCase):
         url = reverse("task-standup-grid")
         res = self.client.get(url, {"project": str(self.project.id)})
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-

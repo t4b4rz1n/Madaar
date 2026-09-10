@@ -5,10 +5,10 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from projects.models import ProjectActivity
+
 from .models import (
     Board,
     Task,
-    
     TaskChecklistItem,
     TaskComment,
     TaskStatus,
@@ -78,14 +78,21 @@ class BoardService:
         if actor and boards_to_update:
             first_board = boards_to_update[0]
             ProjectActivity.objects.create(
-                project=board.project if 'board' in locals() and hasattr(board, 'project') else (first_board.project if 'first_board' in locals() else None),
+                project=board.project
+                if "board" in locals() and hasattr(board, "project")
+                else (first_board.project if "first_board" in locals() else None),
                 event_type=ProjectActivity.EventType.BOARD_UPDATED,
                 entity_type=ProjectActivity.EntityType.BOARD,
-                entity_id=str(board.id if 'board' in locals() else first_board.id),
+                entity_id=str(board.id if "board" in locals() else first_board.id),
                 actor=actor,
-                metadata={"action": Truncator(
-                    str(_("Reordered boards in project '%(project)s'") % {"project": project.name})
-                ).chars(255)},
+                metadata={
+                    "action": Truncator(
+                        str(
+                            _("Reordered boards in project '%(project)s'")
+                            % {"project": project.name}
+                        )
+                    ).chars(255)
+                },
             )
 
 
@@ -125,14 +132,18 @@ class TaskStatusService:
 
         if actor:
             ProjectActivity.objects.create(
-                project=board.project if 'board' in locals() and hasattr(board, 'project') else (first_board.project if 'first_board' in locals() else None),
+                project=board.project
+                if "board" in locals() and hasattr(board, "project")
+                else (first_board.project if "first_board" in locals() else None),
                 event_type=ProjectActivity.EventType.BOARD_UPDATED,
                 entity_type=ProjectActivity.EntityType.BOARD,
-                entity_id=str(board.id if 'board' in locals() else first_board.id),
+                entity_id=str(board.id if "board" in locals() else first_board.id),
                 actor=actor,
-                metadata={"action": Truncator(str(_("Added status '%(name)s' to board") % {"name": name})).chars(
-                    255
-                )},
+                metadata={
+                    "action": Truncator(
+                        str(_("Added status '%(name)s' to board") % {"name": name})
+                    ).chars(255)
+                },
             )
 
         return status_obj
@@ -151,14 +162,18 @@ class TaskStatusService:
 
         if actor:
             ProjectActivity.objects.create(
-                project=board.project if 'board' in locals() and hasattr(board, 'project') else (first_board.project if 'first_board' in locals() else None),
+                project=board.project
+                if "board" in locals() and hasattr(board, "project")
+                else (first_board.project if "first_board" in locals() else None),
                 event_type=ProjectActivity.EventType.BOARD_UPDATED,
                 entity_type=ProjectActivity.EntityType.BOARD,
-                entity_id=str(board.id if 'board' in locals() else first_board.id),
+                entity_id=str(board.id if "board" in locals() else first_board.id),
                 actor=actor,
-                metadata={"action": Truncator(
-                    str(_("Removed status '%(name)s' from board") % {"name": name})
-                ).chars(255)},
+                metadata={
+                    "action": Truncator(
+                        str(_("Removed status '%(name)s' from board") % {"name": name})
+                    ).chars(255)
+                },
             )
 
     @staticmethod
@@ -187,14 +202,18 @@ class TaskStatusService:
 
         if actor:
             ProjectActivity.objects.create(
-                project=board.project if 'board' in locals() and hasattr(board, 'project') else (first_board.project if 'first_board' in locals() else None),
+                project=board.project
+                if "board" in locals() and hasattr(board, "project")
+                else (first_board.project if "first_board" in locals() else None),
                 event_type=ProjectActivity.EventType.BOARD_UPDATED,
                 entity_type=ProjectActivity.EntityType.BOARD,
-                entity_id=str(board.id if 'board' in locals() else first_board.id),
+                entity_id=str(board.id if "board" in locals() else first_board.id),
                 actor=actor,
-                metadata={"action": Truncator(
-                    str(_("Reordered statuses on board '%(board)s'") % {"board": board.title})
-                ).chars(255)},
+                metadata={
+                    "action": Truncator(
+                        str(_("Reordered statuses on board '%(board)s'") % {"board": board.title})
+                    ).chars(255)
+                },
             )
 
 
@@ -317,13 +336,15 @@ class TaskService:
 
         # Log activity
         ProjectActivity.objects.create(
-                project=task.status.board.project if task.status and task.status.board else (task.project if hasattr(task, 'project') else None),
-                event_type=ProjectActivity.EventType.TASK_CREATED,
-                entity_type=ProjectActivity.EntityType.TASK,
-                entity_id=str(task.id),
-                actor=reporter,
-                metadata={"action": str(_("Task created: %(title)s") % {"title": task.title})},
-            )
+            project=task.status.board.project
+            if task.status and task.status.board
+            else (task.project if hasattr(task, "project") else None),
+            event_type=ProjectActivity.EventType.TASK_CREATED,
+            entity_type=ProjectActivity.EntityType.TASK,
+            entity_id=str(task.id),
+            actor=reporter,
+            metadata={"action": str(_("Task created: %(title)s") % {"title": task.title})},
+        )
 
         return task
 
@@ -556,7 +577,9 @@ class TaskService:
             entity_type=ProjectActivity.EntityType.TASK,
             entity_id=str(task.id),
             actor=actor,
-            metadata={"action": Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255)},
+            metadata={
+                "action": Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255)
+            },
         )
 
     @staticmethod
@@ -601,9 +624,11 @@ class ChecklistService:
                 entity_type=ProjectActivity.EntityType.TASK,
                 entity_id=str(task.id),
                 actor=actor,
-                metadata={"action": Truncator(
-                    str(_("Added checklist item: %(desc)s") % {"desc": description})
-                ).chars(255)},
+                metadata={
+                    "action": Truncator(
+                        str(_("Added checklist item: %(desc)s") % {"desc": description})
+                    ).chars(255)
+                },
             )
         return item
 
@@ -616,17 +641,21 @@ class ChecklistService:
         status_str = _("completed") if item.is_completed else _("uncompleted")
         if actor:
             ProjectActivity.objects.create(
-                project=item.task.status.board.project if item.task.status and item.task.status.board else None,
+                project=item.task.status.board.project
+                if item.task.status and item.task.status.board
+                else None,
                 event_type=ProjectActivity.EventType.TASK_CHECKLIST_UPDATED,
                 entity_type=ProjectActivity.EntityType.TASK,
                 entity_id=str(item.task.id),
                 actor=actor,
-                metadata={"action": Truncator(
-                    str(
-                        _("Marked checklist '%(desc)s' as %(status)s")
-                        % {"desc": item.description, "status": status_str}
-                    )
-                ).chars(255)},
+                metadata={
+                    "action": Truncator(
+                        str(
+                            _("Marked checklist '%(desc)s' as %(status)s")
+                            % {"desc": item.description, "status": status_str}
+                        )
+                    ).chars(255)
+                },
             )
         return item
 
@@ -645,9 +674,11 @@ class ChecklistService:
                 entity_type=ProjectActivity.EntityType.TASK,
                 entity_id=str(task.id),
                 actor=actor,
-                metadata={"action": Truncator(str(_("Deleted checklist item: %(desc)s") % {"desc": desc})).chars(
-                    255
-                )},
+                metadata={
+                    "action": Truncator(
+                        str(_("Deleted checklist item: %(desc)s") % {"desc": desc})
+                    ).chars(255)
+                },
             )
 
 
