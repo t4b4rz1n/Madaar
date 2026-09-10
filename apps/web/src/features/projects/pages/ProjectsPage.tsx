@@ -27,13 +27,13 @@ import { usePermissions } from "../../auth/hooks/usePermissions";
 
 const statusConfig: Record<
   ProjectStatus,
-  { label: string; bgClass: string }
+  { label: string; bgClass: string; textColor: string }
 > = {
-  active:    { label: "Active",     bgClass: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-100" },
-  draft:     { label: "Draft",      bgClass: "bg-base-content/10 text-base-content/70" },
-  on_hold:   { label: "On Hold",    bgClass: "bg-amber-500/20 text-amber-700 dark:text-amber-100" },
-  completed: { label: "Completed",  bgClass: "bg-blue-500/20 text-blue-700 dark:text-blue-100" },
-  archived:  { label: "Archived",   bgClass: "bg-red-500/20 text-red-700 dark:text-red-100" },
+  active:    { label: "Active",     bgClass: "bg-emerald-500/20", textColor: "text-emerald-600" },
+  draft:     { label: "Draft",      bgClass: "bg-base-content/10", textColor: "text-base-content/70" },
+  on_hold:   { label: "On Hold",    bgClass: "bg-amber-500/20", textColor: "text-amber-600" },
+  completed: { label: "Completed",  bgClass: "bg-blue-500/20", textColor: "text-blue-600" },
+  archived:  { label: "Archived",   bgClass: "bg-red-500/20", textColor: "text-red-600" },
 };
 
 const ProgressRing = ({
@@ -78,7 +78,6 @@ const ProgressRing = ({
           cx={radius}
           cy={radius}
           className="transition-all duration-1000 ease-in-out"
-          filter={`drop-shadow(0 0 4px ${color}80)`}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -220,7 +219,7 @@ function ProjectCard({
             {project.name}
           </h2>
           <div className="flex items-center gap-2">
-            <span className={`rounded-lg px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cfg.bgClass}`}>
+            <span className={`rounded-lg px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cfg.bgClass} ${cfg.textColor}`}>
               {cfg.label}
             </span>
             {canManage && (
