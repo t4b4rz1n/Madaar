@@ -309,8 +309,6 @@ class TelegramBotService:
     def _handle_main_menu(cls, chat_id: str, lang: str, edit_message_id: int = None):
         """Shows the main interactive menu."""
         user = cls._get_user_by_chat_id(chat_id)
-        if lang:
-            translation.activate(lang)
         cls._update_user_language(user, lang)
 
         name = user.first_name if user else _("User")
@@ -837,6 +835,9 @@ class TelegramBotService:
         """Handles unrecognized messages and tracks spam."""
         from django.core.cache import cache
 
+        if lang:
+            translation.activate(lang)
+
         spam_key = f"tg_spam_{chat_id}"
         ban_key = f"tg_ban_{chat_id}"
 
@@ -845,9 +846,6 @@ class TelegramBotService:
         cache.set(spam_key, count, timeout=120)
 
         if count >= 10:
-            # Activate language before building the ban message
-            if lang:
-                translation.activate(lang)
             # Ban the user for 5 minutes (300 seconds)
             cache.set(ban_key, True, timeout=300)
             cache.delete(spam_key)
@@ -866,9 +864,6 @@ class TelegramBotService:
         user = cls._get_user_by_chat_id(chat_id)
         if user:
             cls._update_user_language(user, lang)
-            # Activate language BEFORE building the translated error message
-            if lang:
-                translation.activate(lang)
             error_msg = _(
                 " <b>Invalid command!</b>\n\nI didn't understand. Please use the buttons below:"
             )
