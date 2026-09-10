@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
+  ArrowDown2,
   People,
   TaskSquare,
   Activity,
@@ -70,22 +71,85 @@ const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
   { id: "activity",   label: "Activity",    icon: <Activity size={15} /> },
 ];
 
+
+const STATUS_OPTIONS = [
+  { value: "draft", label: "Draft" },
+  { value: "active", label: "Active" },
+  { value: "on_hold", label: "On Hold" },
+  { value: "completed", label: "Completed" },
+  { value: "archived", label: "Archived" },
+];
+
+function StatusDropdown({
+  currentStatus,
+  onChange,
+  disabled
+}: {
+  currentStatus: string;
+  onChange: (s: string) => void;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selectedOption = STATUS_OPTIONS.find((o) => o.value === currentStatus) || STATUS_OPTIONS[0];
+
+  useEffect(() => {
+    const listener = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", listener);
+    return () => document.removeEventListener("mousedown", listener);
+  }, []);
+
+  return (
+    <div className="relative z-[100]" ref={ref}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1 cursor-pointer appearance-none rounded-full px-2.5 py-0.5 text-[10px] font-bold capitalize outline-none transition-all ${statusStyles[currentStatus] || statusStyles.draft}`}
+      >
+        {selectedOption.label}
+        <ArrowDown2 size={10} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 top-7 min-w-[120px] rounded-xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl"
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-base-content/5 ${
+                  currentStatus === opt.value ? "bg-primary/10 font-bold text-primary" : "font-medium text-base-content"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function ProjectDetailsPage() {
   
   const updateProjectMutation = useUpdateProject();
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!project) return;
-    const newStatus = e.target.value as any;
-    updateProjectMutation.mutate({ id: project.id, data: { status: newStatus } }, {
-      onSuccess: () => {
-        toast.success("Project status updated.");
-      },
-      onError: () => {
-        toast.error("Failed to update status.");
-      }
-    });
-  };
+
 const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const setActiveProject = useTaskStore((state) => state.setActiveProject);
@@ -206,20 +270,17 @@ const { id } = useParams<{ id: string }>();
               <h1 dir="auto" className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
                 {project.name}
               </h1>
-              <select
-                value={project.status}
-                onChange={handleStatusChange}
-                disabled={updateProjectMutation.isPending}
-                className={`cursor-pointer appearance-none rounded-full px-2.5 py-0.5 text-[10px] font-bold capitalize outline-none transition-all ${
-                  statusStyles[project.status] || statusStyles.draft
-                }`}
-              >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="on_hold">On Hold</option>
-                <option value="completed">Completed</option>
-                <option value="archived">Archived</option>
-              </select>
+              <StatusDropdown 
+                currentStatus={project.status} 
+                onChange={(s) => {
+                  if (!project) return;
+                  updateProjectMutation.mutate({ id: project.id, data: { status: s as any } }, {
+                    onSuccess: () => toast.success("Project status updated."),
+                    onError: () => toast.error("Failed to update status.")
+                  });
+                }} 
+                disabled={updateProjectMutation.isPending} 
+              />
             </div>
             {project.description && (
               <p dir="auto" className="mt-0.5 text-xs text-base-content/50 line-clamp-1">
