@@ -337,6 +337,13 @@ class TaskService:
             actor=reporter,
             metadata={"action": str(_("Task created: %(title)s") % {"title": task.title})},
         )
+        
+        if getattr(task, "milestone_id", None):
+            try:
+                from projects.services import MilestoneService
+                MilestoneService.sync_completion_status(task.milestone_id, reporter)
+            except Exception:
+                pass
 
         return task
 
@@ -424,6 +431,14 @@ class TaskService:
                 actor=actor,
                 metadata={"action": Truncator(action_desc).chars(255)},
             )
+
+        if "is_finished" in kwargs or "milestone" in kwargs:
+            if getattr(task, "milestone_id", None):
+                try:
+                    from projects.services import MilestoneService
+                    MilestoneService.sync_completion_status(task.milestone_id, actor)
+                except Exception:
+                    pass
 
         return task
 
@@ -548,6 +563,13 @@ class TaskService:
                 actor=actor,
                 metadata={"action": Truncator(" | ".join(action_parts)).chars(255)},
             )
+            
+        if changed and getattr(task, "milestone_id", None):
+            try:
+                from projects.services import MilestoneService
+                MilestoneService.sync_completion_status(task.milestone_id, actor)
+            except Exception:
+                pass
 
         return task
 
@@ -573,6 +595,13 @@ class TaskService:
                 "action": Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255)
             },
         )
+        
+        if getattr(task, "milestone_id", None):
+            try:
+                from projects.services import MilestoneService
+                MilestoneService.sync_completion_status(task.milestone_id, actor)
+            except Exception:
+                pass
 
     @staticmethod
     @transaction.atomic

@@ -3,12 +3,14 @@ import re
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 from automations.events import EventDispatcher
 
-from .models import AsyncStandup, Task, TaskChecklistItem, TaskComment
+from .models import AsyncStandup, Task, TaskChecklistItem, TaskComment, TaskStatus, TaskStatusTransition
 
 User = get_user_model()
+
 
 
 @receiver(post_save, sender=TaskChecklistItem)
@@ -25,10 +27,66 @@ def cache_previous_task_state(sender, instance, **kwargs):
         try:
             old = Task.objects.get(pk=instance.pk)
             instance.__original_assignee_id = old.assignee_id
+            instance.__original_status_id = old.status_id
             instance.__original_status_code = old.status.code if old.status else None
+            instance.__original_status_name = old.status.name if old.status else ""
             instance.__original_is_finished = old.is_finished
         except Task.DoesNotExist:
             pass
+
+
+@receiver(post_save, sender=Task)
+def record_status_transition(sender, instance, created, **kwargs):
+    """
+    Records a TaskStatusTransition whenever a task's status changes.
+    This feeds CFD, Cycle Time, and Lead Time analytics.
+    Swallows exceptions so it never aborts the main transaction.
+    """
+    try:
+        new_status = instance.status
+        if new_status is None:
+            return
+
+        if created:
+            # First transition: None → initial status
+            TaskStatusTransition.objects.create(
+                task=instance,
+                from_status=None,
+                to_status=new_status,
+                from_status_code="",
+                from_status_name="",
+                to_status_code=new_status.code,
+                to_status_name=new_status.name,
+                transitioned_at=instance.created_at or timezone.now(),
+                transitioned_by=getattr(instance, "_actor", None),
+            )
+        else:
+            old_status_id = getattr(instance, "__original_status_id", None)
+            if old_status_id and old_status_id != instance.status_id:
+                # Status changed — record transition
+                from_status_code = getattr(instance, "__original_status_code", "") or ""
+                from_status_name = getattr(instance, "__original_status_name", "") or ""
+                try:
+                    from_status_obj = TaskStatus.objects.get(pk=old_status_id)
+                except TaskStatus.DoesNotExist:
+                    from_status_obj = None
+
+                TaskStatusTransition.objects.create(
+                    task=instance,
+                    from_status=from_status_obj,
+                    to_status=new_status,
+                    from_status_code=from_status_code,
+                    from_status_name=from_status_name,
+                    to_status_code=new_status.code,
+                    to_status_name=new_status.name,
+                    transitioned_at=timezone.now(),
+                    transitioned_by=getattr(instance, "_actor", None),
+                )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "record_status_transition failed for Task %s: %s", instance.pk, exc
+        )
 
 
 @receiver(post_save, sender=Task)

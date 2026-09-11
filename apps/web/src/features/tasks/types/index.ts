@@ -135,6 +135,13 @@ export interface Task {
   spent_hours?: number;
   spent_seconds?: number;
   project?: number;
+  milestone?: string | number | null;
+  milestone_detail?: {
+    id: string | number;
+    title: string;
+    status: string;
+    target_date: string;
+  } | null;
 }
 
 export interface Board {

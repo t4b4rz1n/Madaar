@@ -11,6 +11,7 @@ import {
   Trash,
   Crown,
   Flag,
+  Chart,
 } from "iconsax-reactjs";
 import {
   useProject,
@@ -23,11 +24,14 @@ import {
 import type { ProjectMember, Milestone, ProjectActivity } from "../types";
 import { useTaskStore } from "../../tasks/store/useTaskStore";
 import { AddMemberModal } from "../components/AddMemberModal";
+import CumulativeFlowChart from "../components/CumulativeFlowChart";
+import CycleLeadTimeReport from "../components/CycleLeadTimeReport";
+import MilestoneBurndownChart from "../components/MilestoneBurndownChart";
 import { CreateMilestoneModal } from "../components/CreateMilestoneModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { toast } from "sonner";
 
-type TabType = "overview" | "members" | "milestones" | "activity";
+type TabType = "overview" | "members" | "milestones" | "activity" | "analytics";
 
 const DEFAULT_COLOR = "#6366f1";
 
@@ -64,11 +68,66 @@ const formatDate = (value?: string | null) => {
   }).format(new Date(value));
 };
 
+function MilestoneItem({ ms }: { ms: Milestone }) {
+  const msCfg = milestoneStatusConfig[ms.status] ?? milestoneStatusConfig.pending;
+  const [showChart, setShowChart] = useState(false);
+  
+  const total = ms.task_count || 0;
+  const completed = ms.completed_task_count || 0;
+  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-base-content/6 bg-base-200/40 p-3 text-xs transition-all">
+      <div 
+        className="flex items-center justify-between cursor-pointer" 
+        onClick={() => setShowChart(!showChart)}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <Flag size={15} className="shrink-0 text-primary" />
+          <div className="min-w-0 flex flex-col gap-1">
+            <p dir="auto" className="font-bold text-base-content truncate">
+              {ms.title}
+            </p>
+            <div className="flex items-center gap-3 text-[10px] text-base-content/45">
+              {ms.target_date && <span>Target: {formatDate(ms.target_date)}</span>}
+              <div className="flex items-center gap-1.5" title={`${completed} of ${total} tasks completed`}>
+                <TaskSquare size={12} className="text-base-content/40" />
+                <span>{completed}/{total}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden sm:flex flex-col items-end gap-1 mr-2">
+            <div className="text-[10px] font-medium text-base-content/60">{progressPercent}%</div>
+            <div className="w-16 h-1.5 rounded-full bg-base-300 overflow-hidden">
+              <div 
+                className="h-full bg-primary rounded-full transition-all duration-500" 
+                style={{ width: `${progressPercent}%` }} 
+              />
+            </div>
+          </div>
+          <span className={`rounded-md px-2.5 py-1 text-[10px] font-bold ${msCfg.cls}`}>
+            {msCfg.label}
+          </span>
+          <ArrowDown2 size={14} className={`text-base-content/50 transition-transform ${showChart ? "rotate-180" : ""}`} />
+        </div>
+      </div>
+      {showChart && (
+        <div className="pt-3 border-t border-base-content/8 mt-1">
+          <MilestoneBurndownChart milestoneId={String(ms.id)} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
   { id: "overview",   label: "Overview",    icon: <TaskSquare size={15} /> },
   { id: "members",    label: "Members",     icon: <People size={15} /> },
   { id: "milestones", label: "Milestones",  icon: <Flag size={15} /> },
   { id: "activity",   label: "Activity",    icon: <Activity size={15} /> },
+  { id: "analytics",  label: "Analytics",   icon: <Chart size={15} /> },
 ];
 
 
@@ -550,32 +609,9 @@ const { id } = useParams<{ id: string }>();
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {milestones.map((ms: Milestone) => {
-                    const msCfg = milestoneStatusConfig[ms.status] ?? milestoneStatusConfig.pending;
-                    return (
-                      <div
-                        key={ms.id}
-                        className="flex items-center justify-between rounded-xl border border-base-content/6 bg-base-200/40 p-3 text-xs"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Flag size={15} className="shrink-0 text-primary" />
-                          <div className="min-w-0">
-                            <p dir="auto" className="font-bold text-base-content truncate">
-                              {ms.title}
-                            </p>
-                            {ms.target_date && (
-                              <p className="text-[10px] text-base-content/45 mt-0.5">
-                                Target: {formatDate(ms.target_date)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <span className={`shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold ${msCfg.cls}`}>
-                          {msCfg.label}
-                        </span>
-                      </div>
-                    );
-                  })}
+                  {milestones.map((ms: Milestone) => (
+                    <MilestoneItem key={ms.id} ms={ms} />
+                  ))}
                 </div>
               )}
             </div>
@@ -614,6 +650,13 @@ const { id } = useParams<{ id: string }>();
                   })}
                 </div>
               )}
+            </div>
+          )}
+          {/* ── ANALYTICS TAB ── */}
+          {activeTab === "analytics" && (
+            <div className="space-y-5">
+              <CumulativeFlowChart projectId={id || ""} />
+              <CycleLeadTimeReport projectId={id || ""} />
             </div>
           )}
         </motion.div>

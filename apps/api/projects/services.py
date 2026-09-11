@@ -410,12 +410,33 @@ class ProjectMemberService:
 
 
 class MilestoneService:
+    @classmethod
+    @transaction.atomic
+    def sync_completion_status(cls, milestone_id: str, actor=None):
+        """Automatically updates milestone status to COMPLETED if all tasks are finished, or IN_PROGRESS otherwise."""
+        milestone = Milestone.objects.get(pk=milestone_id)
+        
+        from django.db.models import Count, Q
+        stats = milestone.tasks.filter(is_deleted=False).aggregate(
+            total=Count("id"),
+            done=Count("id", filter=Q(is_finished=True))
+        )
+        total = stats["total"] or 0
+        done = stats["done"] or 0
+        
+        if total > 0 and done == total:
+            if milestone.status != Milestone.Status.COMPLETED:
+                cls.update(milestone=milestone, actor=actor, validated_data={"status": Milestone.Status.COMPLETED})
+        else:
+            if milestone.status == Milestone.Status.COMPLETED:
+                cls.update(milestone=milestone, actor=actor, validated_data={"status": Milestone.Status.IN_PROGRESS})
     """Handles all Milestone mutations."""
 
     @staticmethod
     def get_base_queryset(project_id=None) -> QuerySet[Milestone]:
         qs = Milestone.objects.annotate(
-            task_count=Count("tasks", filter=Q(tasks__is_deleted=False))
+            task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
+            completed_task_count=Count("tasks", filter=Q(tasks__is_deleted=False, tasks__is_finished=True))
         )
         if project_id:
             qs = qs.filter(project_id=project_id)

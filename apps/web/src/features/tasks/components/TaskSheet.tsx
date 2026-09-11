@@ -10,7 +10,7 @@ import {
   Profile2User,
   Send2,
   Stop,
-  TaskSquare,
+  TaskSquare, Flag,
   TickCircle,
   Trash,
 } from "iconsax-reactjs";
@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import type { TimeLog } from "../../attendance/types";
 import type { Task } from "../types";
 import { useTaskStore } from "../store/useTaskStore";
-import { getProjectMembers } from "../../projects/api/projectsApi";
+import { getProjectMembers, getProjectMilestones } from "../../projects/api/projectsApi";
 import { createManualLog } from "../../attendance/api/attendanceApi";
 import {
   addChecklistItem,
@@ -151,8 +151,14 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   const effectiveProjectId = task?.project || storeProjectId;
 
   const { data: projectMembers = [] } = useQuery({
-    queryKey: ["projectMembers", effectiveProjectId],
+    queryKey: ["projects", "detail", String(effectiveProjectId), "members"],
     queryFn: () => getProjectMembers(effectiveProjectId!),
+    enabled: Boolean(effectiveProjectId),
+  });
+
+  const { data: projectMilestones = [] } = useQuery({
+    queryKey: ["projects", "detail", String(effectiveProjectId), "milestones"],
+    queryFn: () => getProjectMilestones(effectiveProjectId!),
     enabled: Boolean(effectiveProjectId),
   });
 
@@ -469,6 +475,32 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       </option>
                     )
                 )}
+              </select>
+            </div>
+
+            {/* Milestone Pill */}
+            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[11px] font-semibold text-base-content/70 hover:bg-base-200 transition">
+              <Flag size={13} className="me-1.5 text-base-content/45 shrink-0" />
+              <select
+                value={task.milestone?.toString() || ""}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  const selectedMilestone = projectMilestones.find(
+                    (m) => String(m.id) === newId
+                  );
+                  save({
+                    milestone: newId ? newId : null,
+                    milestone_detail: selectedMilestone || null,
+                  } as any);
+                }}
+                className="bg-transparent font-semibold text-base-content outline-none cursor-pointer truncate max-w-[110px]"
+              >
+                <option value="">No Milestone</option>
+                {projectMilestones.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.title}
+                  </option>
+                ))}
               </select>
             </div>
 

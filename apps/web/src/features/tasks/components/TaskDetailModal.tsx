@@ -4,6 +4,7 @@ import type { Task } from '../types';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { updateTask, getTaskComments, addComment, updateComment, deleteComment, getTaskChecklists, addChecklistItem, toggleChecklistItem, deleteTask, getTaskActivities, getProjectMembers } from '../api/tasksApi';
 import { CloseSquare, TextalignLeft, Activity, Tag, Calendar, TaskSquare, Paperclip2 } from 'iconsax-reactjs';
+import { getProjectMilestones } from '../../projects/api/projectsApi';
 import { format } from 'date-fns';
 import { ConfirmationModal } from '../../../components/ConfirmationModal';
 import { ManualTimeLogForm } from '../../attendance/components/ManualTimeLogForm';
@@ -64,12 +65,21 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   });
 
   const { data: users = [] } = useQuery({
-    queryKey: ['projectMembers', task.project],
+    queryKey: ['projects', 'detail', String(task.project), 'members'],
     queryFn: async () => {
       if (!task.project) return [];
       const members = await getProjectMembers(task.project.toString());
       // map { user: {...} } to just the user object
       return members.map((m: any) => m.user).filter(Boolean);
+    },
+    enabled: !!task.project,
+  });
+
+  const { data: projectMilestones = [] } = useQuery({
+    queryKey: ['projects', 'detail', String(task.project), 'milestones'],
+    queryFn: async () => {
+      if (!task.project) return [];
+      return await getProjectMilestones(task.project.toString());
     },
     enabled: !!task.project,
   });
@@ -271,6 +281,23 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                   <option value="medium" className="bg-[#273043]">Priority: Medium</option>
                   <option value="high" className="bg-[#273043]">Priority: High</option>
                   <option value="critical" className="bg-[#273043]">Priority: Critical</option>
+                </select>
+
+                <select
+                  value={task.milestone?.toString() || ''}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    
+                    updateMutation.mutate({ milestone: newId ? newId : null } as any);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-[13px] text-white/80 border border-white/5 transition-colors outline-none cursor-pointer max-w-[150px]"
+                >
+                  <option value="" className="bg-[#273043]">Milestone: None</option>
+                  {projectMilestones.map((m: any) => (
+                    <option key={m.id} value={m.id} className="bg-[#273043] truncate">
+                      {m.title}
+                    </option>
+                  ))}
                 </select>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-[13px] text-white/80 border border-white/5 transition-colors">
                   <span className="text-lg leading-none mb-0.5">+</span> Add
