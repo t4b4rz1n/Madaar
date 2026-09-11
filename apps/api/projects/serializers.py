@@ -424,6 +424,7 @@ class MilestoneSerializer(serializers.ModelSerializer):
 
     # default=0 prevents errors when object is not annotated
     task_count = serializers.IntegerField(read_only=True, default=0)
+    completed_task_count = serializers.IntegerField(read_only=True, default=0)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
@@ -441,6 +442,7 @@ class MilestoneSerializer(serializers.ModelSerializer):
             "sequence",
             "weight",
             "task_count",
+            "completed_task_count",
             "created_at",
             "updated_at",
         )

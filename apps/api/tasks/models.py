@@ -481,3 +481,67 @@ class AsyncStandup(BaseModel):
     def __str__(self):
         user_info = f"User {self.user_id}" if self.user_id else "Unknown User"
         return f"Standup by {user_info} on {self.date}"
+
+
+class TaskStatusTransition(models.Model):
+    """
+    Immutable audit trail of every status change on a Task.
+
+    Created automatically by a post_save signal and by TaskService.move_task.
+    NOT a BaseModel (no soft-delete) — history must never be erased.
+    Used for CFD, Cycle Time, and Lead Time analytics.
+    """
+
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="status_transitions",
+        verbose_name=_("Task"),
+        db_index=True,
+    )
+    from_status = models.ForeignKey(
+        TaskStatus,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("From status"),
+    )
+    to_status = models.ForeignKey(
+        TaskStatus,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="+",
+        verbose_name=_("To status"),
+    )
+    # Snapshots — preserved even if the TaskStatus row is later deleted/renamed
+    from_status_code = models.CharField(_("From status code"), max_length=50, blank=True, default="")
+    from_status_name = models.CharField(_("From status name"), max_length=100, blank=True, default="")
+    to_status_code = models.CharField(_("To status code"), max_length=50)
+    to_status_name = models.CharField(_("To status name"), max_length=100)
+
+    transitioned_at = models.DateTimeField(
+        _("Transitioned at"),
+        default=timezone.now,
+        db_index=True,
+    )
+    transitioned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="task_status_transitions",
+        verbose_name=_("Transitioned by"),
+    )
+
+    class Meta:
+        verbose_name = _("Task Status Transition")
+        verbose_name_plural = _("Task Status Transitions")
+        ordering = ["transitioned_at"]
+        indexes = [
+            models.Index(fields=["task", "transitioned_at"], name="transition_task_time_idx"),
+            models.Index(fields=["to_status", "transitioned_at"], name="transition_status_time_idx"),
+        ]
+
+    def __str__(self):
+        return f"Task {self.task_id}: {self.from_status_code or '—'} → {self.to_status_code}"

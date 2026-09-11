@@ -2,7 +2,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Calendar1,
+  Calendar1, Flag,
   CloseCircle,
   More,
   Play,
@@ -298,13 +298,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               </div>
             </button>
 
-            {/* ─── Task Metadata (Due Date & Checklist) ─── */}
-            {(task.due_date || (task.checklist_stats && task.checklist_stats.total > 0)) && (
-              <div className="flex items-center gap-2.5 text-[10px] font-medium text-base-content/40">
+            {/* ─── Task Metadata (Due Date, Checklist & Milestone) ─── */}
+            {(task.due_date || (task.checklist_stats && task.checklist_stats.total > 0) || task.milestone_detail) && (
+              <div className="flex flex-wrap items-center gap-2.5 text-[10px] font-medium text-base-content/40">
                 {task.due_date && (
                   <div className={`flex items-center gap-1 ${isOverdue && !isActuallyDone ? 'text-red-500 font-bold bg-red-500/10 px-1.5 py-0.5 rounded-md -ml-1' : ''}`} title="Due date">
                     <Calendar1 size={13} variant={isOverdue && !isActuallyDone ? "Bold" : "Linear"} />
                     <span>{new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                )}
+                {task.milestone_detail && (
+                  <div className="flex items-center gap-1 max-w-[100px]" title="Milestone">
+                    <Flag size={13} className="shrink-0" />
+                    <span className="truncate">{task.milestone_detail.title}</span>
                   </div>
                 )}
                 {task.checklist_stats && task.checklist_stats.total > 0 && (

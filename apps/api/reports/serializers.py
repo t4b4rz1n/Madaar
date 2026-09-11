@@ -209,3 +209,92 @@ class ExecutiveDashboardSerializer(serializers.Serializer):
     resource_utilization = ResourceUtilizationSerializer()
     project_health = ProjectHealthSerializer(many=True)
     financial_summary = FinancialSummarySerializer()
+
+
+# ---------------------------------------------------------------------------
+# Analytics serializers
+# ---------------------------------------------------------------------------
+
+
+class CfdStatusSerializer(serializers.Serializer):
+    """Metadata for a single status column in the CFD."""
+    code = serializers.CharField()
+    name = serializers.CharField()
+    order = serializers.IntegerField()
+
+
+class CfdDaySerializer(serializers.Serializer):
+    """One day's snapshot of task counts per status."""
+    date = serializers.DateField()
+    counts = serializers.DictField(child=serializers.IntegerField())
+
+
+class CfdSerializer(serializers.Serializer):
+    """Cumulative Flow Diagram response."""
+    statuses = CfdStatusSerializer(many=True)
+    data = CfdDaySerializer(many=True)
+
+
+class MilestoneMetaSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    title = serializers.CharField()
+    status = serializers.CharField()
+    start_date = serializers.DateField(allow_null=True)
+    target_date = serializers.DateField()
+    project_id = serializers.UUIDField()
+    project_name = serializers.CharField(allow_null=True)
+
+
+class BurndownPointSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    remaining = serializers.FloatField()
+
+
+class BurnupPointSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    done = serializers.IntegerField()
+    total = serializers.IntegerField()
+
+
+class MilestoneBurndownSerializer(serializers.Serializer):
+    """Burndown / Burnup chart for a milestone."""
+    milestone = MilestoneMetaSerializer()
+    total_tasks = serializers.IntegerField()
+    start_date = serializers.DateField(allow_null=True)
+    target_date = serializers.DateField(allow_null=True)
+    ideal_line = BurndownPointSerializer(many=True)
+    actual_burndown = BurndownPointSerializer(many=True)
+    burnup = BurnupPointSerializer(many=True)
+    note = serializers.CharField(required=False, allow_null=True)
+
+
+class CycleTimeByStatusSerializer(serializers.Serializer):
+    status_code = serializers.CharField()
+    avg_hours_in_status = serializers.FloatField(allow_null=True)
+
+
+class CycleTimeTaskSerializer(serializers.Serializer):
+    task_id = serializers.UUIDField()
+    title = serializers.CharField()
+    lead_time_hours = serializers.FloatField()
+    cycle_time_hours = serializers.FloatField()
+    done_at = serializers.DateTimeField()
+
+
+class CycleLeadTimePeriodSerializer(serializers.Serializer):
+    start = serializers.DateField()
+    end = serializers.DateField()
+
+
+class CycleLeadTimeSerializer(serializers.Serializer):
+    """Cycle Time & Lead Time analytics response."""
+    period = CycleLeadTimePeriodSerializer(allow_null=True)
+    task_count = serializers.IntegerField()
+    avg_lead_time_hours = serializers.FloatField(allow_null=True)
+    avg_cycle_time_hours = serializers.FloatField(allow_null=True)
+    p50_lead_time_hours = serializers.FloatField(allow_null=True)
+    p95_lead_time_hours = serializers.FloatField(allow_null=True)
+    p50_cycle_time_hours = serializers.FloatField(allow_null=True)
+    p95_cycle_time_hours = serializers.FloatField(allow_null=True)
+    by_status = CycleTimeByStatusSerializer(many=True)
+    tasks = CycleTimeTaskSerializer(many=True)

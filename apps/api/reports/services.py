@@ -37,7 +37,7 @@ from django.utils import timezone
 from attendance.models import Attendance, AttendanceSetting, TimeLog, TimeOffRequest
 from organizations.models import TeamMembership
 from projects.models import Milestone, Project, ProjectMember
-from tasks.models import AsyncStandup, Task
+from tasks.models import AsyncStandup, Task, TaskStatusTransition
 
 logger = logging.getLogger(__name__)
 
@@ -1178,3 +1178,487 @@ class ExecutiveDashboardService:
         # Cache for 60 minutes (3600 seconds)
         cache.set(cache_key, result, 3600)
         return result
+
+
+# ---------------------------------------------------------------------------
+# CumulativeFlowService
+# ---------------------------------------------------------------------------
+
+
+class CumulativeFlowService:
+    """
+    Cumulative Flow Diagram (CFD) for a project or a specific board.
+
+    Algorithm
+    ~~~~~~~~~
+    For each calendar day in [start_date, end_date]:
+      - Find the latest TaskStatusTransition for each task up to the end of that day.
+      - Count tasks per status.
+
+    Because TaskStatusTransition is append-only and indexed on (task, transitioned_at),
+    the queries are efficient even for large projects.
+
+    Status ordering
+    ~~~~~~~~~~~~~~~
+    Statuses are returned in their Kanban board order (TaskStatus.order).  If a
+    status has been deleted (to_status is NULL), the snapshot columns
+    (to_status_code / to_status_name) are used so historical data is never lost.
+    """
+
+    @classmethod
+    def get_cfd(
+        cls,
+        *,
+        project_id: str,
+        board_id: str | None = None,
+        start_date: datetime.date | None = None,
+        end_date: datetime.date | None = None,
+        tz_name: str = "UTC",
+    ) -> dict:
+        try:
+            user_tz = zoneinfo.ZoneInfo(tz_name)
+        except (zoneinfo.ZoneInfoNotFoundError, TypeError):
+            user_tz = zoneinfo.ZoneInfo("UTC")
+
+        now = datetime.datetime.now(tz=user_tz)
+        end_date = end_date or now.date()
+        start_date = start_date or (end_date - datetime.timedelta(days=30))
+
+        # Build base queryset scoped to project (and optionally board)
+        transition_qs = TaskStatusTransition.objects.filter(
+            task__project_id=project_id,
+            task__is_deleted=False,
+        )
+        if board_id:
+            transition_qs = transition_qs.filter(task__status__board_id=board_id)
+
+        # Collect all status metadata from transitions in the window
+        # We use snapshots (to_status_code / to_status_name) so deleted statuses
+        # still appear correctly in historic data.
+        status_meta: dict[str, dict] = {}  # code -> {code, name, order}
+
+        # Also pull live statuses from the board(s) for ordering
+        from tasks.models import TaskStatus
+        live_statuses_qs = TaskStatus.objects.filter(
+            board__project_id=project_id, is_deleted=False
+        )
+        if board_id:
+            live_statuses_qs = live_statuses_qs.filter(board_id=board_id)
+        for s in live_statuses_qs.order_by("order"):
+            status_meta[s.code] = {"code": s.code, "name": s.name, "order": s.order}
+
+        # Add any codes that appear in transitions but not in live statuses (deleted ones)
+        snapshot_codes = (
+            transition_qs
+            .values("to_status_code", "to_status_name")
+            .distinct()
+        )
+        extra_order = len(status_meta) + 1
+        for row in snapshot_codes:
+            code = row["to_status_code"]
+            if code and code not in status_meta:
+                status_meta[code] = {
+                    "code": code,
+                    "name": row["to_status_name"],
+                    "order": extra_order,
+                }
+                extra_order += 1
+
+        statuses_ordered = sorted(status_meta.values(), key=lambda x: x["order"])
+        status_codes = [s["code"] for s in statuses_ordered]
+
+        # For each task, find its status at each day boundary (end of day UTC)
+        # We use a Python-level reconstruction because SQL window functions
+        # would be DB-specific.  The transition table is typically small.
+        all_transitions = list(
+            transition_qs
+            .filter(transitioned_at__date__lte=end_date)
+            .values("task_id", "to_status_code", "transitioned_at")
+            .order_by("task_id", "transitioned_at")
+        )
+
+        # Build per-task sorted transition history
+        # Store transition timestamps and corresponding status codes in parallel lists
+        # to allow fast binary search using bisect.
+        import bisect
+        task_history: dict[str, tuple[list[float], list[str]]] = {}
+        for t in all_transitions:
+            tid = str(t["task_id"])
+            if tid not in task_history:
+                task_history[tid] = ([], [])
+            task_history[tid][0].append(t["transitioned_at"].timestamp())
+            task_history[tid][1].append(t["to_status_code"])
+
+        # Day-by-day aggregation
+        data = []
+        current = start_date
+        delta = datetime.timedelta(days=1)
+        utc_zone = zoneinfo.ZoneInfo("UTC")
+        while current <= end_date:
+            # End of this day in UTC as a timestamp
+            day_end_ts = datetime.datetime(
+                current.year, current.month, current.day,
+                23, 59, 59,
+                tzinfo=user_tz,
+            ).astimezone(utc_zone).timestamp()
+
+            counts: dict[str, int] = {code: 0 for code in status_codes}
+            for tid, (times, codes) in task_history.items():
+                # Fast binary search for the last transition at or before day_end
+                idx = bisect.bisect_right(times, day_end_ts)
+                if idx > 0:
+                    last_code = codes[idx - 1]
+                    if last_code in counts:
+                        counts[last_code] += 1
+
+            data.append({"date": current.isoformat(), "counts": counts})
+            current += delta
+
+        return {
+            "statuses": statuses_ordered,
+            "data": data,
+        }
+
+
+# ---------------------------------------------------------------------------
+# MilestoneBurndownService
+# ---------------------------------------------------------------------------
+
+
+class MilestoneBurndownService:
+    """
+    Burndown and Burnup chart for a single Milestone.
+
+    Inputs
+    ~~~~~~
+    * milestone.start_date  (day work begins — defaults to earliest task created_at)
+    * milestone.target_date (the deadline)
+    * Tasks linked via Task.milestone FK
+
+    Outputs
+    ~~~~~~~
+    ideal_line      — straight line from total tasks on start_date to 0 on target_date.
+    actual_burndown — actual remaining (not-Done) tasks each day.
+    burnup          — cumulative Done tasks each day vs. total tasks each day.
+
+    "Done" definition
+    ~~~~~~~~~~~~~~~~~
+    A task is counted as Done on a given day if it had a transition to a status
+    whose code is 'done' (case-insensitive) by the end of that day.
+    This is robust to dynamic statuses — we look for code == 'done', not a fixed FK.
+    """
+
+    @classmethod
+    def get_burndown(
+        cls,
+        *,
+        milestone_id: str,
+        tz_name: str = "UTC",
+    ) -> dict:
+        try:
+            user_tz = zoneinfo.ZoneInfo(tz_name)
+        except (zoneinfo.ZoneInfoNotFoundError, TypeError):
+            user_tz = zoneinfo.ZoneInfo("UTC")
+
+        try:
+            milestone = Milestone.objects.select_related("project").get(
+                pk=milestone_id, is_deleted=False
+            )
+        except Milestone.DoesNotExist:
+            return {"error": "Milestone not found"}
+
+        tasks = list(
+            Task.objects.filter(milestone=milestone, is_deleted=False)
+            .values("id", "created_at", "updated_at", "is_finished")
+        )
+        total_tasks = len(tasks)
+
+        if total_tasks == 0:
+            return {
+                "milestone": cls._milestone_meta(milestone),
+                "total_tasks": 0,
+                "ideal_line": [],
+                "actual_burndown": [],
+                "burnup": [],
+                "note": "No tasks linked to this milestone.",
+            }
+
+        # Date range
+        target_date = milestone.target_date
+        if milestone.start_date:
+            start_date = milestone.start_date
+        else:
+            earliest = min(t["created_at"] for t in tasks)
+            start_date = earliest.astimezone(user_tz).date()
+
+        today = datetime.datetime.now(tz=user_tz).date()
+        end_date = max(target_date, today)  # always extend to today so the chart is live
+
+        # Collect all "done" transitions for milestone tasks
+        task_ids = [t["id"] for t in tasks]
+        done_transitions = list(
+            TaskStatusTransition.objects.filter(
+                task_id__in=task_ids,
+                to_status_code__iexact="done",
+            ).values("task_id", "transitioned_at").order_by("task_id", "transitioned_at")
+        )
+
+        # Per-task first Done date
+        first_done: dict[str, datetime.date] = {}
+        for tr in done_transitions:
+            tid = str(tr["task_id"])
+            if tid not in first_done:
+                first_done[tid] = tr["transitioned_at"].astimezone(user_tz).date()
+        
+        # Fallback for tasks marked is_finished=True but without a transition to a "done" status
+        for t in tasks:
+            tid = str(t["id"])
+            if t["is_finished"] and tid not in first_done:
+                first_done[tid] = t["updated_at"].astimezone(user_tz).date()
+
+        # Ideal line: linear decrease from total to 0
+        num_days = (target_date - start_date).days or 1
+        ideal_line = []
+        current = start_date
+        delta = datetime.timedelta(days=1)
+        while current <= end_date:
+            if current <= target_date:
+                days_elapsed = (current - start_date).days
+                ideal_remaining = max(
+                    0,
+                    round(total_tasks - (total_tasks * days_elapsed / num_days), 1),
+                )
+            else:
+                ideal_remaining = 0
+            ideal_line.append({"date": current.isoformat(), "remaining": ideal_remaining})
+            current += delta
+
+        import bisect
+
+        # Pre-compute and sort dates to avoid timezone conversion in the loop
+        task_created_dates = sorted([t["created_at"].astimezone(user_tz).date() for t in tasks])
+        done_dates = sorted(list(first_done.values()))
+
+        # Actual burndown & burnup
+        actual_burndown = []
+        burnup = []
+        current = start_date
+        while current <= end_date:
+            done_by_today = bisect.bisect_right(done_dates, current)
+            tasks_by_today = bisect.bisect_right(task_created_dates, current)
+            
+            remaining = tasks_by_today - done_by_today
+            actual_burndown.append({"date": current.isoformat(), "remaining": remaining})
+            burnup.append({
+                "date": current.isoformat(),
+                "done": done_by_today,
+                "total": tasks_by_today,
+            })
+            current += delta
+
+        return {
+            "milestone": cls._milestone_meta(milestone),
+            "total_tasks": total_tasks,
+            "start_date": start_date.isoformat(),
+            "target_date": target_date.isoformat(),
+            "ideal_line": ideal_line,
+            "actual_burndown": actual_burndown,
+            "burnup": burnup,
+        }
+
+    @staticmethod
+    def _milestone_meta(m: Milestone) -> dict:
+        return {
+            "id": str(m.id),
+            "title": m.title,
+            "status": m.status,
+            "start_date": m.start_date.isoformat() if m.start_date else None,
+            "target_date": m.target_date.isoformat(),
+            "project_id": str(m.project_id),
+            "project_name": m.project.name if m.project else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# CycleLeadTimeService
+# ---------------------------------------------------------------------------
+
+
+class CycleLeadTimeService:
+    """
+    Cycle Time & Lead Time analytics for a project.
+
+    Definitions
+    ~~~~~~~~~~~
+    Lead Time  — duration from task.created_at to the moment it first entered
+                 a 'done' status.  Measures the total wait + work.
+    Cycle Time — duration from the moment the task first LEFT 'todo' (i.e. first
+                 entered any non-todo active status) to when it reached 'done'.
+                 Measures actual work time excluding queue wait.
+
+    If a board has no 'todo' status (deleted or renamed), Cycle Time falls back
+    to Lead Time.
+
+    Only tasks that have at least one 'done' transition are included.
+    """
+
+    @classmethod
+    def get_cycle_lead_time(
+        cls,
+        *,
+        project_id: str,
+        board_id: str | None = None,
+        start_date: datetime.date | None = None,
+        end_date: datetime.date | None = None,
+        assignee_id: str | None = None,
+        tz_name: str = "UTC",
+    ) -> dict:
+        try:
+            user_tz = zoneinfo.ZoneInfo(tz_name)
+        except (zoneinfo.ZoneInfoNotFoundError, TypeError):
+            user_tz = zoneinfo.ZoneInfo("UTC")
+
+        now = datetime.datetime.now(tz=user_tz)
+        end_date = end_date or now.date()
+        start_date = start_date or (end_date - datetime.timedelta(days=90))
+
+        # Convert dates to UTC-aware datetimes for DB comparison
+        utc = zoneinfo.ZoneInfo("UTC")
+        start_dt = datetime.datetime(start_date.year, start_date.month, start_date.day, tzinfo=user_tz).astimezone(utc)
+        end_dt = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59, tzinfo=user_tz).astimezone(utc)
+
+        # Tasks that completed (entered 'done') within the window
+        task_qs = Task.objects.filter(
+            project_id=project_id,
+            is_deleted=False,
+            is_finished=True,
+        )
+        if board_id:
+            task_qs = task_qs.filter(status__board_id=board_id)
+        if assignee_id:
+            task_qs = task_qs.filter(assignee_id=assignee_id)
+
+        task_ids = list(task_qs.values_list("id", flat=True))
+        if not task_ids:
+            return cls._empty_response()
+
+        # Group by task
+        by_task: dict[str, list] = defaultdict(list)
+        
+        # Fetch transitions in chunks to avoid loading everything into RAM at once
+        chunk_size = 1000
+        for i in range(0, len(task_ids), chunk_size):
+            chunk = task_ids[i:i + chunk_size]
+            transitions_chunk = (
+                TaskStatusTransition.objects.filter(task_id__in=chunk)
+                .values("task_id", "to_status_code", "from_status_code", "transitioned_at")
+                .order_by("task_id", "transitioned_at")
+            )
+            for tr in transitions_chunk.iterator(chunk_size=2000):
+                by_task[str(tr["task_id"])].append(tr)
+
+        task_details = list(
+            task_qs.select_related("status")
+            .values("id", "title", "created_at", "status__code", "status__name")
+        )
+
+        rows = []
+        lead_times_h: list[float] = []
+        cycle_times_h: list[float] = []
+        status_buckets: dict[str, list[float]] = defaultdict(list)  # code -> hours spent
+
+        for task in task_details:
+            tid = str(task["id"])
+            transitions = by_task.get(tid, [])
+
+            # Find first 'done' transition inside our window
+            done_at = None
+            for tr in transitions:
+                if tr["to_status_code"].lower() == "done":
+                    if start_dt <= tr["transitioned_at"] <= end_dt:
+                        done_at = tr["transitioned_at"]
+                        break
+
+            if done_at is None:
+                continue  # Completed outside window — skip
+
+            created_at = task["created_at"]
+            lead_seconds = (done_at - created_at).total_seconds()
+            lead_hours = lead_seconds / 3600
+
+            # Cycle time: from first non-todo transition to done
+            active_start = None
+            for tr in transitions:
+                if tr["from_status_code"].lower() in ("todo", ""):
+                    # Left todo for the first time
+                    active_start = tr["transitioned_at"]
+                    break
+            if active_start is None:
+                cycle_hours = lead_hours  # Fallback
+            else:
+                cycle_seconds = (done_at - active_start).total_seconds()
+                cycle_hours = max(0.0, cycle_seconds / 3600)
+
+            lead_times_h.append(lead_hours)
+            cycle_times_h.append(cycle_hours)
+
+            # Time spent in each status
+            for i, tr in enumerate(transitions):
+                if i + 1 < len(transitions):
+                    next_tr = transitions[i + 1]
+                    hours_in = (next_tr["transitioned_at"] - tr["transitioned_at"]).total_seconds() / 3600
+                    status_buckets[tr["to_status_code"]].append(max(0.0, hours_in))
+
+            rows.append({
+                "task_id": tid,
+                "title": task["title"],
+                "lead_time_hours": round(lead_hours, 1),
+                "cycle_time_hours": round(cycle_hours, 1),
+                "done_at": done_at.isoformat(),
+            })
+
+        if not rows:
+            return cls._empty_response()
+
+        def _avg(lst): return round(sum(lst) / len(lst), 1) if lst else None
+        def _percentile(lst, p):
+            if not lst:
+                return None
+            s = sorted(lst)
+            k = (len(s) - 1) * p / 100
+            f, c = int(k), min(int(k) + 1, len(s) - 1)
+            return round(s[f] + (s[c] - s[f]) * (k - f), 1)
+
+        by_status = [
+            {"status_code": code, "avg_hours_in_status": _avg(hours)}
+            for code, hours in sorted(status_buckets.items())
+        ]
+
+        return {
+            "period": {"start": start_date.isoformat(), "end": end_date.isoformat()},
+            "task_count": len(rows),
+            "avg_lead_time_hours": _avg(lead_times_h),
+            "avg_cycle_time_hours": _avg(cycle_times_h),
+            "p50_lead_time_hours": _percentile(lead_times_h, 50),
+            "p95_lead_time_hours": _percentile(lead_times_h, 95),
+            "p50_cycle_time_hours": _percentile(cycle_times_h, 50),
+            "p95_cycle_time_hours": _percentile(cycle_times_h, 95),
+            "by_status": by_status,
+            "tasks": rows,
+        }
+
+    @staticmethod
+    def _empty_response() -> dict:
+        return {
+            "period": None,
+            "task_count": 0,
+            "avg_lead_time_hours": None,
+            "avg_cycle_time_hours": None,
+            "p50_lead_time_hours": None,
+            "p95_lead_time_hours": None,
+            "p50_cycle_time_hours": None,
+            "p95_cycle_time_hours": None,
+            "by_status": [],
+            "tasks": [],
+        }
+
