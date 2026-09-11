@@ -46,6 +46,19 @@ export const getTasks = async (projectId?: string, boardId?: string, pageSize = 
   return extractData<Task>(res);
 };
 
+export const getUnlinkedTasks = async (projectId: string, pageSize = 1000): Promise<Task[]> => {
+  const params: Record<string, any> = { project: projectId, no_milestone: "true", page_size: pageSize };
+  const res = await ApiService.get<PaginatedResponse<Task> | Task[]>('/tasks/', { params });
+  return extractData<Task>(res);
+};
+
+export const getMilestoneTasks = async (projectId: string, milestoneId: string | number, pageSize = 50): Promise<Task[]> => {
+  const params: Record<string, any> = { project: projectId, milestone: milestoneId, page_size: pageSize };
+  const res = await ApiService.get<PaginatedResponse<Task> | Task[]>('/tasks/', { params });
+  return extractData<Task>(res);
+};
+
+
  export const getTask = async (taskId: string | number): Promise<Task> => {
    const res = await ApiService.get<Task>(`/tasks/${taskId}/`);
    return (res as any).data ?? res;

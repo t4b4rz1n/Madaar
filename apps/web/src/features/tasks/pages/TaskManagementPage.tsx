@@ -1,20 +1,42 @@
-import React, { lazy } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { lazy, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Add } from 'iconsax-reactjs';
+import { toast } from 'sonner';
 import { GlobalProjectSelector } from '../components/GlobalProjectSelector';
 import { WorkspaceView } from '../components/WorkspaceView';
 import { KanbanBoard } from '../components/KanbanBoard';
+import { CreateBoardModal } from '../components/CreateBoardModal';
 import { useTaskStore } from '../store/useTaskStore';
-import { getBoards } from '../api/tasksApi';
+import { getBoards, createBoard } from '../api/tasksApi';
 
 const AttendancePage = lazy(() => import('../../attendance/pages/AttendancePage'));
 
 export const TaskManagementPage: React.FC = () => {
   const { activeProjectId, activeBoardId, setActiveBoard, viewMode, setViewMode } = useTaskStore();
+  const queryClient = useQueryClient();
+  const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
 
   const { data: boards } = useQuery({
     queryKey: ['boards', activeProjectId],
     queryFn: () => getBoards(activeProjectId!),
     enabled: !!activeProjectId,
+  });
+
+  const createBoardMutation = useMutation({
+    mutationFn: ({ title, backgroundColor }: { title: string; backgroundColor: string }) => {
+      if (!activeProjectId) throw new Error('No active project');
+      return createBoard(activeProjectId, title, backgroundColor);
+    },
+    onSuccess: (newBoard) => {
+      queryClient.invalidateQueries({ queryKey: ['boards', activeProjectId] });
+      setActiveBoard(newBoard.id.toString());
+      setViewMode('kanban');
+      setIsCreateBoardOpen(false);
+      toast.success('Board created successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Failed to create board');
+    },
   });
 
   return (
@@ -39,11 +61,10 @@ export const TaskManagementPage: React.FC = () => {
                       setActiveBoard(board.id.toString());
                       setViewMode('kanban');
                     }}
-                    className={`flex items-center gap-1.5 py-1 text-xs font-semibold transition-all shrink-0 hover:text-base-content relative h-full ${
-                      isActive
-                        ? 'text-base-content font-bold'
-                        : 'text-base-content/40'
-                    }`}
+                    className={`flex items-center gap-1.5 py-1 text-xs font-semibold transition-all shrink-0 hover:text-base-content relative h-full ${isActive
+                      ? 'text-base-content font-bold'
+                      : 'text-base-content/40'
+                      }`}
                   >
                     <span
                       className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -56,6 +77,29 @@ export const TaskManagementPage: React.FC = () => {
                   </button>
                 );
               })}
+              {/* Add Board Button */}
+              <button
+                onClick={() => setIsCreateBoardOpen(true)}
+                className="flex items-center gap-1 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-base-content/40 transition-all hover:bg-base-200 hover:text-primary"
+                title="Create new board"
+              >
+                <Add size={14} />
+                <span>Add</span>
+              </button>
+            </div>
+          )}
+
+          {/* Show add button even when no boards exist */}
+          {activeProjectId && (!boards || boards.length === 0) && (
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-px bg-base-content/10 shrink-0" />
+              <button
+                onClick={() => setIsCreateBoardOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-all hover:bg-primary/20"
+              >
+                <Add size={14} />
+                <span>Create your first board</span>
+              </button>
             </div>
           )}
         </div>
@@ -75,11 +119,10 @@ export const TaskManagementPage: React.FC = () => {
                     key={mode}
                     type="button"
                     onClick={() => setViewMode(mode)}
-                    className={`rounded-lg px-3 py-1 text-[11px] font-bold transition-all shrink-0 ${
-                      isActive
-                        ? 'bg-base-100 text-primary shadow-xs'
-                        : 'text-base-content/40 hover:text-base-content'
-                    }`}
+                    className={`rounded-lg px-3 py-1 text-[11px] font-bold transition-all shrink-0 ${isActive
+                      ? 'bg-base-100 text-primary shadow-xs'
+                      : 'text-base-content/40 hover:text-base-content'
+                      }`}
                   >
                     <span>{labels[mode]}</span>
                   </button>
@@ -102,6 +145,16 @@ export const TaskManagementPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Create Board Modal */}
+      <CreateBoardModal
+        isOpen={isCreateBoardOpen}
+        onClose={() => setIsCreateBoardOpen(false)}
+        onSubmit={(title, backgroundColor) => {
+          createBoardMutation.mutate({ title, backgroundColor });
+        }}
+        isPending={createBoardMutation.isPending}
+      />
     </div>
   );
 };
