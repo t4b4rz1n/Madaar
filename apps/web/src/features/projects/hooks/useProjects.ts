@@ -12,6 +12,8 @@ import {
   removeProjectMember,
   getProjectMilestones,
   createMilestone,
+  updateMilestone,
+  deleteMilestone,
   getProjectActivities,
 } from "../api/projectsApi";
 import type {
@@ -192,6 +194,40 @@ export const useCreateMilestone = (projectId: string | number) => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: projectKeys.milestones(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(projectId),
+      });
+    },
+  });
+};
+
+export const useUpdateMilestone = (projectId: string | number, milestoneId: string | number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof updateMilestone>[2]) =>
+      updateMilestone(projectId, milestoneId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.milestones(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(projectId),
+      });
+    },
+  });
+};
+
+export const useDeleteMilestone = (projectId: string | number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (milestoneId: string | number) => deleteMilestone(projectId, milestoneId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.milestones(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(projectId),
       });
     },
   });

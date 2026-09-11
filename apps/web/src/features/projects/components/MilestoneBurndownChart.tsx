@@ -10,6 +10,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Brush,
 } from "recharts";
 import { getMilestoneBurndown } from "../api/analyticsApi";
 import type { MilestoneBurndownData } from "../types/analytics";
@@ -91,27 +92,27 @@ export default function MilestoneBurndownChart({
         <StatBadge
           label="Total Tasks"
           value={String(data.total_tasks)}
-          color="#6366f1"
+          color="var(--color-primary)"
         />
         <StatBadge
           label="Done"
           value={String(data.burnup.at(-1)?.done ?? 0)}
-          color="#10b981"
+          color="var(--color-success)"
         />
         <StatBadge
           label="Remaining"
           value={String(data.actual_burndown.at(-1)?.remaining ?? 0)}
-          color={isLate ? "#ef4444" : "#f59e0b"}
+          color={isLate ? "var(--color-error)" : "var(--color-warning)"}
         />
-        {isLate && (
-          <StatBadge label="Status" value="Delayed ⚠️" color="#ef4444" />
+        {isLate && !isDone && (
+          <StatBadge label="Status" value="Delayed" color="var(--color-error)" />
         )}
         {isDone && (
-          <StatBadge label="Status" value="Completed ✅" color="#10b981" />
+          <StatBadge label="Status" value="Completed" color="var(--color-success)" />
         )}
       </div>
 
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={340}>
         {mode === "burndown" ? (
           <LineChart
             data={chartData}
@@ -119,46 +120,60 @@ export default function MilestoneBurndownChart({
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.06)"
+              stroke="color-mix(in srgb, var(--color-base-content) 8%, transparent)"
             />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
               tickFormatter={shortDate}
             />
             <YAxis
               allowDecimals={false}
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
               width={32}
             />
             <Tooltip content={<BurndownTooltip />} />
             <Legend
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ fontSize: 12, color: "#94a3b8" }}
+              wrapperStyle={{ fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
             />
             {/* Deadline reference line */}
             <ReferenceLine
               x={data.milestone.target_date}
-              stroke="#ef4444"
+              stroke="var(--color-error)"
               strokeDasharray="6 3"
               label={{
                 value: "Deadline",
                 position: "insideTopRight",
-                fill: "#ef4444",
+                fill: "var(--color-error)",
                 fontSize: 11,
               }}
             />
+            {/* Completed reference line */}
+            {isDone && data.milestone.completed_date && (
+              <ReferenceLine
+                x={data.milestone.completed_date}
+                stroke="var(--color-success)"
+                strokeDasharray="4 4"
+                label={{
+                  value: "Completed",
+                  position: "insideBottomLeft",
+                  fill: "var(--color-success)",
+                  fontSize: 11,
+                }}
+              />
+            )}
             {/* Today line */}
             {today >= (data.start_date ?? today) && (
               <ReferenceLine
                 x={today}
-                stroke="rgba(255,255,255,0.2)"
+                stroke="color-mix(in srgb, var(--color-base-content) 20%, transparent)"
                 strokeDasharray="4 4"
                 label={{
                   value: "Today",
                   position: "insideTopLeft",
-                  fill: "#94a3b8",
+                  fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)",
                   fontSize: 11,
                 }}
               />
@@ -167,7 +182,7 @@ export default function MilestoneBurndownChart({
               type="monotone"
               dataKey="ideal"
               name="Ideal Line"
-              stroke="#64748b"
+              stroke="color-mix(in srgb, var(--color-base-content) 50%, transparent)"
               strokeDasharray="6 4"
               strokeWidth={2}
               dot={false}
@@ -176,10 +191,17 @@ export default function MilestoneBurndownChart({
               type="monotone"
               dataKey="actual"
               name="Actual Remaining"
-              stroke="#6366f1"
+              stroke="var(--color-primary)"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 5, fill: "#6366f1" }}
+              activeDot={{ r: 5, fill: "var(--color-primary)" }}
+            />
+            <Brush 
+              dataKey="date" 
+              height={30} 
+              stroke="var(--color-primary)" 
+              fill="var(--color-base-200)" 
+              tickFormatter={shortDate}
             />
           </LineChart>
         ) : (
@@ -189,40 +211,54 @@ export default function MilestoneBurndownChart({
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.06)"
+              stroke="color-mix(in srgb, var(--color-base-content) 8%, transparent)"
             />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
               tickFormatter={shortDate}
             />
             <YAxis
               allowDecimals={false}
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
               width={32}
             />
             <Tooltip content={<BurnupTooltip />} />
             <Legend
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ fontSize: 12, color: "#94a3b8" }}
+              wrapperStyle={{ fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
             />
             <ReferenceLine
               x={data.milestone.target_date}
-              stroke="#ef4444"
+              stroke="var(--color-error)"
               strokeDasharray="6 3"
               label={{
                 value: "Deadline",
                 position: "insideTopRight",
-                fill: "#ef4444",
+                fill: "var(--color-error)",
                 fontSize: 11,
               }}
             />
+            {/* Completed reference line */}
+            {isDone && data.milestone.completed_date && (
+              <ReferenceLine
+                x={data.milestone.completed_date}
+                stroke="var(--color-success)"
+                strokeDasharray="4 4"
+                label={{
+                  value: "Completed",
+                  position: "insideBottomLeft",
+                  fill: "var(--color-success)",
+                  fontSize: 11,
+                }}
+              />
+            )}
             <Line
               type="monotone"
               dataKey="total"
               name="Total Tasks"
-              stroke="#64748b"
+              stroke="color-mix(in srgb, var(--color-base-content) 50%, transparent)"
               strokeDasharray="4 4"
               strokeWidth={1.5}
               dot={false}
@@ -231,10 +267,17 @@ export default function MilestoneBurndownChart({
               type="monotone"
               dataKey="done"
               name="Done Tasks"
-              stroke="#10b981"
+              stroke="var(--color-success)"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 5, fill: "#10b981" }}
+              activeDot={{ r: 5, fill: "var(--color-success)" }}
+            />
+            <Brush 
+              dataKey="date" 
+              height={30} 
+              stroke="var(--color-success)" 
+              fill="var(--color-base-200)" 
+              tickFormatter={shortDate}
             />
           </LineChart>
         )}
@@ -271,12 +314,12 @@ function Header({
             margin: 0,
             fontSize: 16,
             fontWeight: 700,
-            color: "#e2e8f0",
+            color: "var(--color-base-content)",
           }}
         >
           {data.milestone.title}
         </h3>
-        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>
+        <p style={{ margin: "4px 0 0", fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>
           {data.start_date} → {data.target_date}
         </p>
       </div>
@@ -289,11 +332,11 @@ function Header({
             style={{
               padding: "5px 12px",
               borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.1)",
+              border: "1px solid color-mix(in srgb, var(--color-base-content) 15%, transparent)",
               cursor: "pointer",
               fontSize: 12,
-              background: mode === m ? "#6366f1" : "rgba(255,255,255,0.05)",
-              color: mode === m ? "#fff" : "#94a3b8",
+              background: mode === m ? "var(--color-primary)" : "color-mix(in srgb, var(--color-base-content) 5%, transparent)",
+              color: mode === m ? "var(--color-primary-content)" : "color-mix(in srgb, var(--color-base-content) 60%, transparent)",
               transition: "all 0.2s",
             }}
           >
@@ -317,15 +360,15 @@ function StatBadge({
   return (
     <div
       style={{
-        background: `${color}18`,
-        border: `1px solid ${color}40`,
+        background: `color-mix(in srgb, ${color} 10%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
         borderRadius: 10,
         padding: "8px 14px",
         textAlign: "center",
       }}
     >
       <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{label}</div>
+      <div className="text-[11px] mt-[2px] opacity-70" style={{ color: "var(--color-base-content)" }}>{label}</div>
     </div>
   );
 }
@@ -335,14 +378,14 @@ const BurndownTooltip = ({ active, payload, label }: any) => {
   return (
     <div
       style={{
-        background: "#1e1e2e",
-        border: "1px solid rgba(255,255,255,0.1)",
+        background: "var(--color-base-100)",
+        border: "1px solid color-mix(in srgb, var(--color-base-content) 15%, transparent)",
         borderRadius: 8,
         padding: "8px 12px",
         fontSize: 12,
       }}
     >
-      <p style={{ margin: "0 0 6px", color: "#94a3b8" }}>{label}</p>
+      <p style={{ margin: "0 0 6px", color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>{label}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ margin: "2px 0", color: p.color }}>
           {p.name}: {p.value}
@@ -355,7 +398,7 @@ const BurndownTooltip = ({ active, payload, label }: any) => {
 const BurnupTooltip = BurndownTooltip;
 
 const containerStyle: React.CSSProperties = {
-  background: "var(--color-surface, #1e1e2e)",
+  background: "var(--color-surface, var(--color-base-100))",
   borderRadius: 16,
   padding: "24px",
   boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
@@ -366,7 +409,7 @@ function Skeleton() {
     <div style={{ ...containerStyle, height: 360, opacity: 0.5 }}>
       <div
         style={{
-          background: "rgba(255,255,255,0.06)",
+          background: "color-mix(in srgb, var(--color-base-content) 8%, transparent)",
           borderRadius: 8,
           height: "100%",
           animation: "pulse 1.5s ease-in-out infinite",
@@ -385,7 +428,7 @@ function ErrorState({ message }: { message: string }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#ef4444",
+        color: "var(--color-error)",
         fontSize: 14,
       }}
     >
@@ -402,7 +445,7 @@ function EmptyState({ message }: { message: string }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#64748b",
+        color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)",
         fontSize: 14,
       }}
     >

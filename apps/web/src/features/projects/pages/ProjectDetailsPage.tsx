@@ -13,6 +13,7 @@ import {
   Flag,
   Chart,
 } from "iconsax-reactjs";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useProject,
   useProjectMembers,
@@ -20,6 +21,7 @@ import {
   useProjectActivities,
   useRemoveProjectMember,
   useUpdateProject,
+  useDeleteMilestone,
 } from "../hooks/useProjects";
 import type { ProjectMember, Milestone, ProjectActivity } from "../types";
 import { useTaskStore } from "../../tasks/store/useTaskStore";
@@ -28,8 +30,11 @@ import CumulativeFlowChart from "../components/CumulativeFlowChart";
 import CycleLeadTimeReport from "../components/CycleLeadTimeReport";
 import MilestoneBurndownChart from "../components/MilestoneBurndownChart";
 import { CreateMilestoneModal } from "../components/CreateMilestoneModal";
+import { EditMilestoneModal } from "../components/EditMilestoneModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { toast } from "sonner";
+import { getUnlinkedTasks, getTask, updateTask, getMilestoneTasks } from "../../tasks/api/tasksApi";
+import { TaskSheet } from "../../tasks/components/TaskSheet";
 
 type TabType = "overview" | "members" | "milestones" | "activity" | "analytics";
 
@@ -68,9 +73,26 @@ const formatDate = (value?: string | null) => {
   }).format(new Date(value));
 };
 
-function MilestoneItem({ ms }: { ms: Milestone }) {
+function MilestoneItem({ 
+  ms, 
+  projectId,
+  onEdit, 
+  onDelete 
+}: { 
+  ms: Milestone; 
+  projectId: string;
+  onEdit: (ms: Milestone) => void; 
+  onDelete: (ms: Milestone) => void;
+}) {
   const msCfg = milestoneStatusConfig[ms.status] ?? milestoneStatusConfig.pending;
   const [showChart, setShowChart] = useState(false);
+  const setSelectedTaskId = useTaskStore(state => state.setSelectedTaskId);
+
+  const { data: milestoneTasks = [], isLoading: isLoadingTasks } = useQuery({
+    queryKey: ["milestone-tasks", projectId, ms.id],
+    queryFn: () => getMilestoneTasks(projectId, ms.id),
+    enabled: showChart,
+  });
   
   const total = ms.task_count || 0;
   const completed = ms.completed_task_count || 0;
@@ -98,6 +120,22 @@ function MilestoneItem({ ms }: { ms: Milestone }) {
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => onEdit(ms)}
+              className="p-1 rounded-md text-base-content/40 hover:text-primary hover:bg-base-200"
+              title="Edit Milestone"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            <button
+              onClick={() => onDelete(ms)}
+              className="p-1 rounded-md text-base-content/40 hover:text-error hover:bg-base-200"
+              title="Delete Milestone"
+            >
+              <Trash size={14} variant="Bold" />
+            </button>
+          </div>
           <div className="hidden sm:flex flex-col items-end gap-1 mr-2">
             <div className="text-[10px] font-medium text-base-content/60">{progressPercent}%</div>
             <div className="w-16 h-1.5 rounded-full bg-base-300 overflow-hidden">
@@ -113,11 +151,85 @@ function MilestoneItem({ ms }: { ms: Milestone }) {
           <ArrowDown2 size={14} className={`text-base-content/50 transition-transform ${showChart ? "rotate-180" : ""}`} />
         </div>
       </div>
-      {showChart && (
-        <div className="pt-3 border-t border-base-content/8 mt-1">
-          <MilestoneBurndownChart milestoneId={String(ms.id)} />
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {showChart && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="pt-3 border-t border-base-content/8 mt-1 flex flex-col gap-4">
+              <MilestoneBurndownChart milestoneId={String(ms.id)} />
+              
+              {/* Tasks List */}
+              <div className="px-2 pb-2">
+                <h4 className="text-[11px] font-bold text-base-content/50 uppercase tracking-wider mb-2">
+                  Linked Tasks ({milestoneTasks.length})
+                </h4>
+                {isLoadingTasks ? (
+                  <div className="flex justify-center p-4">
+                    <span className="loading loading-dots loading-sm opacity-50"></span>
+                  </div>
+                ) : milestoneTasks.length > 0 ? (
+                  <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                    {milestoneTasks.map((task: any) => (
+                      <div
+                        key={task.id}
+                        className="group/task flex items-center justify-between p-3 rounded-xl bg-base-100/40 hover:bg-base-100 border border-base-content/5 hover:border-base-content/10 hover:shadow-sm cursor-pointer transition-all duration-200"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTaskId(String(task.id));
+                        }}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`flex items-center justify-center w-5 h-5 rounded-full shrink-0 border transition-colors ${
+                              task.status?.is_done 
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" 
+                                : "bg-base-content/5 border-base-content/10 text-base-content/40"
+                            }`}
+                          >
+                            <TaskSquare size={10} variant={task.status?.is_done ? "Bold" : "Linear"} />
+                          </div>
+                          <p className="text-[12px] font-medium text-base-content/90 group-hover/task:text-primary transition-colors truncate">
+                            {task.title}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0 opacity-70 group-hover/task:opacity-100 transition-opacity">
+                          {task.priority && (
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                              task.priority === "critical"
+                                ? "bg-red-500/15 text-red-600 dark:text-red-400"
+                                : task.priority === "high"
+                                ? "bg-orange-500/15 text-orange-600 dark:text-orange-400"
+                                : task.priority === "medium"
+                                ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-500"
+                                : "bg-base-content/10 text-base-content/70"
+                            }`}>
+                              {task.priority}
+                            </span>
+                          )}
+                          {task.status?.name && (
+                            <span className="text-[10px] font-medium text-base-content/60 bg-base-content/5 px-2 py-0.5 rounded-full border border-base-content/10">
+                              {task.status.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-base-content/40 text-center py-2 bg-base-100/30 rounded-lg">
+                    No tasks linked to this milestone yet.
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -204,6 +316,210 @@ function StatusDropdown({
   );
 }
 
+// ── MilestonesTab ────────────────────────────────────────────────────────────
+
+function MilestonesTab({
+  milestones,
+  projectId,
+  project,
+  onCreateMilestone,
+}: {
+  milestones: Milestone[];
+  projectId: string;
+  project: any;
+  onCreateMilestone: () => void;
+}) {
+  // Calculate weighted progress
+  const totalWeight = milestones.reduce((s, m) => s + (m.weight || 1), 0);
+  const completedWeight = milestones
+    .filter((m) => m.status === "completed")
+    .reduce((s, m) => s + (m.weight || 1), 0);
+  const weightedProgress = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
+
+  const unlinkedCount = project?.unlinked_task_count || 0;
+
+  // Only fetch unlinked tasks if there are any
+  const { data: unlinkedTasks = [], isLoading: loadingUnlinked } = useQuery({
+    queryKey: ["unlinked-tasks", projectId],
+    queryFn: () => getUnlinkedTasks(projectId),
+    enabled: unlinkedCount > 0,
+    staleTime: 60_000,
+  });
+
+  const setSelectedTaskId = useTaskStore(state => state.setSelectedTaskId);
+  const [milestoneToEdit, setMilestoneToEdit] = useState<Milestone | null>(null);
+  const [milestoneToDelete, setMilestoneToDelete] = useState<Milestone | null>(null);
+  const deleteMilestoneMutation = useDeleteMilestone(projectId);
+
+  const handleDeleteConfirm = () => {
+    if (!milestoneToDelete) return;
+    deleteMilestoneMutation.mutate(milestoneToDelete.id, {
+      onSuccess: () => {
+        toast.success("Milestone deleted.");
+        setMilestoneToDelete(null);
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header card with weighted progress */}
+      <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5">
+        <div className="flex items-center justify-between border-b border-base-content/8 pb-3 mb-4">
+          <h3 className="text-sm font-bold text-base-content">
+            Project Milestones ({milestones.length})
+          </h3>
+          <button
+            type="button"
+            onClick={onCreateMilestone}
+            className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
+          >
+            <Add size={14} /> New Milestone
+          </button>
+        </div>
+
+        {/* Weighted progress bar */}
+        {milestones.length > 0 && (
+          <div className="mb-5 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-base-content/60 uppercase tracking-wider text-[10px]">
+                Weighted Project Progress
+              </span>
+              <span className="font-black text-primary">{weightedProgress}%</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-base-300">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-700"
+                style={{ width: `${weightedProgress}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-base-content/40">
+              Based on milestone weights — only completed milestones count toward progress.
+            </p>
+          </div>
+        )}
+
+        {/* Milestone list */}
+        {milestones.length === 0 ? (
+          <p className="py-8 text-center text-xs text-base-content/40">
+            No milestones added to this project yet.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {milestones.map((ms: Milestone) => (
+              <div key={ms.id} className="flex flex-col gap-2">
+                {/* Weight badge added to each milestone row */}
+                <div className="flex items-center gap-2 group">
+                  <div className="flex-1">
+                    <MilestoneItem 
+                      ms={ms} 
+                      projectId={projectId}
+                      onEdit={setMilestoneToEdit}
+                      onDelete={setMilestoneToDelete}
+                    />
+                  </div>
+                  <div
+                    className="shrink-0 rounded-lg bg-base-200 px-2 py-1 text-[10px] font-bold text-base-content/60 whitespace-nowrap"
+                    title="Milestone weight (contributes this much to project progress)"
+                  >
+                    Weight: {ms.weight || 1}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Unlinked Tasks section */}
+      {unlinkedCount > 0 && (
+        <div className="rounded-2xl border border-amber-500/20 bg-base-100 p-5 space-y-4">
+          <div className="flex items-center gap-2 border-b border-base-content/8 pb-3">
+            <div className="flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500 shrink-0">
+                <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5zM11 10v5h2v-5h-2zm0 6v2h2v-2h-2z"/>
+              </svg>
+              <h3 className="text-sm font-bold text-base-content">
+                Unlinked Tasks
+                <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600">
+                  {unlinkedCount}
+                </span>
+              </h3>
+            </div>
+          </div>
+          <p className="text-[10px] text-base-content/50 -mt-2">
+            These tasks are not linked to any milestone and do <strong>not</strong> affect project progress.
+          </p>
+
+          {loadingUnlinked ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-9 animate-pulse rounded-xl bg-base-200/70" />
+              ))}
+            </div>
+          ) : unlinkedTasks.length === 0 ? (
+            <p className="py-4 text-center text-xs text-base-content/40">Loading…</p>
+          ) : (
+            <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+              {unlinkedTasks.map((task: any) => (
+                <div
+                  key={task.id}
+                  onClick={() => setSelectedTaskId(task.id)}
+                  className="flex items-center justify-between rounded-xl border border-base-content/6 bg-base-200/40 px-3 py-2.5 text-xs cursor-pointer hover:bg-base-200/70 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`size-2 shrink-0 rounded-full ${task.is_finished ? "bg-emerald-500" : "bg-base-content/20"}`} />
+                    <span
+                      dir="auto"
+                      className={`font-semibold truncate ${task.is_finished ? "line-through text-base-content/40" : "text-base-content"}`}
+                    >
+                      {task.title}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    {task.priority && (
+                      <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                        task.priority === "critical" ? "bg-red-500/15 text-red-500" :
+                        task.priority === "high" ? "bg-orange-500/15 text-orange-500" :
+                        task.priority === "medium" ? "bg-amber-500/15 text-amber-600" :
+                        "bg-base-content/10 text-base-content/50"
+                      }`}>
+                        {task.priority}
+                      </span>
+                    )}
+                    {task.assignee && (
+                      <span className="text-[10px] text-base-content/40 truncate max-w-[80px]">
+                        {task.assignee.full_name || task.assignee.username || "Assigned"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Edit Milestone Modal */}
+      <EditMilestoneModal
+        isOpen={!!milestoneToEdit}
+        onClose={() => setMilestoneToEdit(null)}
+        projectId={projectId}
+        milestone={milestoneToEdit}
+      />
+
+      {/* Delete Confirm Modal */}
+      <DeleteConfirmModal
+        isOpen={!!milestoneToDelete}
+        onClose={() => setMilestoneToDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Milestone"
+        isLoading={deleteMilestoneMutation.isPending}
+      />
+    </div>
+  );
+}
+
 export default function ProjectDetailsPage() {
 
   const updateProjectMutation = useUpdateProject();
@@ -212,6 +528,16 @@ export default function ProjectDetailsPage() {
 const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const setActiveProject = useTaskStore((state) => state.setActiveProject);
+  const selectedTaskId = useTaskStore(state => state.selectedTaskId);
+  const setSelectedTaskId = useTaskStore(state => state.setSelectedTaskId);
+  const queryClient = useQueryClient();
+
+  const taskQuery = useQuery({
+    queryKey: ["task", selectedTaskId],
+    queryFn: () => getTask(selectedTaskId!),
+    enabled: !!selectedTaskId,
+  });
+
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
@@ -589,32 +915,12 @@ const { id } = useParams<{ id: string }>();
 
           {/* ── MILESTONES TAB ── */}
           {activeTab === "milestones" && (
-            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
-              <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
-                <h3 className="text-sm font-bold text-base-content">
-                  Project Milestones ({milestones.length})
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateMilestoneOpen(true)}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
-                >
-                  <Add size={14} /> New Milestone
-                </button>
-              </div>
-
-              {milestones.length === 0 ? (
-                <p className="py-8 text-center text-xs text-base-content/40">
-                  No milestones added to this project yet.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {milestones.map((ms: Milestone) => (
-                    <MilestoneItem key={ms.id} ms={ms} />
-                  ))}
-                </div>
-              )}
-            </div>
+            <MilestonesTab
+              milestones={milestones}
+              projectId={id || ""}
+              project={project}
+              onCreateMilestone={() => setIsCreateMilestoneOpen(true)}
+            />
           )}
 
           {/* ── ACTIVITY TAB ── */}
@@ -689,6 +995,16 @@ const { id } = useParams<{ id: string }>();
         onConfirm={handleConfirmDeleteMember}
         isLoading={removeMemberMutation.isPending}
         title={deleteModalState.memberName}
+      />
+      
+      <TaskSheet
+        task={taskQuery.data ?? null}
+        onClose={() => setSelectedTaskId(null)}
+        onPatch={async (taskId, patch) => {
+          await updateTask(taskId, patch);
+          queryClient.invalidateQueries({ queryKey: ["unlinked-tasks", id] });
+          queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        }}
       />
     </div>
   );
