@@ -59,7 +59,7 @@ from .services import (
 class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
     permission_classes = [IsAuthenticated, IsBoardPermission]
-    pagination_class = DefaultPagination
+    pagination_class = None
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
@@ -150,7 +150,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 class TaskStatusViewSet(viewsets.ModelViewSet):
     serializer_class = TaskStatusSerializer
     permission_classes = [IsAuthenticated, IsTaskStatusPermission]
-    pagination_class = DefaultPagination
+    pagination_class = None
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def get_queryset(self):
@@ -304,6 +304,14 @@ class TaskViewSet(viewsets.ModelViewSet):
         parent_only = self.request.query_params.get("parent_only")
         if parent_only == "true":
             qs = qs.filter(parent_task__isnull=True)
+
+        milestone_id = self.request.query_params.get("milestone")
+        if milestone_id:
+            qs = qs.filter(milestone_id=milestone_id)
+
+        no_milestone = self.request.query_params.get("no_milestone")
+        if no_milestone == "true":
+            qs = qs.filter(milestone__isnull=True)
 
         search = self.request.query_params.get("search")
         if search:
