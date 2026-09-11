@@ -1393,6 +1393,9 @@ class MilestoneBurndownService:
         else:
             earliest = min(t["created_at"] for t in tasks)
             start_date = earliest.astimezone(user_tz).date()
+            
+        # Ensure start_date is not after target_date (prevents 1-dot charts if deadline is in the past)
+        start_date = min(start_date, target_date)
 
         today = datetime.datetime.now(tz=user_tz).date()
         end_date = max(target_date, today)  # always extend to today so the chart is live
@@ -1418,6 +1421,11 @@ class MilestoneBurndownService:
             tid = str(t["id"])
             if t["is_finished"] and tid not in first_done:
                 first_done[tid] = t["updated_at"].astimezone(user_tz).date()
+
+        # Bug Fix: Only count tasks as "done" historically if they are STILL finished today!
+        # This prevents the chart from showing tasks as permanently done if they were moved back to 'todo'
+        valid_finished_ids = {str(t["id"]) for t in tasks if t["is_finished"]}
+        first_done = {tid: date for tid, date in first_done.items() if tid in valid_finished_ids}
 
         # Ideal line: linear decrease from total to 0
         num_days = (target_date - start_date).days or 1
@@ -1562,7 +1570,7 @@ class CycleLeadTimeService:
 
         task_details = list(
             task_qs.select_related("status")
-            .values("id", "title", "created_at", "status__code", "status__name")
+            .values("id", "title", "created_at", "updated_at", "status__code", "status__name")
         )
 
         rows = []
@@ -1582,8 +1590,13 @@ class CycleLeadTimeService:
                         done_at = tr["transitioned_at"]
                         break
 
+            # Fallback: if task is_finished but never physically moved to 'done' column, use updated_at
             if done_at is None:
-                continue  # Completed outside window — skip
+                updated_at_utc = task["updated_at"]
+                if start_dt <= updated_at_utc <= end_dt:
+                    done_at = updated_at_utc
+                else:
+                    continue  # Completed outside window — skip
 
             created_at = task["created_at"]
             lead_seconds = (done_at - created_at).total_seconds()

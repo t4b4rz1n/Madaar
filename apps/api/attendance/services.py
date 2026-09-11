@@ -215,6 +215,13 @@ class TimeLogService:
                 if not is_member:
                     raise PermissionDenied(_("You are not a member of this organization."))
 
+        # Prevent duplicate active timers for the exact same task
+        from attendance.models import TimeLog
+        from rest_framework.exceptions import ValidationError
+        
+        if TimeLog.objects.filter(user=user, task=task, is_active=True).exists():
+            raise ValidationError(_("A timer is already running for this task."))
+
         # Guard against re-entrant calls (move_task → start_timer loop)
         if getattr(_start_timer_local, "in_start_timer", False):
             return None
