@@ -73,13 +73,22 @@ class ProjectListSerializer(serializers.ModelSerializer):
     completed_task_count = serializers.IntegerField(read_only=True, default=0)
     progress_percentage = serializers.SerializerMethodField()
     milestone_count = serializers.IntegerField(read_only=True, default=0)
+    completed_milestone_count = serializers.IntegerField(read_only=True, default=0)
+    unlinked_task_count = serializers.IntegerField(read_only=True, default=0)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     def get_progress_percentage(self, obj):
-        total = getattr(obj, "task_count", 0)
-        completed = getattr(obj, "completed_task_count", 0)
-        if total > 0:
-            return round((completed / total) * 100)
+        """
+        Weighted Milestone Progress:
+          progress = completed_weight / total_weight * 100
+
+        Returns 0 if no milestones are defined.
+        Progress is ONLY driven by milestones — tasks alone never advance the percentage.
+        """
+        total_weight = getattr(obj, "total_milestone_weight", None) or 0
+        if total_weight > 0:
+            completed_weight = getattr(obj, "completed_milestone_weight", None) or 0
+            return round((completed_weight / total_weight) * 100)
         return 0
 
     class Meta:
@@ -104,6 +113,8 @@ class ProjectListSerializer(serializers.ModelSerializer):
             "completed_task_count",
             "progress_percentage",
             "milestone_count",
+            "completed_milestone_count",
+            "unlinked_task_count",
             "created_at",
             "updated_at",
         )

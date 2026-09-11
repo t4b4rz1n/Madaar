@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from django.db import transaction
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, Q, QuerySet, Sum
 from django.utils import timezone
 
 from .models import Milestone, Project, ProjectActivity, ProjectMember
@@ -80,6 +80,26 @@ class ProjectService:
                 distinct=True
             ),
             milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False), distinct=True),
+            completed_milestone_count=Count(
+                "milestones",
+                filter=Q(milestones__is_deleted=False, milestones__status="completed"),
+                distinct=True,
+            ),
+            # Weighted milestone progress fields
+            total_milestone_weight=Sum(
+                "milestones__weight",
+                filter=Q(milestones__is_deleted=False),
+            ),
+            completed_milestone_weight=Sum(
+                "milestones__weight",
+                filter=Q(milestones__is_deleted=False, milestones__status="completed"),
+            ),
+            # Unlinked tasks = tasks without a milestone
+            unlinked_task_count=Count(
+                "tasks",
+                filter=Q(tasks__is_deleted=False, tasks__milestone__isnull=True),
+                distinct=True,
+            ),
         )
 
     @classmethod
@@ -524,6 +544,11 @@ class MilestoneService:
             entity_id=milestone.pk,
             metadata={"title": milestone.title},
         )
+        
+        # Unlink all tasks connected to this milestone so they become orphans instead of zombies
+        if hasattr(milestone, "tasks"):
+            milestone.tasks.update(milestone=None)
+            
         milestone.delete()  # soft delete
         logger.info(
             "Milestone %s soft-deleted from project %s (by %s)",

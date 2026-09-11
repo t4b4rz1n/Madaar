@@ -117,6 +117,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "description", "owner__email", "owner__username"]
     ordering_fields = ["name", "status", "deadline", "created_at", "updated_at"]
     ordering = ["-updated_at"]
+    pagination_class = None
 
     # -- Permissions -------------------------------------------------------
 
@@ -255,6 +256,7 @@ class ProjectMemberViewSet(NestedProjectMixin, viewsets.ModelViewSet):
     filterset_class = ProjectMemberFilter
     ordering_fields = ["specialty", "allocation_percentage", "created_at"]
     ordering = ["created_at"]
+    pagination_class = None
 
     # -- Permissions -------------------------------------------------------
 
@@ -334,6 +336,7 @@ class MilestoneViewSet(NestedProjectMixin, viewsets.ModelViewSet):
     filterset_class = MilestoneFilter
     ordering_fields = ["target_date", "sequence", "status", "created_at"]
     ordering = ["target_date", "sequence"]
+    pagination_class = None
 
     # -- Permissions -------------------------------------------------------
 
