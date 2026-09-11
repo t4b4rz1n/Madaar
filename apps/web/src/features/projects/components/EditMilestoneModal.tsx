@@ -1,25 +1,37 @@
-import React, { useState } from "react";
-import { CloseCircle, Calendar1, Flag } from "iconsax-reactjs";
-import { useCreateMilestone } from "../hooks/useProjects";
+import React, { useState, useEffect } from "react";
+import { CloseCircle, Calendar1, Edit2 } from "iconsax-reactjs";
+import { useUpdateMilestone } from "../hooks/useProjects";
 import { toast } from "sonner";
+import type { Milestone } from "../types";
 
-interface CreateMilestoneModalProps {
+interface EditMilestoneModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string | number;
+  milestone: Milestone | null;
 }
 
-export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
+export const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({
   isOpen,
   onClose,
   projectId,
+  milestone,
 }) => {
-  const createMilestoneMutation = useCreateMilestone(projectId);
+  const updateMilestoneMutation = useUpdateMilestone(projectId, milestone?.id || "");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [weight, setWeight] = useState(1);
+
+  useEffect(() => {
+    if (milestone) {
+      setTitle(milestone.title || "");
+      setDescription(milestone.description || "");
+      setTargetDate(milestone.target_date || "");
+      setWeight(milestone.weight || 1);
+    }
+  }, [milestone]);
 
   if (!isOpen) return null;
 
@@ -36,7 +48,7 @@ export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
       return;
     }
 
-    createMilestoneMutation.mutate(
+    updateMilestoneMutation.mutate(
       {
         title: title.trim(),
         description: description.trim() || undefined,
@@ -45,12 +57,8 @@ export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
       },
       {
         onSuccess: () => {
-          toast.success("Milestone created successfully!");
+          toast.success("Milestone updated successfully!");
           onClose();
-          setTitle("");
-          setDescription("");
-          setTargetDate("");
-          setWeight(1);
         },
         onError: (err: any) => {
           const errorData = err?.data || err?.response?.data;
@@ -58,7 +66,7 @@ export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
             errorData?.target_date?.[0] ||
             errorData?.start_date?.[0] ||
             errorData?.detail ||
-            "Could not create milestone.";
+            "Could not update milestone.";
           toast.error(msg);
         },
       }
@@ -68,7 +76,7 @@ export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
-
+      
     >
       <div
         className="madaar-surface w-full max-w-lg rounded-[28px] border border-base-content/10 bg-base-100 p-6 shadow-2xl animate-in fade-in zoom-in duration-200 sm:p-7"
@@ -78,14 +86,14 @@ export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
         <div className="flex items-center justify-between border-b border-base-content/10 pb-4">
           <div className="flex items-center gap-3">
             <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
-              <Flag size={20} />
+              <Edit2 size={20} />
             </div>
             <div>
               <h3 className="text-xl font-bold tracking-tight text-base-content">
-                Create Milestone
+                Edit Milestone
               </h3>
               <p className="mt-0.5 text-xs text-base-content/55">
-                Set a major phase or delivery goal for this project.
+                Update milestone details.
               </p>
             </div>
           </div>
@@ -159,24 +167,22 @@ export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-base-content/10 pt-4 sm:flex-row sm:justify-end">
+          {/* Footer */}
+          <div className="mt-8 flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-ghost rounded-xl"
+              className="rounded-xl px-5 py-2.5 text-sm font-bold text-base-content/60 hover:bg-base-200"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={createMilestoneMutation.isPending}
-              className="btn btn-primary rounded-xl px-6"
+              onClick={handleSubmit}
+              disabled={updateMilestoneMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-content transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
             >
-              {createMilestoneMutation.isPending ? (
-                <span className="loading loading-spinner loading-sm"></span>
-              ) : (
-                "Create Milestone"
-              )}
+              {updateMilestoneMutation.isPending ? "Updating..." : "Update Milestone"}
             </button>
           </div>
         </form>

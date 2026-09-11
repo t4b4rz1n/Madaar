@@ -15,12 +15,12 @@ import type { CfdData, CfdStatus } from "../types/analytics";
 
 // Palette auto-assigned to statuses in order (can be extended)
 const STATUS_COLORS = [
-  "#6366f1", // indigo
-  "#f59e0b", // amber
-  "#10b981", // emerald
-  "#3b82f6", // blue
-  "#ef4444", // red
-  "#8b5cf6", // violet
+  "var(--color-primary)", // indigo
+  "var(--color-warning)", // amber
+  "var(--color-success)", // emerald
+  "var(--color-info)", // blue
+  "var(--color-error)", // red
+  "var(--color-secondary)", // violet
   "#ec4899", // pink
   "#14b8a6", // teal
 ];
@@ -93,7 +93,7 @@ export default function CumulativeFlowChart({
     <div
       id="cfd-chart-container"
       style={{
-        background: "var(--color-surface, #1e1e2e)",
+        background: "var(--color-surface, var(--color-base-100))",
         borderRadius: 16,
         padding: "24px",
         boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
@@ -116,7 +116,7 @@ export default function CumulativeFlowChart({
                 margin: 0,
                 fontSize: 16,
                 fontWeight: 700,
-                color: "var(--color-text-primary, #e2e8f0)",
+                color: "var(--color-text-primary, var(--color-base-content))",
               }}
             >
               Cumulative Flow Diagram (CFD)
@@ -125,7 +125,7 @@ export default function CumulativeFlowChart({
               style={{
                 margin: "4px 0 0",
                 fontSize: 12,
-                color: "var(--color-text-secondary, #94a3b8)",
+                color: "var(--color-text-secondary, color-mix(in srgb, var(--color-base-content) 60%, transparent))",
               }}
             >
               Task distribution across statuses over time
@@ -170,10 +170,10 @@ export default function CumulativeFlowChart({
               </linearGradient>
             ))}
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-base-content) 6%, transparent)" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: "#94a3b8" }}
+            tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
             tickFormatter={(v) => {
               const d = new Date(v);
               return `${d.getMonth() + 1}/${d.getDate()}`;
@@ -181,13 +181,13 @@ export default function CumulativeFlowChart({
           />
           <YAxis
             allowDecimals={false}
-            tick={{ fontSize: 11, fill: "#94a3b8" }}
+            tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
             width={32}
           />
           <Tooltip
             contentStyle={{
-              background: "#1e1e2e",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--color-base-100)",
+              border: "1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent)",
               borderRadius: 8,
               fontSize: 12,
             }}
@@ -202,7 +202,7 @@ export default function CumulativeFlowChart({
             }
             iconType="circle"
             iconSize={8}
-            wrapperStyle={{ fontSize: 12, color: "#94a3b8" }}
+            wrapperStyle={{ fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
           />
           {statuses.map((s, i) => (
             <Area
@@ -247,14 +247,14 @@ function BottleneckHint({ data }: { data: CfdData }) {
       style={{
         marginTop: 12,
         padding: "8px 14px",
-        background: "rgba(245,158,11,0.1)",
+        background: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
         borderRadius: 8,
-        borderLeft: "3px solid #f59e0b",
+        borderLeft: "3px solid var(--color-warning)",
         fontSize: 12,
-        color: "#fbbf24",
+        color: "var(--color-warning)",
       }}
     >
-      ⚠️ Possible bottleneck: tasks in &laquo;{bottleneck.name}&raquo; are
+      Possible bottleneck: tasks in &laquo;{bottleneck.name}&raquo; are
       growing faster than other columns.
     </div>
   );
@@ -263,11 +263,11 @@ function BottleneckHint({ data }: { data: CfdData }) {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "color-mix(in srgb, var(--color-base-content) 6%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent)",
   borderRadius: 8,
   padding: "6px 10px",
-  color: "#e2e8f0",
+  color: "var(--color-base-content)",
   fontSize: 12,
 };
 
@@ -276,7 +276,7 @@ function CFDSkeleton() {
     <div
       style={{
         height: 360,
-        background: "var(--color-surface, #1e1e2e)",
+        background: "var(--color-surface, var(--color-base-100))",
         borderRadius: 16,
         overflow: "hidden",
       }}
@@ -286,7 +286,7 @@ function CFDSkeleton() {
           width: "100%",
           height: "100%",
           background:
-            "linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 75%)",
+            "linear-gradient(90deg,color-mix(in srgb, var(--color-base-content) 4%, transparent) 25%,color-mix(in srgb, var(--color-base-content) 8%, transparent) 50%,color-mix(in srgb, var(--color-base-content) 4%, transparent) 75%)",
           borderRadius: 8,
           animation: "pulse 1.5s ease-in-out infinite",
         }}
@@ -303,9 +303,9 @@ function CFDError({ message }: { message: string }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#ef4444",
+        color: "var(--color-error)",
         fontSize: 14,
-        background: "var(--color-surface, #1e1e2e)",
+        background: "var(--color-surface, var(--color-base-100))",
         borderRadius: 16,
       }}
     >
@@ -322,9 +322,9 @@ function CFDEmpty({ message }: { message: string }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#64748b",
+        color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)",
         fontSize: 14,
-        background: "var(--color-surface, #1e1e2e)",
+        background: "var(--color-surface, var(--color-base-100))",
         borderRadius: 16,
       }}
     >

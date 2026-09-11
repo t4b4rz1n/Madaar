@@ -150,6 +150,31 @@ export const createMilestone = async (
   return unwrap<Milestone>(response);
 };
 
+export const updateMilestone = async (
+  projectId: string | number,
+  milestoneId: string | number,
+  data: {
+    title?: string;
+    description?: string;
+    status?: string;
+    target_date?: string | null;
+    weight?: number;
+  }
+): Promise<Milestone> => {
+  const response = await ApiService.patch<Milestone>(
+    `/projects/${projectId}/milestones/${milestoneId}/`,
+    data
+  );
+  return unwrap<Milestone>(response);
+};
+
+export const deleteMilestone = async (
+  projectId: string | number,
+  milestoneId: string | number
+): Promise<void> => {
+  await ApiService.delete(`/projects/${projectId}/milestones/${milestoneId}/`);
+};
+
 // ==========================================
 // 📈 PROJECT ACTIVITIES API
 // ==========================================
