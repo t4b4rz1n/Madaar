@@ -91,21 +91,21 @@ export default function CycleLeadTimeReport({
           label="Avg Lead Time"
           value={formatHours(data.avg_lead_time_hours)}
           sub={`P50: ${formatHours(data.p50_lead_time_hours)} | P95: ${formatHours(data.p95_lead_time_hours)}`}
-          color="#6366f1"
+          color="var(--color-primary)"
           id="kpi-lead-time"
         />
         <KpiCard
           label="Avg Cycle Time"
           value={formatHours(data.avg_cycle_time_hours)}
           sub={`P50: ${formatHours(data.p50_cycle_time_hours)} | P95: ${formatHours(data.p95_cycle_time_hours)}`}
-          color="#10b981"
+          color="var(--color-success)"
           id="kpi-cycle-time"
         />
         <KpiCard
           label="Tasks Analyzed"
           value={String(data.task_count)}
           sub={`${start} to ${end}`}
-          color="#f59e0b"
+          color="var(--color-warning)"
           id="kpi-task-count"
         />
       </div>
@@ -113,7 +113,7 @@ export default function CycleLeadTimeReport({
       {/* Time per status bar chart */}
       {barData.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h4 style={{ margin: "0 0 12px", fontSize: 13, color: "#94a3b8", fontWeight: 600 }}>
+          <h4 style={{ margin: "0 0 12px", fontSize: 13, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)", fontWeight: 600 }}>
             Avg time per status
           </h4>
           <ResponsiveContainer width="100%" height={180}>
@@ -123,23 +123,23 @@ export default function CycleLeadTimeReport({
             >
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="rgba(255,255,255,0.06)"
+                stroke="color-mix(in srgb, var(--color-base-content) 6%, transparent)"
                 vertical={false}
               />
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
                 tickFormatter={(v) => `${v}h`}
                 width={40}
               />
               <Tooltip
-                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                cursor={{ fill: "color-mix(in srgb, var(--color-base-content) 4%, transparent)" }}
                 contentStyle={{
-                  background: "#1e1e2e",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "var(--color-base-100)",
+                  border: "1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent)",
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -164,7 +164,7 @@ export default function CycleLeadTimeReport({
       {/* Tasks table */}
       {!compactMode && data.tasks.length > 0 && (
         <div>
-          <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "#94a3b8", fontWeight: 600 }}>
+          <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)", fontWeight: 600 }}>
             Completed Tasks
           </h4>
           <div style={{ overflowX: "auto" }}>
@@ -174,11 +174,11 @@ export default function CycleLeadTimeReport({
                 width: "100%",
                 borderCollapse: "collapse",
                 fontSize: 12,
-                color: "#e2e8f0",
+                color: "var(--color-base-content)",
               }}
             >
               <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <tr style={{ borderBottom: "1px solid color-mix(in srgb, var(--color-base-content) 8%, transparent)" }}>
                   {["Task Title", "Lead Time", "Cycle Time", "Done At"].map(
                     (h) => (
                       <th
@@ -186,7 +186,7 @@ export default function CycleLeadTimeReport({
                         style={{
                           padding: "8px 12px",
                           textAlign: "right",
-                          color: "#64748b",
+                          color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)",
                           fontWeight: 600,
                           whiteSpace: "nowrap",
                         }}
@@ -202,12 +202,12 @@ export default function CycleLeadTimeReport({
                   <tr
                     key={t.task_id}
                     style={{
-                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      borderBottom: "1px solid color-mix(in srgb, var(--color-base-content) 4%, transparent)",
                       transition: "background 0.1s",
                     }}
                     onMouseEnter={(e) =>
                     ((e.currentTarget as HTMLElement).style.background =
-                      "rgba(255,255,255,0.03)")
+                      "color-mix(in srgb, var(--color-base-content) 3%, transparent)")
                     }
                     onMouseLeave={(e) =>
                     ((e.currentTarget as HTMLElement).style.background =
@@ -215,13 +215,13 @@ export default function CycleLeadTimeReport({
                     }
                   >
                     <td style={{ padding: "8px 12px" }}>{t.title}</td>
-                    <td style={{ padding: "8px 12px", color: "#6366f1" }}>
+                    <td style={{ padding: "8px 12px", color: "var(--color-primary)" }}>
                       {formatHours(t.lead_time_hours)}
                     </td>
-                    <td style={{ padding: "8px 12px", color: "#10b981" }}>
+                    <td style={{ padding: "8px 12px", color: "var(--color-success)" }}>
                       {formatHours(t.cycle_time_hours)}
                     </td>
-                    <td style={{ padding: "8px 12px", color: "#94a3b8" }}>
+                    <td style={{ padding: "8px 12px", color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>
                       {new Date(t.done_at).toLocaleDateString("en-US")}
                     </td>
                   </tr>
@@ -237,7 +237,7 @@ export default function CycleLeadTimeReport({
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-const STATUS_BAR_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6"];
+const STATUS_BAR_COLORS = ["var(--color-primary)", "var(--color-warning)", "var(--color-success)", "var(--color-info)", "var(--color-error)", "var(--color-secondary)"];
 
 function SectionHeader({
   start,
@@ -262,10 +262,10 @@ function SectionHeader({
       }}
     >
       <div>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--color-base-content)" }}>
           Cycle Time & Lead Time
         </h3>
-        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>
+        <p style={{ margin: "4px 0 0", fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>
           Average task lifecycle from creation to Done
         </p>
       </div>
@@ -306,34 +306,34 @@ function KpiCard({
     <div
       id={id}
       style={{
-        background: `${color}12`,
-        border: `1px solid ${color}30`,
+        background: `color-mix(in srgb, ${color} 10%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
         borderRadius: 12,
         padding: "14px 16px",
       }}
     >
-      <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)", marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1.2 }}>
         {value}
       </div>
-      <div style={{ fontSize: 10, color: "#64748b", marginTop: 6 }}>{sub}</div>
+      <div style={{ fontSize: 10, color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)", marginTop: 6 }}>{sub}</div>
     </div>
   );
 }
 
 const containerStyle: React.CSSProperties = {
-  background: "var(--color-surface, #1e1e2e)",
+  background: "var(--color-surface, var(--color-base-100))",
   borderRadius: 16,
   padding: "24px",
   boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
 };
 
 const inputStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "color-mix(in srgb, var(--color-base-content) 6%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent)",
   borderRadius: 8,
   padding: "6px 10px",
-  color: "#e2e8f0",
+  color: "var(--color-base-content)",
   fontSize: 12,
 };
 
@@ -342,7 +342,7 @@ function Skeleton() {
     <div style={{ ...containerStyle, height: 360, opacity: 0.5 }}>
       <div
         style={{
-          background: "rgba(255,255,255,0.06)",
+          background: "color-mix(in srgb, var(--color-base-content) 6%, transparent)",
           borderRadius: 8,
           height: "100%",
         }}
@@ -360,7 +360,7 @@ function ErrorState({ message }: { message: string }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#ef4444",
+        color: "var(--color-error)",
         fontSize: 14,
       }}
     >
@@ -377,7 +377,7 @@ function EmptyState() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#64748b",
+        color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)",
         fontSize: 14,
       }}
     >
