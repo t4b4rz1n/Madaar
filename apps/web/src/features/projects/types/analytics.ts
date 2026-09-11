@@ -35,6 +35,8 @@ export interface MilestoneMeta {
   target_date: string;
   project_id: string;
   project_name: string | null;
+  completed_at?: string | null;
+  completed_date?: string | null;
 }
 
 export interface BurndownPoint {

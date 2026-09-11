@@ -279,12 +279,13 @@ function ProjectCard({
   canManage: boolean;
 }) {
   const cfg = statusConfig[project.status];
-  const taskCount = project.task_count || 0;
   const memberCount = project.member_count ?? project.members_count ?? 0;
-
   const progress = project.progress_percentage || 0;
-  const completedTasks = project.completed_task_count || 0;
   const projectColor = project.color || "#6366f1";
+
+  // Always milestone-based — no task fallback
+  const completedMilestones = project.completed_milestone_count || 0;
+  const totalMilestones = project.milestone_count || 0;
 
   return (
     <motion.article
@@ -326,14 +327,14 @@ function ProjectCard({
         <div className="mt-6 flex items-end justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-base-content/45">
-              Tasks Progress
+              Milestone Progress
             </p>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl font-bold text-base-content">
-                {completedTasks}
+                {completedMilestones}
               </span>
               <span className="text-sm font-medium text-base-content/50">
-                / {taskCount} Done
+                / {totalMilestones} Done
               </span>
             </div>
           </div>
@@ -342,6 +343,16 @@ function ProjectCard({
             <ProgressRing radius={30} stroke={4} progress={progress} color={projectColor} />
           </div>
         </div>
+
+        {/* Unlinked tasks warning badge */}
+        {(project.unlinked_task_count || 0) > 0 && (
+          <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-amber-500">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5zM11 10v5h2v-5h-2zm0 6v2h2v-2h-2z"/>
+            </svg>
+            <span>{project.unlinked_task_count} unlinked task{(project.unlinked_task_count || 0) > 1 ? "s" : ""}</span>
+          </div>
+        )}
 
         <div className="mt-4 flex items-center gap-2 text-xs text-base-content/50">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -446,7 +457,12 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-121px)] space-y-6 pb-10">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+      className="min-h-[calc(100vh-121px)] space-y-6 pb-10"
+    >
       {/* Top Bar: Title & Action & Search */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -591,6 +607,6 @@ export default function ProjectsPage() {
         isLoading={deleteProjectMutation.isPending}
         title={deleteModalState.projectTitle}
       />
-    </div>
+    </motion.div>
   );
 }
