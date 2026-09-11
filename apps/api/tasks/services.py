@@ -421,6 +421,15 @@ class TaskService:
                         )
 
         if changes:
+            # Sync is_finished if status changed and is_finished wasn't explicitly provided
+            if "status" in kwargs and "is_finished" not in kwargs:
+                if task.status:
+                    code = task.status.code.lower() if task.status.code else ""
+                    if code == "done":
+                        task.is_finished = True
+                    elif code in ["todo", "doing", "review"]:
+                        task.is_finished = False
+
             task.save()
             action_desc = ", ".join(changes)
             ProjectActivity.objects.create(

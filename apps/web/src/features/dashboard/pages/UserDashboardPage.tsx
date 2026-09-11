@@ -479,6 +479,9 @@ export const UserDashboardPage = () => {
               <div className="grid gap-3 sm:grid-cols-2">
                 {projectsData.filter((p: any) => p.status === "active").slice(0, 4).map((p: any) => {
                   const color = p.color || "#6366f1";
+                  const completedMilestones = p.completed_milestone_count || 0;
+                  const totalMilestones = p.milestone_count || 0;
+                  const progress = p.progress_percentage || 0;
 
                   return (
                     <div
@@ -515,20 +518,20 @@ export const UserDashboardPage = () => {
                       <div className="relative z-10 mt-6 flex items-end justify-between">
                         <div className="flex flex-col gap-1">
                           <span className="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">
-                            Tasks Progress
+                            Milestone Progress
                           </span>
                           <div className="flex items-baseline gap-1">
                             <span className="text-2xl font-black text-base-content">
-                              {Math.round(((p.task_count || 0) * (p.progress_percentage || 0)) / 100)}
+                              {completedMilestones}
                             </span>
                             <span className="text-[11px] font-bold text-base-content/40">
-                              / {p.task_count || 0} Done
+                              / {totalMilestones} Done
                             </span>
                           </div>
                         </div>
 
                         <div className="shrink-0">
-                          <ProgressRing radius={28} stroke={4} progress={p.progress_percentage || 0} color={color} />
+                          <ProgressRing radius={28} stroke={4} progress={progress} color={color} />
                         </div>
                       </div>
                     </div>

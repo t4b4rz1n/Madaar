@@ -25,7 +25,7 @@ const statusLabels: Record<OrganizationStatus, string> = {
   archived: "Archived",
 };
 
-const emptyForm = (): OrganizationPayload => ({ name: "", slug: "", description: "", status: "active" });
+const emptyForm = (): OrganizationPayload => ({ name: "", description: "", status: "active" });
 
 const getErrorMessage = (error: any, fallback: string): string => {
   const data = error?.response?.data ?? error?.data ?? error;
@@ -58,11 +58,10 @@ function OrganizationFormModal({
   const [form, setForm] = useState<OrganizationPayload>(() =>
     organization
       ? {
-          name: organization.name,
-          slug: organization.slug,
-          description: organization.description || "",
-          status: organization.status,
-        }
+        name: organization.name,
+        description: organization.description || "",
+        status: organization.status,
+      }
       : emptyForm(),
   );
 
@@ -70,11 +69,10 @@ function OrganizationFormModal({
     setForm(
       organization
         ? {
-            name: organization.name,
-            slug: organization.slug,
-            description: organization.description || "",
-            status: organization.status,
-          }
+          name: organization.name,
+          description: organization.description || "",
+          status: organization.status,
+        }
         : emptyForm(),
     );
   }, [organization]);
@@ -83,32 +81,117 @@ function OrganizationFormModal({
     setForm((current) => ({ ...current, [field]: value }));
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" >
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <motion.div
-        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        initial={{ opacity: 0, y: 20, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="madaar-surface max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-[28px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl"
-        onMouseDown={(event) => event.stopPropagation()}
+        exit={{ opacity: 0, y: 20, scale: 0.96 }}
+        transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
+        className="madaar-surface relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-hidden rounded-[28px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl"
+        onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="organization-modal-title"
       >
-        <header className="flex items-start justify-between border-b border-base-content/10 bg-base-200/20 p-5 sm:p-7">
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">Organization setup</p>
-            <h2 id="organization-modal-title" className="text-2xl font-semibold tracking-tight">{organization ? "Edit organization" : "Create an organization"}</h2>
-            <p className="mt-1 text-sm text-base-content/55">Projects, teams and members will live inside this space.</p>
-          </div>
-          <button type="button" onClick={onClose} className="btn btn-ghost btn-square btn-sm rounded-xl text-base-content/50 transition hover:bg-base-200 hover:text-base-content" aria-label="Close organization form"><CloseCircle size={20} /></button>
-        </header>
+        <div className="max-h-[calc(100vh-2rem)] overflow-y-auto">
+          <header className="flex items-start justify-between gap-4 border-b border-base-content/10 bg-base-200/20 px-6 py-5 sm:px-8 sm:py-6">
+            <div className="min-w-0 flex-1">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                Organization setup
+              </p>
+              <h2 id="organization-modal-title" className="text-2xl font-semibold tracking-tight text-base-content">
+                {organization ? "Edit organization" : "Create an organization"}
+              </h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-base-content/60">
+                Projects, teams and members will live inside this space.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-ghost btn-square btn-sm shrink-0 rounded-xl text-base-content/50 transition hover:bg-base-200 hover:text-base-content"
+              aria-label="Close organization form"
+            >
+              <CloseCircle size={20} />
+            </button>
+          </header>
 
-        <form className="space-y-5 p-5 sm:p-7" onSubmit={(event) => { event.preventDefault(); onSubmit({ ...form, name: form.name.trim(), slug: form.slug?.trim() || undefined, description: form.description?.trim() || "" }); }}>
-          <label className="form-control"><span className="mb-2 text-sm font-medium">Organization name <span className="text-error">*</span></span><input required autoFocus value={form.name} onChange={(event) => setField("name", event.target.value)} className="input input-bordered w-full rounded-xl bg-base-200/50 focus:border-primary focus:outline-none" placeholder="e.g. Madaar Studio" /></label>
-          <label className="form-control"><span className="mb-2 text-sm font-medium">Slug <span className="text-xs font-normal text-base-content/45">(optional)</span></span><input value={form.slug || ""} onChange={(event) => setField("slug", event.target.value.toLowerCase().replace(/\s+/g, "-"))} className="input input-bordered w-full rounded-xl bg-base-200/50 focus:border-primary focus:outline-none" placeholder="madaar-studio" /><span className="mt-1 text-xs text-base-content/45">Leave blank to generate it from the organization name.</span></label>
-          <label className="form-control"><span className="mb-2 text-sm font-medium">Description</span><textarea value={form.description} onChange={(event) => setField("description", event.target.value)} className="textarea textarea-bordered min-h-28 resize-y rounded-xl bg-base-200/50 focus:border-primary focus:outline-none" placeholder="What does this organization do?" /></label>
-          {organization && <label className="form-control"><span className="mb-2 text-sm font-medium">Status</span><select value={form.status} onChange={(event) => setField("status", event.target.value as OrganizationStatus)} className="select select-bordered rounded-xl bg-base-200/50 focus:border-primary focus:outline-none">{statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>}
-          <div className="flex flex-col-reverse gap-3 border-t border-base-content/10 pt-5 sm:flex-row sm:justify-end"><button type="button" onClick={onClose} className="btn btn-ghost rounded-xl">Cancel</button><button type="submit" disabled={isPending || !form.name.trim()} className="btn btn-primary rounded-xl px-6 shadow-lg shadow-primary/15">{isPending ? <span className="loading loading-spinner loading-sm" /> : organization ? "Save changes" : "Create organization"}</button></div>
-        </form>
+          <form className="space-y-6 p-6 sm:p-8" onSubmit={(event) => { event.preventDefault(); onSubmit({ ...form, name: form.name.trim(), description: form.description?.trim() || "" }); }}>
+            <div className="space-y-2">
+              <label htmlFor="org-name" className="block text-sm font-medium text-base-content">
+                Organization name <span className="text-error">*</span>
+              </label>
+              <input
+                id="org-name"
+                type="text"
+                required
+                autoFocus
+                value={form.name}
+                onChange={(event) => setField("name", event.target.value)}
+                className="input input-bordered w-full rounded-xl bg-base-200/50 transition-colors focus:border-primary focus:bg-base-100 focus:outline-none"
+                placeholder="e.g. Madaar Studio"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="org-description" className="block text-sm font-medium text-base-content">
+                Description
+              </label>
+              <textarea
+                id="org-description"
+                value={form.description}
+                onChange={(event) => setField("description", event.target.value)}
+                className="textarea textarea-bordered min-h-32 w-full resize-y rounded-xl bg-base-200/50 transition-colors focus:border-primary focus:bg-base-100 focus:outline-none"
+                placeholder="What does this organization do?"
+              />
+            </div>
+
+            {organization && (
+              <div className="space-y-2">
+                <label htmlFor="org-status" className="block text-sm font-medium text-base-content">
+                  Status
+                </label>
+                <select
+                  id="org-status"
+                  value={form.status}
+                  onChange={(event) => setField("status", event.target.value as OrganizationStatus)}
+                  className="select select-bordered w-full rounded-xl bg-base-200/50 transition-colors focus:border-primary focus:bg-base-100 focus:outline-none"
+                >
+                  {statusOptions.map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex flex-col-reverse gap-3 border-t border-base-content/10 pt-6 sm:flex-row sm:justify-end">
+              <button type="button" onClick={onClose} className="btn btn-ghost rounded-xl">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isPending || !form.name.trim()}
+                className="btn btn-primary rounded-xl px-6 shadow-lg shadow-primary/15 disabled:opacity-50"
+              >
+                {isPending ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm" />
+                    <span>Saving...</span>
+                  </>
+                ) : organization ? (
+                  "Save changes"
+                ) : (
+                  "Create organization"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </motion.div>
     </div>
   );
