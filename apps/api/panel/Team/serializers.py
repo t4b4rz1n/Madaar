@@ -89,7 +89,7 @@ class TeamSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         lead_id = request.data.get("lead_id") if request else None
         validated_data.pop("is_active", None)
-        
+
         if lead_id is not None:
             validated_data["leader_id"] = lead_id if lead_id else None
 

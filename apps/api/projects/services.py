@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import logging
@@ -75,11 +74,11 @@ class ProjectService:
             ),
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False), distinct=True),
             completed_task_count=Count(
-                "tasks",
-                filter=Q(tasks__is_deleted=False, tasks__is_finished=True),
-                distinct=True
+                "tasks", filter=Q(tasks__is_deleted=False, tasks__is_finished=True), distinct=True
             ),
-            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False), distinct=True),
+            milestone_count=Count(
+                "milestones", filter=Q(milestones__is_deleted=False), distinct=True
+            ),
         )
 
     @classmethod
@@ -332,14 +331,16 @@ class ProjectMemberService:
         if team and not user:
             from organizations.models import TeamMembership
 
-            team_memberships = TeamMembership.objects.filter(team=team, is_deleted=False).select_related("user")
-            
+            team_memberships = TeamMembership.objects.filter(
+                team=team, is_deleted=False
+            ).select_related("user")
+
             # Optimization: Fetch existing project member user IDs to avoid N+1 queries
             existing_user_ids = set(
                 ProjectMember.objects.filter(
-                    project=project, 
-                    user__in=[tm.user_id for tm in team_memberships], 
-                    is_deleted=False
+                    project=project,
+                    user__in=[tm.user_id for tm in team_memberships],
+                    is_deleted=False,
                 ).values_list("user_id", flat=True)
             )
 

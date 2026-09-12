@@ -9,7 +9,7 @@ import datetime
 import pytest
 from django.utils import timezone
 
-from organizations.models import OrganizationMembership, TeamMembership
+from organizations.models import OrganizationMembership
 
 from .factories import (
     AttendanceFactory,

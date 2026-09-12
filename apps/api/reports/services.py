@@ -447,6 +447,7 @@ class ManagerDashboardService:
     @staticmethod
     def get_managed_team_ids(user) -> list:
         from organizations.models import Team
+
         return list(
             Team.objects.filter(
                 leader=user,
@@ -783,11 +784,13 @@ class ManagerDashboardService:
             managed_team_count = 1
         elif user.is_staff or user.is_superuser:
             from organizations.models import Team
+
             managed_team_count = Team.objects.filter(is_deleted=False).count()
         else:
             admin_org_ids = cls._get_admin_org_ids(user)
             if admin_org_ids:
                 from organizations.models import Team
+
                 managed_team_count = Team.objects.filter(
                     organization_id__in=admin_org_ids,
                     is_deleted=False,

@@ -121,8 +121,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             pass
 
         try:
-            from organizations.models import Team
             from organizations.constants import TEAM_LEAD_PERMISSIONS
+            from organizations.models import Team
+
             if Team.objects.filter(leader=instance, is_deleted=False).exists():
                 for perm in TEAM_LEAD_PERMISSIONS:
                     if perm not in user_permissions:

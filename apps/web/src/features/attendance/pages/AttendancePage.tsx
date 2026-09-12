@@ -224,4 +224,3 @@ export const AttendancePage: React.FC = () => {
 };
 
 export default AttendancePage;
-

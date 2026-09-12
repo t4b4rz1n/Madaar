@@ -628,18 +628,23 @@ class TimesheetService:
 
     @staticmethod
     def get_team_timesheet(manager, organization, start_date, end_date):
-        from organizations.models import OrganizationMembership
         from django.db.models import Q
 
+        from organizations.models import OrganizationMembership
+
         # Check if the manager is an admin/owner or has view_all permissions for this org
-        is_org_admin = OrganizationMembership.objects.filter(
-            user=manager,
-            organization_id=organization,
-            is_deleted=False,
-        ).filter(
-            Q(dynamic_roles__permissions__code__in=["attendance.view_all", "report.view"])
-            | Q(role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN])
-        ).exists()
+        is_org_admin = (
+            OrganizationMembership.objects.filter(
+                user=manager,
+                organization_id=organization,
+                is_deleted=False,
+            )
+            .filter(
+                Q(dynamic_roles__permissions__code__in=["attendance.view_all", "report.view"])
+                | Q(role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN])
+            )
+            .exists()
+        )
 
         if is_org_admin:
             # Admins see everyone in the organization
@@ -653,9 +658,7 @@ class TimesheetService:
         else:
             # Regular team leads only see their managed teams
             managed_teams = list(
-                manager.led_teams.filter(
-                    organization=organization
-                ).values_list("id", flat=True)
+                manager.led_teams.filter(organization=organization).values_list("id", flat=True)
             )
             qs = TimeLog.objects.filter(
                 user__team_memberships__team_id__in=managed_teams,

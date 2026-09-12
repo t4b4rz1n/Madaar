@@ -42,6 +42,7 @@ def _invalidate_manager(user_id=None, team_id=None):
         _bump_version(f"dashboard_version:mgr:team_{team_id}")
         # Bump the aggregate cache for the leader of this team
         from organizations.models import Team
+
         team = Team.objects.filter(id=team_id).first()
         if team and team.leader_id:
             _bump_version(f"dashboard_version:mgr:user_{team.leader_id}")
@@ -55,6 +56,7 @@ def _invalidate_manager(user_id=None, team_id=None):
             _bump_version(f"dashboard_version:mgr:team_{t_id}")
             # Bump aggregate leader for these teams
             from organizations.models import Team
+
             team = Team.objects.filter(id=t_id).first()
             if team and team.leader_id:
                 _bump_version(f"dashboard_version:mgr:user_{team.leader_id}")

@@ -147,7 +147,7 @@ export const CreateEditUserModal = ({
           animate="visible"
           exit="hidden"
           className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          
+
         >
           <motion.div
             variants={modalVariants}
