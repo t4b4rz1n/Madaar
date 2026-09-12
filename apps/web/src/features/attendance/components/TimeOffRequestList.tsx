@@ -174,7 +174,11 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
       toast.success('Request approved');
-    }
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not approve the request.';
+      toast.error(msg);
+    },
   });
 
   const rejectMutation = useMutation({
@@ -182,7 +186,11 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
       toast.success('Request rejected');
-    }
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not reject the request.';
+      toast.error(msg);
+    },
   });
 
   const cancelMutation = useMutation({
@@ -190,7 +198,11 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
       toast.success('Request cancelled');
-    }
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not cancel the request.';
+      toast.error(msg);
+    },
   });
 
   const getStatusColor = (status: string) => {

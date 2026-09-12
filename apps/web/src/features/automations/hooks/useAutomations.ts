@@ -87,9 +87,13 @@ export const useSaveAutomationRule = (organizationId?: string) => {
       queryClient.invalidateQueries({ queryKey: key(organizationId) });
     },
     onError: (error: unknown) => {
-      const message = typeof error === "object" && error && "message" in error
-        ? String(error.message)
-        : "Failed to save the automation rule.";
+      const axiosError = error as any;
+      const message =
+        axiosError?.response?.data?.message ||
+        axiosError?.response?.data?.detail ||
+        (typeof error === "object" && error && "message" in error
+          ? String(error.message)
+          : "Failed to save the automation rule.");
       toast.error(message);
     },
   });

@@ -137,15 +137,15 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
         setAllocation(100);
       },
       onError: (err: any) => {
-        const responseData = err?.data || err?.response?.data || err;
+        const responseData = err?.response?.data || err?.data || err;
         let errorMsg = "Could not add member to project.";
         if (typeof responseData === "object" && responseData !== null) {
           errorMsg =
+            responseData.message ||
+            responseData.detail ||
             responseData.user_id?.[0] ||
             responseData.team_id?.[0] ||
             responseData.non_field_errors?.[0] ||
-            responseData.detail ||
-            responseData.message ||
             errorMsg;
         }
         toast.error(String(errorMsg));

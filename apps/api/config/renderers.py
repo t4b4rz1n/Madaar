@@ -16,7 +16,8 @@ def extract_detail_message(data, status_code):
             try:
                 for field, errors in data.items():
                     if field != "non_field_errors" and isinstance(errors, list) and errors:
-                        return _("Field {field}: {error}").format(field=_(field), error=errors[0])
+                        error_msg = errors[0]
+                        return str(error_msg)
                 if (
                     "non_field_errors" in data
                     and isinstance(data["non_field_errors"], list)
