@@ -31,6 +31,15 @@ export const createBoard = async (projectId: string, title: string, backgroundCo
   return (data as any).data ?? data;
 };
 
+export const updateBoard = async (boardId: string, payload: { title?: string; background_color?: string; description?: string }): Promise<Board> => {
+  const data = await ApiService.patch<Board>(`/tasks/boards/${boardId}/`, payload);
+  return (data as any).data ?? data;
+};
+
+export const deleteBoard = async (boardId: string): Promise<void> => {
+  await ApiService.delete(`/tasks/boards/${boardId}/`);
+};
+
 export const getProjectMembers = async (projectId: string): Promise<User[]> => {
   const res = await ApiService.get<PaginatedResponse<User> | User[]>(`/projects/${projectId}/members/`);
   return extractData<User>(res);

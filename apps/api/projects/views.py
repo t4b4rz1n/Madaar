@@ -414,6 +414,7 @@ class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
     """Read-only activity feed for a Project."""
 
     serializer_class = ProjectActivitySerializer
+    pagination_class = None
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = ProjectActivityFilter
     ordering_fields = ["created_at", "event_type"]

@@ -297,11 +297,11 @@ function ProjectCard({
       className="group relative cursor-pointer overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl"
     >
       {/* Subtle Halo effect on the right side */}
-      <div 
+      <div
         className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-10 blur-[40px] pointer-events-none transition-opacity duration-300 group-hover:opacity-20"
         style={{ backgroundColor: projectColor }}
       />
-      
+
       {/* Content wrapper to stay above the halo */}
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-3">
@@ -457,7 +457,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}

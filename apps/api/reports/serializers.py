@@ -218,6 +218,7 @@ class ExecutiveDashboardSerializer(serializers.Serializer):
 
 class CfdStatusSerializer(serializers.Serializer):
     """Metadata for a single status column in the CFD."""
+
     code = serializers.CharField()
     name = serializers.CharField()
     order = serializers.IntegerField()
@@ -225,12 +226,14 @@ class CfdStatusSerializer(serializers.Serializer):
 
 class CfdDaySerializer(serializers.Serializer):
     """One day's snapshot of task counts per status."""
+
     date = serializers.DateField()
     counts = serializers.DictField(child=serializers.IntegerField())
 
 
 class CfdSerializer(serializers.Serializer):
     """Cumulative Flow Diagram response."""
+
     statuses = CfdStatusSerializer(many=True)
     data = CfdDaySerializer(many=True)
 
@@ -258,6 +261,7 @@ class BurnupPointSerializer(serializers.Serializer):
 
 class MilestoneBurndownSerializer(serializers.Serializer):
     """Burndown / Burnup chart for a milestone."""
+
     milestone = MilestoneMetaSerializer()
     total_tasks = serializers.IntegerField()
     start_date = serializers.DateField(allow_null=True)
@@ -288,6 +292,7 @@ class CycleLeadTimePeriodSerializer(serializers.Serializer):
 
 class CycleLeadTimeSerializer(serializers.Serializer):
     """Cycle Time & Lead Time analytics response."""
+
     period = CycleLeadTimePeriodSerializer(allow_null=True)
     task_count = serializers.IntegerField()
     avg_lead_time_hours = serializers.FloatField(allow_null=True)

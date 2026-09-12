@@ -144,19 +144,13 @@ def process_rules_for_event(event_type: str, payload: dict):
 
         if user.is_superuser:
             has_telegram = bool(telegram_chat_id and str(telegram_chat_id).strip())
-            if has_telegram:
+            # Superusers always get in-app. Email/Telegram respect their profile settings.
+            if has_telegram and notify_telegram:
                 should_send_telegram = True
-                # should_send_email remains as its original evaluated value (True only if notify_email is enabled)
-            else:
-                should_send_telegram = False
-                # Force email if they don't have Telegram
-                should_send_email = bool(user.email)
+            if notify_email and user.email:
+                should_send_email = True
 
-        if not should_send_email and not should_send_telegram:
-            # We still want to send in-app notifications even if email/telegram are disabled
-            pass
-
-        # Create English in-app notification
+        # Create English in-app notification (always, regardless of email/telegram)
         with translation.override("en"):
             from django.utils.html import strip_tags
 

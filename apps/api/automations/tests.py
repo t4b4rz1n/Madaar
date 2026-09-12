@@ -152,7 +152,6 @@ class TelegramBotLocalizationTests(TestCase):
             owner=self.user,
         )
 
-
     @patch("automations.services.TelegramBotService._send_or_edit")
     def test_telegram_bot_handlers_english_localization(self, mock_send_or_edit):
         from automations.services import TelegramBotService

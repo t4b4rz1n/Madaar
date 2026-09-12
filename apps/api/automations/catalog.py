@@ -113,18 +113,6 @@ AUTOMATION_EVENT_CATALOG = (
         ],
     ),
     _event(
-        "milestone_completed",
-        _("Milestone completed"),
-        _("A project milestone is completed."),
-        [Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS],
-        allowed_recipients=[
-            Recipient.PROJECT_OWNER,
-            Recipient.PROJECT_MEMBERS,
-            Recipient.HAS_PERM_PROJECT_MANAGE,
-            Recipient.HAS_PERM_ORG_MANAGE,
-        ],
-    ),
-    _event(
         "task_assigned",
         _("Task assigned"),
         _("A task is assigned to a user."),
@@ -158,7 +146,12 @@ AUTOMATION_EVENT_CATALOG = (
         "task_completed",
         _("Task completed"),
         _("A task is marked complete."),
-        [Recipient.REPORTER, Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE],
+        [
+            Recipient.REPORTER,
+            Recipient.PROJECT_OWNER,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.SUPERUSERS,
+        ],
         allowed_recipients=[
             Recipient.ASSIGNEE,
             Recipient.REPORTER,
@@ -166,6 +159,7 @@ AUTOMATION_EVENT_CATALOG = (
             Recipient.PROJECT_MEMBERS,
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.HAS_PERM_ORG_MANAGE,
+            Recipient.SUPERUSERS,
         ],
         mandatory_recipients=[Recipient.REPORTER],
     ),
@@ -218,12 +212,13 @@ AUTOMATION_EVENT_CATALOG = (
         "standup_submitted",
         _("Daily stand-up submitted"),
         _("A team member submits a daily stand-up."),
-        [Recipient.HAS_PERM_ORG_MANAGE],
+        [Recipient.HAS_PERM_ORG_MANAGE, Recipient.SUPERUSERS],
         allowed_recipients=[
             Recipient.HAS_PERM_ORG_MANAGE,
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.PROJECT_OWNER,
             Recipient.PROJECT_MEMBERS,
+            Recipient.SUPERUSERS,
         ],
     ),
     _event(
@@ -254,13 +249,14 @@ AUTOMATION_EVENT_CATALOG = (
         "timer_started",
         _("Work timer started"),
         _("A work timer is started for a task."),
-        [Recipient.HAS_PERM_ORG_MANAGE, Recipient.HAS_PERM_PROJECT_MANAGE],
+        [Recipient.HAS_PERM_ORG_MANAGE, Recipient.HAS_PERM_PROJECT_MANAGE, Recipient.SUPERUSERS],
         allowed_recipients=[
             Recipient.HAS_PERM_ORG_MANAGE,
             Recipient.HAS_PERM_PROJECT_MANAGE,
             Recipient.PROJECT_OWNER,
             Recipient.ASSIGNEE,
             Recipient.REPORTER,
+            Recipient.SUPERUSERS,
         ],
     ),
     # ── Superuser-specific events ──────────────────────────────────────────
@@ -325,23 +321,48 @@ AUTOMATION_EVENT_CATALOG = (
         "board_created",
         _("Board created"),
         _("A new board is created in a project."),
-        [Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE],
-        allowed_recipients=[Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE],
+        [Recipient.PROJECT_OWNER, Recipient.HAS_PERM_PROJECT_MANAGE, Recipient.SUPERUSERS],
+        allowed_recipients=[
+            Recipient.PROJECT_OWNER,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.SUPERUSERS,
+        ],
     ),
     _event(
         "milestone_created",
         _("Milestone created"),
         _("A new milestone is created in a project."),
-        [Recipient.PROJECT_OWNER],
-        allowed_recipients=[Recipient.PROJECT_OWNER],
+        [Recipient.PROJECT_OWNER, Recipient.SUPERUSERS],
+        allowed_recipients=[
+            Recipient.PROJECT_OWNER,
+            Recipient.SUPERUSERS,
+        ],
     ),
     # ── Team Lead-specific events ──────────────────────────────────────────
     _event(
         "task_created",
         _("Task created"),
         _("A new task is created in the project."),
-        [Recipient.HAS_PERM_PROJECT_MANAGE],
-        allowed_recipients=[Recipient.HAS_PERM_PROJECT_MANAGE, Recipient.PROJECT_OWNER],
+        [Recipient.HAS_PERM_PROJECT_MANAGE, Recipient.SUPERUSERS],
+        allowed_recipients=[
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.PROJECT_OWNER,
+            Recipient.SUPERUSERS,
+        ],
+    ),
+    # ── Milestone completed (with superuser) ──────────────────────────────
+    _event(
+        "milestone_completed",
+        _("Milestone completed"),
+        _("A project milestone is completed."),
+        [Recipient.PROJECT_OWNER, Recipient.PROJECT_MEMBERS, Recipient.SUPERUSERS],
+        allowed_recipients=[
+            Recipient.PROJECT_OWNER,
+            Recipient.PROJECT_MEMBERS,
+            Recipient.HAS_PERM_PROJECT_MANAGE,
+            Recipient.HAS_PERM_ORG_MANAGE,
+            Recipient.SUPERUSERS,
+        ],
     ),
 )
 

@@ -196,11 +196,11 @@ export default function MilestoneBurndownChart({
               dot={false}
               activeDot={{ r: 5, fill: "var(--color-primary)" }}
             />
-            <Brush 
-              dataKey="date" 
-              height={30} 
-              stroke="var(--color-primary)" 
-              fill="var(--color-base-200)" 
+            <Brush
+              dataKey="date"
+              height={30}
+              stroke="var(--color-primary)"
+              fill="var(--color-base-200)"
               tickFormatter={shortDate}
             />
           </LineChart>
@@ -272,11 +272,11 @@ export default function MilestoneBurndownChart({
               dot={false}
               activeDot={{ r: 5, fill: "var(--color-success)" }}
             />
-            <Brush 
-              dataKey="date" 
-              height={30} 
-              stroke="var(--color-success)" 
-              fill="var(--color-base-200)" 
+            <Brush
+              dataKey="date"
+              height={30}
+              stroke="var(--color-success)"
+              fill="var(--color-base-200)"
               tickFormatter={shortDate}
             />
           </LineChart>

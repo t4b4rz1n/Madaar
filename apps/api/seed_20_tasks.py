@@ -11,6 +11,7 @@ from tasks.models import Board, Task, TaskStatus
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
+
 def run_seed_tasks():
     # Only get the 3 projects we created previously
     projects = Project.objects.filter(name__in=["Project 1", "Project 2", "Project 3"])
@@ -25,9 +26,15 @@ def run_seed_tasks():
 
         # Create board and statuses
         board, _ = Board.objects.get_or_create(title=f"Sprint 1 - {proj.name}", project=proj)
-        status_todo, _ = TaskStatus.objects.get_or_create(board=board, code="todo", defaults={"name": "To Do", "order": 1})
-        status_doing, _ = TaskStatus.objects.get_or_create(board=board, code="doing", defaults={"name": "Doing", "order": 2})
-        status_done, _ = TaskStatus.objects.get_or_create(board=board, code="done", defaults={"name": "Done", "order": 3})
+        status_todo, _ = TaskStatus.objects.get_or_create(
+            board=board, code="todo", defaults={"name": "To Do", "order": 1}
+        )
+        status_doing, _ = TaskStatus.objects.get_or_create(
+            board=board, code="doing", defaults={"name": "Doing", "order": 2}
+        )
+        status_done, _ = TaskStatus.objects.get_or_create(
+            board=board, code="done", defaults={"name": "Done", "order": 3}
+        )
 
         statuses = [status_todo, status_doing, status_done]
 
@@ -45,7 +52,9 @@ def run_seed_tasks():
             assignee = random.choice(proj_members) if proj_members else None
 
             # Random deadline between 1 and 45 days from now
-            due_date = timezone.now() + timedelta(days=random.randint(1, 45), hours=random.randint(0, 23))
+            due_date = timezone.now() + timedelta(
+                days=random.randint(1, 45), hours=random.randint(0, 23)
+            )
 
             Task.objects.create(
                 title=title,
@@ -53,10 +62,11 @@ def run_seed_tasks():
                 status=status,
                 priority=priority,
                 assignee=assignee,
-                due_date=due_date
+                due_date=due_date,
             )
 
     print("Task seeding complete!")
+
 
 if __name__ == "__main__":
     run_seed_tasks()

@@ -14,6 +14,7 @@ from projects.models import Project, ProjectMember
 User = get_user_model()
 DEFAULT_PASSWORD = "Password123!"
 
+
 def run_seed():
     print("Creating 15 Users...")
     users = []
@@ -21,8 +22,7 @@ def run_seed():
         username = f"user_{i}"
         email = f"user_{i}@example.com"
         user, created = User.objects.get_or_create(
-            username=username,
-            defaults={"email": email, "first_name": "User", "last_name": str(i)}
+            username=username, defaults={"email": email, "first_name": "User", "last_name": str(i)}
         )
         if created:
             user.set_password(DEFAULT_PASSWORD)
@@ -32,14 +32,14 @@ def run_seed():
     print("Creating Organization...")
     owner = users[0]
     org, _ = Organization.objects.get_or_create(
-        name="Global Organization",
-        slug="global-organization",
-        defaults={"owner": owner}
+        name="Global Organization", slug="global-organization", defaults={"owner": owner}
     )
 
     for user in users:
         role = "owner" if user == owner else "employee"
-        OrganizationMembership.objects.get_or_create(user=user, organization=org, defaults={"role": role})
+        OrganizationMembership.objects.get_or_create(
+            user=user, organization=org, defaults={"role": role}
+        )
 
     print("Creating 5 Teams...")
     teams = []
@@ -59,9 +59,7 @@ def run_seed():
     projects = []
     for i in range(1, 4):
         proj, _ = Project.objects.get_or_create(
-            name=f"Project {i}",
-            organization=org,
-            defaults={"owner": owner}
+            name=f"Project {i}", organization=org, defaults={"owner": owner}
         )
         projects.append(proj)
 
@@ -71,6 +69,7 @@ def run_seed():
         ProjectMember.objects.get_or_create(project=proj, user=user)
 
     print("Data seeded successfully!")
+
 
 if __name__ == "__main__":
     run_seed()

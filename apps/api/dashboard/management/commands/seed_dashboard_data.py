@@ -111,9 +111,7 @@ class Command(BaseCommand):
 
         # Team memberships
         for user in [ali, hamed, manager]:
-            TeamMembership.objects.get_or_create(
-                user=user, team=self._team
-            )
+            TeamMembership.objects.get_or_create(user=user, team=self._team)
 
     # ── project & board ──────────────────────────────────────────────
 

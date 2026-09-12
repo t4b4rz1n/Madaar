@@ -78,6 +78,7 @@ def _is_org_admin_or_owner(user, org_id) -> bool:
 def _is_team_lead(user, team_id) -> bool:
     """Check whether *user* is lead of the given team."""
     from organizations.models import Team
+
     return Team.objects.filter(
         id=team_id,
         leader=user,
@@ -88,6 +89,7 @@ def _is_team_lead(user, team_id) -> bool:
 def _get_managed_team_ids(user):
     """Return IDs of all teams where *user* is a lead."""
     from organizations.models import Team
+
     return list(
         Team.objects.filter(
             leader=user,

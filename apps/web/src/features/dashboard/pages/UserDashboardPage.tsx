@@ -490,11 +490,11 @@ export const UserDashboardPage = () => {
                       className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-base-content/10 bg-base-100/50 backdrop-blur-md p-5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-base-content/5"
                     >
                       {/* Decorative colored glow based on project color */}
-                      <div 
+                      <div
                         className="absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40 pointer-events-none"
                         style={{ backgroundColor: color }}
                       />
-                      
+
                       <div className="relative z-10 flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           {p.prefix && (
@@ -734,7 +734,7 @@ function DashboardTaskCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const isOverdue = task.is_overdue;
-  
+
   return (
     <motion.div
       layout
@@ -761,7 +761,7 @@ function DashboardTaskCard({
                  {task.title}
                </p>
              </div>
-             
+
              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-base-content/45">
                {task.project_name && (
                  <span className="font-semibold text-primary">
@@ -808,7 +808,7 @@ function DashboardTaskCard({
                 </button>
               )}
             </div>
-            
+
             <div className={`p-1 rounded-lg transition-colors ${expanded ? "bg-base-content/10" : "hover:bg-base-content/5"}`}>
               <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
                  <ArrowRight size={14} className="text-base-content/50" />
@@ -832,7 +832,7 @@ function DashboardTaskCard({
                ) : (
                  <p className="italic text-base-content/40">No additional details provided.</p>
                )}
-               
+
                <div className="flex items-center gap-4 mt-1 pt-2 border-t border-base-content/5">
                  {task.due_date && (
                    <div className="flex items-center gap-1 text-[10px]">

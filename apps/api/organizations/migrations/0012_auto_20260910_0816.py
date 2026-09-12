@@ -5,12 +5,12 @@ from django.db import migrations
 def remove_project_create_from_team_lead(apps, schema_editor):
     Role = apps.get_model('organizations', 'Role')
     Permission = apps.get_model('organizations', 'Permission')
-    
+
     try:
         project_create_perm = Permission.objects.get(code='project.create')
     except Permission.DoesNotExist:
         return
-        
+
     team_lead_roles = Role.objects.filter(name='Team Lead')
     for role in team_lead_roles:
         role.permissions.remove(project_create_perm)
@@ -18,12 +18,12 @@ def remove_project_create_from_team_lead(apps, schema_editor):
 def reverse_remove_project_create(apps, schema_editor):
     Role = apps.get_model('organizations', 'Role')
     Permission = apps.get_model('organizations', 'Permission')
-    
+
     try:
         project_create_perm = Permission.objects.get(code='project.create')
     except Permission.DoesNotExist:
         return
-        
+
     team_lead_roles = Role.objects.filter(name='Team Lead')
     for role in team_lead_roles:
         role.permissions.add(project_create_perm)

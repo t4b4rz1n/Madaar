@@ -515,8 +515,12 @@ class TaskStatusTransition(models.Model):
         verbose_name=_("To status"),
     )
     # Snapshots — preserved even if the TaskStatus row is later deleted/renamed
-    from_status_code = models.CharField(_("From status code"), max_length=50, blank=True, default="")
-    from_status_name = models.CharField(_("From status name"), max_length=100, blank=True, default="")
+    from_status_code = models.CharField(
+        _("From status code"), max_length=50, blank=True, default=""
+    )
+    from_status_name = models.CharField(
+        _("From status name"), max_length=100, blank=True, default=""
+    )
     to_status_code = models.CharField(_("To status code"), max_length=50)
     to_status_name = models.CharField(_("To status name"), max_length=100)
 
@@ -540,7 +544,9 @@ class TaskStatusTransition(models.Model):
         ordering = ["transitioned_at"]
         indexes = [
             models.Index(fields=["task", "transitioned_at"], name="transition_task_time_idx"),
-            models.Index(fields=["to_status", "transitioned_at"], name="transition_status_time_idx"),
+            models.Index(
+                fields=["to_status", "transitioned_at"], name="transition_status_time_idx"
+            ),
         ]
 
     def __str__(self):

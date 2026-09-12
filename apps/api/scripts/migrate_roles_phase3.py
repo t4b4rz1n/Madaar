@@ -49,7 +49,6 @@ ROLE_PERMISSIONS_MAP = {
         "attendance.view_all",
         "finance.view_reports",
     ],
-
     "hr": [
         "notification.view",
         "project.view",
