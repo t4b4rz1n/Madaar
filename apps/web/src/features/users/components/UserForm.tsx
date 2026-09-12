@@ -20,7 +20,7 @@ export const UserForm = ({
   editMode,
   organizationId,
 }: UserFormProps) => {
-  const { data: rolesData, isLoading: isLoadingRoles, isError: isRolesError } =
+  const { data: rolesData, isLoading: isLoadingRoles } =
     useRoles(organizationId ? { organization_id: organizationId } : undefined);
   const roles = rolesData?.results || [];
 
