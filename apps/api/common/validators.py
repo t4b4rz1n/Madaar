@@ -1,5 +1,6 @@
 try:
     import magic as _magic
+
     _magic_available = True
 except (ImportError, OSError):
     _magic_available = False

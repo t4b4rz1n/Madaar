@@ -76,8 +76,9 @@ export const ProfileEditForm = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPG and PNG images are supported.");
       return;
     }
 
@@ -121,7 +122,7 @@ export const ProfileEditForm = () => {
       updateData.notify_via_telegram = data.notify_via_telegram;
     }
     if (profileImage) {
-      updateData.profile_image = profileImage;
+      updateData.avatar = profileImage;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -194,12 +195,12 @@ export const ProfileEditForm = () => {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
+                accept="image/png,image/jpeg"
                 onChange={handleProfileImageChange}
                 className="hidden"
               />
               <p className="text-xs text-base-content/50">
-                Click the photo to upload a JPG, PNG or WebP image (max 5 MB).
+                Click the photo to upload a JPG or PNG image (max 5 MB).
               </p>
 
               <div>
@@ -236,7 +237,7 @@ export const ProfileEditForm = () => {
                     <span className="text-sm font-semibold text-base-content">
                       First Name
                     </span>
-                    <span className="text-error text-xs">*</span>
+                    <span className="text-xs text-base-content/40">(Optional)</span>
                   </label>
                   <Controller
                     name="first_name"
@@ -258,7 +259,7 @@ export const ProfileEditForm = () => {
                     <span className="text-sm font-semibold text-base-content">
                       Last Name
                     </span>
-                    <span className="text-error text-xs">*</span>
+                    <span className="text-xs text-base-content/40">(Optional)</span>
                   </label>
                   <Controller
                     name="last_name"

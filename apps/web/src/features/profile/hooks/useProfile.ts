@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "../../auth/store/authStore";
 import { updateProfile, getTelegramMagicLink, getProfile } from "../api/profileApi";
 import type { ProfileUpdateData } from "../types";
+import { getErrorMessage } from "../../../core/utils/errorHandler";
 
 export const useProfileQuery = (refetchInterval: number | false = false) => {
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -20,7 +21,7 @@ export const useProfileQuery = (refetchInterval: number | false = false) => {
           last_name: response.data.last_name,
           email: response.data.email,
           is_staff: response.data.is_staff,
-          profile_image_url: response.data.profile_image,
+          profile_image_url: response.data.avatar_url,
           notify_via_email: response.data.notify_via_email,
           notify_via_telegram: response.data.notify_via_telegram,
         });
@@ -46,14 +47,14 @@ export const useUpdateProfile = () => {
         updateUser({
           first_name: response.data.first_name,
           last_name: response.data.last_name,
-          profile_image_url: response.data.profile_image,
+          profile_image_url: response.data.avatar_url,
           notify_via_email: response.data.notify_via_email,
           notify_via_telegram: response.data.notify_via_telegram,
         });
       }
     },
     onError: (error: any) => {
-      toast.error(error.message || "Error updating profile.");
+      toast.error(getErrorMessage(error, "Error updating profile."));
     },
   });
 };

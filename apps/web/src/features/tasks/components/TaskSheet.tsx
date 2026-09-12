@@ -911,6 +911,20 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       <p dir="auto" className="text-xs leading-relaxed text-base-content/75">
                         {comment.content}
                       </p>
+                      {comment.attached_file_url && (
+                        <div className="mt-2 pt-2 border-t border-base-content/10">
+                          {comment.attached_file_url.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                            <a href={comment.attached_file_url} target="_blank" rel="noreferrer" className="block w-48 h-32 rounded-lg overflow-hidden border border-base-content/10 hover:border-primary/50 transition-colors">
+                              <img src={comment.attached_file_url} alt="Attachment" className="w-full h-full object-cover" />
+                            </a>
+                          ) : (
+                            <a href={comment.attached_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 bg-base-200/50 hover:bg-base-200 border border-base-content/10 rounded-lg text-xs text-base-content/80 transition-colors">
+                              <Paperclip2 size={14} />
+                              Download Attachment
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>

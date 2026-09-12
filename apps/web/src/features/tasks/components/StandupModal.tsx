@@ -172,7 +172,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
       {isOpen && (
         <motion.div
           className="fixed inset-0 z-[120] flex items-center justify-center p-4"
-          
+
           role="dialog"
           aria-modal="true"
           initial={{ opacity: 0 }}

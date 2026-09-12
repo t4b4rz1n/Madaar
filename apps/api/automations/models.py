@@ -52,9 +52,7 @@ class AutomationRule(BaseModel):
     recipients = models.JSONField(
         default=list,
         blank=True,
-        help_text=_(
-            "List of recipient roles, e.g. ['owner', 'admins', 'assignee', 'reporter']"
-        ),
+        help_text=_("List of recipient roles, e.g. ['owner', 'admins', 'assignee', 'reporter']"),
     )
 
     class Meta:

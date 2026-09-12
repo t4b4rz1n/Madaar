@@ -646,7 +646,7 @@ const TeamLeadDashboardPage = () => {
 
   const dashboard = dashboardQuery.data;
   const members = membersQuery.data || [];
-  
+
   const workHours = dashboard?.work_hours || [];
   const maxTasks = Math.max(...members.map((m) => m.total_tasks), 1);
   const workHoursByUser = new Map(

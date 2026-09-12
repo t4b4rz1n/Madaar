@@ -24,6 +24,7 @@ export const mockProfile: UserProfile = {
   email: "admin@example.com",
   is_staff: true,
   profile_image: null,
+  avatar_url: null,
 };
 
 export let mockUsers: User[] = [

@@ -7,27 +7,32 @@ import {
   SearchNormal1,
   ArrowDown2,
   TickCircle,
+  AddSquare,
 } from "iconsax-reactjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAddProjectMember } from "../hooks/useProjects";
 import { getUsers } from "../../users/api/usersApi";
 import { teamsApi } from "../../teams/api/teamsApi";
 import { toast } from "sonner";
+import { CreateEditUserModal } from "../../users/components/CreateEditUserModal";
 
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string | number;
+  orgId?: string;
 }
 
 export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   isOpen,
   onClose,
   projectId,
+  orgId,
 }) => {
   const queryClient = useQueryClient();
   const addMemberMutation = useAddProjectMember(projectId);
   const [memberType, setMemberType] = useState<"user" | "team">("user");
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
 
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState("");
@@ -132,15 +137,15 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
         setAllocation(100);
       },
       onError: (err: any) => {
-        const responseData = err?.data || err?.response?.data || err;
+        const responseData = err?.response?.data || err?.data || err;
         let errorMsg = "Could not add member to project.";
         if (typeof responseData === "object" && responseData !== null) {
           errorMsg =
+            responseData.message ||
+            responseData.detail ||
             responseData.user_id?.[0] ||
             responseData.team_id?.[0] ||
             responseData.non_field_errors?.[0] ||
-            responseData.detail ||
-            responseData.message ||
             errorMsg;
         }
         toast.error(String(errorMsg));
@@ -150,8 +155,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs"
-      
+      className={`fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs transition-opacity duration-150 ${isCreateUserOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+
     >
       <div
         className="w-full max-w-md overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
@@ -266,7 +271,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                       No matching users found
                     </div>
                   ) : (
-                    filteredUsers.map((u: any) => {
+                    <>
+                    {filteredUsers.map((u: any) => {
                       const displayName =
                         `${u.first_name || ""} ${u.last_name || ""}`.trim() ||
                         u.username ||
@@ -308,7 +314,24 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                           )}
                         </button>
                       );
-                    })
+                    })}
+                    {/* دکمه ساخت یوزر جدید - آخر لیست */}
+                    {orgId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          setIsCreateUserOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all border-t border-base-content/8 mt-1 pt-2 text-primary hover:bg-primary/8 font-bold"
+                      >
+                        <div className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary shrink-0">
+                          <AddSquare size={15} />
+                        </div>
+                        <span className="text-xs">Create New User</span>
+                      </button>
+                    )}
+                    </>
                   )
                 ) : isLoadingTeams ? (
                   <div className="p-3 text-center text-xs text-base-content/40">
@@ -428,6 +451,39 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* مودال اصلی ساخت یوزر جدید */}
+      <CreateEditUserModal
+        isOpen={isCreateUserOpen}
+        organizationId={orgId}
+        onClose={() => {
+          setIsCreateUserOpen(false);
+        }}
+        onSuccess={(newUserId?: string) => {
+          setIsCreateUserOpen(false);
+          if (newUserId) {
+            // اضافه کردن خودکار به پروژه
+            addMemberMutation.mutate(
+              { user_id: newUserId, allocation_percentage: 100 },
+              {
+                onSuccess: () => {
+                  toast.success("New user created and added to project");
+                  queryClient.invalidateQueries({ queryKey: ["users-list"] });
+                  queryClient.invalidateQueries({ queryKey: ["projects"] });
+                  onClose();
+                },
+                onError: () => {
+                  toast.warning("User created but could not be added to project automatically");
+                  queryClient.invalidateQueries({ queryKey: ["users-list"] });
+                },
+              }
+            );
+          } else {
+            queryClient.invalidateQueries({ queryKey: ["users-list"] });
+            toast.success("User created. You can now select them from the list.");
+          }
+        }}
+      />
     </div>
   );
 };

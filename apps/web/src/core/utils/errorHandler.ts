@@ -1,3 +1,19 @@
+/**
+ * Extracts the first field-level error message from a DRF validation error object.
+ * Returns only the error text (not the field name) for a cleaner UX.
+ */
+const extractFieldError = (data: Record<string, unknown>): string | null => {
+  for (const [, value] of Object.entries(data)) {
+    if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
+      return value[0];
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+  return null;
+};
+
 export const getErrorMessage = (
   error: unknown,
   fallbackMessage: string
@@ -18,38 +34,29 @@ export const getErrorMessage = (
     }
 
     if (err.errors && typeof err.errors === "object") {
-      for (const [field, value] of Object.entries(err.errors)) {
-        if (Array.isArray(value) && value.length > 0) {
-          return `${field}: ${String(value[0])}`;
-        }
-
-        if (typeof value === "string") {
-          return `${field}: ${value}`;
-        }
-      }
+      const msg = extractFieldError(err.errors as Record<string, unknown>);
+      if (msg) return msg;
     }
 
     const response = err.response as
-      | { data?: { message?: unknown; detail?: unknown; errors?: unknown } }
+      | { data?: Record<string, unknown> }
       | undefined;
 
-    if (typeof response?.data?.message === "string") {
-      return response.data.message;
-    }
+    if (response?.data && typeof response.data === "object") {
+      const data = response.data;
 
-    if (typeof response?.data?.detail === "string") {
-      return response.data.detail;
-    }
+      if (typeof data.message === "string") return data.message;
+      if (typeof data.detail === "string") return data.detail;
 
-    if (response?.data?.errors && typeof response.data.errors === "object") {
-      for (const [field, value] of Object.entries(response.data.errors)) {
-        if (Array.isArray(value) && value.length > 0) {
-          return `${field}: ${String(value[0])}`;
-        }
-        if (typeof value === "string") {
-          return `${field}: ${value}`;
-        }
+      if (data.errors && typeof data.errors === "object") {
+        const msg = extractFieldError(data.errors as Record<string, unknown>);
+        if (msg) return msg;
       }
+
+      // DRF sometimes returns validation errors directly as { field: ["error msg"] }
+      // (no "errors" wrapper) — handle that case too
+      const directMsg = extractFieldError(data);
+      if (directMsg) return directMsg;
     }
   }
 

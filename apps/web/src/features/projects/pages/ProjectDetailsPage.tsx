@@ -146,7 +146,7 @@ function StatusDropdown({
 }
 
 export default function ProjectDetailsPage() {
-  
+
   const updateProjectMutation = useUpdateProject();
 
 
@@ -270,16 +270,16 @@ const { id } = useParams<{ id: string }>();
               <h1 dir="auto" className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
                 {project.name}
               </h1>
-              <StatusDropdown 
-                currentStatus={project.status} 
+              <StatusDropdown
+                currentStatus={project.status}
                 onChange={(s) => {
                   if (!project) return;
                   updateProjectMutation.mutate({ id: project.id, data: { status: s as any } }, {
                     onSuccess: () => toast.success("Project status updated."),
                     onError: () => toast.error("Failed to update status.")
                   });
-                }} 
-                disabled={updateProjectMutation.isPending} 
+                }}
+                disabled={updateProjectMutation.isPending}
               />
             </div>
             {project.description && (
@@ -623,6 +623,15 @@ const { id } = useParams<{ id: string }>();
         isOpen={isAddMemberOpen}
         onClose={() => setIsAddMemberOpen(false)}
         projectId={id || ""}
+        orgId={
+          project?.organization
+            ? String(
+                typeof project.organization === "object"
+                  ? (project.organization as any).id
+                  : project.organization
+              )
+            : undefined
+        }
       />
       <CreateMilestoneModal
         isOpen={isCreateMilestoneOpen}

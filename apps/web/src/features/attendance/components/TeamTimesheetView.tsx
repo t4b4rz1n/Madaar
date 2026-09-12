@@ -69,7 +69,7 @@ export const TeamTimesheetView: React.FC = () => {
               </span>
             </div>
           )}
-          
+
           <div className="flex items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 p-1">
           <button type="button" onClick={prevWeek} className="grid size-8 place-items-center rounded-lg text-base-content/45 transition-colors hover:bg-base-100 hover:text-base-content">
             <ArrowLeft2 size={18} />

@@ -6,7 +6,7 @@ from organizations.services import PermissionService
 class CanManageRoles(permissions.BasePermission):
     """
     Permission class guarding Role management endpoints (/panel/roles/).
-    - Read actions (list, retrieve, permissions): require 'role.view', 'org.manage_roles', or 'org.manage_settings'.
+    - Read actions (list, retrieve, permissions): require 'role.view', 'org.manage_roles', 'org.manage_settings', or 'org.manage_members'.
     - Mutation actions (create, update, delete): require 'org.manage_roles' or 'org.manage_settings'.
     """
 
@@ -58,6 +58,7 @@ class CanManageRoles(permissions.BasePermission):
                 PermissionService.has_permission(user, "role.view", org_id)
                 or PermissionService.has_permission(user, "org.manage_roles", org_id)
                 or PermissionService.has_permission(user, "org.manage_settings", org_id)
+                or PermissionService.has_permission(user, "org.manage_members", org_id)
             )
 
         return PermissionService.has_permission(
@@ -81,6 +82,7 @@ class CanManageRoles(permissions.BasePermission):
                 PermissionService.has_permission(user, "role.view", org_id)
                 or PermissionService.has_permission(user, "org.manage_roles", org_id)
                 or PermissionService.has_permission(user, "org.manage_settings", org_id)
+                or PermissionService.has_permission(user, "org.manage_members", org_id)
             )
 
         return PermissionService.has_permission(

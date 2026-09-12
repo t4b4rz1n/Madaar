@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import logging
@@ -75,11 +74,11 @@ class ProjectService:
             ),
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False), distinct=True),
             completed_task_count=Count(
-                "tasks",
-                filter=Q(tasks__is_deleted=False, tasks__is_finished=True),
-                distinct=True
+                "tasks", filter=Q(tasks__is_deleted=False, tasks__is_finished=True), distinct=True
             ),
-            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False), distinct=True),
+            milestone_count=Count(
+                "milestones", filter=Q(milestones__is_deleted=False), distinct=True
+            ),
         )
 
     @classmethod

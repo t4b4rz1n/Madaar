@@ -143,6 +143,8 @@ class RoleViewSet(viewsets.ViewSet):
                 }
             )
 
+        self._ensure_default_permissions_and_roles(org)
+
         qs = (
             Role.objects.filter(organization=org, is_deleted=False)
             .annotate(

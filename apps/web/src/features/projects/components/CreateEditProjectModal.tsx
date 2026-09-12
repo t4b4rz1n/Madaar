@@ -141,11 +141,12 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       let msg = "Could not save project.";
       if (errorData) {
         if (typeof errorData === "string") msg = errorData;
+        else if (errorData.message) msg = errorData.message;
         else if (errorData.detail) msg = errorData.detail;
         else if (typeof errorData === "object") {
           const firstKey = Object.keys(errorData)[0];
           const firstVal = errorData[firstKey];
-          msg = `${firstKey}: ${Array.isArray(firstVal) ? firstVal.join(", ") : firstVal}`;
+          msg = Array.isArray(firstVal) ? firstVal[0] : String(firstVal);
         }
       }
       toast.error(msg);
@@ -184,7 +185,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs"
-      
+
     >
       <div
         className="w-full max-w-lg overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in-95 duration-150"

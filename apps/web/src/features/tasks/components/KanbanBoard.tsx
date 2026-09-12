@@ -131,7 +131,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onError: (err: any, _newMove, context: any) => {
       const errorData = err.response?.data;
-      const errorMessage = errorData?.detail || errorData?.error || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData)) || err.message || 'Failed to move task';
+      const errorMessage = errorData?.message || errorData?.detail || errorData?.error || err.message || 'Failed to move task';
       console.error('Move task error:', err.response?.status, errorData);
       toast.error(errorMessage);
       if (context?.previousTasks) {

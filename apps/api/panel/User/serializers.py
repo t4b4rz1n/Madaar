@@ -139,6 +139,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             "avatar": {"validators": []},
+            "first_name": {"required": False, "allow_blank": True},
+            "last_name": {"required": False, "allow_blank": True},
         }
         ref_name = "user_panel"
 
@@ -326,6 +328,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             "avatar": {"validators": []},
+            "first_name": {"required": False, "allow_blank": True},
+            "last_name": {"required": False, "allow_blank": True},
         }
         ref_name = "user_panel__update"
 
