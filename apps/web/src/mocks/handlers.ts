@@ -173,7 +173,6 @@ export const handlers = [
     );
 
     if (user && credentials.password) {
-      // پیدا کردن نقش کاربر از دیتابیس موک
       const userRole = user.role_id
         ? mockRoles.find((r) => String(r.id) === String(user.role_id))
         : null;

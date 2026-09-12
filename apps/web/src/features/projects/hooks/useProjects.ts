@@ -43,7 +43,6 @@ export const projectKeys = {
     [...projectKeys.detail(id), "activities"] as const,
 };
 
-// ۱. دریافت لیست پروژه‌ها
 export const useProjects = (params?: ProjectListParams) => {
   return useQuery({
     queryKey: projectKeys.list(params),
@@ -51,17 +50,15 @@ export const useProjects = (params?: ProjectListParams) => {
   });
 };
 
-// ۲. دریافت جزئیات یک پروژه
 export const useProject = (id: string | number) => {
   return useQuery({
     queryKey: projectKeys.detail(id),
     queryFn: () => getProjectById(id),
     enabled: Boolean(id),
-    staleTime: 0, // اطمینان از به روز بودن داده‌ها هنگام سوییچ
+    staleTime: 0,
   });
 };
 
-// ۳. ساخت پروژه جدید
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
 
@@ -73,8 +70,6 @@ export const useCreateProject = () => {
   });
 };
 
-// ۴. ویرایش پروژه
-// ۴. ویرایش پروژه
 export const useUpdateProject = () => {
   const queryClient = useQueryClient();
 
@@ -92,7 +87,6 @@ export const useUpdateProject = () => {
   });
 };
 
-// ۵. حذف پروژه
 export const useDeleteProject = () => {
   const queryClient = useQueryClient();
 
@@ -104,7 +98,6 @@ export const useDeleteProject = () => {
   });
 };
 
-// ۶. آرشیو و تکمیل پروژه
 export const useArchiveProject = () => {
   const queryClient = useQueryClient();
 
@@ -127,7 +120,6 @@ export const useCompleteProject = () => {
   });
 };
 
-// ----------- اعضا (Members) -----------
 
 export const useProjectMembers = (projectId: string | number) => {
   return useQuery({
@@ -171,7 +163,6 @@ export const useRemoveProjectMember = (projectId: string | number) => {
     },
   });
 };
-// ----------- نقاط عطف (Milestones) -----------
 
 export const useProjectMilestones = (projectId: string | number) => {
   return useQuery({
@@ -233,7 +224,6 @@ export const useDeleteMilestone = (projectId: string | number) => {
   });
 };
 
-// ----------- فید فعالیت‌ها (Activities) -----------
 
 export const useProjectActivities = (projectId: string | number) => {
   return useQuery({

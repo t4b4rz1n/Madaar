@@ -73,7 +73,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 
         qs = (
             Board.objects.select_related("project", "created_by")
-            .prefetch_related("statuses", "tasks")
+            .prefetch_related("statuses")
             .filter(is_deleted=False)
         )
         if org_ids is not None:

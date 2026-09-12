@@ -38,7 +38,6 @@ export const CreateEditTeamModal = ({
 }: CreateEditTeamModalProps) => {
   const isEditMode = !!team;
 
-  // استفاده از هوک‌های مجزا به جای useTeams
   const createTeam = useCreateTeam();
   const updateTeam = useUpdateTeam();
 
@@ -52,7 +51,7 @@ export const CreateEditTeamModal = ({
     defaultValues: {
       name: "",
       description: "",
-      lead_id: null, // اضافه شد
+      lead_id: null,
       is_active: true,
     },
   });
@@ -63,7 +62,7 @@ export const CreateEditTeamModal = ({
       reset({
         name: team.name,
         description: team.description || "",
-        lead_id: team.lead_id, // اضافه شد
+        lead_id: team.lead_id,
         is_active: !!team.is_active,
       });
     } else {
@@ -79,8 +78,8 @@ export const CreateEditTeamModal = ({
         await createTeam.mutateAsync({ ...data, organization: organizationId });
       }
       onClose();
-    } catch {
-      // توستر خطا قبلاً در ساختار هوک پیاده‌سازی شده است
+    } catch (error) {
+      // Error is handled by the mutation callbacks
     }
   });
 

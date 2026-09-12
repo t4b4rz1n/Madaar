@@ -83,8 +83,6 @@ class BoardSerializer(serializers.ModelSerializer):
     statuses = TaskStatusSerializer(many=True, read_only=True)
     created_by_detail = UserMinimalSerializer(source="created_by", read_only=True)
     project_detail = ProjectMinimalSerializer(source="project", read_only=True)
-    task_count = serializers.SerializerMethodField()
-    done_task_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Board
@@ -99,17 +97,9 @@ class BoardSerializer(serializers.ModelSerializer):
             "created_by_detail",
             "order",
             "statuses",
-            "task_count",
-            "done_task_count",
             "created_at",
         )
         read_only_fields = ("id", "created_by", "order", "created_at")
-
-    def get_task_count(self, obj):
-        return obj.tasks.filter(is_deleted=False).count()
-
-    def get_done_task_count(self, obj):
-        return obj.tasks.filter(is_deleted=False, status__is_done=True).count()
 
     def validate_background_color(self, value):
         """Validate hex color format or linear-gradient string."""

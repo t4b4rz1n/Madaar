@@ -38,7 +38,6 @@ export const TeamsToolbar = ({
 }: ToolbarProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // استیت محلی فیلد جست‌وجو برای اعمال Debounce
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("search") || "",
   );
@@ -53,10 +52,8 @@ export const TeamsToolbar = ({
     left: 0,
   });
 
-  // سینک فیلترها با URL (تک‌منبع حقیقت)
   const activeFilter = searchParams.get("is_active") || "";
 
-  // محاسبه سورت از روی URL
   const sortConfig = useMemo<{ key: SortKey; dir: SortDirection }>(() => {
     const ordering = searchParams.get("ordering") || "";
     const isDesc = ordering.startsWith("-");
@@ -79,12 +76,10 @@ export const TeamsToolbar = ({
     onSearchRef.current = onSearch;
   }, [onSearch]);
 
-  // همگام‌سازی استیت سرچ متنی
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
   }, [searchParams]);
 
-  // اعمال دبانس سرچ
   const isFirstSearch = useRef(true);
   useEffect(() => {
     if (isFirstSearch.current) {

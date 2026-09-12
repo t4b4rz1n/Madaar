@@ -236,7 +236,7 @@ export type MockRole = {
   description: string;
   is_active: boolean;
   is_staff: boolean;
-  permissions: string[]; // تغییر از MockPermission[] به string[]
+  permissions: string[];
 };
 
 export let mockRoles: MockRole[] = [
@@ -457,7 +457,7 @@ export let mockProjects: Project[] = [
     name: "Modares (Internal Management System)",
     description:
       "Development of an integrated team OS with gamification and task management",
-    status: "active", // به جای in_progress
+    status: "active",
     prefix: "MAD",
     budget: 500000000,
     budget_currency: "IRR",
@@ -780,7 +780,6 @@ export const db = {
       return mockTeams.length < initialLength;
     },
   },
-  // اضافه کردن این بخش به داخل شیء db
   projects: {
     getAll: () => mockProjects,
     getById: (id: string | number) =>
@@ -797,7 +796,7 @@ export const db = {
         budget_currency: data.budget_currency || "IRR",
         start_date: data.start_date || new Date().toISOString().split("T")[0],
         deadline: data.deadline,
-        status: "draft", // به جای planning
+        status: "draft",
         members_count: 1,
         progress_percentage: 0,
         created_at: new Date().toISOString(),

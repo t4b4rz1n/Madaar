@@ -175,6 +175,8 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     organization_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(),
         source="organization",
+        required=False,
+        allow_null=True,
     )
 
     class Meta:

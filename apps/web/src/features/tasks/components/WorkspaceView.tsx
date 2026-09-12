@@ -7,11 +7,9 @@ import {
   Add,
   FolderAdd,
   CloseCircle,
-  Task,
   Element3,
   SearchNormal1,
   Sort,
-  TickCircle,
   More,
   Edit2,
   Trash,
@@ -272,9 +270,6 @@ export const WorkspaceView: React.FC = () => {
             {filteredBoards.map((board, idx) => {
               const pastelFallback = presetColors[idx % presetColors.length].value;
               const statusCount = board.statuses?.length || 0;
-              const taskCount = board.task_count ?? 0;
-              const doneCount = board.done_task_count ?? 0;
-              const progress = taskCount > 0 ? Math.round((doneCount / taskCount) * 100) : 0;
 
               return (
                 <motion.div
@@ -283,14 +278,14 @@ export const WorkspaceView: React.FC = () => {
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  className="group relative overflow-hidden rounded-2xl border border-base-content/8 bg-base-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer"
+                  className="group relative overflow-hidden rounded-2xl border border-base-content/8 bg-base-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer min-h-[180px] flex flex-col"
                   onClick={() => setActiveBoard(board.id.toString())}
                 >
                   <div
                     className="absolute left-0 top-0 h-1.5 w-full"
                     style={{ background: board.background_color || pastelFallback }}
                   />
-                  <div className="p-5">
+                  <div className="p-5 flex-1 flex flex-col">
                     <div className="mb-4 flex items-center justify-between">
                       <div
                         className="flex size-11 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110"
@@ -305,7 +300,7 @@ export const WorkspaceView: React.FC = () => {
                         {canManageBoard && (
                           <div className="relative" onClick={(e) => e.stopPropagation()}>
                             <button
-                              className="flex size-7 items-center justify-center rounded-lg text-base-content/40 opacity-0 transition-all hover:bg-base-200 hover:text-base-content group-hover:opacity-100"
+                              className="flex size-7 items-center justify-center rounded-lg text-base-content/40 transition-all hover:bg-base-200 hover:text-base-content"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenMenuId(openMenuId === board.id ? null : board.id);
@@ -351,26 +346,7 @@ export const WorkspaceView: React.FC = () => {
                       {board.title}
                     </h3>
 
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs text-base-content/50">
-                        <div className="flex items-center gap-1.5">
-                          <Task size={13} />
-                          <span>{taskCount} tasks</span>
-                        </div>
-                        <div className="flex items-center gap-1 font-medium">
-                          <TickCircle size={12} className="text-emerald-500" />
-                          <span>{doneCount}/{taskCount} done</span>
-                        </div>
-                      </div>
-                      {taskCount > 0 && (
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-base-200">
-                          <div
-                            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
+
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 transition-transform group-hover:scale-x-100" />
                 </motion.div>

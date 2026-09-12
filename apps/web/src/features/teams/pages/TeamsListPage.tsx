@@ -37,7 +37,6 @@ const itemVariants = {
 export default function TeamsListPage() {
   const { hasAnyPermission } = usePermissions();
 
-  // مجوز مدیریت تیم‌ها
   const canManageTeams = hasAnyPermission(["org.manage_members", "org.manage_settings"]);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,7 +79,6 @@ export default function TeamsListPage() {
   }>({ open: false, team: null });
   const deleteTeam = useDeleteTeam();
 
-  // پیش‌فرض نمایش کارتی (Grid)
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const {

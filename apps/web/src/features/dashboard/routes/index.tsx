@@ -11,7 +11,6 @@ const TeamLeadDashboardPage = lazy(() => import("../pages/TeamLeadDashboardPage"
 
 export const dashboardRoutes: RouteObject[] = [
   {
-    // صفحه داشبورد ادمین: نیاز به پرمیشن مدیریت کلی سازمان
     path: "admin",
     element: (
       <Suspense fallback={<PageLoader />}>
@@ -25,7 +24,6 @@ export const dashboardRoutes: RouteObject[] = [
     ),
   },
   {
-    // داشبورد شخصی: همه کاربران لاگین‌شده
     path: "dashboard",
     element: (
       <Suspense fallback={<PageLoader />}>
@@ -34,7 +32,6 @@ export const dashboardRoutes: RouteObject[] = [
     ),
   },
   {
-    // صفحه مدیریت: نیاز به یکی از پرمیشن‌های مدیریتی
     path: "manager",
     element: (
       <Suspense fallback={<PageLoader />}>
@@ -54,8 +51,6 @@ export const dashboardRoutes: RouteObject[] = [
     ),
   },
   {
-    // داشبورد تیم‌لید: نیاز به دسترسی گزارش یا مدیریت اعضا
-    // خطای 403 توسط صفحه خودش handle می‌شود
     path: "team-lead",
     element: (
       <Suspense fallback={<PageLoader />}>

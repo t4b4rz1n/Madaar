@@ -297,9 +297,6 @@ export default function OrganizationsPage() {
                 <h2 id="delete-organization-title" className="text-xl font-semibold tracking-tight text-base-content">
                   Delete Organization
                 </h2>
-                <p className="mt-1 text-sm font-medium text-base-content/50" lang="fa" dir="rtl">
-                  حذف سازمان
-                </p>
                 <p id="delete-organization-description" className="mt-4 text-sm leading-6 text-base-content/60">
                   Are you sure you want to remove <span className="font-semibold text-base-content">{deletingOrg.name}</span>? This will hide it and its projects from the workspace.
                 </p>
