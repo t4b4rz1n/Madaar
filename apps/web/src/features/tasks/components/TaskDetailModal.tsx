@@ -287,7 +287,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                   value={task.milestone?.toString() || ''}
                   onChange={(e) => {
                     const newId = e.target.value;
-                    
+
                     updateMutation.mutate({ milestone: newId ? newId : null } as any);
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-[13px] text-white/80 border border-white/5 transition-colors outline-none cursor-pointer max-w-[150px]"

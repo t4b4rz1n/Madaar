@@ -79,9 +79,6 @@ class ProjectService:
             milestone_count=Count(
                 "milestones", filter=Q(milestones__is_deleted=False), distinct=True
             ),
-<<<<<<< HEAD
-=======
-            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False), distinct=True),
             completed_milestone_count=Count(
                 "milestones",
                 filter=Q(milestones__is_deleted=False, milestones__status="completed"),
@@ -355,14 +352,16 @@ class ProjectMemberService:
         if team and not user:
             from organizations.models import TeamMembership
 
-            team_memberships = TeamMembership.objects.filter(team=team, is_deleted=False).select_related("user")
+            team_memberships = TeamMembership.objects.filter(
+                team=team, is_deleted=False
+            ).select_related("user")
 
             # Optimization: Fetch existing project member user IDs to avoid N+1 queries
             existing_user_ids = set(
                 ProjectMember.objects.filter(
                     project=project,
                     user__in=[tm.user_id for tm in team_memberships],
-                    is_deleted=False
+                    is_deleted=False,
                 ).values_list("user_id", flat=True)
             )
 
@@ -439,28 +438,39 @@ class MilestoneService:
     def sync_completion_status(cls, milestone_id: str, actor=None):
         """Automatically updates milestone status to COMPLETED if all tasks are finished, or IN_PROGRESS otherwise."""
         milestone = Milestone.objects.get(pk=milestone_id)
-        
+
         from django.db.models import Count, Q
+
         stats = milestone.tasks.filter(is_deleted=False).aggregate(
-            total=Count("id"),
-            done=Count("id", filter=Q(is_finished=True))
+            total=Count("id"), done=Count("id", filter=Q(is_finished=True))
         )
         total = stats["total"] or 0
         done = stats["done"] or 0
-        
+
         if total > 0 and done == total:
             if milestone.status != Milestone.Status.COMPLETED:
-                cls.update(milestone=milestone, actor=actor, validated_data={"status": Milestone.Status.COMPLETED})
+                cls.update(
+                    milestone=milestone,
+                    actor=actor,
+                    validated_data={"status": Milestone.Status.COMPLETED},
+                )
         else:
             if milestone.status == Milestone.Status.COMPLETED:
-                cls.update(milestone=milestone, actor=actor, validated_data={"status": Milestone.Status.IN_PROGRESS})
+                cls.update(
+                    milestone=milestone,
+                    actor=actor,
+                    validated_data={"status": Milestone.Status.IN_PROGRESS},
+                )
+
     """Handles all Milestone mutations."""
 
     @staticmethod
     def get_base_queryset(project_id=None) -> QuerySet[Milestone]:
         qs = Milestone.objects.annotate(
             task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
-            completed_task_count=Count("tasks", filter=Q(tasks__is_deleted=False, tasks__is_finished=True))
+            completed_task_count=Count(
+                "tasks", filter=Q(tasks__is_deleted=False, tasks__is_finished=True)
+            ),
         )
         if project_id:
             qs = qs.filter(project_id=project_id)
@@ -547,11 +557,11 @@ class MilestoneService:
             entity_id=milestone.pk,
             metadata={"title": milestone.title},
         )
-        
+
         # Unlink all tasks connected to this milestone so they become orphans instead of zombies
         if hasattr(milestone, "tasks"):
             milestone.tasks.update(milestone=None)
-            
+
         milestone.delete()  # soft delete
         logger.info(
             "Milestone %s soft-deleted from project %s (by %s)",

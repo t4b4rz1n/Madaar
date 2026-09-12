@@ -51,6 +51,24 @@ class BoardService:
         ]
         TaskStatus.objects.bulk_create(statuses_to_create)
 
+        # Dispatch board_created automation event
+        from automations.events import EventDispatcher
+
+        EventDispatcher.dispatch(
+            event_type="board_created",
+            payload={
+                "project_id": str(project.id) if project else None,
+                "project_name": project.name if project else "—",
+                "organization_id": str(project.organization_id)
+                if project and project.organization_id
+                else None,
+                "board_name": title,
+                "creator_name": created_by.get_full_name() or created_by.username
+                if created_by
+                else "System",
+            },
+        )
+
         return board
 
     @staticmethod
@@ -337,10 +355,11 @@ class TaskService:
             actor=reporter,
             metadata={"action": str(_("Task created: %(title)s") % {"title": task.title})},
         )
-        
+
         if getattr(task, "milestone_id", None):
             try:
                 from projects.services import MilestoneService
+
                 MilestoneService.sync_completion_status(task.milestone_id, reporter)
             except Exception:
                 pass
@@ -445,6 +464,7 @@ class TaskService:
             if getattr(task, "milestone_id", None):
                 try:
                     from projects.services import MilestoneService
+
                     MilestoneService.sync_completion_status(task.milestone_id, actor)
                 except Exception:
                     pass
@@ -572,10 +592,11 @@ class TaskService:
                 actor=actor,
                 metadata={"action": Truncator(" | ".join(action_parts)).chars(255)},
             )
-            
+
         if changed and getattr(task, "milestone_id", None):
             try:
                 from projects.services import MilestoneService
+
                 MilestoneService.sync_completion_status(task.milestone_id, actor)
             except Exception:
                 pass
@@ -604,10 +625,11 @@ class TaskService:
                 "action": Truncator(str(_("Deleted task: %(title)s") % {"title": title})).chars(255)
             },
         )
-        
+
         if getattr(task, "milestone_id", None):
             try:
                 from projects.services import MilestoneService
+
                 MilestoneService.sync_completion_status(task.milestone_id, actor)
             except Exception:
                 pass

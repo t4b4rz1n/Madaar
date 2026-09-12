@@ -92,9 +92,7 @@ class StaffTeamViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Team.objects.filter(parent_team__isnull=True).select_related(
-            "organization"
-        )
+        queryset = Team.objects.filter(parent_team__isnull=True).select_related("organization")
 
         is_active = self.request.query_params.get("is_active")
         if is_active == "true":

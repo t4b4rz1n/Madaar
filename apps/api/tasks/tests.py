@@ -375,8 +375,6 @@ class TasksRBACTestCase(APITestCase):
 
     # TODO: Team Lead board creation test removed temporarily - will be fixed in Phase 2
 
-
-
     def test_checklist_security_unrelated_employee_forbidden(self):
         """Unrelated employee cannot toggle or delete another user's checklist item."""
         task = Task.objects.create(

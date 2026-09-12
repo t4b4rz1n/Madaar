@@ -3,6 +3,7 @@ reports/tests/test_analytics.py
 --------------------------------
 Tests for CFD, Milestone Burndown, and Cycle/Lead Time endpoints.
 """
+
 import datetime
 
 from django.contrib.auth import get_user_model
@@ -13,7 +14,7 @@ from rest_framework.test import APITestCase
 
 from organizations.models import Organization, OrganizationMembership
 from projects.models import Milestone, Project, ProjectMember
-from tasks.models import Board, Task, TaskStatus, TaskStatusTransition
+from tasks.models import Task, TaskStatus, TaskStatusTransition
 from tasks.services import BoardService
 
 User = get_user_model()
@@ -21,7 +22,9 @@ User = get_user_model()
 
 def _create_org_and_user(username, role="owner"):
     org = Organization.objects.create(name=f"Org {username}", slug=f"org-{username}")
-    user = User.objects.create_user(username=username, email=f"{username}@test.com", password="Pass123!")
+    user = User.objects.create_user(
+        username=username, email=f"{username}@test.com", password="Pass123!"
+    )
     OrganizationMembership.objects.create(user=user, organization=org, role=role)
     return org, user
 
@@ -67,9 +70,7 @@ class CFDTestCase(APITestCase):
 
     def test_non_member_forbidden(self):
         stranger = User.objects.create_user("stranger_cfd", "s@test.com", "Pass123!")
-        OrganizationMembership.objects.create(
-            user=stranger, organization=self.org, role="employee"
-        )
+        OrganizationMembership.objects.create(user=stranger, organization=self.org, role="employee")
         self.client.force_authenticate(user=stranger)
         res = self.client.get(self._url())
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
@@ -120,12 +121,18 @@ class MilestoneBurndownTestCase(APITestCase):
         )
         # Two tasks linked to milestone
         cls.task1 = Task.objects.create(
-            title="Task A", project=cls.project, status=cls.todo,
-            reporter=cls.owner, milestone=cls.milestone
+            title="Task A",
+            project=cls.project,
+            status=cls.todo,
+            reporter=cls.owner,
+            milestone=cls.milestone,
         )
         cls.task2 = Task.objects.create(
-            title="Task B", project=cls.project, status=cls.todo,
-            reporter=cls.owner, milestone=cls.milestone
+            title="Task B",
+            project=cls.project,
+            status=cls.todo,
+            reporter=cls.owner,
+            milestone=cls.milestone,
         )
 
     def _url(self):
@@ -182,6 +189,7 @@ class MilestoneBurndownTestCase(APITestCase):
 
     def test_nonexistent_milestone_returns_404(self):
         import uuid
+
         self.client.force_authenticate(user=self.owner)
         url = reverse("reports:milestone-burndown", kwargs={"milestone_id": uuid.uuid4()})
         res = self.client.get(url)
@@ -207,27 +215,42 @@ class CycleLeadTimeTestCase(APITestCase):
         cls.done = TaskStatus.objects.get(board=cls.board, code="done")
 
         cls.task = Task.objects.create(
-            title="CT Task", project=cls.project, status=cls.done,
-            reporter=cls.owner, is_finished=True
+            title="CT Task",
+            project=cls.project,
+            status=cls.done,
+            reporter=cls.owner,
+            is_finished=True,
         )
         # Transitions: todo → doing → done
         base = datetime.datetime(2026, 9, 1, tzinfo=datetime.timezone.utc)
         TaskStatusTransition.objects.create(
-            task=cls.task, from_status=None, to_status=cls.todo,
-            from_status_code="", from_status_name="",
-            to_status_code="todo", to_status_name="To Do",
+            task=cls.task,
+            from_status=None,
+            to_status=cls.todo,
+            from_status_code="",
+            from_status_name="",
+            to_status_code="todo",
+            to_status_name="To Do",
             transitioned_at=base,
         )
         TaskStatusTransition.objects.create(
-            task=cls.task, from_status=cls.todo, to_status=cls.doing,
-            from_status_code="todo", from_status_name="To Do",
-            to_status_code="doing", to_status_name="Doing",
+            task=cls.task,
+            from_status=cls.todo,
+            to_status=cls.doing,
+            from_status_code="todo",
+            from_status_name="To Do",
+            to_status_code="doing",
+            to_status_name="Doing",
             transitioned_at=base + datetime.timedelta(hours=24),
         )
         TaskStatusTransition.objects.create(
-            task=cls.task, from_status=cls.doing, to_status=cls.done,
-            from_status_code="doing", from_status_name="Doing",
-            to_status_code="done", to_status_name="Done",
+            task=cls.task,
+            from_status=cls.doing,
+            to_status=cls.done,
+            from_status_code="doing",
+            from_status_name="Doing",
+            to_status_code="done",
+            to_status_name="Done",
             transitioned_at=base + datetime.timedelta(hours=48),
         )
 
@@ -236,9 +259,7 @@ class CycleLeadTimeTestCase(APITestCase):
 
     def test_manager_can_access(self):
         self.client.force_authenticate(user=self.owner)
-        res = self.client.get(self._url(), {
-            "start_date": "2026-09-01", "end_date": "2026-09-30"
-        })
+        res = self.client.get(self._url(), {"start_date": "2026-09-01", "end_date": "2026-09-30"})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn("avg_lead_time_hours", res.data)
         self.assertIn("avg_cycle_time_hours", res.data)
@@ -252,9 +273,7 @@ class CycleLeadTimeTestCase(APITestCase):
     def test_lead_and_cycle_time_values(self):
         """Lead time = 48h from creation to done; Cycle time = 24h from doing to done."""
         self.client.force_authenticate(user=self.owner)
-        res = self.client.get(self._url(), {
-            "start_date": "2026-09-01", "end_date": "2026-09-30"
-        })
+        res = self.client.get(self._url(), {"start_date": "2026-09-01", "end_date": "2026-09-30"})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         if res.data["task_count"] > 0:
             # Cycle time should be ~24h (doing → done)
@@ -288,8 +307,7 @@ class TaskStatusTransitionSignalTestCase(APITestCase):
     def test_task_creation_records_initial_transition(self):
         """Creating a task should create one TaskStatusTransition (None → initial status)."""
         task = Task.objects.create(
-            title="Signal Task", project=self.project,
-            status=self.todo, reporter=self.owner
+            title="Signal Task", project=self.project, status=self.todo, reporter=self.owner
         )
         transitions = TaskStatusTransition.objects.filter(task=task)
         self.assertEqual(transitions.count(), 1)
@@ -299,8 +317,7 @@ class TaskStatusTransitionSignalTestCase(APITestCase):
     def test_status_change_records_transition(self):
         """Changing a task's status should record a second transition."""
         task = Task.objects.create(
-            title="Signal Task 2", project=self.project,
-            status=self.todo, reporter=self.owner
+            title="Signal Task 2", project=self.project, status=self.todo, reporter=self.owner
         )
         initial_count = TaskStatusTransition.objects.filter(task=task).count()
 

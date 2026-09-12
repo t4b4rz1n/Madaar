@@ -155,32 +155,44 @@ def cache_previous_milestone_state(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=Milestone)
-def notify_milestone_completed(sender, instance, created, **kwargs):
+def notify_milestone_created_or_completed(sender, instance, created, **kwargs):
     """
-    6. milestone_completed: When milestone status changes to completed
+    milestone_created: When a new milestone is created
+    milestone_completed: When milestone status changes to completed
     """
-    if not created:
-        old_status = getattr(instance, "__original_status", None)
-        if (
-            old_status != Milestone.Status.COMPLETED
-            and instance.status == Milestone.Status.COMPLETED
-        ):
-            project = instance.project
-            owner_id = project.owner_id
-            target_ids = []
-            if owner_id:
-                target_ids.append(str(owner_id))
+    if created:
+        project = instance.project
+        EventDispatcher.dispatch(
+            event_type="milestone_created",
+            payload={
+                "project_id": str(project.id) if project else None,
+                "project_name": project.name if project else "—",
+                "organization_id": str(project.organization_id)
+                if project and project.organization_id
+                else None,
+                "milestone_title": instance.title,
+            },
+        )
+        return
 
-            if target_ids:
-                EventDispatcher.dispatch(
-                    event_type="milestone_completed",
-                    payload={
-                        "target_user_ids": target_ids,
-                        "project_id": str(project.id),
-                        "project_name": project.name,
-                        "milestone_title": instance.title,
-                    },
-                )
+    old_status = getattr(instance, "__original_status", None)
+    if old_status != Milestone.Status.COMPLETED and instance.status == Milestone.Status.COMPLETED:
+        project = instance.project
+        owner_id = project.owner_id
+        target_ids = []
+        if owner_id:
+            target_ids.append(str(owner_id))
+
+        if target_ids:
+            EventDispatcher.dispatch(
+                event_type="milestone_completed",
+                payload={
+                    "target_user_ids": target_ids,
+                    "project_id": str(project.id),
+                    "project_name": project.name,
+                    "milestone_title": instance.title,
+                },
+            )
 
 
 @receiver(pre_save, sender=Project)

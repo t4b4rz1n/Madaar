@@ -73,15 +73,15 @@ const formatDate = (value?: string | null) => {
   }).format(new Date(value));
 };
 
-function MilestoneItem({ 
-  ms, 
+function MilestoneItem({
+  ms,
   projectId,
-  onEdit, 
-  onDelete 
-}: { 
-  ms: Milestone; 
+  onEdit,
+  onDelete
+}: {
+  ms: Milestone;
   projectId: string;
-  onEdit: (ms: Milestone) => void; 
+  onEdit: (ms: Milestone) => void;
   onDelete: (ms: Milestone) => void;
 }) {
   const msCfg = milestoneStatusConfig[ms.status] ?? milestoneStatusConfig.pending;
@@ -93,15 +93,15 @@ function MilestoneItem({
     queryFn: () => getMilestoneTasks(projectId, ms.id),
     enabled: showChart,
   });
-  
+
   const total = ms.task_count || 0;
   const completed = ms.completed_task_count || 0;
   const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-base-content/6 bg-base-200/40 p-3 text-xs transition-all">
-      <div 
-        className="flex items-center justify-between cursor-pointer" 
+      <div
+        className="flex items-center justify-between cursor-pointer"
         onClick={() => setShowChart(!showChart)}
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -139,9 +139,9 @@ function MilestoneItem({
           <div className="hidden sm:flex flex-col items-end gap-1 mr-2">
             <div className="text-[10px] font-medium text-base-content/60">{progressPercent}%</div>
             <div className="w-16 h-1.5 rounded-full bg-base-300 overflow-hidden">
-              <div 
-                className="h-full bg-primary rounded-full transition-all duration-500" 
-                style={{ width: `${progressPercent}%` }} 
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
               />
             </div>
           </div>
@@ -162,7 +162,7 @@ function MilestoneItem({
           >
             <div className="pt-3 border-t border-base-content/8 mt-1 flex flex-col gap-4">
               <MilestoneBurndownChart milestoneId={String(ms.id)} />
-              
+
               {/* Tasks List */}
               <div className="px-2 pb-2">
                 <h4 className="text-[11px] font-bold text-base-content/50 uppercase tracking-wider mb-2">
@@ -183,17 +183,12 @@ function MilestoneItem({
                           setSelectedTaskId(String(task.id));
                         }}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={`flex items-center justify-center w-5 h-5 rounded-full shrink-0 border transition-colors ${
-                              task.status?.is_done 
-                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" 
-                                : "bg-base-content/5 border-base-content/10 text-base-content/40"
-                            }`}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`size-2 shrink-0 rounded-full ${task.status?.is_done || task.is_finished ? "bg-emerald-500" : "bg-base-content/20"}`} />
+                          <p
+                            dir="auto"
+                            className={`font-semibold truncate ${task.status?.is_done || task.is_finished ? "line-through text-base-content/40" : "text-[12px] text-base-content/90 group-hover/task:text-primary transition-colors"}`}
                           >
-                            <TaskSquare size={10} variant={task.status?.is_done ? "Bold" : "Linear"} />
-                          </div>
-                          <p className="text-[12px] font-medium text-base-content/90 group-hover/task:text-primary transition-colors truncate">
                             {task.title}
                           </p>
                         </div>
@@ -411,8 +406,8 @@ function MilestonesTab({
                 {/* Weight badge added to each milestone row */}
                 <div className="flex items-center gap-2 group">
                   <div className="flex-1">
-                    <MilestoneItem 
-                      ms={ms} 
+                    <MilestoneItem
+                      ms={ms}
                       projectId={projectId}
                       onEdit={setMilestoneToEdit}
                       onDelete={setMilestoneToDelete}
@@ -996,7 +991,7 @@ const { id } = useParams<{ id: string }>();
         isLoading={removeMemberMutation.isPending}
         title={deleteModalState.memberName}
       />
-      
+
       <TaskSheet
         task={taskQuery.data ?? null}
         onClose={() => setSelectedTaskId(null)}

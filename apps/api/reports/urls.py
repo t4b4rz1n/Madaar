@@ -43,7 +43,6 @@ urlpatterns = [
         ExecutiveDashboardView.as_view(),
         name="executive-dashboard",
     ),
-
     # ── Project Analytics ───────────────────────────────────────────────────
     path(
         "projects/<uuid:project_id>/cfd/",
@@ -55,7 +54,6 @@ urlpatterns = [
         CycleLeadTimeView.as_view(),
         name="project-cycle-time",
     ),
-
     # ── Milestone Analytics ─────────────────────────────────────────────────
     path(
         "milestones/<uuid:milestone_id>/burndown/",

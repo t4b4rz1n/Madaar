@@ -147,6 +147,9 @@ export interface Task {
 export interface Board {
   id: string;
   title: string;
+  description?: string;
   background_color?: string;
   statuses: TaskStatus[];
+  task_count?: number;
+  done_task_count?: number;
 }

@@ -155,7 +155,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
   return (
     <div
+<<<<<<< HEAD
       className={`fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs transition-opacity duration-150 ${isCreateUserOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+=======
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs"
+>>>>>>> ff5926e (feat(analytics): Add CFD, burndown, and cycle time reports)
 
     >
       <div

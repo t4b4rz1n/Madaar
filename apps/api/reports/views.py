@@ -222,14 +222,27 @@ class CumulativeFlowView(APIView):
             "Useful for identifying bottlenecks (e.g. a growing 'Review' band)."
         ),
         parameters=[
-            OpenApiParameter("board_id", OpenApiTypes.UUID, required=False,
-                             description="Narrow to a single board."),
-            OpenApiParameter("start_date", OpenApiTypes.DATE, required=False,
-                             description="ISO date (default: 30 days ago)."),
-            OpenApiParameter("end_date", OpenApiTypes.DATE, required=False,
-                             description="ISO date (default: today)."),
-            OpenApiParameter("tz", OpenApiTypes.STR, required=False,
-                             description="IANA timezone (default: UTC)."),
+            OpenApiParameter(
+                "board_id",
+                OpenApiTypes.UUID,
+                required=False,
+                description="Narrow to a single board.",
+            ),
+            OpenApiParameter(
+                "start_date",
+                OpenApiTypes.DATE,
+                required=False,
+                description="ISO date (default: 30 days ago).",
+            ),
+            OpenApiParameter(
+                "end_date",
+                OpenApiTypes.DATE,
+                required=False,
+                description="ISO date (default: today).",
+            ),
+            OpenApiParameter(
+                "tz", OpenApiTypes.STR, required=False, description="IANA timezone (default: UTC)."
+            ),
         ],
         responses={200: CfdSerializer},
         tags=["reports"],
@@ -266,10 +279,9 @@ class CumulativeFlowView(APIView):
             raise NotFound("Project not found.")
 
         org_id = project.organization_id
-        has_manage = (
-            PermissionService.has_permission(user, "project.manage", org_id)
-            or PermissionService.has_permission(user, "report.view", org_id)
-        )
+        has_manage = PermissionService.has_permission(
+            user, "project.manage", org_id
+        ) or PermissionService.has_permission(user, "report.view", org_id)
         if has_manage:
             return
         is_member = ProjectMember.objects.filter(
@@ -277,6 +289,7 @@ class CumulativeFlowView(APIView):
         ).exists()
         if not is_member:
             from rest_framework.exceptions import PermissionDenied
+
             raise PermissionDenied("You are not a member of this project.")
 
     @staticmethod
@@ -313,12 +326,11 @@ class MilestoneBurndownView(APIView):
 
     @extend_schema(
         summary="Milestone Burndown / Burnup",
-        description=(
-            "Returns daily burndown and burnup series for the specified milestone."
-        ),
+        description=("Returns daily burndown and burnup series for the specified milestone."),
         parameters=[
-            OpenApiParameter("tz", OpenApiTypes.STR, required=False,
-                             description="IANA timezone (default: UTC)."),
+            OpenApiParameter(
+                "tz", OpenApiTypes.STR, required=False, description="IANA timezone (default: UTC)."
+            ),
         ],
         responses={200: MilestoneBurndownSerializer},
         tags=["reports"],
@@ -346,11 +358,11 @@ class MilestoneBurndownView(APIView):
             raise NotFound("Milestone not found.")
 
         from organizations.services import PermissionService
+
         org_id = m.project.organization_id
-        has_manage = (
-            PermissionService.has_permission(user, "project.manage", org_id)
-            or PermissionService.has_permission(user, "report.view", org_id)
-        )
+        has_manage = PermissionService.has_permission(
+            user, "project.manage", org_id
+        ) or PermissionService.has_permission(user, "report.view", org_id)
         if has_manage:
             return
         is_member = ProjectMember.objects.filter(
@@ -358,6 +370,7 @@ class MilestoneBurndownView(APIView):
         ).exists()
         if not is_member:
             from rest_framework.exceptions import PermissionDenied
+
             raise PermissionDenied("You are not a member of this project.")
 
 
@@ -392,16 +405,30 @@ class CycleLeadTimeView(APIView):
             "Returns cycle time and lead time statistics for completed tasks in the project."
         ),
         parameters=[
-            OpenApiParameter("board_id", OpenApiTypes.UUID, required=False,
-                             description="Narrow to a single board."),
-            OpenApiParameter("start_date", OpenApiTypes.DATE, required=False,
-                             description="ISO date (default: 90 days ago)."),
-            OpenApiParameter("end_date", OpenApiTypes.DATE, required=False,
-                             description="ISO date (default: today)."),
-            OpenApiParameter("assignee_id", OpenApiTypes.UUID, required=False,
-                             description="Filter by assignee."),
-            OpenApiParameter("tz", OpenApiTypes.STR, required=False,
-                             description="IANA timezone (default: UTC)."),
+            OpenApiParameter(
+                "board_id",
+                OpenApiTypes.UUID,
+                required=False,
+                description="Narrow to a single board.",
+            ),
+            OpenApiParameter(
+                "start_date",
+                OpenApiTypes.DATE,
+                required=False,
+                description="ISO date (default: 90 days ago).",
+            ),
+            OpenApiParameter(
+                "end_date",
+                OpenApiTypes.DATE,
+                required=False,
+                description="ISO date (default: today).",
+            ),
+            OpenApiParameter(
+                "assignee_id", OpenApiTypes.UUID, required=False, description="Filter by assignee."
+            ),
+            OpenApiParameter(
+                "tz", OpenApiTypes.STR, required=False, description="IANA timezone (default: UTC)."
+            ),
         ],
         responses={200: CycleLeadTimeSerializer},
         tags=["reports"],
@@ -432,7 +459,6 @@ class CycleLeadTimeView(APIView):
             return datetime.date.fromisoformat(value)
         except ValueError:
             raise ParseError(f"Invalid date format: '{value}'. Use YYYY-MM-DD.")
-
 
 
 class EmployeeDashboardView(APIView):

@@ -7,10 +7,16 @@ from django.utils import timezone
 
 from automations.events import EventDispatcher
 
-from .models import AsyncStandup, Task, TaskChecklistItem, TaskComment, TaskStatus, TaskStatusTransition
+from .models import (
+    AsyncStandup,
+    Task,
+    TaskChecklistItem,
+    TaskComment,
+    TaskStatus,
+    TaskStatusTransition,
+)
 
 User = get_user_model()
-
 
 
 @receiver(post_save, sender=TaskChecklistItem)
@@ -84,6 +90,7 @@ def record_status_transition(sender, instance, created, **kwargs):
                 )
     except Exception as exc:
         import logging
+
         logging.getLogger(__name__).warning(
             "record_status_transition failed for Task %s: %s", instance.pk, exc
         )

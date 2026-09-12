@@ -146,7 +146,11 @@ export const CreateEditUserModal = ({
           initial="hidden"
           animate="visible"
           exit="hidden"
+<<<<<<< HEAD
           className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+=======
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+>>>>>>> ff5926e (feat(analytics): Add CFD, burndown, and cycle time reports)
 
         >
           <motion.div
