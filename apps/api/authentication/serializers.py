@@ -19,6 +19,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     )
 
     avatar = serializers.ImageField(required=False, allow_null=True)
+    first_name = serializers.CharField(required=False, allow_blank=True, default="")
+    last_name = serializers.CharField(required=False, allow_blank=True, default="")
     access = serializers.SerializerMethodField(read_only=True)
     refresh = serializers.SerializerMethodField(read_only=True)
 

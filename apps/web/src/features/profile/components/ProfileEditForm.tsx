@@ -236,7 +236,7 @@ export const ProfileEditForm = () => {
                     <span className="text-sm font-semibold text-base-content">
                       First Name
                     </span>
-                    <span className="text-error text-xs">*</span>
+                    <span className="text-xs text-base-content/40">(Optional)</span>
                   </label>
                   <Controller
                     name="first_name"
@@ -258,7 +258,7 @@ export const ProfileEditForm = () => {
                     <span className="text-sm font-semibold text-base-content">
                       Last Name
                     </span>
-                    <span className="text-error text-xs">*</span>
+                    <span className="text-xs text-base-content/40">(Optional)</span>
                   </label>
                   <Controller
                     name="last_name"

@@ -5,8 +5,8 @@ export interface User {
   id: string;  // UUID
   username: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   is_active: boolean;
   is_staff: boolean;
   role_id: string | null;  // UUID
@@ -20,8 +20,8 @@ export interface UserFormData {
   username: string;
   email: string;
   password: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   is_active: boolean;
   is_staff: boolean;
   role_id: string | null;  // UUID
@@ -31,8 +31,8 @@ export interface UserFormData {
 export interface UserUpdateData {
   username: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   is_active: boolean;
   is_staff: boolean;
   role_id: string | null;  // UUID

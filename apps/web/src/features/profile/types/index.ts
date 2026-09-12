@@ -1,8 +1,8 @@
 export interface UserProfile {
   id: string | number;
   username: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
   is_staff: boolean;
   profile_image: string | null;

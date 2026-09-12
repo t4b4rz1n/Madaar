@@ -21,10 +21,14 @@ class User(AbstractUser, BaseModel):
 
     first_name = models.CharField(
         max_length=100,
+        blank=True,
+        default="",
     )
 
     last_name = models.CharField(
         max_length=100,
+        blank=True,
+        default="",
     )
 
     phone_number = models.CharField(
@@ -44,7 +48,7 @@ class User(AbstractUser, BaseModel):
     objects = UserManager()
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
+    REQUIRED_FIELDS = ["username"]
 
     class Meta:
         db_table = "users"

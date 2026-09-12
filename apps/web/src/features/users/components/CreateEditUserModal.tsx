@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Add, Edit, CloseCircle } from "iconsax-reactjs";
 import { createPortal } from "react-dom";
+import { useOrganizations } from "../../organizations/hooks/useOrganizations";
 import { useCreateUser, useUpdateUser } from "../hooks/useUsers";
 import { UserForm } from "./UserForm";
 import type { User, UserFormData, UserUpdateData } from "../types";
@@ -21,7 +22,7 @@ interface CreateEditUserModalProps {
   onClose: () => void;
   user?: User | null;
   organizationId?: string;
-  onSuccess?: () => void;
+  onSuccess?: (newUserId?: string) => void;
 }
 
 export const CreateEditUserModal = ({
@@ -33,6 +34,9 @@ export const CreateEditUserModal = ({
 }: CreateEditUserModalProps) => {
   const isEditMode = !!user;
   const schema = isEditMode ? updateUserSchema : createUserSchema;
+  const { data: organizations = [] } = useOrganizations();
+  const resolvedOrganizationId =
+    organizationId ?? user?.organization?.id ?? organizations[0]?.id;
 
   const {
     control,
@@ -119,14 +123,15 @@ export const CreateEditUserModal = ({
       is_active: !!data.is_active,
       is_staff: !!data.is_staff,
       role_id: data.role_id ?? null,
-      organization_id: organizationId,
+      organization_id: resolvedOrganizationId,
     };
 
 
     createMutation.mutate(createPayload, {
-      onSuccess: () => {
+      onSuccess: (response: any) => {
+        const newUserId = response?.data?.id ? String(response.data.id) : undefined;
         onClose();
-        onSuccess?.();
+        onSuccess?.(newUserId);
       },
     });
   });
@@ -141,7 +146,7 @@ export const CreateEditUserModal = ({
           initial="hidden"
           animate="visible"
           exit="hidden"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           
         >
           <motion.div
@@ -183,6 +188,7 @@ export const CreateEditUserModal = ({
                   errors={errors}
                   editMode={isEditMode}
                   setValue={setValue}
+                  organizationId={resolvedOrganizationId}
                 />
               </form>
             </div>

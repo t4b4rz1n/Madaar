@@ -10,6 +10,7 @@ interface UserFormProps {
   errors: any;
   setValue: any;
   editMode?: boolean;
+  organizationId?: string;
 }
 
 export const UserForm = ({
@@ -17,8 +18,10 @@ export const UserForm = ({
   errors,
   setValue: _setValue,
   editMode,
+  organizationId,
 }: UserFormProps) => {
-  const { data: rolesData, isLoading: isLoadingRoles } = useRoles();
+  const { data: rolesData, isLoading: isLoadingRoles, isError: isRolesError } =
+    useRoles(organizationId ? { organization_id: organizationId } : undefined);
   const roles = rolesData?.results || [];
 
   const currentUser = useAuthStore((state) => state.user);
@@ -167,6 +170,7 @@ export const UserForm = ({
             <label className="form-control w-full">
               <div className="label mb-2">
                 <span className="label-text font-semibold">First Name</span>
+                <span className="text-xs text-base-content/40">(Optional)</span>
               </div>
               <InputField
                 {...field}
@@ -189,6 +193,7 @@ export const UserForm = ({
             <label className="form-control w-full">
               <div className="label mb-2">
                 <span className="label-text font-semibold">Last Name</span>
+                <span className="text-xs text-base-content/40">(Optional)</span>
               </div>
               <InputField
                 {...field}

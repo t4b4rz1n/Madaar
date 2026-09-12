@@ -623,6 +623,15 @@ const { id } = useParams<{ id: string }>();
         isOpen={isAddMemberOpen}
         onClose={() => setIsAddMemberOpen(false)}
         projectId={id || ""}
+        orgId={
+          project?.organization
+            ? String(
+                typeof project.organization === "object"
+                  ? (project.organization as any).id
+                  : project.organization
+              )
+            : undefined
+        }
       />
       <CreateMilestoneModal
         isOpen={isCreateMilestoneOpen}

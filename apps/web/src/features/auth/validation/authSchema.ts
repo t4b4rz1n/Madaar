@@ -9,8 +9,8 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 
 export const registerSchema = z
   .object({
-    first_name: z.string().trim().min(2, "First name must be at least 2 characters"),
-    last_name: z.string().trim().min(2, "Last name must be at least 2 characters"),
+    first_name: z.string().trim().optional().or(z.literal("")),
+    last_name: z.string().trim().optional().or(z.literal("")),
     username: z
       .string()
       .trim()
