@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "../../auth/store/authStore";
 import { updateProfile, getTelegramMagicLink, getProfile } from "../api/profileApi";
 import type { ProfileUpdateData } from "../types";
+import { getErrorMessage } from "../../../core/utils/errorHandler";
 
 export const useProfileQuery = (refetchInterval: number | false = false) => {
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -53,7 +54,7 @@ export const useUpdateProfile = () => {
       }
     },
     onError: (error: any) => {
-      toast.error(error.message || "Error updating profile.");
+      toast.error(getErrorMessage(error, "Error updating profile."));
     },
   });
 };
