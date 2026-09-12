@@ -99,8 +99,8 @@ class ProjectService:
                 filter=Q(tasks__is_deleted=False, tasks__milestone__isnull=True),
                 distinct=True,
             ),
->>>>>>> 6d46332 (refactor: Update API services and views for attendance and projects)
         )
+
 
     @classmethod
     def get_accessible_queryset(cls, user) -> QuerySet[Project]:
