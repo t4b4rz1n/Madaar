@@ -42,6 +42,14 @@ axiosClient.interceptors.request.use(
     if (token) {
       config.headers.set("Authorization", `Bearer ${token}`);
     }
+
+    // If sending FormData (e.g. file upload), remove the hardcoded
+    // Content-Type so axios can set multipart/form-data with the
+    // correct boundary automatically.
+    if (config.data instanceof FormData) {
+      config.headers.delete("Content-Type");
+    }
+
     return config;
   },
   (error) => {
