@@ -181,7 +181,6 @@
   --madaar-focus-ring: 0 0 0 3px rgb(100 181 255 / 0.34);
 }
 
-/* حل مشکل پس‌زمینه شفاف گزینه‌های select در مد دارک و لایت */
 select option {
   background-color: var(--color-base-100) !important;
   color: var(--color-base-content) !important;

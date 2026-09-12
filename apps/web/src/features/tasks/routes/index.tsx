@@ -9,7 +9,6 @@ import { StandupsPage } from '../pages/StandupsPage';
 
 export const tasksRoutes: RouteObject[] = [
   {
-    // بورد تسک‌ها: نیاز به پرمیشن دیدن تسک یا بورد
     path: 'tasks',
     element: (
       <Suspense fallback={<PageLoader />}>
@@ -23,7 +22,6 @@ export const tasksRoutes: RouteObject[] = [
     ),
   },
   {
-    // صفحه Standups: همه اعضای سازمان
     path: 'standups',
     element: (
       <UserRoute>

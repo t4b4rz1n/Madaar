@@ -10,7 +10,6 @@ const OrgRolesPage = lazy(() => import("../../roles/pages/OrgRolesPage"));
 
 export const organizationsRoutes: RouteObject[] = [
   {
-    // صفحه سازمان‌ها: نیاز به یکی از پرمیشن‌های مدیریت سازمان
     path: "organizations",
     element: (
       <Suspense fallback={<PageLoader />}>
@@ -37,7 +36,6 @@ export const organizationsRoutes: RouteObject[] = [
     ),
   },
   {
-    // صفحه مدیریت رول‌های سازمان - org-scoped roles
     path: "organizations/:orgId/roles",
     element: (
       <Suspense fallback={<PageLoader />}>

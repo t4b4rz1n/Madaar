@@ -503,7 +503,6 @@ export default function ProjectsPage() {
             )}
           </label>
           <StatusFilterDropdown value={statusFilter} onChange={setStatusFilter} />
-          {/* دکمه New Project - فقط برای کاربران با پرمیشن */}
           {canCreateProject && (
             <button
               type="button"

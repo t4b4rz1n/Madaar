@@ -83,7 +83,7 @@ const formatDate = (value: string | null | undefined) => {
 const getInitials = (
   firstName?: string,
   lastName?: string,
-  fallback = "؟"
+  fallback = "?"
 ) =>
   `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || fallback;
 
@@ -513,7 +513,7 @@ const OverdueSummaryPanel = ({
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-error/10 text-[11px] font-black text-error">
                 {member.first_name?.[0]?.toUpperCase() ||
                   member.username?.[0]?.toUpperCase() ||
-                  "؟"}
+                  "?"}
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-base-content">

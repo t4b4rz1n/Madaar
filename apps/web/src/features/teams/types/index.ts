@@ -1,6 +1,5 @@
 
 
-// تعریف UserBasicInfo برای نمایش اطلاعات لیدر
 export interface UserBasicInfo {
   first_name: string;
   last_name: string;
