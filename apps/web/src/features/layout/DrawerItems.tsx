@@ -12,6 +12,7 @@ import {
   TaskSquare,
   NoteText,
   Chart21,
+  ChartSquare,
   Calendar,
   Timer1,
 } from "iconsax-reactjs";
@@ -94,7 +95,7 @@ export const drawerItems: DrawerItem[] = [
     title: "Team Overview",
     link: "team-lead",
     section: "Workspace",
-    icon: <Chart21 variant="Outline" />,
+    icon: <ChartSquare variant="Outline" />,
     permissions: ["report.view_team_lead"],
     isPrimary: true,
   },
