@@ -117,7 +117,7 @@ export const NotificationCenter = () => {
                 <EmptyState text="No notifications yet." />
               ) : (
                 notifications.map((notification) => (
-                  <NotificationRow key={notification.id} notification={notification} />
+                  <NotificationRow key={notification.id} notification={notification} onClick={() => setIsOpen(false)} />
                 ))
               )}
             </div>
@@ -139,7 +139,7 @@ export const NotificationCenter = () => {
   );
 };
 
-const NotificationRow = ({ notification }: { notification: Notification }) => {
+const NotificationRow = ({ notification, onClick }: { notification: Notification, onClick: () => void }) => {
   const content = (
     <>
       <span
@@ -154,6 +154,14 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
       </span>
     </>
   );
+
+  if (notification.link) {
+    return (
+      <Link to={notification.link} onClick={onClick} className="motion-interactive flex gap-3 rounded-xl px-3 py-3 hover:bg-base-200">
+        {content}
+      </Link>
+    );
+  }
 
   return (
     <div className="flex gap-3 rounded-xl px-3 py-3">

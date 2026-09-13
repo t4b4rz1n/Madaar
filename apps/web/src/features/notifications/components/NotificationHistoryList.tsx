@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -24,10 +25,14 @@ export const NotificationHistoryList = ({
   viewMode,
 }: NotificationHistoryListProps) => {
   const { mutate: markSeen } = useMarkNotificationSeen();
+  const navigate = useNavigate();
 
   const handleCardClick = (notification: NotificationType) => {
     if (!notification.seen) {
       markSeen(notification.id);
+    }
+    if (notification.link) {
+      navigate(notification.link);
     }
   };
 
