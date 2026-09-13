@@ -19,13 +19,65 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft2,
   ArrowRight2,
+<<<<<<< HEAD
   Calendar1,
+=======
+>>>>>>> e159d67 (feat: replace DoranDatePicker with custom Jalali calendar modal using DoranDate core, matching Gregorian UI style)
   CloseCircle,
   TickCircle,
 } from "iconsax-reactjs";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../features/auth/store/authStore";
-import "@doranjs/react/styles.css";
+
+// Use ReturnType to avoid the private constructor issue
+type JDoranDate = ReturnType<typeof DoranDate.fromGregorian>;
+
+const JALALI_MONTHS = [
+  "فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور",
+  "مهر","آبان","آذر","دی","بهمن","اسفند",
+];
+// Jalali week starts Saturday: Sat=0, Sun=1, Mon=2, Tue=3, Wed=4, Thu=5, Fri=6
+const JALALI_WEEKDAYS = ["ش","ی","د","س","چ","پ","ج"];
+
+interface JalaliDay {
+  jDate: JDoranDate;
+  isCurrentMonth: boolean;
+}
+
+function buildJalaliGrid(jMonth: JDoranDate): JalaliDay[] {
+  const startOfM = jMonth.startOf("month");
+  const daysInM = startOfM.daysInMonth;
+  // leading cells (Sat=0 means no leading empty, Sun=1 means 1, etc.)
+  const leadingEmpty = startOfM.dayOfWeek;
+
+  const days: JalaliDay[] = [];
+
+  // Leading days from previous month
+  if (leadingEmpty > 0) {
+    const prevM = startOfM.addMonths(-1);
+    const prevDaysInM = prevM.daysInMonth;
+    for (let i = leadingEmpty - 1; i >= 0; i--) {
+      days.push({ jDate: prevM.withDay(prevDaysInM - i), isCurrentMonth: false });
+    }
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInM; d++) {
+    days.push({ jDate: startOfM.withDay(d), isCurrentMonth: true });
+  }
+
+  // Trailing days to complete last row
+  const remainder = days.length % 7;
+  if (remainder !== 0) {
+    const nextM = startOfM.addMonths(1);
+    const toAdd = 7 - remainder;
+    for (let d = 1; d <= toAdd; d++) {
+      days.push({ jDate: nextM.withDay(d), isCurrentMonth: false });
+    }
+  }
+
+  return days;
+}
 
 // Use ReturnType to avoid the private constructor issue
 type JDoranDate = ReturnType<typeof DoranDate.fromGregorian>;
@@ -207,10 +259,13 @@ export const CustomDatePicker = ({
           whileTap={{ scale: 0.99 }}
         >
           <div className="flex items-center gap-2 flex-1 overflow-hidden">
+<<<<<<< HEAD
             <Calendar1
               size={20}
               className="text-base-content/60 flex-shrink-0"
             />
+=======
+>>>>>>> e159d67 (feat: replace DoranDatePicker with custom Jalali calendar modal using DoranDate core, matching Gregorian UI style)
             <span
               className={`text-sm truncate ${
                 hasValue ? "font-medium text-base-content" : "text-base-content/60"
@@ -362,7 +417,7 @@ export const CustomDatePicker = ({
                   onClick={handleJumpToToday}
                   className="text-primary text-sm font-medium hover:underline"
                 >
-                  Jump to Today
+                  {isJalali ? "امروز" : "Jump to Today"}
                 </button>
                 <div className="flex gap-2">
                   <button
@@ -370,14 +425,14 @@ export const CustomDatePicker = ({
                     onClick={handleCancel}
                     className="btn btn-sm btn-ghost rounded-lg"
                   >
-                    Cancel
+                    {isJalali ? "انصراف" : "Cancel"}
                   </button>
                   <button
                     type="button"
                     onClick={handleConfirm}
                     className="btn btn-sm btn-primary rounded-lg"
                   >
-                    <TickCircle size={16} /> Confirm
+                    <TickCircle size={16} /> {isJalali ? "تأیید" : "Confirm"}
                   </button>
                 </div>
               </div>
