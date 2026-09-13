@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
+<<<<<<< HEAD
 import urllib.parse
 
 def _get_event_link(event_type: str, payload: dict) -> str:
@@ -35,6 +36,25 @@ def _get_event_link(event_type: str, payload: dict) -> str:
             
     qs = urllib.parse.urlencode(query)
     return f"/_routing?{qs}" 
+=======
+def _get_event_link(event_type: str, payload: dict) -> str:
+    """Generate a relevant frontend link based on event type and payload."""
+    project_id = payload.get("project_id")
+    task_id = payload.get("task_id")
+    board_id = payload.get("board_id")
+    organization_id = payload.get("organization_id")
+
+    if task_id and project_id:
+        # Route to task management page with query params
+        return f"/tasks?project={project_id}&board={board_id or ''}&task={task_id}"
+    if project_id:
+        return f"/projects/{project_id}"
+    if event_type in ("leave_requested", "leave_resolved"):
+        return "/attendance?tab=timeoff"
+    if organization_id:
+        return f"/organizations/{organization_id}"
+    return "/" 
+>>>>>>> 54902c4 (fix: make task and leave request notifications link correctly)
 
 
 def process_rules_for_event(event_type: str, payload: dict):
