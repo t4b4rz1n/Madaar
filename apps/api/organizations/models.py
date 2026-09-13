@@ -13,6 +13,11 @@ class Organization(BaseModel):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, db_index=True)
     description = models.TextField(blank=True)
+    currency = models.CharField(
+        max_length=10,
+        default="IRR",
+        help_text="Default currency for the organization",
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

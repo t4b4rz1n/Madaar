@@ -280,7 +280,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Budget
+                Budget & Currency
               </label>
               <div className="flex">
                 <input

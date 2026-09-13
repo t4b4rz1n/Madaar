@@ -25,7 +25,7 @@ const statusLabels: Record<OrganizationStatus, string> = {
   archived: "Archived",
 };
 
-const emptyForm = (): OrganizationPayload => ({ name: "", description: "", status: "active" });
+const emptyForm = (): OrganizationPayload => ({ name: "", description: "", currency: "IRR", status: "active" });
 
 const getErrorMessage = (error: any, fallback: string): string => {
   const data = error?.response?.data ?? error?.data ?? error;
@@ -60,6 +60,7 @@ function OrganizationFormModal({
       ? {
         name: organization.name,
         description: organization.description || "",
+        currency: organization.currency || "IRR",
         status: organization.status,
       }
       : emptyForm(),
@@ -71,6 +72,7 @@ function OrganizationFormModal({
         ? {
           name: organization.name,
           description: organization.description || "",
+          currency: organization.currency || "IRR",
           status: organization.status,
         }
         : emptyForm(),
@@ -147,6 +149,22 @@ function OrganizationFormModal({
                 className="textarea textarea-bordered min-h-32 w-full resize-y rounded-xl bg-base-200/50 transition-colors focus:border-primary focus:bg-base-100 focus:outline-none"
                 placeholder="What does this organization do?"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="org-currency" className="block text-sm font-medium text-base-content">
+                Currency
+              </label>
+              <select
+                id="org-currency"
+                value={form.currency}
+                onChange={(event) => setField("currency", event.target.value)}
+                className="select select-bordered w-full rounded-xl bg-base-200/50 transition-colors focus:border-primary focus:bg-base-100 focus:outline-none"
+              >
+                <option value="IRR">IRR</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
             </div>
 
             {organization && (

@@ -13,6 +13,7 @@ export interface Organization {
   name: string;
   slug: string;
   description?: string;
+  currency?: string;
   status: OrganizationStatus;
   status_display?: string;
   owner?: OrganizationOwner | null;
@@ -27,6 +28,7 @@ export interface OrganizationPayload {
   name: string;
   slug?: string;
   description?: string;
+  currency?: string;
   status: OrganizationStatus;
 }
 
