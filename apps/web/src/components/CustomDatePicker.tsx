@@ -25,6 +25,7 @@ import {
 } from "iconsax-reactjs";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../features/auth/store/authStore";
+import "@doranjs/react/styles.css";
 
 // Use ReturnType to avoid the private constructor issue
 type JDoranDate = ReturnType<typeof DoranDate.fromGregorian>;
@@ -75,8 +76,6 @@ function buildJalaliGrid(jMonth: JDoranDate): JalaliDay[] {
 
   return days;
 }
-
-
 
 interface CustomDatePickerProps {
   value?: string;
