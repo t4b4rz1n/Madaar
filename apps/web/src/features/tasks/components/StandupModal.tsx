@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { formatDisplayDate } from "../../../utils/date";
 import { toast } from "sonner";
 import {
   Calendar,
@@ -132,7 +132,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
     const parsed = new Date(`${targetDate}T00:00:00`);
     return Number.isNaN(parsed.getTime())
       ? targetDate
-      : format(parsed, "EEEE, MMMM d, yyyy");
+      : formatDisplayDate(parsed, "EEEE, d MMMM yyyy");
   }, [targetDate]);
 
 

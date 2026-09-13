@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import { DoranDate } from '@doranjs/core';
 import { toast } from 'sonner';
 import {
   ArrowLeft2,
@@ -64,12 +65,34 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const currentUserId = useAuthStore((state) => state.user?.id);
+  const calendarPref = useAuthStore((state) => state.user?.calendar_preference) || 'gregorian';
 
   const now = new Date();
+  const initialPref = useAuthStore.getState().user?.calendar_preference || 'gregorian';
+  const initialCursor = initialPref === 'jalali' 
+    ? { year: DoranDate.fromGregorian(now).year, month: DoranDate.fromGregorian(now).month }
+    : { year: now.getFullYear(), month: now.getMonth() + 1 };
+
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
     () => localStorage.getItem(SELECTED_PROJECT_STORAGE_KEY) ?? '',
   );
-  const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() + 1 });
+  const [cursor, setCursor] = useState(initialCursor);
+  const [prevPref, setPrevPref] = useState(initialPref);
+
+  React.useEffect(() => {
+    if (calendarPref !== prevPref) {
+      if (calendarPref === 'jalali') {
+        const jd = DoranDate.fromGregorian(new Date(cursor.year, cursor.month - 1, 1));
+        setCursor({ year: jd.year, month: jd.month });
+      } else {
+        // From jalali to gregorian
+        const gd = DoranDate.fromJalali(cursor.year, cursor.month, 1).toGregorian();
+        setCursor({ year: gd.getFullYear(), month: gd.getMonth() + 1 });
+      }
+      setPrevPref(calendarPref);
+    }
+  }, [calendarPref, cursor, prevPref]);
+
   const [modalState, setModalState] = useState<CellModalState | null>(null);
   const [hourDrafts, setHourDrafts] = useState<HourDrafts>({});
   const [isProjDropdownOpen, setIsProjDropdownOpen] = useState(false);
@@ -112,9 +135,22 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
     }
   }, [projectsQuery.isSuccess, projects, selectedProjectId]);
 
+
+  const dateParams = useMemo(() => {
+    if (calendarPref === 'jalali') {
+      const startDoran = DoranDate.fromJalali(cursor.year, cursor.month, 1);
+      const endDoran = DoranDate.fromJalali(cursor.year, cursor.month, startDoran.daysInMonth);
+      return {
+        start_date: format(startDoran.toGregorian(), 'yyyy-MM-dd'),
+        end_date: format(endDoran.toGregorian(), 'yyyy-MM-dd')
+      };
+    }
+    return { year: cursor.year, month: cursor.month };
+  }, [cursor, calendarPref]);
+
   const gridQuery = useQuery({
-    queryKey: ['standup-grid', selectedProjectId, cursor.year, cursor.month],
-    queryFn: () => getStandupGrid(selectedProjectId, cursor.year, cursor.month),
+    queryKey: ['standup-grid', selectedProjectId, cursor.year, cursor.month, calendarPref],
+    queryFn: () => getStandupGrid(selectedProjectId, dateParams),
     enabled: Boolean(selectedProjectId),
   });
   const grid: StandupGridData | undefined = gridQuery.data;
@@ -125,8 +161,13 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
   );
 
   const dayIso = useCallback(
-    (day: number): string => `${cursor.year}-${pad2(cursor.month)}-${pad2(day)}`,
-    [cursor.year, cursor.month],
+    (day: number): string => {
+      if (calendarPref === 'jalali') {
+        return format(DoranDate.fromJalali(cursor.year, cursor.month, day).toGregorian(), 'yyyy-MM-dd');
+      }
+      return `${cursor.year}-${pad2(cursor.month)}-${pad2(day)}`;
+    },
+    [cursor.year, cursor.month, calendarPref],
   );
 
   const entryIndex = useMemo(() => {
@@ -168,10 +209,17 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
 
   const shiftMonth = useCallback((delta: number) => {
     setCursor((prev) => {
+      if (calendarPref === 'jalali') {
+        let newMonth = prev.month + delta;
+        let newYear = prev.year;
+        while (newMonth > 12) { newMonth -= 12; newYear += 1; }
+        while (newMonth < 1) { newMonth += 12; newYear -= 1; }
+        return { year: newYear, month: newMonth };
+      }
       const shifted = new Date(prev.year, prev.month - 1 + delta, 1);
       return { year: shifted.getFullYear(), month: shifted.getMonth() + 1 };
     });
-  }, []);
+  }, [calendarPref]);
 
   const handleOpenCell = useCallback(
     (member: StandupGridMember, day: number) => {
@@ -302,8 +350,13 @@ export const StandupsPage: React.FC<StandupPageProps> = ({
   );
 
   const monthLabel = useMemo(
-    () => format(new Date(cursor.year, cursor.month - 1, 1), 'MMMM yyyy'),
-    [cursor.year, cursor.month],
+    () => {
+      if (calendarPref === 'jalali') {
+        return DoranDate.fromJalali(cursor.year, cursor.month, 1).format('MMMM YYYY');
+      }
+      return format(new Date(cursor.year, cursor.month - 1, 1), 'MMMM yyyy');
+    },
+    [cursor.year, cursor.month, calendarPref],
   );
 
   const isLoading = projectsQuery.isLoading || (Boolean(selectedProjectId) && gridQuery.isLoading);

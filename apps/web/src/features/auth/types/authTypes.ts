@@ -19,6 +19,7 @@ export interface User {
   notify_via_email?: boolean;
   notify_via_telegram?: boolean;
   can_manage_automations?: boolean;
+  calendar_preference?: "gregorian" | "jalali";
 }
 
 export interface AuthResponse {

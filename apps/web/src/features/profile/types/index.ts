@@ -10,6 +10,7 @@ export interface UserProfile {
   telegram_connected?: boolean;
   notify_via_email?: boolean;
   notify_via_telegram?: boolean;
+  calendar_preference?: "gregorian" | "jalali";
 }
 
 export interface ProfileUpdateData {
@@ -21,4 +22,5 @@ export interface ProfileUpdateData {
   avatar?: File;
   notify_via_email?: boolean;
   notify_via_telegram?: boolean;
+  calendar_preference?: "gregorian" | "jalali";
 }

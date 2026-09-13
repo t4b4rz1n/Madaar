@@ -42,6 +42,18 @@ class User(AbstractUser, BaseModel):
         upload_to="avatars/", null=True, blank=True, validators=[profile_picture_validator]
     )
 
+    CALENDAR_CHOICES = (
+        ("gregorian", "Gregorian"),
+        ("jalali", "Jalali"),
+    )
+
+    calendar_preference = models.CharField(
+        max_length=20,
+        choices=CALENDAR_CHOICES,
+        default="gregorian",
+        help_text="User's preferred calendar system",
+    )
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 

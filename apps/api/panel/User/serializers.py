@@ -50,6 +50,7 @@ class UserListSerializer(serializers.ModelSerializer):
             "organization",
             "salary_type",
             "salary_amount",
+            "calendar_preference",
         ]
         ref_name = "users_panel"
 
@@ -176,6 +177,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "role_id",
             "salary_type",
             "salary_amount",
+            "calendar_preference",
         ]
         extra_kwargs = {
             "avatar": {"validators": []},
@@ -404,6 +406,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "role_id",
             "salary_type",
             "salary_amount",
+            "calendar_preference",
         ]
         extra_kwargs = {
             "avatar": {"validators": []},

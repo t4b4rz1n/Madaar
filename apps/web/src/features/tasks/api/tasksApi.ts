@@ -270,11 +270,10 @@ export const deleteStandup = async (entryId: string): Promise<void> => {
  */
 export const getStandupGrid = async (
   projectId: string,
-  year: number,
-  month: number,
+  params: { year?: number; month?: number; start_date?: string; end_date?: string }
 ): Promise<StandupGridData> => {
   const data = await ApiService.get<StandupGridData>('/tasks/standups/grid/', {
-    params: { project: projectId, year, month },
+    params: { project: projectId, ...params },
   });
   return (data as any).data ?? data;
 };

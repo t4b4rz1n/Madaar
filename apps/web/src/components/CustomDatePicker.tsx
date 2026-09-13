@@ -22,6 +22,10 @@ import {
   TickCircle,
 } from "iconsax-reactjs";
 import { useEffect, useState } from "react";
+import { DoranDatePicker } from "@doranjs/react";
+import { useAuthStore } from "../features/auth/store/authStore";
+import { formatDisplayDate } from "../utils/date";
+import "@doranjs/react/styles.css";
 
 interface CustomDatePickerProps {
   value?: string;
@@ -42,6 +46,8 @@ export const CustomDatePicker = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+  const preference = useAuthStore((state) => state.user?.calendar_preference) || "gregorian";
+
   useEffect(() => {
     if (value) {
       const parsed = parseISO(value);
@@ -54,6 +60,29 @@ export const CustomDatePicker = ({
     }
   }, [value]);
 
+  if (preference === "jalali") {
+    return (
+      <div className={`relative w-full ${className}`}>
+        <DoranDatePicker
+          value={value || null}
+          onChange={(_v, gregorian) => {
+            if (gregorian) {
+              onChange(format(gregorian, "yyyy-MM-dd"));
+            } else {
+              onChange("");
+            }
+          }}
+          placeholder={placeholder}
+          className={`w-full p-3 bg-base-100 border rounded-xl flex items-center justify-between text-left hover:border-primary/50 transition-colors ${
+            error ? "border-error" : "border-base-content/20"
+          }`}
+          dir="rtl"
+        />
+      </div>
+    );
+  }
+
+  // Fallback to existing Gregorian calendar implementation
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
@@ -80,14 +109,12 @@ export const CustomDatePicker = ({
 
   return (
     <>
-      {/* Trigger Button */}
       <div className={`relative ${className}`}>
         <motion.button
           type="button"
           onClick={() => setIsOpen(true)}
-          className={`w-full p-3 bg-base-100 border rounded-xl flex items-center justify-between text-left hover:border-primary/50 transition-colors ${
-            error ? "border-error" : "border-base-content/20"
-          }`}
+          className={`w-full p-3 bg-base-100 border rounded-xl flex items-center justify-between text-left hover:border-primary/50 transition-colors ${error ? "border-error" : "border-base-content/20"
+            }`}
           whileTap={{ scale: 0.99 }}
         >
           <div className="flex items-center gap-2 flex-1 overflow-hidden">
@@ -96,14 +123,13 @@ export const CustomDatePicker = ({
               className="text-base-content/60 flex-shrink-0"
             />
             <span
-              className={`text-sm truncate ${
-                selectedDate
+              className={`text-sm truncate ${selectedDate
                   ? "font-medium text-base-content"
                   : "text-base-content/60"
-              }`}
+                }`}
             >
               {selectedDate
-                ? format(selectedDate, "MMMM dd, yyyy")
+                ? formatDisplayDate(selectedDate, "MMMM dd, yyyy")
                 : placeholder}
             </span>
           </div>
@@ -119,7 +145,6 @@ export const CustomDatePicker = ({
         </motion.button>
       </div>
 
-      {/* Modal Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -136,7 +161,6 @@ export const CustomDatePicker = ({
               className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-base-content/10 bg-base-100/50">
                 <button
                   type="button"
@@ -157,7 +181,6 @@ export const CustomDatePicker = ({
                 </button>
               </div>
 
-              {/* Calendar Grid */}
               <div className="p-4">
                 <div className="grid grid-cols-7 gap-1 mb-2">
                   {weekDays.map((day) => (
@@ -184,14 +207,13 @@ export const CustomDatePicker = ({
                         onClick={() => handleDateClick(day)}
                         className={`
                           h-10 w-10 mx-auto rounded-xl text-sm font-medium transition-all relative flex items-center justify-center
-                          ${
-                            !isCurrentMonth
-                              ? "text-base-content/20"
-                              : isSelected
+                          ${!isCurrentMonth
+                            ? "text-base-content/20"
+                            : isSelected
                               ? "bg-primary text-primary-content shadow-lg shadow-primary/30"
                               : isTodayDate
-                              ? "bg-primary/10 text-primary font-bold border-2 border-primary/20"
-                              : "text-base-content hover:bg-base-200"
+                                ? "bg-primary/10 text-primary font-bold border-2 border-primary/20"
+                                : "text-base-content hover:bg-base-200"
                           }
                         `}
                         whileTap={{ scale: 0.9 }}
@@ -203,7 +225,6 @@ export const CustomDatePicker = ({
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="p-4 border-t border-base-content/10 bg-base-100 flex justify-between items-center">
                 <button
                   type="button"
@@ -222,7 +243,7 @@ export const CustomDatePicker = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsOpen(false)} // Confirm action
+                    onClick={() => setIsOpen(false)}
                     className="btn btn-sm btn-primary rounded-lg"
                   >
                     <TickCircle size={16} /> Confirm

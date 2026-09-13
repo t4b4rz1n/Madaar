@@ -655,14 +655,26 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
         try:
             year = int(request.query_params.get("year") or today.year)
             month = int(request.query_params.get("month") or today.month)
+            start_date_str = request.query_params.get("start_date")
+            end_date_str = request.query_params.get("end_date")
+            if start_date_str and end_date_str:
+                from datetime import datetime
+                first_day = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                last_day = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                days_in_month = (last_day - first_day).days + 1
+            else:
+                if not 1 <= month <= 12:
+                    return Response(
+                        {"detail": _("Month must be between 1 and 12.")},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                first_day = date(year, month, 1)
+                from calendar import monthrange
+                days_in_month = monthrange(year, month)[1]
+                last_day = first_day + timedelta(days=days_in_month - 1)
         except (TypeError, ValueError):
             return Response(
-                {"detail": _("Invalid year or month.")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not 1 <= month <= 12:
-            return Response(
-                {"detail": _("Month must be between 1 and 12.")},
+                {"detail": _("Invalid date parameters.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -712,9 +724,7 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        first_day = date(year, month, 1)
-        days_in_month = monthrange(year, month)[1]
-        last_day = first_day + timedelta(days=days_in_month - 1)
+
 
         User = get_user_model()
 

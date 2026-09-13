@@ -50,6 +50,7 @@ export const ProfileEditForm = () => {
       password_confirm: "",
       notify_via_email: user?.notify_via_email ?? true,
       notify_via_telegram: user?.notify_via_telegram ?? false,
+      calendar_preference: user?.calendar_preference || "gregorian",
     },
   });
 
@@ -121,6 +122,9 @@ export const ProfileEditForm = () => {
     if (data.notify_via_telegram !== user.notify_via_telegram) {
       updateData.notify_via_telegram = data.notify_via_telegram;
     }
+    if (data.calendar_preference !== user.calendar_preference) {
+      updateData.calendar_preference = data.calendar_preference;
+    }
     if (profileImage) {
       updateData.avatar = profileImage;
     }
@@ -139,6 +143,7 @@ export const ProfileEditForm = () => {
           password_confirm: "",
           notify_via_email: data.notify_via_email,
           notify_via_telegram: data.notify_via_telegram,
+          calendar_preference: data.calendar_preference,
         });
         setProfileImage(null);
         setProfileImagePreview(null);
@@ -482,6 +487,51 @@ export const ProfileEditForm = () => {
                     )}
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* Preferences Section */}
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-1 h-5 bg-primary rounded-full"></div>
+                <h3 className="text-sm font-bold text-base-content/70 uppercase tracking-wider">
+                  Preferences
+                </h3>
+              </div>
+
+              <div className="bg-base-200/30 border border-base-content/10 rounded-xl p-5 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-base-content">Calendar System</h4>
+                    <p className="text-xs text-base-content/60 mt-0.5">Switch between Gregorian and Jalali calendar</p>
+                  </div>
+                </div>
+                <Controller
+                  name="calendar_preference"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      className="select select-bordered select-sm w-full max-w-xs"
+                      value={field.value || "gregorian"}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        updateMutation.mutate({ calendar_preference: e.target.value as "gregorian" | "jalali" }, {
+                          onSuccess: () => {
+                            reset({ ...watch(), calendar_preference: e.target.value as "gregorian" | "jalali" });
+                          }
+                        });
+                      }}
+                    >
+                      <option value="gregorian">Gregorian (میلادی)</option>
+                      <option value="jalali">Jalali (شمسی)</option>
+                    </select>
+                  )}
+                />
               </div>
             </div>
 

@@ -36,6 +36,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "telegram_connected",
             "notify_via_email",
             "notify_via_telegram",
+            "calendar_preference",
         )
         read_only_fields = ("username", "email", "telegram_connected")
 
