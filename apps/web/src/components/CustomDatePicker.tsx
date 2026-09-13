@@ -25,7 +25,6 @@ import {
 } from "iconsax-reactjs";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../features/auth/store/authStore";
-import "@doranjs/react/styles.css";
 
 // Use ReturnType to avoid the private constructor issue
 type JDoranDate = ReturnType<typeof DoranDate.fromGregorian>;
@@ -76,6 +75,8 @@ function buildJalaliGrid(jMonth: JDoranDate): JalaliDay[] {
 
   return days;
 }
+
+
 
 interface CustomDatePickerProps {
   value?: string;
@@ -362,7 +363,7 @@ export const CustomDatePicker = ({
                   onClick={handleJumpToToday}
                   className="text-primary text-sm font-medium hover:underline"
                 >
-                  Jump to Today
+                  {isJalali ? "امروز" : "Jump to Today"}
                 </button>
                 <div className="flex gap-2">
                   <button
@@ -370,14 +371,14 @@ export const CustomDatePicker = ({
                     onClick={handleCancel}
                     className="btn btn-sm btn-ghost rounded-lg"
                   >
-                    Cancel
+                    {isJalali ? "انصراف" : "Cancel"}
                   </button>
                   <button
                     type="button"
                     onClick={handleConfirm}
                     className="btn btn-sm btn-primary rounded-lg"
                   >
-                    <TickCircle size={16} /> Confirm
+                    <TickCircle size={16} /> {isJalali ? "تأیید" : "Confirm"}
                   </button>
                 </div>
               </div>
