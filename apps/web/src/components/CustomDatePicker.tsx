@@ -65,7 +65,7 @@ export const CustomDatePicker = ({
       <div className={`relative w-full ${className}`}>
         <DoranDatePicker
           value={value || null}
-          onChange={(_v, gregorian) => {
+          onChange={(_v: any, gregorian: any) => {
             if (gregorian) {
               onChange(format(gregorian, "yyyy-MM-dd"));
             } else {

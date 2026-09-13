@@ -124,6 +124,31 @@ export const removeProjectMember = async (
   await ApiService.delete(`projects/${projectId}/members/${memberId}/`);
 };
 
+/** Update salary for a specific project member (sets salary_override=true). */
+export const updateProjectMemberSalary = async (
+  projectId: string | number,
+  memberId: string | number,
+  data: { salary_type?: "monthly" | "hourly" | null; salary_amount?: string | number | null }
+): Promise<ProjectMember> => {
+  const response = await ApiService.patch<ProjectMember>(
+    `projects/${projectId}/members/${memberId}/salary/`,
+    data
+  );
+  return unwrap<ProjectMember>(response);
+};
+
+/** Reset a project member's salary back to the org-level (clears salary_override). */
+export const resetProjectMemberSalary = async (
+  projectId: string | number,
+  memberId: string | number
+): Promise<ProjectMember> => {
+  const response = await ApiService.post<ProjectMember>(
+    `projects/${projectId}/members/${memberId}/salary/reset/`,
+    {}
+  );
+  return unwrap<ProjectMember>(response);
+};
+
 // ==========================================
 // 🚩 PROJECT MILESTONES API
 // ==========================================

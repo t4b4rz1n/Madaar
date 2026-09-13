@@ -11,6 +11,7 @@ from .serializers import (
     AddOrgMemberSerializer,
     OrganizationMemberSerializer,
     OrganizationSerializer,
+    UpdateOrgMemberSalarySerializer,
 )
 
 
@@ -255,16 +256,27 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                         membership.invited_by = (
                             request.user if request.user.is_authenticated else None
                         )
+                        # Update salary if provided
+                        salary_type = serializer.validated_data.get("salary_type")
+                        salary_amount = serializer.validated_data.get("salary_amount")
+                        if salary_type is not None:
+                            membership.salary_type = salary_type
+                        if salary_amount is not None:
+                            membership.salary_amount = salary_amount
                         membership.save()
                         if role_obj:
                             membership.dynamic_roles.set([role_obj])
                         created = False
                     else:
+                        salary_type = serializer.validated_data.get("salary_type")
+                        salary_amount = serializer.validated_data.get("salary_amount")
                         membership = OrganizationMembership.objects.create(
                             user_id=user_id,
                             organization=organization,
                             role=legacy_role,
                             invited_by=request.user if request.user.is_authenticated else None,
+                            salary_type=salary_type,
+                            salary_amount=salary_amount,
                         )
                         if role_obj:
                             membership.dynamic_roles.set([role_obj])
@@ -302,3 +314,39 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             membership.save(update_fields=["is_deleted"])
 
         return Response({"detail": "Member removed."}, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path="members/(?P<user_id>[^/.]+)/salary",
+        permission_classes=[IsAuthenticated, CanManageOrganization],
+    )
+    def update_member_salary(self, request, pk=None, user_id=None):
+        """Update the org-level salary for a specific member.
+
+        This will also propagate to all ProjectMembers where salary_override=False
+        (via the post_save signal on OrganizationMembership).
+        """
+        organization = self.get_object()
+
+        membership = OrganizationMembership.objects.filter(
+            organization=organization,
+            is_deleted=False,
+        ).filter(Q(user_id=user_id) | Q(id=user_id)).first()
+
+        if not membership:
+            return Response({"detail": "Member not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UpdateOrgMemberSalarySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if "salary_type" in serializer.validated_data:
+            membership.salary_type = serializer.validated_data["salary_type"]
+        if "salary_amount" in serializer.validated_data:
+            membership.salary_amount = serializer.validated_data["salary_amount"]
+
+        membership.save(update_fields=["salary_type", "salary_amount", "updated_at"])
+
+        response_serializer = OrganizationMemberSerializer(membership, context={"request": request})
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+

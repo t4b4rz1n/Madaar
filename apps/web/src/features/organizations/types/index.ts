@@ -49,4 +49,11 @@ export interface OrganizationMember {
 export interface AddExistingMemberPayload {
   user_id: string;
   role_id?: string | null;
+  salary_type?: "monthly" | "hourly" | null;
+  salary_amount?: string | number | null;
+}
+
+export interface UpdateMemberSalaryPayload {
+  salary_type?: "monthly" | "hourly" | null;
+  salary_amount?: string | number | null;
 }

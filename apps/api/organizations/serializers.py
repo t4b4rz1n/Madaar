@@ -179,6 +179,17 @@ class AddOrgMemberSerializer(serializers.Serializer):
         allow_blank=True,
         default=OrganizationMembership.Role.EMPLOYEE,
     )
+    salary_type = serializers.ChoiceField(
+        choices=OrganizationMembership.SalaryType.choices,
+        required=False,
+        allow_null=True,
+    )
+    salary_amount = serializers.DecimalField(
+        max_digits=20,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         validators = []
@@ -193,3 +204,25 @@ class AddOrgMemberSerializer(serializers.Serializer):
             raise serializers.ValidationError("User is not active.")
 
         return value
+
+
+class UpdateOrgMemberSalarySerializer(serializers.Serializer):
+    """Serializer for updating a member's salary at the organization level."""
+    salary_type = serializers.ChoiceField(
+        choices=OrganizationMembership.SalaryType.choices,
+        required=False,
+        allow_null=True,
+    )
+    salary_amount = serializers.DecimalField(
+        max_digits=20,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+    )
+
+    def validate(self, attrs):
+        if "salary_type" not in attrs and "salary_amount" not in attrs:
+            raise serializers.ValidationError(
+                "Provide at least salary_type or salary_amount."
+            )
+        return attrs
