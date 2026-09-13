@@ -528,14 +528,14 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                   setFocusedCellKey(null);
                 }
               }}
-              className="h-7 w-full rounded-lg bg-primary/10 text-center text-[11px] font-bold text-primary placeholder:text-base-content/30 focus:border-primary/50 focus:bg-primary/15 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none p-0 transition-all"
+              className="h-7 w-full rounded-lg bg-primary/10 text-center text-[12px] font-bold text-primary placeholder:text-base-content/30 focus:border-primary/50 focus:bg-primary/15 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none p-0 transition-all"
             />
           ) : (
             <div
               tabIndex={0}
               onFocus={() => setFocusedCellKey(key)}
               onClick={() => setFocusedCellKey(key)}
-              className="flex h-7 w-full cursor-text items-center justify-center rounded-lg bg-transparent text-center text-[11px] font-bold text-primary transition-all hover:bg-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              className="flex h-7 w-full cursor-text items-center justify-center rounded-lg bg-transparent text-center text-[12px] font-bold text-primary transition-all hover:bg-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/50"
             >
               {value ? formatDecimalHours(value) : '-'}
             </div>
@@ -543,13 +543,12 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
         ) : (
           <span
             title={value ? formatDecimalHours(value) : undefined}
-            className={`text-[11px] font-bold ${
-              value
+            className={`text-[12px] font-bold ${value
                 ? isSelfView || isOwnRow(row)
                   ? 'text-primary font-black'
                   : 'text-base-content/75'
                 : 'text-base-content/20'
-            }`}
+              }`}
           >
             {value ? formatDecimalHours(value) : '-'}
           </span>
@@ -574,14 +573,6 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Header Bar — title only; subtitle and divider removed */}
-      <div className="flex items-center gap-3">
-        <div className="grid size-10 place-items-center rounded-2xl bg-primary/10 text-primary shrink-0">
-          <NoteText variant="Bulk" size={24} />
-        </div>
-        <h1 className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">{title}</h1>
-      </div>
-
       {isLoading ? (
         <div className="flex min-h-[240px] items-center justify-center">
           <span className="loading loading-spinner loading-md text-primary" />
@@ -600,9 +591,9 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
             </div>
           )}
 
-          {/* Month Navigator Header — month stepper + project picker */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-content/8 px-4 py-3 bg-base-200/30">
-            <div className="flex items-center gap-2">
+          {/* Matrix Header — month stepper, title, and project picker */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-base-content/8 bg-base-200/30 px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2">
               <button
                 type="button"
                 onClick={() => shiftMonth(-1)}
@@ -627,9 +618,16 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
               </button>
             </div>
 
+            <div className="flex min-w-0 items-center justify-center gap-2 text-center">
+              <NoteText size={16} className="shrink-0 text-primary" />
+              <h1 className="truncate text-sm font-bold tracking-tight text-base-content sm:text-base">
+                {title}
+              </h1>
+            </div>
+
             {/* Project picker — only meaningful in team view */}
             {!isSelfView && projects.length > 0 && (
-              <div className="relative z-[50]" ref={projDropdownRef}>
+              <div className="relative z-[50] justify-self-end" ref={projDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsProjDropdownOpen((prev) => !prev)}
@@ -655,9 +653,8 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                   </span>
                   <ArrowDown2
                     size={14}
-                    className={`shrink-0 text-base-content/50 transition-transform duration-200 ${
-                      isProjDropdownOpen ? 'rotate-180 text-primary' : ''
-                    }`}
+                    className={`shrink-0 text-base-content/50 transition-transform duration-200 ${isProjDropdownOpen ? 'rotate-180 text-primary' : ''
+                      }`}
                   />
                 </button>
 
@@ -681,11 +678,10 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                               setSelectedProjectId(String(p.id));
                               setIsProjDropdownOpen(false);
                             }}
-                            className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left transition-all ${
-                              isSelected
+                            className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left transition-all ${isSelected
                                 ? 'bg-primary/10 text-primary font-bold'
                                 : 'text-base-content/80 hover:bg-base-200/60 hover:text-base-content font-medium'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <span
@@ -737,11 +733,10 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                     return (
                       <th
                         key={day}
-                        className={`border-b border-base-content/8 px-1 py-2 text-center text-[11px] font-bold transition-all ${
-                          isToday
+                        className={`border-b border-base-content/8 px-1 py-2 text-center text-[11px] font-bold transition-all ${isToday
                             ? 'bg-primary/10 text-primary border-b-primary/40'
                             : 'bg-base-200/20 text-base-content/50'
-                        }`}
+                          }`}
                       >
                         {day}
                       </th>
@@ -768,11 +763,10 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                             />
                           ) : (
                             <div
-                              className={`grid size-7 place-items-center rounded-lg text-[10px] font-bold shrink-0 ${
-                                isCurrent
+                              className={`grid size-7 place-items-center rounded-lg text-[10px] font-bold shrink-0 ${isCurrent
                                   ? 'bg-primary text-primary-content'
                                   : 'bg-base-200 text-base-content/60'
-                              }`}
+                                }`}
                             >
                               {row.label[0]?.toUpperCase() || 'U'}
                             </div>
@@ -780,9 +774,8 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                           <div className="min-w-0">
                             <p
                               dir="auto"
-                              className={`truncate text-xs font-bold ${
-                                isCurrent ? 'text-primary' : 'text-base-content'
-                              }`}
+                              className={`truncate text-xs font-bold ${isCurrent ? 'text-primary' : 'text-base-content'
+                                }`}
                               title={row.label}
                             >
                               {row.label}
@@ -812,9 +805,8 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                         return (
                           <td
                             key={day}
-                            className={`border-b border-l border-base-content/5 p-1 text-center transition-all ${
-                              isToday ? 'bg-primary/5' : ''
-                            }`}
+                            className={`border-b border-l border-base-content/5 p-1 text-center transition-all ${isToday ? 'bg-primary/5' : ''
+                              }`}
                             onClick={editable ? undefined : () => handleOpenCell(row, day)}
                             onContextMenu={(e) => {
                               e.preventDefault();
@@ -829,15 +821,14 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                             }
                           >
                             <div
-                              className={`mx-auto flex w-full items-center justify-center ${
-                                editable
+                              className={`mx-auto flex w-full items-center justify-center ${editable
                                   ? 'cursor-text'
                                   : isFuture
                                     ? 'cursor-not-allowed opacity-40'
                                     : hasEntry
                                       ? 'cursor-pointer'
                                       : 'cursor-default'
-                              }`}
+                                }`}
                             >
                               {renderCellContent(row, day, isoDate)}
                             </div>

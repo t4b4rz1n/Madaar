@@ -412,7 +412,7 @@ export const UserDashboardPage = () => {
               No active tasks assigned to you right now.
             </div>
           ) : (
-            <div className="mt-3 min-h-0 max-h-[21rem] flex-1 space-y-2 overflow-y-auto pe-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="mt-3 min-h-0 max-h-[17rem] flex-1 space-y-2 overflow-y-auto pe-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {allTasks.map((t: EmployeeTaskSummary) => {
                 const isRunningTimer = dashboard?.active_timers?.some(
                   (at) => String(at.task_id) === String(t.id),
