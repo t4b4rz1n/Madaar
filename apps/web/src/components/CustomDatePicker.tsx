@@ -19,11 +19,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft2,
   ArrowRight2,
+  Calendar1,
   CloseCircle,
   TickCircle,
 } from "iconsax-reactjs";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../features/auth/store/authStore";
+import "@doranjs/react/styles.css";
 
 // Use ReturnType to avoid the private constructor issue
 type JDoranDate = ReturnType<typeof DoranDate.fromGregorian>;
@@ -205,6 +207,10 @@ export const CustomDatePicker = ({
           whileTap={{ scale: 0.99 }}
         >
           <div className="flex items-center gap-2 flex-1 overflow-hidden">
+            <Calendar1
+              size={20}
+              className="text-base-content/60 flex-shrink-0"
+            />
             <span
               className={`text-sm truncate ${
                 hasValue ? "font-medium text-base-content" : "text-base-content/60"
