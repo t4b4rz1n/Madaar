@@ -321,15 +321,6 @@ export let mockRoles: MockRole[] = [
     is_staff: false,
     permissions: ["discounts.view", "tickets.view"],
   },
-  {
-    id: 8,
-    name: "HR",
-    description:
-      "Human Resources; managing personnel status, users, and reviewing internal tickets.",
-    is_active: true,
-    is_staff: false,
-    permissions: ["users.manage", "tickets.view"],
-  },
 ];
 
 export const mockNotifications: Notification[] = [
