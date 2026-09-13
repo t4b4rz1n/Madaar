@@ -33,6 +33,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
+            "currency",
             "status",
             "status_display",
             "owner",
