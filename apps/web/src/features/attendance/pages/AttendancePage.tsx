@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Clock, DocumentText, People, Timer1 } from 'iconsax-reactjs';
@@ -29,7 +30,16 @@ const tabs: { id: AttendanceTab; label: string; helper: string; icon: typeof Tim
 export const AttendancePage: React.FC = () => {
   const { activeOrganizationId, setActiveOrganization } = useAttendanceStore();
   const { activeProjectId, activeBoardId, setActiveProject, setActiveBoard } = useTaskStore();
-  const [activeTab, setActiveTab] = useState<AttendanceTab>('overview');
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') as AttendanceTab) || 'overview';
+  const [activeTab, setActiveTab] = useState<AttendanceTab>(initialTab);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as AttendanceTab;
+    if (tab && ['overview', 'timesheet', 'timeoff', 'team'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const { data: organizations = [] } = useQuery({
     queryKey: ['organizations'],

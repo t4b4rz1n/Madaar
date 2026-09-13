@@ -119,6 +119,8 @@ def handle_task_automations(sender, instance, created, **kwargs):
                     "project_id": str(instance.project_id) if instance.project_id else None,
                     "project_name": instance.project.name if instance.project_id else "—",
                     "task_title": instance.title,
+                    "task_id": str(instance.id),
+                    "board_id": str(instance.status.board_id) if getattr(instance, "status", None) and getattr(instance.status, "board_id", None) else None,
                     "reporter_id": str(instance.reporter_id) if instance.reporter_id else None,
                 },
             )
@@ -135,6 +137,8 @@ def handle_task_automations(sender, instance, created, **kwargs):
                     "assignee_id": str(instance.assignee_id),
                     "reporter_id": str(instance.reporter_id) if instance.reporter_id else None,
                     "task_title": instance.title,
+                    "task_id": str(instance.id),
+                    "board_id": str(instance.status.board_id) if getattr(instance, "status", None) and getattr(instance.status, "board_id", None) else None,
                     "assigner": assigner,
                 },
             )
@@ -153,6 +157,8 @@ def handle_task_automations(sender, instance, created, **kwargs):
                             else None,
                             "reporter_id": str(instance.reporter_id),
                             "task_title": instance.title,
+                    "task_id": str(instance.id),
+                    "board_id": str(instance.status.board_id) if getattr(instance, "status", None) and getattr(instance.status, "board_id", None) else None,
                             "assignee": instance.assignee.get_full_name()
                             if instance.assignee
                             else "User",
@@ -168,6 +174,8 @@ def handle_task_automations(sender, instance, created, **kwargs):
                         "assignee_id": str(instance.assignee_id) if instance.assignee_id else None,
                         "reporter_id": str(instance.reporter_id) if instance.reporter_id else None,
                         "task_title": instance.title,
+                    "task_id": str(instance.id),
+                    "board_id": str(instance.status.board_id) if getattr(instance, "status", None) and getattr(instance.status, "board_id", None) else None,
                     },
                 )
     except Exception as exc:
@@ -219,6 +227,8 @@ def handle_task_comments(sender, instance, created, **kwargs):
                             "assignee_id": str(task.assignee_id) if task.assignee_id else None,
                             "reporter_id": str(task.reporter_id) if task.reporter_id else None,
                             "task_title": task.title,
+                            "task_id": str(task.id),
+                            "board_id": str(task.status.board_id) if getattr(task, "status", None) and getattr(task.status, "board_id", None) else None,
                             "author": author_name,
                             "comment_text": f"{author_name} mentioned you: {content[:50]}...",
                         },
@@ -247,6 +257,8 @@ def handle_task_comments(sender, instance, created, **kwargs):
                         "assignee_id": str(task.assignee_id) if task.assignee_id else None,
                         "reporter_id": str(task.reporter_id) if task.reporter_id else None,
                         "task_title": task.title,
+                            "task_id": str(task.id),
+                            "board_id": str(task.status.board_id) if getattr(task, "status", None) and getattr(task.status, "board_id", None) else None,
                         "author": author_name,
                     },
                 )

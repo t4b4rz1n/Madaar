@@ -19,17 +19,19 @@ def _get_event_link(event_type: str, payload: dict) -> str:
     """Generate a relevant frontend link based on event type and payload."""
     project_id = payload.get("project_id")
     task_id = payload.get("task_id")
+    board_id = payload.get("board_id")
     organization_id = payload.get("organization_id")
 
     if task_id and project_id:
-        return f"/projects/{project_id}/board?task={task_id}"
+        # Route to task management page with query params
+        return f"/tasks?project={project_id}&board={board_id or ''}&task={task_id}"
     if project_id:
         return f"/projects/{project_id}"
     if event_type in ("leave_requested", "leave_resolved"):
-        return "/requests/time-off"
+        return "/attendance?tab=timeoff"
     if organization_id:
         return f"/organizations/{organization_id}"
-    return "/"
+    return "/" 
 
 
 def process_rules_for_event(event_type: str, payload: dict):

@@ -1,6 +1,7 @@
 import React, { lazy, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Add } from 'iconsax-reactjs';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { GlobalProjectSelector } from '../components/GlobalProjectSelector';
 import { WorkspaceView } from '../components/WorkspaceView';
@@ -12,7 +13,30 @@ import { getBoards, createBoard } from '../api/tasksApi';
 const AttendancePage = lazy(() => import('../../attendance/pages/AttendancePage'));
 
 export const TaskManagementPage: React.FC = () => {
-  const { activeProjectId, activeBoardId, setActiveBoard, viewMode, setViewMode } = useTaskStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { activeProjectId, activeBoardId, setActiveProject, setActiveBoard, setSelectedTaskId, viewMode, setViewMode } = useTaskStore();
+
+  React.useEffect(() => {
+    const project = searchParams.get('project');
+    const board = searchParams.get('board');
+    const task = searchParams.get('task');
+
+    if (project && project !== activeProjectId) {
+      setActiveProject(project);
+    }
+    if (board && board !== activeBoardId) {
+      setActiveBoard(board);
+      setViewMode('kanban');
+    }
+    if (task) {
+      setSelectedTaskId(task);
+    }
+    
+    // Clear URL to avoid re-triggering if user navigates manually later
+    if (project || board || task) {
+      setSearchParams({});
+    }
+  }, [searchParams, activeProjectId, activeBoardId, setActiveProject, setActiveBoard, setSelectedTaskId, setSearchParams]);
   const queryClient = useQueryClient();
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
 
