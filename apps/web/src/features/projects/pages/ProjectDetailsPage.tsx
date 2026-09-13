@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePermissions } from "../../auth/hooks/usePermissions";
+import { useAuthStore } from "../../auth/store/authStore";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -535,6 +536,7 @@ function MilestonesTab({
 export default function ProjectDetailsPage() {
 
   const updateProjectMutation = useUpdateProject();
+  const user = useAuthStore((state) => state.user);
 
 
   const { id } = useParams<{ id: string }>();
@@ -644,6 +646,10 @@ export default function ProjectDetailsPage() {
   };
 
   const ownerName = getProjectOwnerName();
+  
+  const isOwner = project.owner?.id === user?.id;
+  const isSuperUser = user?.is_staff;
+  const canViewSalaries = isSuperUser || isOwner;
 
   return (
     <div key={id} className="space-y-5 pb-10">
@@ -702,7 +708,10 @@ export default function ProjectDetailsPage() {
 
       {/* Navigation Tabs */}
       <div className="flex gap-1 overflow-x-auto rounded-xl border border-base-content/8 bg-base-100 p-1">
-        {tabs.filter(t => t.id !== "reports" || (canManageProject || hasAnyPermission(["report.view"]))).map((tab) => (
+        {tabs
+          .filter(t => t.id !== "reports" || (canManageProject || hasAnyPermission(["report.view"])))
+          .filter(t => t.id !== "salaries" || canViewSalaries)
+          .map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
