@@ -180,7 +180,7 @@ class OrganizationMembership(BaseModel):
         help_text="Type of salary: monthly or hourly",
     )
     salary_amount = models.DecimalField(
-        max_digits=20,
+        max_digits=40,
         decimal_places=2,
         null=True,
         blank=True,

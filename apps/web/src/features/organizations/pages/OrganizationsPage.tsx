@@ -151,21 +151,7 @@ function OrganizationFormModal({
               />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="org-currency" className="block text-sm font-medium text-base-content">
-                Currency
-              </label>
-              <select
-                id="org-currency"
-                value={form.currency}
-                onChange={(event) => setField("currency", event.target.value)}
-                className="select select-bordered w-full rounded-xl bg-base-200/50 transition-colors focus:border-primary focus:bg-base-100 focus:outline-none"
-              >
-                <option value="IRR">IRR</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-              </select>
-            </div>
+
 
             {organization && (
               <div className="space-y-2">

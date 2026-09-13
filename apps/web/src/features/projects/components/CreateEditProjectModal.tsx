@@ -280,7 +280,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Budget & Currency
+                Budget (IRR)
               </label>
               <div className="flex">
                 <input
@@ -290,18 +290,8 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   placeholder="0.00"
                   value={formData.budget}
                   onChange={handleChange}
-                  className="w-full h-9.5 rounded-l-xl border border-r-0 border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                  className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
                 />
-                <select
-                  name="budget_currency"
-                  value={formData.budget_currency}
-                  onChange={handleChange}
-                  className="h-9.5 rounded-r-xl border border-base-content/10 bg-base-200/50 px-2 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
-                >
-                  <option value="IRR">IRR</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                </select>
               </div>
             </div>
             {project && (
