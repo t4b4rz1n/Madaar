@@ -435,14 +435,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if "is_staff" in validated_data and not (actor and actor.is_superuser):
             validated_data.pop("is_staff")
 
+        has_role_id = "role_id" in validated_data
         role_id = validated_data.pop("role_id", None)
+        has_salary_type = "salary_type" in validated_data
         salary_type = validated_data.pop("salary_type", None)
+        has_salary_amount = "salary_amount" in validated_data
         salary_amount = validated_data.pop("salary_amount", None)
 
         with transaction.atomic():
             user = super().update(instance, validated_data)
 
-            if role_id is not None or salary_type is not None or salary_amount is not None:
+            if has_role_id or has_salary_type or has_salary_amount:
                 raw_org_id = _extract_org_id(request)
                 org = None
 
@@ -481,7 +484,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                             user=user, organization=org, is_deleted=False
                         )
 
-                    if salary_type is not None or salary_amount is not None:
+                    if has_salary_type or has_salary_amount:
                         is_salary_manager = False
                         if actor and actor.is_superuser:
                             is_salary_manager = True
@@ -495,12 +498,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                                 is_deleted=False
                             ).exists()
                         if is_salary_manager:
-                            if salary_type is not None:
+                            if has_salary_type:
                                 membership.salary_type = salary_type
-                            if salary_amount is not None:
+                            if has_salary_amount:
                                 membership.salary_amount = salary_amount
 
-                    if not role_id:
+                    if not has_role_id:
+                        # Only skip role update, keep existing dynamic_roles unless role_id was explicitly sent as null
+                        pass
+                    elif not role_id:
                         membership.dynamic_roles.clear()
                         membership.save()
                     else:
