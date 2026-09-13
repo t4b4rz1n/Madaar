@@ -193,7 +193,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 .prefetch_related("dynamic_roles")
                 .order_by("-created_at")
             )
-            serializer = OrganizationMemberSerializer(memberships, many=True)
+            serializer = OrganizationMemberSerializer(memberships, many=True, context={"request": request})
             return Response(serializer.data)
 
         elif request.method == "POST":
@@ -275,7 +275,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            response_serializer = OrganizationMemberSerializer(membership)
+            response_serializer = OrganizationMemberSerializer(membership, context={"request": request})
             status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
             return Response(response_serializer.data, status=status_code)
 
