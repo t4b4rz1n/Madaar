@@ -274,6 +274,9 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
 
     user = UserMinimalSerializer(read_only=True)
     team = TeamMinimalSerializer(read_only=True)
+    salary_type = serializers.SerializerMethodField()
+    salary_amount = serializers.SerializerMethodField()
+    salary_override = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectMember
@@ -286,10 +289,53 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
             "allocation_start_date",
             "allocation_end_date",
             "is_active",
+            "salary_type",
+            "salary_amount",
+            "salary_override",
             "created_at",
             "updated_at",
         )
         read_only_fields = fields
+
+    def _can_view_salary(self, obj: ProjectMember) -> bool:
+        """Only org owners, admins, and HR can see salary details."""
+        request = self.context.get("request")
+        if not request or not request.user or not request.user.is_authenticated:
+            return False
+        actor = request.user
+        if actor.is_superuser or actor.is_staff:
+            return True
+        # Get the org from the project
+        try:
+            org = obj.project.organization
+        except Exception:
+            return False
+        from organizations.models import OrganizationMembership
+        return OrganizationMembership.objects.filter(
+            user=actor,
+            organization=org,
+            role__in=[
+                OrganizationMembership.Role.OWNER,
+                OrganizationMembership.Role.ADMIN,
+                OrganizationMembership.Role.HR,
+            ],
+            is_deleted=False,
+        ).exists()
+
+    def get_salary_type(self, obj: ProjectMember):
+        if self._can_view_salary(obj):
+            return obj.salary_type
+        return None
+
+    def get_salary_amount(self, obj: ProjectMember):
+        if self._can_view_salary(obj):
+            return str(obj.salary_amount) if obj.salary_amount is not None else None
+        return None
+
+    def get_salary_override(self, obj: ProjectMember):
+        if self._can_view_salary(obj):
+            return obj.salary_override
+        return None
 
 
 class ProjectMemberWriteSerializer(serializers.ModelSerializer):
@@ -318,6 +364,9 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
             "allocation_start_date",
             "allocation_end_date",
             "is_active",
+            "salary_type",
+            "salary_amount",
+            "salary_override",
         )
 
     def validate(self, attrs: dict) -> dict:

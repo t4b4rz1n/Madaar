@@ -133,6 +133,10 @@ class Project(BaseModel):
 class ProjectMember(BaseModel):
     """Resource Allocation: Assigning users/resources to a project based on specialty and capacity allocation."""
 
+    class SalaryType(models.TextChoices):
+        MONTHLY = "monthly", _("Monthly")
+        HOURLY = "hourly", _("Hourly")
+
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
@@ -186,6 +190,33 @@ class ProjectMember(BaseModel):
         ),
     )
     is_active = models.BooleanField(_("Is active"), default=True, db_index=True)
+
+    # ── Salary fields ───────────────────────────────────────────────────────
+    salary_type = models.CharField(
+        _("Salary type"),
+        max_length=20,
+        choices=SalaryType.choices,
+        null=True,
+        blank=True,
+        help_text=_("Type of salary: monthly or hourly. Copied from org membership by default."),
+    )
+    salary_amount = models.DecimalField(
+        _("Salary amount"),
+        max_digits=20,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text=_("The salary amount for this member in this project."),
+    )
+    salary_override = models.BooleanField(
+        _("Salary override"),
+        default=False,
+        help_text=_(
+            "If True, this project uses a custom salary instead of the organization-level salary. "
+            "When False, changes to the org-level salary will propagate here automatically."
+        ),
+    )
+
 
     class Meta:
         verbose_name = _("Project Member")

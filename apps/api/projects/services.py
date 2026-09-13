@@ -321,6 +321,9 @@ class ProjectMemberService:
             for attr, value in validated_data.items():
                 setattr(existing, attr, value)
             existing.is_active = True
+            # Copy org salary if not explicitly set and not already overridden
+            if not existing.salary_override and not validated_data.get("salary_amount"):
+                cls._copy_org_salary(existing, project)
             existing.save()
             member = existing
         elif reactivated:
@@ -328,9 +331,18 @@ class ProjectMemberService:
             reactivated.is_active = True
             for attr, value in validated_data.items():
                 setattr(reactivated, attr, value)
+            # Copy org salary if not explicitly set
+            if not validated_data.get("salary_amount"):
+                cls._copy_org_salary(reactivated, project)
             reactivated.save()
             member = reactivated
         else:
+            # Copy org salary before creation if not supplied in validated_data
+            if not validated_data.get("salary_amount"):
+                org_salary = cls._get_org_salary(user, project)
+                if org_salary:
+                    validated_data.setdefault("salary_type", org_salary["salary_type"])
+                    validated_data.setdefault("salary_amount", org_salary["salary_amount"])
             member = ProjectMember.objects.create(project=project, **validated_data)
 
         _ActivityLogger.log(
@@ -380,6 +392,36 @@ class ProjectMemberService:
 
         return cls.get_by_pk(member.pk)
 
+    @staticmethod
+    def _get_org_salary(user, project) -> dict | None:
+        """Return org-level salary info for a user in a project's organization."""
+        if not user:
+            return None
+        try:
+            from organizations.models import OrganizationMembership
+            membership = OrganizationMembership.objects.filter(
+                user=user,
+                organization=project.organization,
+                is_deleted=False,
+            ).first()
+            if membership and (membership.salary_type or membership.salary_amount):
+                return {
+                    "salary_type": membership.salary_type,
+                    "salary_amount": membership.salary_amount,
+                }
+        except Exception as exc:
+            logger.warning("Failed to fetch org salary for user %s: %s", user, exc)
+        return None
+
+    @classmethod
+    def _copy_org_salary(cls, member: "ProjectMember", project: Project) -> None:
+        """Copy org-level salary into a ProjectMember instance (does NOT save)."""
+        org_salary = cls._get_org_salary(member.user, project)
+        if org_salary:
+            member.salary_type = org_salary["salary_type"]
+            member.salary_amount = org_salary["salary_amount"]
+
+
     @classmethod
     @transaction.atomic
     def update(
@@ -424,6 +466,75 @@ class ProjectMemberService:
             metadata={"user_id": user_id},
         )
         logger.info("Member %s removed from project %s (by %s)", member.pk, project.pk, actor)
+
+    @classmethod
+    @transaction.atomic
+    def update_salary(
+        cls,
+        *,
+        member: ProjectMember,
+        actor,
+        salary_type: str | None,
+        salary_amount,
+    ) -> ProjectMember:
+        """Set a project-level salary override for a member.
+
+        This marks ``salary_override=True`` so that future changes to the
+        org-level salary will NOT cascade to this member in this project.
+        """
+        member.salary_type = salary_type
+        member.salary_amount = salary_amount
+        member.salary_override = True
+        member.save(update_fields=["salary_type", "salary_amount", "salary_override", "updated_at"])
+
+        _ActivityLogger.log(
+            project=member.project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.MEMBER_UPDATED,
+            entity_type=ProjectActivity.EntityType.MEMBER,
+            entity_id=member.pk,
+            metadata={
+                "salary_type": salary_type,
+                "salary_amount": str(salary_amount) if salary_amount is not None else None,
+                "salary_override": True,
+            },
+        )
+        logger.info(
+            "Project-level salary set for member %s in project %s (by %s)",
+            member.pk,
+            member.project_id,
+            actor,
+        )
+        return cls.get_by_pk(member.pk)
+
+    @classmethod
+    @transaction.atomic
+    def reset_salary_to_org(cls, *, member: ProjectMember, actor) -> ProjectMember:
+        """Reset a member's salary back to the org-level value.
+
+        Clears the ``salary_override`` flag so future org-level changes
+        will again propagate to this member in this project.
+        """
+        cls._copy_org_salary(member, member.project)
+        member.salary_override = False
+        member.save(update_fields=["salary_type", "salary_amount", "salary_override", "updated_at"])
+
+        _ActivityLogger.log(
+            project=member.project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.MEMBER_UPDATED,
+            entity_type=ProjectActivity.EntityType.MEMBER,
+            entity_id=member.pk,
+            metadata={"salary_override": False, "reset_to_org": True},
+        )
+        logger.info(
+            "Salary reset to org-level for member %s in project %s (by %s)",
+            member.pk,
+            member.project_id,
+            actor,
+        )
+        return cls.get_by_pk(member.pk)
+
 
 
 # ---------------------------------------------------------------------------

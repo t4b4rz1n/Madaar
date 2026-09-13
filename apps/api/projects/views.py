@@ -315,6 +315,47 @@ class ProjectMemberViewSet(NestedProjectMixin, viewsets.ModelViewSet):
         ProjectMemberService.remove(member=member, actor=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(
+        summary=_("Update project-level salary for a member"),
+        tags=["projects"],
+        request=None,
+        responses={200: ProjectMemberReadSerializer},
+    )
+    @action(detail=True, methods=["patch"], url_path="salary")
+    def update_salary(self, request, project_pk=None, pk=None):
+        """Set or update a project-specific salary for a member (marks salary_override=True)."""
+        member = self.get_object()
+        salary_type = request.data.get("salary_type")
+        salary_amount = request.data.get("salary_amount")
+
+        if salary_type is None and salary_amount is None:
+            return Response(
+                {"detail": _("Provide at least salary_type or salary_amount.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        updated = ProjectMemberService.update_salary(
+            member=member,
+            actor=request.user,
+            salary_type=salary_type,
+            salary_amount=salary_amount,
+        )
+        return Response(ProjectMemberReadSerializer(updated, context={"request": request}).data)
+
+    @extend_schema(
+        summary=_("Reset salary to organization level"),
+        tags=["projects"],
+        request=None,
+        responses={200: ProjectMemberReadSerializer},
+    )
+    @action(detail=True, methods=["post"], url_path="salary/reset")
+    def reset_salary(self, request, project_pk=None, pk=None):
+        """Remove the project-level salary override and revert to org salary."""
+        member = self.get_object()
+        updated = ProjectMemberService.reset_salary_to_org(member=member, actor=request.user)
+        return Response(ProjectMemberReadSerializer(updated, context={"request": request}).data)
+
+
 
 # ---------------------------------------------------------------------------
 # Milestone ViewSet (nested: /projects/<project_pk>/milestones/)

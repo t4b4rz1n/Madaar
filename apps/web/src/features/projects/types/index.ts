@@ -88,6 +88,9 @@ export interface ProjectMember {
   allocation_start_date?: string;
   allocation_end_date?: string;
   is_active: boolean;
+  salary_type?: "monthly" | "hourly" | null;
+  salary_amount?: string | null;
+  salary_override?: boolean;
   created_at: string;
   updated_at: string;
 }

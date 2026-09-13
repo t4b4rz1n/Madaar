@@ -14,6 +14,7 @@ import {
   Crown,
   Flag,
   Chart,
+  DollarCircle,
 } from "iconsax-reactjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -35,11 +36,13 @@ import { CreateMilestoneModal } from "../components/CreateMilestoneModal";
 import { EditMilestoneModal } from "../components/EditMilestoneModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { ProjectReportView } from "../components/ProjectReportView";
+import { ProjectMemberSalaryPanel } from "../components/ProjectMemberSalaryPanel";
 import { toast } from "sonner";
 import { getUnlinkedTasks, getTask, updateTask, getMilestoneTasks } from "../../tasks/api/tasksApi";
 import { TaskSheet } from "../../tasks/components/TaskSheet";
 
-type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports";
+type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports" | "salaries";
+
 
 const DEFAULT_COLOR = "#6366f1";
 
@@ -240,6 +243,7 @@ const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
   { id: "activity", label: "Activity", icon: <Activity size={15} /> },
   { id: "analytics", label: "Analytics", icon: <Chart size={15} /> },
   { id: "reports", label: "Reports", icon: <Chart size={15} variant="Bold" /> },
+  { id: "salaries", label: "Salaries", icon: <DollarCircle size={15} /> },
 ];
 
 
@@ -977,6 +981,15 @@ export default function ProjectDetailsPage() {
           {/* ── REPORTS TAB ── */}
           {activeTab === "reports" && (
             <ProjectReportView projectId={id || ""} />
+          )}
+          {/* ── SALARIES TAB ── */}
+          {activeTab === "salaries" && (
+            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
+              <h3 className="text-sm font-bold text-base-content border-b border-base-content/8 pb-3">
+                Project Member Salaries
+              </h3>
+              <ProjectMemberSalaryPanel projectId={id || ""} members={members} />
+            </div>
           )}
         </motion.div>
       </AnimatePresence>
