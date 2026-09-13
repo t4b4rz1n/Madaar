@@ -984,12 +984,7 @@ export default function ProjectDetailsPage() {
           )}
           {/* ── SALARIES TAB ── */}
           {activeTab === "salaries" && (
-            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
-              <h3 className="text-sm font-bold text-base-content border-b border-base-content/8 pb-3">
-                Project Member Salaries
-              </h3>
-              <ProjectMemberSalaryPanel projectId={id || ""} members={members} />
-            </div>
+            <ProjectMemberSalaryPanel projectId={id || ""} members={members} />
           )}
         </motion.div>
       </AnimatePresence>
