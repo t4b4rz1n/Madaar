@@ -298,13 +298,17 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def _can_view_salary(self, obj: ProjectMember) -> bool:
-        """Only org owners, admins, and HR can see salary details."""
+        """Only org owners, project owners, and superusers can see salary details."""
         request = self.context.get("request")
         if not request or not request.user or not request.user.is_authenticated:
             return False
         actor = request.user
         if actor.is_superuser or actor.is_staff:
             return True
+            
+        if getattr(obj.project, 'owner_id', None) == actor.id:
+            return True
+            
         # Get the org from the project
         try:
             org = obj.project.organization
@@ -314,11 +318,7 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
         return OrganizationMembership.objects.filter(
             user=actor,
             organization=org,
-            role__in=[
-                OrganizationMembership.Role.OWNER,
-                OrganizationMembership.Role.ADMIN,
-                OrganizationMembership.Role.HR,
-            ],
+            role=OrganizationMembership.Role.OWNER,
             is_deleted=False,
         ).exists()
 
