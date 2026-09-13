@@ -9,7 +9,6 @@ import { usePermissions } from "../auth/hooks/usePermissions";
 import { getVisibleDrawerItems } from "./DrawerItems";
 import {
   useLayoutStore,
-  SIDEBAR_COLLAPSED_WIDTH,
 } from "./store/layoutStore";
 import { getProjects } from "../projects/api/projectsApi";
 import { useTaskStore } from "../tasks/store/useTaskStore";
