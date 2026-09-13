@@ -39,16 +39,6 @@ _DEFAULT_ROLE_PERMISSIONS = {
         "attendance.view_all",
         "finance.view_reports",
     ],
-    "Team Lead": [
-        "notification.view",
-        "project.view",
-        "board.view",
-        "task.view",
-        "task.create",
-        "task.manage_all",
-        "task.review",
-        "report.view_team_lead",
-    ],
     "Hr": [
         "notification.view",
         "project.view",

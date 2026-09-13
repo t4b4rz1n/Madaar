@@ -4,7 +4,6 @@ import {
   Headphone,
   Hierarchy,
   User,
-  Teacher,
   MoneyArchive,
   Setting,
 } from "iconsax-reactjs";
@@ -27,9 +26,6 @@ const roleBadgeClassMap: Record<string, string> = {
   Backend:
     "bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-lime-500/20 text-emerald-300 border border-emerald-400/30 shadow-[0_0_12px_rgba(16,185,129,0.18)]",
 
-  "Team Lead":
-    "bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-yellow-500/20 text-amber-300 border border-amber-400/30 shadow-[0_0_12px_rgba(245,158,11,0.18)]",
-
   Accountant:
     "bg-gradient-to-r from-violet-500/20 via-indigo-500/20 to-purple-500/20 text-violet-300 border border-violet-400/30 shadow-[0_0_12px_rgba(139,92,246,0.18)]",
 };
@@ -40,7 +36,6 @@ const roleIconMap = {
   "Regular User": User,
   Frontend: Code1,
   Backend: Hierarchy,
-  "Team Lead": Teacher,
   Accountant: MoneyArchive,
 } as const;
 
