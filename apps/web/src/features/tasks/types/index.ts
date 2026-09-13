@@ -63,6 +63,35 @@ export interface StandupGridEntry {
   blockers?: string | null;
 }
 
+export interface MyStandupProject {
+  id: string;
+  name: string;
+  prefix: string;
+  color?: string | null;
+  total_hours: string;
+}
+
+export interface MyStandupGridEntry {
+  id: string;
+  project_id: string;
+  /** ISO date (YYYY-MM-DD) */
+  date: string;
+  hours_worked: string;
+  is_complete: boolean;
+  today_work: string;
+  blockers?: string | null;
+}
+
+export interface MyStandupGridData {
+  year: number;
+  month: number;
+  /** Server-side today (ISO date) */
+  today: string;
+  can_write: boolean;
+  projects: MyStandupProject[];
+  entries: MyStandupGridEntry[];
+}
+
 export interface StandupGridData {
   project: {
     id: string;

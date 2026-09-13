@@ -5,7 +5,7 @@ import { PermissionGuard } from '../../auth/components/PermissionGuard';
 import { UserRoute } from '../../../core/router/UserRoute';
 import PageLoader from '../../../components/PageLoader';
 import { TaskManagementPage } from '../pages/TaskManagementPage';
-import { StandupsPage } from '../pages/StandupsPage';
+import { StandupMatrix } from '../components/StandupMatrix';
 
 export const tasksRoutes: RouteObject[] = [
   {
@@ -26,7 +26,7 @@ export const tasksRoutes: RouteObject[] = [
     element: (
       <UserRoute>
         <Suspense fallback={<PageLoader />}>
-          <StandupsPage />
+          <StandupMatrix />
         </Suspense>
       </UserRoute>
     ),

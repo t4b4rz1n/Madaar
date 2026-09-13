@@ -1,21 +1,21 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
   TaskSquare,
   Ticket,
   NoteText,
-  Briefcase,
   Play,
   Stop,
   TickCircle,
-  Add,
   ArrowRight,
   User,
   LogoutCurve,
   Danger,
+  Timer1,
+  Briefcase,
 } from "iconsax-reactjs";
 import { toast } from "sonner";
 import { useAuthStore } from "../../auth/store/authStore";
@@ -28,10 +28,10 @@ import {
   stopTimer,
   getOrganizations,
 } from "../../attendance/api/attendanceApi";
-import { useProjects } from "../../projects/hooks/useProjects";
 import { useTickets } from "../../tickets/hooks/useTickets";
 import { updateTask, getTask } from "../../tasks/api/tasksApi";
 import { StandupModal } from "../../tasks/components/StandupModal";
+import { StandupMatrix } from "../../tasks/components/StandupMatrix";
 import { TaskSheet } from "../../tasks/components/TaskSheet";
 import type { EmployeeTaskSummary } from "../types";
 
@@ -61,63 +61,17 @@ const formatDecimalHours = (
   return `${h}h ${m}m`;
 };
 
-const ProgressRing = ({
-  radius,
-  stroke,
-  progress,
-  color,
-}: {
-  radius: number;
-  stroke: number;
-  progress: number;
-  color: string;
-}) => {
-  const normalizedRadius = radius - stroke * 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = Math.max(0, circumference - (progress / 100) * circumference);
-
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg
-        height={radius * 2}
-        width={radius * 2}
-        className="transform -rotate-90"
-      >
-        <circle
-          stroke="currentColor"
-          fill="transparent"
-          strokeWidth={stroke}
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-          className="opacity-10"
-        />
-        <circle
-          stroke={color}
-          fill="transparent"
-          strokeWidth={stroke}
-          strokeDasharray={circumference + " " + circumference}
-          style={{ strokeDashoffset }}
-          strokeLinecap="round"
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-          className="transition-all duration-1000 ease-in-out"
-          filter={`drop-shadow(0 0 4px ${color}80)`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[11px] font-black text-base-content">
-          {Math.round(progress)}%
-        </span>
-      </div>
-    </div>
-  );
+const formatSeconds = (
+  seconds: number | null | undefined,
+): string => {
+  const value = Math.max(0, Number(seconds || 0));
+  const h = Math.floor(value / 3600);
+  const m = Math.floor((value % 3600) / 60);
+  return `${h}h ${m}m`;
 };
 
 export const UserDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const timezone = useMemo(getTimezone, []);
 
@@ -143,10 +97,7 @@ export const UserDashboardPage = () => {
     queryFn: getOrganizations,
   });
 
-  // 3. Projects Query
-  const { data: projectsData = [] } = useProjects(undefined);
-
-  // 4. Tickets Query
+  // 3. Tickets Query
   const { data: ticketsData } = useTickets(
     new URLSearchParams({ page_size: "10" }),
   );
@@ -275,17 +226,15 @@ export const UserDashboardPage = () => {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 pb-12"
+      className="space-y-4 pb-8"
     >
       {/* ─── 1. Header Bar with Greetings & Quick Actions ─── */}
-      <div className="flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
+      <div className="flex flex-col justify-between gap-2.5 border-b border-base-content/8 pb-3 sm:flex-row sm:items-center">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <h1 className="text-lg font-bold tracking-tight text-base-content sm:text-xl">
               Good day, {displayName} 👋
             </h1>
-          </div>
-          <p className="mt-0.5 text-xs text-base-content/50">
+          <p className="text-xs text-base-content/50">
             {formatDay()} — Your daily command center.
           </p>
         </div>
@@ -297,7 +246,7 @@ export const UserDashboardPage = () => {
               type="button"
               onClick={() => checkOutMutation.mutate()}
               disabled={checkOutMutation.isPending}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/10 px-3.5 text-xs font-bold text-red-500 hover:bg-red-500/20 transition-all"
+              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/10 px-3 text-xs font-bold text-red-500 hover:bg-red-500/20 transition-all"
             >
               <LogoutCurve size={15} />
               <span>Check Out</span>
@@ -307,7 +256,7 @@ export const UserDashboardPage = () => {
               type="button"
               onClick={() => checkInMutation.mutate()}
               disabled={checkInMutation.isPending}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all"
+              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all"
             >
               <User size={15} />
               <span>Check In</span>
@@ -318,7 +267,7 @@ export const UserDashboardPage = () => {
           <button
             type="button"
             onClick={() => setStandupOpen(true)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all"
+            className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all"
           >
             <TickCircle size={15} />
             <span>
@@ -328,10 +277,10 @@ export const UserDashboardPage = () => {
         </div>
       </div>
 
-      {/* ─── 2. Top Metrics Grid (4 Summary Cards) ─── */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {/* Attendance */}
-        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
+      {/* ─── 2. Metrics (3 rows × 2 cards) + My Tasks column spanning all three rows ─── */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] lg:grid-rows-3">
+        {/* ── Row 1 · Attendance ── */}
+        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4 lg:col-start-1 lg:row-start-1">
           <div className="flex items-center justify-between text-base-content/40">
             <span className="text-[10px] font-bold uppercase tracking-wider">
               Attendance
@@ -348,8 +297,8 @@ export const UserDashboardPage = () => {
           </p>
         </div>
 
-        {/* Focus Tasks */}
-        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
+        {/* ── Row 1 · Focus Tasks ── */}
+        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4 lg:col-start-2 lg:row-start-1">
           <div className="flex items-center justify-between text-base-content/40">
             <span className="text-[10px] font-bold uppercase tracking-wider">
               Focus Tasks
@@ -366,26 +315,8 @@ export const UserDashboardPage = () => {
           </p>
         </div>
 
-        {/* Daily Standup */}
-        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-          <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              Daily Standup
-            </span>
-            <NoteText size={16} className="text-emerald-500" />
-          </div>
-          <p className="mt-2 text-base font-bold text-base-content">
-            {dashboard?.today_standup ? "Submitted" : "Pending"}
-          </p>
-          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
-            {dashboard?.today_standup
-              ? `${formatDecimalHours(dashboard.today_standup.hours_worked)} logged`
-              : "Log your daily progress"}
-          </p>
-        </div>
-
-        {/* Active Tickets */}
-        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
+        {/* ── Row 2 · Open Tickets ── */}
+        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4 lg:col-start-1 lg:row-start-2">
           <div className="flex items-center justify-between text-base-content/40">
             <span className="text-[10px] font-bold uppercase tracking-wider">
               Open Tickets
@@ -402,200 +333,109 @@ export const UserDashboardPage = () => {
               : "No active tickets"}
           </p>
         </div>
-      </div>
 
-      {/* ─── 3. Main Dashboard Layout (2 Columns) ─── */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column (2 Cols wide on LG): Tasks & Projects */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Tasks Section */}
-          <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
-              <div className="flex items-center gap-2">
-                <TaskSquare size={16} className="text-primary" />
-                <h2 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                  My Priority Tasks ({allTasks.length})
-                </h2>
-              </div>
-              <Link
-                to="/tasks"
-                className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
-              >
-                <span>View Board</span>
-                <ArrowRight size={13} />
-              </Link>
-            </div>
-
-            {allTasks.length === 0 ? (
-              <div className="py-8 text-center text-xs text-base-content/40">
-                No active tasks assigned to you right now.
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-base-content/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-base-content/20">
-                {allTasks.map((t: EmployeeTaskSummary) => {
-                  const isRunningTimer = dashboard?.active_timers?.some(
-                    (at) => String(at.task_id) === String(t.id),
-                  );
-
-                  return (
-                    <DashboardTaskCard
-                       key={t.id}
-                       task={t}
-                       isRunningTimer={isRunningTimer || false}
-                       onMarkDone={(id) => markDoneMutation.mutate(id)}
-                       onStartTimer={(id) => startTimerMutation.mutate(id)}
-                       onStopTimer={() => stopTimerMutation.mutate(undefined)}
-                       onClickTitle={(id) => setSelectedTaskId(id)}
-                    />
-                  );
-                })}
-              </div>
-            )}
+        {/* ── Row 2 · Daily Standup ── */}
+        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4 lg:col-start-2 lg:row-start-2">
+          <div className="flex items-center justify-between text-base-content/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Daily Standup
+            </span>
+            <NoteText size={16} className="text-emerald-500" />
           </div>
-
-          {/* Active Projects Grid */}
-          <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
-              <div className="flex items-center gap-2">
-                <Briefcase size={16} className="text-primary" />
-                <h2 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                  Active Projects ({projectsData.filter((p: any) => p.status === "active").length})
-                </h2>
-              </div>
-              <Link
-                to="/projects"
-                className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
-              >
-                <span>All Projects</span>
-                <ArrowRight size={13} />
-              </Link>
-            </div>
-
-            {projectsData.filter((p: any) => p.status === "active").length === 0 ? (
-              <div className="py-8 text-center text-xs text-base-content/40">
-                No active projects assigned yet.
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {projectsData.filter((p: any) => p.status === "active").slice(0, 4).map((p: any) => {
-                  const color = p.color || "#6366f1";
-                  const completedMilestones = p.completed_milestone_count || 0;
-                  const totalMilestones = p.milestone_count || 0;
-                  const progress = p.progress_percentage || 0;
-
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => navigate(`/projects/${p.id}`)}
-                      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-base-content/10 bg-base-100/50 backdrop-blur-md p-5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-base-content/5"
-                    >
-                      {/* Decorative colored glow based on project color */}
-                      <div
-                        className="absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40 pointer-events-none"
-                        style={{ backgroundColor: color }}
-                      />
-
-                      <div className="relative z-10 flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          {p.prefix && (
-                            <span className="mb-2 inline-block rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm" style={{ backgroundColor: color }}>
-                              {p.prefix}
-                            </span>
-                          )}
-                          <h3
-                            dir="auto"
-                            className="text-base font-black text-base-content truncate"
-                            title={p.name}
-                          >
-                            {p.name}
-                          </h3>
-                        </div>
-                        <span className="shrink-0 rounded-full bg-base-200 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-base-content/70">
-                          {p.status}
-                        </span>
-                      </div>
-
-                      <div className="relative z-10 mt-6 flex items-end justify-between">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">
-                            Milestone Progress
-                          </span>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-base-content">
-                              {completedMilestones}
-                            </span>
-                            <span className="text-[11px] font-bold text-base-content/40">
-                              / {totalMilestones} Done
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0">
-                          <ProgressRing radius={28} stroke={4} progress={progress} color={color} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <p className="mt-2 text-base font-bold text-base-content">
+            {dashboard?.today_standup ? "Submitted" : "Pending"}
+          </p>
+          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
+            {dashboard?.today_standup
+              ? `${formatDecimalHours(dashboard.today_standup.hours_worked)} logged`
+              : "Log your daily progress"}
+          </p>
         </div>
 
-        {/* Right Column: Standup, Blockers & Tickets */}
-        <div className="space-y-6">
-          {/* Daily Standup Widget */}
-          <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                Today's Standup
-              </h3>
-              <button
-                type="button"
-                onClick={() => setStandupOpen(true)}
-                className="text-xs font-bold text-primary hover:underline"
-              >
-                {dashboard?.today_standup ? "Edit" : "Write"}
-              </button>
-            </div>
-
-            {dashboard?.today_standup ? (
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs space-y-1.5">
-                <div className="flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400">
-                  <span>
-                    Logged{" "}
-                    {formatDecimalHours(dashboard.today_standup.hours_worked)}
-                  </span>
-                  <TickCircle size={15} />
-                </div>
-                {dashboard.today_standup.today_work && (
-                  <p
-                    dir="auto"
-                    className="text-base-content/75 text-[11px] line-clamp-2"
-                  >
-                    {dashboard.today_standup.today_work}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-base-content/15 p-4 text-center">
-                <p className="text-xs text-base-content/50">
-                  You haven't logged today's standup yet.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setStandupOpen(true)}
-                  className="mt-2.5 inline-flex h-8 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
-                >
-                  <Add size={14} /> Log Standup
-                </button>
-              </div>
-            )}
+        {/* ── Row 3 · Weekly Hours ── */}
+        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4 lg:col-start-1 lg:row-start-3">
+          <div className="flex items-center justify-between text-base-content/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Weekly Hours
+            </span>
+            <Timer1 size={16} className="text-violet-500" />
           </div>
+          <p className="mt-2 text-base font-bold text-base-content">
+            {formatSeconds(dashboard?.weekly_time?.total_seconds)}
+          </p>
+          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
+            {`${dashboard?.weekly_time?.total_logs ?? 0} time logs this week`}
+          </p>
+        </div>
+
+        {/* ── Row 3 · Active Projects ── */}
+        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4 lg:col-start-2 lg:row-start-3">
+          <div className="flex items-center justify-between text-base-content/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Active Projects
+            </span>
+            <Briefcase size={16} className="text-teal-500" />
+          </div>
+          <p className="mt-2 text-base font-bold text-base-content">
+            {dashboard?.active_projects?.length ?? 0}{" "}
+            {(dashboard?.active_projects?.length ?? 0) === 1
+              ? "Project"
+              : "Projects"}
+          </p>
+          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
+            {dashboard?.active_projects?.length
+              ? "Currently assigned to you"
+              : "No active projects"}
+          </p>
+        </div>
+
+        {/* ── Column 3 · My Tasks (spans all three rows) ── */}
+        <div className="flex flex-col rounded-xl border border-base-content/8 bg-base-100 p-4 lg:col-start-3 lg:row-span-3 lg:row-start-1">
+          <div className="flex items-center justify-between border-b border-base-content/8 pb-2.5">
+            <div className="flex items-center gap-2">
+              <TaskSquare size={15} className="text-primary" />
+              <h2 className="text-[11px] font-bold text-base-content uppercase tracking-wider">
+                My Tasks ({allTasks.length})
+              </h2>
+            </div>
+            <Link
+              to="/tasks"
+              className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1"
+            >
+              <span>Board</span>
+              <ArrowRight size={12} />
+            </Link>
+          </div>
+
+          {allTasks.length === 0 ? (
+            <div className="py-6 text-center text-xs text-base-content/40">
+              No active tasks assigned to you right now.
+            </div>
+          ) : (
+            <div className="mt-3 min-h-0 max-h-[21rem] flex-1 space-y-2 overflow-y-auto pe-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {allTasks.map((t: EmployeeTaskSummary) => {
+                const isRunningTimer = dashboard?.active_timers?.some(
+                  (at) => String(at.task_id) === String(t.id),
+                );
+
+                return (
+                  <DashboardTaskCard
+                     key={t.id}
+                     task={t}
+                     isRunningTimer={isRunningTimer || false}
+                     onMarkDone={(id) => markDoneMutation.mutate(id)}
+                     onStartTimer={(id) => startTimerMutation.mutate(id)}
+                     onStopTimer={() => stopTimerMutation.mutate(undefined)}
+                     onClickTitle={(id) => setSelectedTaskId(id)}
+                  />
+                );
+              })}
+            </div>
+          )}
 
           {/* Blocked Tasks Widget */}
           {dashboard?.blocked_tasks && dashboard.blocked_tasks.length > 0 && (
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
+            <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                 <Danger size={16} />
                 <h3 className="text-xs font-bold uppercase tracking-wider">
@@ -627,54 +467,12 @@ export const UserDashboardPage = () => {
               </div>
             </div>
           )}
-
-          {/* Support Tickets Widget */}
-          <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                Support Tickets
-              </h3>
-              <Link
-                to="/tickets"
-                className="text-xs font-bold text-primary hover:underline"
-              >
-                View all
-              </Link>
-            </div>
-
-            {openTickets.length === 0 ? (
-              <p className="py-4 text-center text-xs text-base-content/40">
-                No open tickets right now.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {openTickets.slice(0, 3).map((t: any) => (
-                  <div
-                    key={t.id}
-                    onClick={() => navigate(`/tickets/${t.id}`)}
-                    className="flex items-center justify-between gap-2 rounded-xl border border-base-content/6 bg-base-200/40 p-2.5 text-xs cursor-pointer hover:bg-base-200/70 transition"
-                  >
-                    <div className="min-w-0">
-                      <p
-                        dir="auto"
-                        className="font-bold text-base-content truncate"
-                      >
-                        {t.subject || t.title}
-                      </p>
-                      <span className="text-[10px] text-base-content/45 capitalize">
-                        {t.status}
-                      </span>
-                    </div>
-                    <ArrowRight
-                      size={13}
-                      className="shrink-0 text-base-content/40"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
+      </div>
+
+      {/* ─── 3. Standup Matrix (full width, nothing beside) ─── */}
+      <div className="min-w-0">
+        <StandupMatrix title="Standup Matrix" />
       </div>
 
       {/* Standup & Task Modals */}
@@ -801,10 +599,11 @@ function DashboardTaskCard({
                 <button
                   type="button"
                   onClick={() => onStartTimer(String(task.id))}
-                  className="inline-flex h-7 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-[11px] font-bold text-primary hover:bg-primary/20"
+                  aria-label="Start focus timer"
+                  title="Start focus timer"
+                  className="inline-flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20"
                 >
                   <Play size={12} variant="Bold" />
-                  <span>Focus</span>
                 </button>
               )}
             </div>

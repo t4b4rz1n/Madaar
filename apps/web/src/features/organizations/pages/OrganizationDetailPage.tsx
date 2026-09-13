@@ -40,7 +40,7 @@ const formatSalary = (amount?: string | null, type?: string | null) => {
   if (!amount || !type) return null;
   const num = parseFloat(amount);
   if (isNaN(num)) return null;
-  
+
   // Format number with commas (e.g. 100,000)
   const formatted = num.toLocaleString('en-US');
   const typeText = type.toLowerCase() === 'hourly' ? '/hr' : '/mo';

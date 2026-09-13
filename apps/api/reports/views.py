@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from projects.models import Milestone, ProjectMember
+from projects.models import Milestone
 
 from .permissions import IsEmployeeOrAbove, IsExecutive, IsManagerOrAbove
 from .serializers import (
@@ -265,8 +265,6 @@ class CumulativeFlowView(APIView):
         serializer = CfdSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
     def _check_project_access(self, user, project_id):
         if user.is_staff or user.is_superuser:
             return
@@ -281,7 +279,9 @@ class CumulativeFlowView(APIView):
             )
         except Project.DoesNotExist:
             from rest_framework.exceptions import PermissionDenied
+
             raise PermissionDenied("You do not have access to this project.")
+
     @staticmethod
     def _parse_date(value) -> datetime.date | None:
         if not value:
@@ -341,20 +341,17 @@ class MilestoneBurndownView(APIView):
         if user.is_staff or user.is_superuser:
             return
         try:
-            m = Milestone.objects.select_related("project").get(
-                pk=milestone_id, is_deleted=False
-            )
+            m = Milestone.objects.select_related("project").get(pk=milestone_id, is_deleted=False)
         except Milestone.DoesNotExist:
             raise NotFound("Milestone not found.")
 
         from projects.services import ProjectService
 
         try:
-            ProjectService.get_accessible_queryset(user).get(
-                pk=m.project_id, is_deleted=False
-            )
+            ProjectService.get_accessible_queryset(user).get(pk=m.project_id, is_deleted=False)
         except Exception:
             from rest_framework.exceptions import PermissionDenied
+
             raise PermissionDenied("You do not have access to this project.")
 
 
@@ -419,7 +416,7 @@ class CycleLeadTimeView(APIView):
     )
     def get(self, request, project_id):
         self._check_project_access(request.user, project_id)
-        
+
         board_id = request.query_params.get("board_id")
         assignee_id = request.query_params.get("assignee_id")
         tz_name = request.query_params.get("tz", "UTC")
@@ -446,7 +443,6 @@ class CycleLeadTimeView(APIView):
         except ValueError:
             raise ParseError(f"Invalid date format: '{value}'. Use YYYY-MM-DD.")
 
-
     def _check_project_access(self, user, project_id):
         if user.is_staff or user.is_superuser:
             return
@@ -460,4 +456,5 @@ class CycleLeadTimeView(APIView):
             )
         except Project.DoesNotExist:
             from rest_framework.exceptions import PermissionDenied
+
             raise PermissionDenied("You do not have access to this project.")

@@ -1,4 +1,3 @@
-from calendar import monthrange
 from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
@@ -619,6 +618,15 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
         if month:
             qs = qs.filter(date__month=month)
 
+        # Optional inclusive ISO date range (YYYY-MM-DD) — used by the
+        # Jalali-aware self grid, which spans two Gregorian months.
+        start_date = params.get("start_date")
+        end_date = params.get("end_date")
+        if start_date:
+            qs = qs.filter(date__gte=start_date)
+        if end_date:
+            qs = qs.filter(date__lte=end_date)
+
         return qs.distinct()
 
     def perform_create(self, serializer):
@@ -659,6 +667,7 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
             end_date_str = request.query_params.get("end_date")
             if start_date_str and end_date_str:
                 from datetime import datetime
+
                 first_day = datetime.strptime(start_date_str, "%Y-%m-%d").date()
                 last_day = datetime.strptime(end_date_str, "%Y-%m-%d").date()
                 days_in_month = (last_day - first_day).days + 1
@@ -670,6 +679,7 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
                     )
                 first_day = date(year, month, 1)
                 from calendar import monthrange
+
                 days_in_month = monthrange(year, month)[1]
                 last_day = first_day + timedelta(days=days_in_month - 1)
         except (TypeError, ValueError):
@@ -723,8 +733,6 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
                 {"detail": _("You do not have access to this project's standups.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
-
-
 
         User = get_user_model()
 
@@ -815,6 +823,123 @@ class AsyncStandupViewSet(viewsets.ModelViewSet):
                 "today": today.isoformat(),
                 "can_write": bool(is_super or is_project_member or is_org_manager),
                 "members": members_payload,
+                "entries": entries_payload,
+            }
+        )
+
+    # ── Personal grid (project × day matrix) ──────────────────────────
+
+    @extend_schema(
+        description=(
+            "Personal standup grid of the signed-in user: project rows × day "
+            "columns, across every project they logged a standup on. "
+            "Used on the Today & Focus page for regular members, who may not "
+            "see other members' hours."
+        ),
+        parameters=[
+            OpenApiParameter("year", int, OpenApiParameter.QUERY),
+            OpenApiParameter("month", int, OpenApiParameter.QUERY),
+            OpenApiParameter("start_date", str, OpenApiParameter.QUERY),
+            OpenApiParameter("end_date", str, OpenApiParameter.QUERY),
+        ],
+        responses={200: dict},
+    )
+    @action(detail=False, methods=["get"], url_path="my-grid")
+    def my_grid(self, request):
+        user = request.user
+        today = timezone.localdate()
+
+        try:
+            year = int(request.query_params.get("year") or today.year)
+            month = int(request.query_params.get("month") or today.month)
+            start_date_str = request.query_params.get("start_date")
+            end_date_str = request.query_params.get("end_date")
+            if start_date_str and end_date_str:
+                from datetime import datetime
+
+                first_day = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                last_day = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+            else:
+                if not 1 <= month <= 12:
+                    return Response(
+                        {"detail": _("Month must be between 1 and 12.")},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                from calendar import monthrange
+
+                first_day = date(year, month, 1)
+                last_day = first_day + timedelta(days=monthrange(year, month)[1] - 1)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": _("Invalid date parameters.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        entries = list(
+            AsyncStandup.objects.filter(
+                user=user,
+                is_deleted=False,
+                date__gte=first_day,
+                date__lte=last_day,
+            )
+            .select_related("project")
+            .order_by("project_id", "date")
+        )
+
+        totals = {}
+        for entry in entries:
+            key = entry.project_id
+            totals[key] = totals.get(key, 0) + entry.hours_worked
+
+        # Rows = every project the user is an active member of (or owns), not
+        # only the ones they already logged a standup on. Otherwise a member
+        # with no logs yet gets an empty grid instead of an editable one.
+        member_project_ids = ProjectMember.objects.filter(
+            user=user,
+            is_active=True,
+            is_deleted=False,
+        ).values_list("project_id", flat=True)
+
+        user_projects = (
+            Project.objects.filter(
+                Q(id__in=member_project_ids) | Q(owner=user),
+                is_deleted=False,
+            )
+            .distinct()
+            .order_by("name")
+        )
+
+        projects_payload = [
+            {
+                "id": str(project.id),
+                "name": project.name,
+                "prefix": project.prefix,
+                "color": getattr(project, "color", None),
+                "total_hours": str(totals.get(project.id) or 0),
+            }
+            for project in user_projects
+        ]
+
+        entries_payload = [
+            {
+                "id": str(entry.id),
+                "project_id": str(entry.project_id),
+                "date": entry.date.isoformat(),
+                "hours_worked": str(entry.hours_worked),
+                "is_complete": bool((entry.today_work or "").strip()),
+                "today_work": entry.today_work,
+                "blockers": entry.blockers,
+            }
+            for entry in entries
+        ]
+
+        return Response(
+            {
+                "year": year,
+                "month": month,
+                "today": today.isoformat(),
+                "can_write": True,
+                "projects": projects_payload,
                 "entries": entries_payload,
             }
         )

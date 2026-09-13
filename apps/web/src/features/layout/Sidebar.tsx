@@ -7,7 +7,10 @@ import { useLogout } from "../auth/hooks/useAuth";
 import { useAuthStore } from "../auth/store/authStore";
 import { usePermissions } from "../auth/hooks/usePermissions";
 import { getVisibleDrawerItems } from "./DrawerItems";
-import { useLayoutStore } from "./store/layoutStore";
+import {
+  useLayoutStore,
+  SIDEBAR_COLLAPSED_WIDTH,
+} from "./store/layoutStore";
 import { getProjects } from "../projects/api/projectsApi";
 import { useTaskStore } from "../tasks/store/useTaskStore";
 import logoUrl from "/images/base-logo1.png";
@@ -84,7 +87,7 @@ export const Sidebar = () => {
         } transition-transform duration-300 ease-in-out lg:translate-x-0`}
       >
         {/* Header Logo */}
-        <div className="flex h-[72px] items-center justify-between border-b border-base-content/8 px-4">
+        <div className="flex h-14 items-center justify-between border-b border-base-content/8 px-4">
           <AnimatePresence>
             {!isCollapsed && (
               <motion.img

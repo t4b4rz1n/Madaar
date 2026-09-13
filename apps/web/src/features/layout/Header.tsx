@@ -39,7 +39,7 @@ export const Header = ({
       variants={headerVariants}
       initial="hidden"
       animate="visible"
-      className="madaar-glass sticky top-0 z-30 flex min-h-[72px] items-center justify-between px-4 sm:px-8"
+      className="madaar-glass sticky top-0 z-30 flex min-h-14 items-center justify-between px-4 sm:px-8"
     >
       <div className="flex min-w-0 items-center gap-2">
         <motion.button

@@ -135,7 +135,7 @@ class UserListSerializer(serializers.ModelSerializer):
             user=actor,
             organization=org,
             role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
-            is_deleted=False
+            is_deleted=False,
         ).exists()
 
     def get_salary_type(self, obj):
@@ -151,7 +151,6 @@ class UserListSerializer(serializers.ModelSerializer):
         return None
 
 
-
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True, required=True, style={"input_type": "password"}
@@ -160,7 +159,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
     organization_id = serializers.UUIDField(required=False, write_only=True, allow_null=True)
     role_id = serializers.CharField(write_only=True, required=False, allow_null=True)
     salary_type = serializers.CharField(write_only=True, required=False, allow_null=True)
-    salary_amount = serializers.DecimalField(max_digits=12, decimal_places=2, write_only=True, required=False, allow_null=True)
+    salary_amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, write_only=True, required=False, allow_null=True
+    )
 
     class Meta:
         model = User
@@ -298,8 +299,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
                         is_salary_manager = OrganizationMembership.objects.filter(
                             user=actor,
                             organization=org,
-                            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
-                            is_deleted=False
+                            role__in=[
+                                OrganizationMembership.Role.OWNER,
+                                OrganizationMembership.Role.ADMIN,
+                            ],
+                            is_deleted=False,
                         ).exists()
                     if is_salary_manager:
                         if salary_type is not None:
@@ -311,6 +315,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 role_obj = None
                 if role_id:
                     import uuid
+
                     try:
                         role_uuid = uuid.UUID(role_id)
                         role_obj = (
@@ -391,7 +396,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=False)
     role_id = serializers.CharField(write_only=True, required=False, allow_null=True)
     salary_type = serializers.CharField(write_only=True, required=False, allow_null=True)
-    salary_amount = serializers.DecimalField(max_digits=12, decimal_places=2, write_only=True, required=False, allow_null=True)
+    salary_amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, write_only=True, required=False, allow_null=True
+    )
 
     class Meta:
         model = User
@@ -485,8 +492,11 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                             is_salary_manager = OrganizationMembership.objects.filter(
                                 user=actor,
                                 organization=org,
-                                role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
-                                is_deleted=False
+                                role__in=[
+                                    OrganizationMembership.Role.OWNER,
+                                    OrganizationMembership.Role.ADMIN,
+                                ],
+                                is_deleted=False,
                             ).exists()
                         if is_salary_manager:
                             if salary_type is not None:
@@ -499,6 +509,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                         membership.save()
                     else:
                         import uuid
+
                         role_obj = None
                         try:
                             role_uuid = uuid.UUID(role_id)
@@ -510,7 +521,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                             )
                         except ValueError:
                             pass
-                        
+
                         if not role_obj:
                             role_obj = (
                                 Role.objects.filter(

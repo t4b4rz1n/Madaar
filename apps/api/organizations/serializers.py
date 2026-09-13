@@ -148,15 +148,18 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
     def _can_manage_salary(self, membership):
         request = self.context.get("request")
         actor = request.user if request and request.user and request.user.is_authenticated else None
-        if not actor: return False
-        if actor.is_superuser: return True
+        if not actor:
+            return False
+        if actor.is_superuser:
+            return True
         org = membership.organization
-        if org.owner == actor: return True
+        if org.owner == actor:
+            return True
         return OrganizationMembership.objects.filter(
             user=actor,
             organization=org,
             role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
-            is_deleted=False
+            is_deleted=False,
         ).exists()
 
     def get_salary_type(self, obj):
@@ -168,7 +171,6 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
         if self._can_manage_salary(obj):
             return str(obj.salary_amount) if obj.salary_amount else None
         return None
-
 
 
 class AddOrgMemberSerializer(serializers.Serializer):

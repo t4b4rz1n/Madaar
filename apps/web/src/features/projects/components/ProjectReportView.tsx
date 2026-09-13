@@ -227,14 +227,14 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                     </span>
                   </div>
                   <div className="h-1.5 w-full bg-base-content/10 rounded-full overflow-hidden mb-4">
-                    <motion.div 
+                    <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${member.totalTasks > 0 ? (member.completedTasks / member.totalTasks) * 100 : 0}%` }}
                       transition={{ duration: 0.8, ease: "easeOut" }}
                       className="h-full bg-emerald-500 rounded-full"
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between bg-primary/5 rounded-xl px-4 py-3 border border-primary/10">
                     <div className="flex items-center gap-2 text-primary">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>

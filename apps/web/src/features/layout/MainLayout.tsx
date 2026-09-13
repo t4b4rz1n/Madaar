@@ -14,7 +14,7 @@ import { Sidebar } from "./Sidebar";
 import { useLayoutStore } from "./store/layoutStore";
 
 export const MainLayout = () => {
-  const { setSidebarOpen } = useLayoutStore();
+  const setSidebarOpen = useLayoutStore((state) => state.setSidebarOpen);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);

@@ -7,6 +7,7 @@ import type {
   TaskActivityLog,
   AsyncStandup,
   StandupGridData,
+  MyStandupGridData,
   User,
   PaginatedResponse,
 } from '../types';
@@ -203,6 +204,20 @@ export const getStandups = async (projectId?: string): Promise<AsyncStandup[]> =
     { params },
   );
   return extractData<AsyncStandup>(res);
+};
+
+/**
+ * Personal standup grid (project rows x day columns) for the signed-in user.
+ * Regular members cannot see other members, so their matrix is grouped by
+ * project instead of by teammate.
+ */
+export const getMyStandupGrid = async (
+  params: { year?: number; month?: number; start_date?: string; end_date?: string },
+): Promise<MyStandupGridData> => {
+  const data = await ApiService.get<MyStandupGridData>('/tasks/standups/my-grid/', {
+    params,
+  });
+  return (data as any).data ?? data;
 };
 
 export const createStandup = async (payload: StandupPayload): Promise<AsyncStandup> => {

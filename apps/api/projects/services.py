@@ -101,7 +101,6 @@ class ProjectService:
             ),
         )
 
-
     @classmethod
     def get_accessible_queryset(cls, user) -> QuerySet[Project]:
         """Return projects accessible by the given user."""

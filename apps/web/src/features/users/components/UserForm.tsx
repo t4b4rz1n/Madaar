@@ -26,9 +26,9 @@ export const UserForm = ({
 
   const currentUser = useAuthStore((state) => state.user) as any;
   const canEditStaff = !!currentUser?.is_staff;
-  
+
   const roleNameStr = (currentUser?.role_name || currentUser?.role?.name || "").toLowerCase();
-  
+
   // If the user being edited already has a salary populated, it means the backend
   // allowed us to see it, so we can edit it. Otherwise fallback to role check.
   const formSalaryType = control._defaultValues?.salary_type;
