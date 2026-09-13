@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Lock, Message, TickSquare, User, Hierarchy, CardCoin, Coin1 } from "iconsax-reactjs";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import InputField from "../../../components/InputField";
 import { useAuthStore } from "../../auth/store/authStore";
 import { useRoles } from "../../roles/hooks/useRoles";
@@ -29,10 +29,12 @@ export const UserForm = ({
   
   const roleNameStr = (currentUser?.role_name || currentUser?.role?.name || "").toLowerCase();
   
-  // If the user being edited already has a salary populated, it means the backend
-  // allowed us to see it, so we can edit it. Otherwise fallback to role check.
-  const formSalaryType = control._defaultValues?.salary_type;
-  const canEditSalary = canEditStaff || roleNameStr === "owner" || roleNameStr === "admin" || formSalaryType !== undefined;
+  // Watch salary_type reactively — if backend returned a value, it won't be null after reset()
+  const watchedSalaryType = useWatch({ control, name: "salary_type" });
+  // canEditSalary: true if admin/staff/owner, OR if the backend already returned a salary value
+  // (backend only sends salary fields to users who have permission to see them)
+  const canEditSalary = canEditStaff || roleNameStr === "owner" || roleNameStr === "admin" || watchedSalaryType != null;
+
 
   return (
     <motion.div

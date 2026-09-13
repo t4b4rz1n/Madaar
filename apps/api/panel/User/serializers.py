@@ -471,9 +471,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                     org = Organization.objects.filter(is_deleted=False).first()
 
                 if org:
-                    membership, _ = OrganizationMembership.objects.get_or_create(
-                        user=user, organization=org, is_deleted=False
+                    membership = (
+                        OrganizationMembership.objects.filter(
+                            user=user, organization=org, is_deleted=False
+                        ).first()
                     )
+                    if not membership:
+                        membership = OrganizationMembership.objects.create(
+                            user=user, organization=org, is_deleted=False
+                        )
 
                     if salary_type is not None or salary_amount is not None:
                         is_salary_manager = False
