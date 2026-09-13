@@ -363,7 +363,7 @@ export const CustomDatePicker = ({
                   onClick={handleJumpToToday}
                   className="text-primary text-sm font-medium hover:underline"
                 >
-                  {isJalali ? "امروز" : "Jump to Today"}
+                  Jump to Today
                 </button>
                 <div className="flex gap-2">
                   <button
@@ -371,14 +371,14 @@ export const CustomDatePicker = ({
                     onClick={handleCancel}
                     className="btn btn-sm btn-ghost rounded-lg"
                   >
-                    {isJalali ? "انصراف" : "Cancel"}
+                    Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleConfirm}
                     className="btn btn-sm btn-primary rounded-lg"
                   >
-                    <TickCircle size={16} /> {isJalali ? "تأیید" : "Confirm"}
+                    <TickCircle size={16} /> Confirm
                   </button>
                 </div>
               </div>
