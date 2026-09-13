@@ -24,6 +24,7 @@ export const useProfileQuery = (refetchInterval: number | false = false) => {
           profile_image_url: response.data.avatar_url,
           notify_via_email: response.data.notify_via_email,
           notify_via_telegram: response.data.notify_via_telegram,
+          calendar_preference: response.data.calendar_preference,
         });
       }
       return response.data;
@@ -50,6 +51,7 @@ export const useUpdateProfile = () => {
           profile_image_url: response.data.avatar_url,
           notify_via_email: response.data.notify_via_email,
           notify_via_telegram: response.data.notify_via_telegram,
+          calendar_preference: response.data.calendar_preference,
         });
       }
     },

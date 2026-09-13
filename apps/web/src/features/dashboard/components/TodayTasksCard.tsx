@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { ArrowRight, Calendar, Play, TaskSquare, TickCircle, Timer1 } from "iconsax-reactjs";
 import { Link } from "react-router-dom";
 import type { EmployeeTaskSummary } from "../types";
@@ -20,10 +21,10 @@ const priorityClass: Record<string, string> = {
   low: "bg-base-200 text-base-content/50",
 };
 
-const dueLabel = (dueDate: string | null, overdue: boolean) => {
+const dueLabel = (dueDate: string | null | undefined, overdue: boolean) => {
   if (overdue) return "Overdue";
   if (!dueDate) return "No due date";
-  return `Due ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(dueDate))}`;
+  return `Due ${formatDisplayDate(new Date(dueDate), "MMM d")}`;
 };
 
 export const TodayTasksCard = ({ tasks, overdueTasks, activeTaskIds = [], onSelectTask, onMarkDone, startingTaskId, onStart }: TodayTasksCardProps) => {

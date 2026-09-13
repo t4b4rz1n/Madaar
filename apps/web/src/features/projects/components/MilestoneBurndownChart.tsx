@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -320,7 +321,7 @@ function Header({
           {data.milestone.title}
         </h3>
         <p style={{ margin: "4px 0 0", fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>
-          {data.start_date} → {data.target_date}
+          {formatDisplayDate(data.start_date || "", "yyyy-MM-dd")} → {formatDisplayDate(data.target_date || "", "yyyy-MM-dd")}
         </p>
       </div>
       <div style={{ display: "flex", gap: 6 }}>
@@ -368,7 +369,7 @@ function StatBadge({
       }}
     >
       <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>
-      <div className="text-[11px] mt-[2px] opacity-70" style={{ color: "var(--color-base-content)" }}>{label}</div>
+      <div className="text-[11px] mt-[2px] opacity-70" style={{ color: "var(--color-base-content)" }}>{formatDisplayDate(label, "MMM d, yyyy")}</div>
     </div>
   );
 }
@@ -385,7 +386,7 @@ const BurndownTooltip = ({ active, payload, label }: any) => {
         fontSize: 12,
       }}
     >
-      <p style={{ margin: "0 0 6px", color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>{label}</p>
+      <p style={{ margin: "0 0 6px", color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>{formatDisplayDate(label, "MMM d, yyyy")}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ margin: "2px 0", color: p.color }}>
           {p.name}: {p.value}
@@ -454,7 +455,4 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
-const shortDate = (v: string) => {
-  const d = new Date(v);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-};
+const shortDate = (v: string) => formatDisplayDate(v, "M/d");;

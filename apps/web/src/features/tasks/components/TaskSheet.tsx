@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Add,
@@ -507,20 +508,29 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
             {/* Due Date Picker Pill */}
             <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[11px] font-semibold text-base-content/70 hover:bg-base-200 transition">
               <Calendar size={13} className="me-1.5 text-base-content/45 shrink-0" />
-              <input
-                ref={dueDateInputRef}
-                type="datetime-local"
-                value={dueDate}
-                onChange={(e) => {
-                  setDueDate(e.target.value);
-                  save({
-                    due_date: e.target.value
-                      ? new Date(e.target.value).toISOString()
-                      : undefined,
-                  });
-                }}
-                className="bg-transparent font-semibold text-base-content outline-none cursor-pointer max-w-[125px]"
-              />
+              <div className="flex items-center gap-1">
+                <CustomDatePicker
+                  value={dueDate ? dueDate.split('T')[0] : ''}
+                  onChange={(date) => {
+                    const time = dueDate ? (dueDate.split('T')[1] || '00:00') : '00:00';
+                    const newVal = `${date}T${time}`;
+                    setDueDate(newVal);
+                    save({ due_date: new Date(newVal).toISOString() });
+                  }}
+                  triggerClassName="bg-transparent font-semibold text-base-content outline-none cursor-pointer w-[80px]"
+                />
+                <input
+                  type="time"
+                  value={dueDate ? dueDate.split('T')[1]?.slice(0, 5) : ''}
+                  onChange={(e) => {
+                    const date = dueDate ? dueDate.split('T')[0] : new Date().toISOString().split('T')[0];
+                    const newVal = `${date}T${e.target.value}`;
+                    setDueDate(newVal);
+                    save({ due_date: new Date(newVal).toISOString() });
+                  }}
+                  className="bg-transparent font-semibold text-base-content outline-none cursor-pointer w-[60px]"
+                />
+              </div>
             </div>
 
             {/* Timer Control Pill */}

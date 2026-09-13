@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getTeamTimesheet } from '../api/attendanceApi';
@@ -75,7 +76,7 @@ export const TeamTimesheetView: React.FC = () => {
             <ArrowLeft2 size={18} />
           </button>
           <span className="min-w-[140px] text-center text-xs font-bold text-base-content/60">
-            {format(currentWeek, 'MMM dd')} - {format(addDays(currentWeek, 6), 'MMM dd, yyyy')}
+            {formatDisplayDate(currentWeek, 'MMM dd')} - {formatDisplayDate(addDays(currentWeek, 6), 'MMM dd, yyyy')}
           </span>
           <button type="button" onClick={nextWeek} className="grid size-8 place-items-center rounded-lg text-base-content/45 transition-colors hover:bg-base-100 hover:text-base-content">
             <ArrowRight2 size={18} />
@@ -102,8 +103,8 @@ export const TeamTimesheetView: React.FC = () => {
                 <th className="px-6 py-4 text-center font-bold text-success">Total</th>
                 {weekDates.map((date, i) => (
                   <th key={i} className="px-4 py-4 font-semibold text-center">
-                    <div className="text-base-content/40">{format(date, 'EEE')}</div>
-                    <div className="mt-1 text-base-content/80">{format(date, 'dd')}</div>
+                    <div className="text-base-content/40">{formatDisplayDate(date, 'EEE')}</div>
+                    <div className="mt-1 text-base-content/80">{formatDisplayDate(date, 'dd')}</div>
                   </th>
                 ))}
               </tr>

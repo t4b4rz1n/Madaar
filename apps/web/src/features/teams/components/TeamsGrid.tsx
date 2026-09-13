@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { motion } from "framer-motion";
 import { Edit2, People, Profile2User, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
@@ -140,7 +141,7 @@ export const TeamsGrid = ({
 
          <div className="flex items-end justify-between gap-3 rounded-b-2xl border-t border-base-content/5 bg-base-200/20 px-5 pb-5 pt-3 sm:px-6 sm:pb-6">
             <div className="text-xs text-base-content/50">
-              {new Date(team.created_at ?? "").toLocaleDateString()}
+              {formatDisplayDate(team.created_at ?? "", "yyyy-MM-dd")}
             </div>
             {canManage && (
               <div className="flex items-center gap-2">

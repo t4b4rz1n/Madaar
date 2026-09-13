@@ -1,8 +1,9 @@
+import { formatDisplayDate } from "../../../utils/date";
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTimeOffRequests, approveTimeOffRequest, rejectTimeOffRequest, cancelTimeOffRequest } from '../api/attendanceApi';
 import { useAttendanceStore } from '../store/useAttendanceStore';
-import { format } from 'date-fns';
+
 import { TickCircle, CloseCircle, Trash, DocumentText, CloseSquare } from 'iconsax-reactjs';
 import { toast } from 'sonner';
 
@@ -275,8 +276,8 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                     </td>
                     <td className="px-6 py-4 capitalize font-medium">{req.request_type}</td>
                     <td className="px-6 py-4">
-                      <div className="text-base-content/90">{format(new Date(req.start_datetime), 'MMM dd, HH:mm')}</div>
-                      <div className="text-xs text-base-content/40">to {format(new Date(req.end_datetime), 'MMM dd, HH:mm')}</div>
+                      <div className="text-base-content/90">{formatDisplayDate(new Date(req.start_datetime), 'MMM d, HH:mm')}</div>
+                      <div className="text-xs text-base-content/40">to {formatDisplayDate(new Date(req.end_datetime), 'MMM d, HH:mm')}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 text-[11px] uppercase tracking-wider font-bold rounded-full border ${getStatusColor(req.status)}`}>

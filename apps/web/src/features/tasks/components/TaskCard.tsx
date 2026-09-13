@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { createPortal } from "react-dom";
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -304,7 +305,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 {task.due_date && (
                   <div className={`flex items-center gap-1 ${isOverdue && !isActuallyDone ? 'text-red-500 font-bold bg-red-500/10 px-1.5 py-0.5 rounded-md -ml-1' : ''}`} title="Due date">
                     <Calendar1 size={13} variant={isOverdue && !isActuallyDone ? "Bold" : "Linear"} />
-                    <span>{new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span>{formatDisplayDate(task.due_date, "MMM d")}</span>
                   </div>
                 )}
                 {task.milestone_detail && (

@@ -1,8 +1,9 @@
+import { formatDisplayDate } from "../../../utils/date";
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getHolidays } from '../api/attendanceApi';
 import { CalendarTick } from 'iconsax-reactjs';
-import { format } from 'date-fns';
+
 
 export const HolidayCalendar: React.FC<{ year?: number }> = ({ year = new Date().getFullYear() }) => {
   const { data: holidays = [], isLoading } = useQuery({
@@ -32,8 +33,8 @@ export const HolidayCalendar: React.FC<{ year?: number }> = ({ year = new Date()
             {holidays.map(holiday => (
               <div key={holiday.id} className="flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/45 p-4 transition-colors hover:border-warning/30 hover:bg-base-200/75">
                 <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-warning/10 text-warning">
-                  <span className="text-xs font-semibold uppercase">{format(new Date(holiday.date), 'MMM')}</span>
-                  <span className="text-xl font-bold leading-none">{format(new Date(holiday.date), 'dd')}</span>
+                  <span className="text-xs font-semibold uppercase">{formatDisplayDate(new Date(holiday.date), 'MMM')}</span>
+                  <span className="text-xl font-bold leading-none">{formatDisplayDate(new Date(holiday.date), 'dd')}</span>
                 </div>
                 <div>
                   <h3 className="font-semibold text-base-content">{holiday.name}</h3>

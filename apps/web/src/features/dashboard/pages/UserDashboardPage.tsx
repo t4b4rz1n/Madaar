@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -43,13 +44,7 @@ const getTimezone = () => {
   }
 };
 
-const formatDay = () =>
-  new Intl.DateTimeFormat("en", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date());
+const formatDay = () => formatDisplayDate(new Date(), "EEEE, MMMM d, yyyy");
 
 const formatDecimalHours = (
   decimalValue: number | string | null | undefined,
@@ -575,7 +570,7 @@ function DashboardTaskCard({
                  <div className="flex items-center gap-1 font-semibold ml-1">
                    <Clock size={10} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
                    <span className={isOverdue ? "text-red-500" : "text-base-content/50"}>
-                     {new Date(task.due_date).toLocaleDateString()}
+                     {formatDisplayDate(task.due_date, "yyyy-MM-dd")}
                    </span>
                  </div>
                )}
@@ -637,7 +632,7 @@ function DashboardTaskCard({
                    <div className="flex items-center gap-1 text-[10px]">
                      <Clock size={12} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
                      <span className={isOverdue ? "text-red-500 font-bold" : "text-base-content/50 font-medium"}>
-                       Due: {new Date(task.due_date).toLocaleDateString()}
+                       Due: {formatDisplayDate(task.due_date, "yyyy-MM-dd")}
                      </span>
                    </div>
                  )}

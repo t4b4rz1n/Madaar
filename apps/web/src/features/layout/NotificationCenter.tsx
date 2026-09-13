@@ -10,16 +10,13 @@ import {
 import type { Notification } from "../notifications/types";
 import { motionTokens } from "../../core/config/designTokens";
 
+import { formatDisplayDate } from "../../utils/date";
+
 const formatNotificationDate = (date: string) => {
   const value = new Date(date);
   if (Number.isNaN(value.getTime())) return "";
 
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(value);
+  return formatDisplayDate(value, "MMM d, HH:mm");
 };
 
 export const NotificationCenter = () => {

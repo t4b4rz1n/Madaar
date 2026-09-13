@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { motion } from "framer-motion";
 import { ArrowRight, Briefcase, Calendar1, Chart21, Clock, Danger, People, Refresh2, TaskSquare, Timer1 } from "iconsax-reactjs";
 import { useEffect, useMemo, useState } from "react";
@@ -12,7 +13,7 @@ const getTimezone = () => {
   try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; }
 };
 const formatHours = (seconds: number | null | undefined) => { const value = Math.max(0, Number(seconds || 0)); return `${Math.floor(value / 3600)}h ${Math.floor((value % 3600) / 60).toString().padStart(2, "0")}m`; };
-const formatDate = (value: string | null | undefined) => value ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value)) : "No deadline";
+const formatDate = (value: string | null | undefined) => value ? formatDisplayDate(new Date(value), "MMM d, yyyy") : "No deadline";
 const formatBudget = (value: string | number | null | undefined, currency = "IRR") => { const amount = Number(value || 0); return amount ? `${new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(amount)} ${currency}` : "No budget set"; };
 const panelClass = "madaar-surface overflow-hidden rounded-2xl border border-base-content/10 bg-base-100";
 const healthTone = (health: string) => health === "delayed" ? { label: "Delayed", className: "bg-error/10 text-error", bar: "bg-error" } : health === "at_risk" ? { label: "At risk", className: "bg-warning/10 text-warning", bar: "bg-warning" } : { label: "On track", className: "bg-success/10 text-success", bar: "bg-success" };

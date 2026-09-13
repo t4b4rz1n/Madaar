@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { Edit2, People, Profile2User, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
 
@@ -143,7 +144,7 @@ export const TeamsTable = ({
                 </span>
               </td>
               <td className="text-xs text-base-content/60">
-                {new Date(team.created_at ?? "").toLocaleDateString()}
+                {formatDisplayDate(team.created_at ?? "", "yyyy-MM-dd")}
               </td>
               {canManage && (
                 <td className="text-end">

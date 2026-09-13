@@ -1,3 +1,4 @@
+import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import React, { useEffect, useState } from "react";
 import { CloseCircle, FolderAdd, TickCircle } from "iconsax-reactjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -330,24 +331,18 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
               <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
                 Start Date
               </label>
-              <input
-                type="date"
-                name="start_date"
+              <CustomDatePicker
                 value={formData.start_date}
-                onChange={handleChange}
-                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
+                onChange={(v) => setFormData((prev) => ({ ...prev, start_date: v }))}
               />
             </div>
             <div>
               <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
                 Deadline
               </label>
-              <input
-                type="date"
-                name="deadline"
+              <CustomDatePicker
                 value={formData.deadline}
-                onChange={handleChange}
-                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
+                onChange={(v) => setFormData((prev) => ({ ...prev, deadline: v }))}
               />
             </div>
           </div>

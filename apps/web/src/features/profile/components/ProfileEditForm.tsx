@@ -527,8 +527,8 @@ export const ProfileEditForm = () => {
                         });
                       }}
                     >
-                      <option value="gregorian">Gregorian (میلادی)</option>
-                      <option value="jalali">Jalali (شمسی)</option>
+                      <option value="gregorian">Gregorian</option>
+                      <option value="jalali">Jalali</option>
                     </select>
                   )}
                 />

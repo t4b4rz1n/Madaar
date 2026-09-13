@@ -1,3 +1,4 @@
+import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import React, { useState, useEffect } from "react";
 import { CloseCircle, Calendar1, Edit2 } from "iconsax-reactjs";
 import { useUpdateMilestone } from "../hooks/useProjects";
@@ -145,12 +146,10 @@ export const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({
              <label className="mb-2 flex items-center gap-1 text-xs font-medium text-base-content">
                 <Calendar1 size={14} /> Target Date <span className="text-error">*</span>
               </label>
-              <input
-                type="date"
-                required
+              <CustomDatePicker
                 value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="input input-bordered w-full rounded-xl bg-base-200/60"
+                onChange={setTargetDate}
+                triggerClassName="w-full p-3 bg-base-200/60 border border-base-content/20 rounded-xl text-left hover:border-primary/50 transition-colors"
               />
             </div>
 

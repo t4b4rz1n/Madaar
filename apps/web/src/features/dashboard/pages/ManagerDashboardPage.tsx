@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -49,10 +50,7 @@ const formatHours = (seconds: number | null | undefined) => {
   return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
 };
 
-const formatDate = (value: string | null | undefined) => {
-  if (!value) return "No deadline";
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value));
-};
+const formatDate = (value: string | null | undefined) => value ? formatDisplayDate(new Date(value), "MMM d") : "-";;
 
 const getInitials = (firstName?: string, lastName?: string, fallback = "?") =>
   `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || fallback;

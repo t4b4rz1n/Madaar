@@ -1,3 +1,5 @@
+import { formatDisplayDate } from "../../../utils/date";
+import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import { useEffect, useMemo, useState } from "react";
 import {
   Area,
@@ -132,19 +134,15 @@ export default function CumulativeFlowChart({
             </p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <input
-              id="cfd-start-date"
-              type="date"
+            <CustomDatePicker
               value={start}
-              onChange={(e) => setStart(e.target.value)}
-              style={inputStyle}
+              onChange={(v) => setStart(v)}
+              triggerClassName="h-9 rounded-xl border border-base-content/10 bg-base-100/50 px-3 text-xs font-semibold text-base-content hover:bg-base-100"
             />
-            <input
-              id="cfd-end-date"
-              type="date"
+            <CustomDatePicker
               value={end}
-              onChange={(e) => setEnd(e.target.value)}
-              style={inputStyle}
+              onChange={(v) => setEnd(v)}
+              triggerClassName="h-9 rounded-xl border border-base-content/10 bg-base-100/50 px-3 text-xs font-semibold text-base-content hover:bg-base-100"
             />
           </div>
         </div>
@@ -174,10 +172,7 @@ export default function CumulativeFlowChart({
           <XAxis
             dataKey="date"
             tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
-            tickFormatter={(v) => {
-              const d = new Date(v);
-              return `${d.getMonth() + 1}/${d.getDate()}`;
-            }}
+            tickFormatter={(v) => formatDisplayDate(v, "M/d")}
           />
           <YAxis
             allowDecimals={false}
@@ -185,6 +180,7 @@ export default function CumulativeFlowChart({
             width={32}
           />
           <Tooltip
+            labelFormatter={(label) => typeof label === "string" ? formatDisplayDate(label, "MMM d, yyyy") : ""}
             contentStyle={{
               background: "var(--color-base-100)",
               border: "1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent)",
@@ -262,14 +258,6 @@ function BottleneckHint({ data }: { data: CfdData }) {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const inputStyle: React.CSSProperties = {
-  background: "color-mix(in srgb, var(--color-base-content) 6%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent)",
-  borderRadius: 8,
-  padding: "6px 10px",
-  color: "var(--color-base-content)",
-  fontSize: 12,
-};
 
 function CFDSkeleton() {
   return (

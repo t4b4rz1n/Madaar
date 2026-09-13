@@ -1,6 +1,7 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format } from 'date-fns';
 import { Login, Logout, Timer1 } from "iconsax-reactjs";
 import { toast } from "sonner";
 import { checkIn, checkOut, getTodayAttendance, getOrganizations } from "../api/attendanceApi";
@@ -136,7 +137,7 @@ export const CheckInOut: React.FC = () => {
               Attendance
             </p>
             <h2 className="mt-1 text-lg font-semibold">
-              {format(new Date(), "EEEE, MMMM d")}
+              {formatDisplayDate(new Date(), "EEEE, d MMMM yyyy")}
             </h2>
             <p className="mt-1 text-xs text-base-content/50">
               Record your working time. You can pause and resume.

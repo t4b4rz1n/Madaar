@@ -1,7 +1,7 @@
+import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import { Controller } from "react-hook-form";
 import { motion } from "framer-motion";
 import InputField from "../../../components/InputField";
-import { CustomDatePicker } from "../../../components/CustomDatePicker";
 
 interface DiscountFormProps {
   control: any;

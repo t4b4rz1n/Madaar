@@ -1,3 +1,4 @@
+import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createTimeOffRequest } from '../api/attendanceApi';
@@ -85,24 +86,52 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
 
         <div>
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-base-content/45">Start date &amp; time</label>
-          <input
-            type="datetime-local"
-            value={formData.start_datetime}
-            onChange={(e) => setFormData({ ...formData, start_datetime: e.target.value })}
-            className="h-11 w-full rounded-xl border border-base-content/10 bg-base-200/60 px-3 text-sm text-base-content outline-none transition-colors focus:border-primary/40"
-            required
-          />
+          <div className="flex gap-2">
+            <CustomDatePicker
+              className="flex-1 min-w-0"
+              value={formData.start_datetime ? formData.start_datetime.split('T')[0] : ''}
+              onChange={(date) => {
+                const time = formData.start_datetime ? (formData.start_datetime.split('T')[1] || '00:00') : '00:00';
+                setFormData({ ...formData, start_datetime: `${date}T${time}` });
+              }}
+              triggerClassName="h-11 w-full rounded-xl border border-base-content/10 bg-base-200/60 px-3 text-sm text-base-content outline-none transition-colors focus:border-primary/40 hover:border-primary/40"
+            />
+            <input
+              type="time"
+              value={formData.start_datetime ? formData.start_datetime.split('T')[1] : ''}
+              onChange={(e) => {
+                const date = formData.start_datetime ? formData.start_datetime.split('T')[0] : new Date().toISOString().split('T')[0];
+                setFormData({ ...formData, start_datetime: `${date}T${e.target.value}` });
+              }}
+              className="h-11 w-[120px] shrink-0 rounded-xl border border-base-content/10 bg-base-200/60 px-2 text-sm text-base-content outline-none transition-colors focus:border-primary/40"
+              required
+            />
+          </div>
         </div>
 
         <div>
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-base-content/45">End date &amp; time</label>
-          <input
-            type="datetime-local"
-            value={formData.end_datetime}
-            onChange={(e) => setFormData({ ...formData, end_datetime: e.target.value })}
-            className="h-11 w-full rounded-xl border border-base-content/10 bg-base-200/60 px-3 text-sm text-base-content outline-none transition-colors focus:border-primary/40"
-            required
-          />
+          <div className="flex gap-2">
+            <CustomDatePicker
+              className="flex-1 min-w-0"
+              value={formData.end_datetime ? formData.end_datetime.split('T')[0] : ''}
+              onChange={(date) => {
+                const time = formData.end_datetime ? (formData.end_datetime.split('T')[1] || '00:00') : '00:00';
+                setFormData({ ...formData, end_datetime: `${date}T${time}` });
+              }}
+              triggerClassName="h-11 w-full rounded-xl border border-base-content/10 bg-base-200/60 px-3 text-sm text-base-content outline-none transition-colors focus:border-primary/40 hover:border-primary/40"
+            />
+            <input
+              type="time"
+              value={formData.end_datetime ? formData.end_datetime.split('T')[1] : ''}
+              onChange={(e) => {
+                const date = formData.end_datetime ? formData.end_datetime.split('T')[0] : new Date().toISOString().split('T')[0];
+                setFormData({ ...formData, end_datetime: `${date}T${e.target.value}` });
+              }}
+              className="h-11 w-[120px] shrink-0 rounded-xl border border-base-content/10 bg-base-200/60 px-2 text-sm text-base-content outline-none transition-colors focus:border-primary/40"
+              required
+            />
+          </div>
         </div>
 
         <div className="col-span-1 md:col-span-2">

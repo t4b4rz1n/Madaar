@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 /**
  * TeamLeadDashboardPage.tsx
  * -------------------------
@@ -72,13 +73,7 @@ const formatTime = (isoString: string | null | undefined) => {
   }).format(new Date(isoString));
 };
 
-const formatDate = (value: string | null | undefined) => {
-  if (!value) return "No deadline";
-  return new Intl.DateTimeFormat("fa-IR", {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-};
+const formatDate = (value: string | null | undefined) => value ? formatDisplayDate(new Date(value), "MMM d, yyyy") : "-";;
 
 const getInitials = (
   firstName?: string,

@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePermissions } from "../../auth/hooks/usePermissions";
@@ -68,11 +69,7 @@ const getUserDisplayName = (member: ProjectMember) => {
 
 const formatDate = (value?: string | null) => {
   if (!value) return null;
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
+  return formatDisplayDate(new Date(value), "MMM d, yyyy");
 };
 
 function MilestoneItem({

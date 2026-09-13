@@ -1,11 +1,13 @@
+import { CustomDatePicker } from "../../../components/CustomDatePicker";
+import { formatDisplayDate } from "../../../utils/date";
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Task } from '../types';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { updateTask, getTaskComments, addComment, updateComment, deleteComment, getTaskChecklists, addChecklistItem, toggleChecklistItem, deleteTask, getTaskActivities, getProjectMembers } from '../api/tasksApi';
-import { CloseSquare, TextalignLeft, Activity, Tag, Calendar, TaskSquare, Paperclip2 } from 'iconsax-reactjs';
+import { CloseSquare, TextalignLeft, Activity, Tag, TaskSquare, Paperclip2 } from 'iconsax-reactjs';
 import { getProjectMilestones } from '../../projects/api/projectsApi';
-import { format } from 'date-fns';
+
 import { ConfirmationModal } from '../../../components/ConfirmationModal';
 import { ManualTimeLogForm } from '../../attendance/components/ManualTimeLogForm';
 import { Timer1 } from 'iconsax-reactjs';
@@ -41,7 +43,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   const [isMembersMenuOpen, setIsMembersMenuOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const membersButtonRef = useRef<HTMLDivElement>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  
 
   // Local state for optimistic UI updates
   const [localAssignee, setLocalAssignee] = useState<any>(task.assignee_detail || null);
@@ -309,25 +311,20 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                   <TaskSquare size={14} className="text-white/60" /> Checklist
                 </button>
                 <div className="flex items-center">
-                  <button
-                    onClick={() => dateInputRef.current?.showPicker?.()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-[13px] text-white/80 border border-white/5 transition-colors cursor-pointer"
-                  >
-                    <Calendar size={14} className="text-white/60" />
-                    {localDueDate ? format(new Date(localDueDate), 'MMM d, yyyy') : 'Dates'}
-                  </button>
-                  <input
-                    ref={dateInputRef}
-                    type="date"
-                    value={localDueDate ? new Date(localDueDate).toISOString().split('T')[0] : ''}
-                    className="sr-only"
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        const iso = new Date(e.target.value).toISOString();
+                  <CustomDatePicker
+                    value={localDueDate ? localDueDate.split('T')[0] : ''}
+                    onChange={(v) => {
+                      if (v) {
+                        const iso = new Date(v).toISOString();
                         setLocalDueDate(iso);
                         updateMutation.mutate({ due_date: iso } as any);
+                      } else {
+                        setLocalDueDate(null);
+                        updateMutation.mutate({ due_date: null } as any);
                       }
                     }}
+                    placeholder="Dates"
+                    triggerClassName="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-[13px] text-white/80 border border-white/5 transition-colors cursor-pointer"
                   />
                   {localDueDate && (
                     <button
@@ -629,7 +626,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                           <>
                             <div className="flex items-baseline gap-2 mb-1.5">
                               <span className="font-bold text-[14px] text-white/90">{name}</span>
-                              <span className="text-[12px] text-white/40">{format(new Date(item.created_at || Date.now()), 'MMM d, p')}</span>
+                              <span className="text-[12px] text-white/40">{formatDisplayDate(new Date(item.created_at || Date.now()), 'MMM d, HH:mm')}</span>
                             </div>
 
                             {editingCommentId === item.id ? (
@@ -704,7 +701,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                           <div className="pt-1 text-[13px]">
                             <span className="font-bold text-white/90 mr-1.5">{name}</span>
                             <span className="text-white/70">{item.metadata?.action || item.event_type}</span>
-                            <span className="text-white/40 ml-2 text-[11px]">{format(new Date(item.created_at || Date.now()), 'MMM d, p')}</span>
+                            <span className="text-white/40 ml-2 text-[11px]">{formatDisplayDate(new Date(item.created_at || Date.now()), 'MMM d, HH:mm')}</span>
                           </div>
                         )}
                       </div>

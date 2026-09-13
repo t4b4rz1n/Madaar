@@ -21,12 +21,15 @@ export const formatDisplayDate = (
       return doranDate.format("dddd، D MMMM YYYY");
     }
     if (formatStr === "MMM d, yyyy") {
-      return doranDate.format("D MMM YYYY");
+      return doranDate.format("D MMMM YYYY");
+    }
+    if (formatStr === "MMM d, HH:mm") {
+      return doranDate.format("D MMMM, HH:mm");
     }
     if (formatStr === "yyyy-MM-dd") {
       return doranDate.format("YYYY-MM-DD");
     }
-    return doranDate.format(formatStr.replace(/y/g, "Y").replace(/d/g, "D"));
+    return doranDate.format(formatStr.replace(/y/g, "Y").replace(/d/g, "D").replace(/MMM/g, "MMMM").replace(/EEE/g, "dddd").replace(/MMMMMM/g, "MMMM"));
   }
 
   return dateFnsFormat(d, formatStr);

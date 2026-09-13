@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "../../../utils/date";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Add,
@@ -423,7 +424,7 @@ export default function OrganizationDetailPage() {
                     {project.description || "No description provided"}
                   </p>
                   <div className="mt-4 flex items-center justify-between text-xs text-base-content/50">
-                    <span>{project.deadline ? `Due ${new Date(project.deadline).toLocaleDateString()}` : "No deadline"}</span>
+                    <span>{project.deadline ? `Due ${formatDisplayDate(project.deadline, "yyyy-MM-dd")}` : "No deadline"}</span>
                     {project.progress_percentage !== undefined && <span>{project.progress_percentage}% complete</span>}
                   </div>
                 </motion.div>
