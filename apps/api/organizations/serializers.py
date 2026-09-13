@@ -93,6 +93,8 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
     role_id = serializers.SerializerMethodField()
     role_name = serializers.SerializerMethodField()
     role_display = serializers.SerializerMethodField()
+    salary_type = serializers.SerializerMethodField()
+    salary_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = OrganizationMembership
@@ -107,6 +109,8 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
             "role_id",
             "role_name",
             "role_display",
+            "salary_type",
+            "salary_amount",
             "created_at",
         )
         read_only_fields = fields
@@ -140,6 +144,31 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
         if dyn_role:
             return dyn_role.name
         return obj.get_role_display()
+
+    def _can_manage_salary(self, membership):
+        request = self.context.get("request")
+        actor = request.user if request and request.user and request.user.is_authenticated else None
+        if not actor: return False
+        if actor.is_superuser: return True
+        org = membership.organization
+        if org.owner == actor: return True
+        return OrganizationMembership.objects.filter(
+            user=actor,
+            organization=org,
+            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
+            is_deleted=False
+        ).exists()
+
+    def get_salary_type(self, obj):
+        if self._can_manage_salary(obj):
+            return obj.salary_type
+        return None
+
+    def get_salary_amount(self, obj):
+        if self._can_manage_salary(obj):
+            return str(obj.salary_amount) if obj.salary_amount else None
+        return None
+
 
 
 class AddOrgMemberSerializer(serializers.Serializer):

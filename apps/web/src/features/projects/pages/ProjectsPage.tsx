@@ -305,7 +305,7 @@ function ProjectCard({
       {/* Content wrapper to stay above the halo */}
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-3">
-          <h2 dir="auto" className="flex-1 text-xl font-bold tracking-tight text-base-content">
+          <h2 dir="auto" className="flex-1 min-w-0 truncate text-xl font-bold tracking-tight text-base-content">
             {project.name}
           </h2>
           <div className="flex items-center gap-2">

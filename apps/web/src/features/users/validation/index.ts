@@ -8,6 +8,8 @@ const baseUserSchema = z.object({
   is_active: z.boolean(),
   is_staff: z.boolean(),
   role_id: z.string().nullable().optional(),
+  salary_type: z.enum(["monthly", "hourly"]).nullable().optional(),
+  salary_amount: z.string().nullable().optional(),
 });
 
 export const createUserSchema = baseUserSchema.extend({

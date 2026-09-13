@@ -7,7 +7,7 @@ import {
   People,
   Profile2User,
   Shield,
-  User,
+  User as UserIcon,
   Trash,
 } from "iconsax-reactjs";
 import { useState } from "react";
@@ -25,6 +25,8 @@ import { teamsApi } from "../../teams/api/teamsApi";
 import * as projectsApi from "../../projects/api/projectsApi";
 import { CreateEditTeamModal } from "../../teams/components/CreateEditTeamModal";
 import { CreateEditProjectModal } from "../../projects/components/CreateEditProjectModal";
+import { CreateEditUserModal } from "../../users/components/CreateEditUserModal";
+import type { User } from "../../users/types";
 import type { TeamWithDetails } from "../../teams/types";
 import type { Project } from "../../projects/types";
 
@@ -32,6 +34,17 @@ const getUserDisplayName = (member: OrganizationMember): string => {
   const fullName = member.full_name?.trim();
   if (fullName) return fullName;
   return member.username || member.email || "Member";
+};
+
+const formatSalary = (amount?: string | null, type?: string | null) => {
+  if (!amount || !type) return null;
+  const num = parseFloat(amount);
+  if (isNaN(num)) return null;
+  
+  // Format number with commas (e.g. 100,000)
+  const formatted = num.toLocaleString('en-US');
+  const typeText = type.toLowerCase() === 'hourly' ? '/hr' : '/mo';
+  return `${formatted} ${typeText}`;
 };
 
 const getInitials = (name: string): string => {
@@ -50,6 +63,7 @@ export default function OrganizationDetailPage() {
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<OrganizationMember | null>(null);
+  const [selectedUserToEdit, setSelectedUserToEdit] = useState<User | null>(null);
 
   const { data: organization, isLoading: isOrgLoading } = useQuery({
     queryKey: ["organizations", orgId],
@@ -205,7 +219,7 @@ export default function OrganizationDetailPage() {
       <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-madaar-card">
         <div className="flex items-center justify-between border-b border-base-content/10 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-2">
-            <User size={18} className="text-base-content/45" />
+            <UserIcon size={18} className="text-base-content/45" />
             <h2 className="text-lg font-semibold">Members</h2>
             <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-base-content/55">
               {members.length}
@@ -225,7 +239,7 @@ export default function OrganizationDetailPage() {
         ) : members.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-base-content/45">
-              <User size={24} />
+              <UserIcon size={24} />
             </div>
             <p className="text-sm text-base-content/55">
               No members yet. Create the first member for this organization.
@@ -241,7 +255,23 @@ export default function OrganizationDetailPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  className="madaar-surface group relative flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-madaar-raised"
+                  onClick={() => {
+                    const nameParts = (member.full_name || "").trim().split(/\s+/);
+                    setSelectedUserToEdit({
+                      id: member.user_id,
+                      username: member.username,
+                      email: member.email,
+                      first_name: nameParts[0] || "",
+                      last_name: nameParts.slice(1).join(" ") || "",
+                      is_active: true,
+                      is_staff: false,
+                      role_id: member.role || null,
+                      avatar: member.avatar,
+                      salary_type: member.salary_type || null,
+                      salary_amount: member.salary_amount || null
+                    });
+                  }}
+                  className="madaar-surface group relative flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-madaar-raised cursor-pointer"
                 >
                   <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                     {getInitials(getUserDisplayName(member))}
@@ -253,15 +283,25 @@ export default function OrganizationDetailPage() {
                     <p className="truncate text-xs text-base-content/45">
                       {member.email}
                     </p>
-                    {member.role_display && (
-                      <span className="mt-1 inline-block rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-medium text-base-content/55">
-                        {member.role_display}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      {member.role_display && (
+                        <span className="inline-block rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-medium text-base-content/55">
+                          {member.role_display}
+                        </span>
+                      )}
+                      {formatSalary(member.salary_amount, member.salary_type) && (
+                        <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          {formatSalary(member.salary_amount, member.salary_type)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setMemberToRemove(member)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMemberToRemove(member);
+                    }}
                     className="btn btn-ghost btn-square btn-sm rounded-xl text-error/60 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-error/10 hover:text-error"
                     title="Remove from organization"
                   >
@@ -410,6 +450,18 @@ export default function OrganizationDetailPage() {
         onClose={() => setIsCreateProjectOpen(false)}
         project={null}
       />
+      {selectedUserToEdit && (
+        <CreateEditUserModal
+          isOpen={!!selectedUserToEdit}
+          onClose={() => setSelectedUserToEdit(null)}
+          user={selectedUserToEdit}
+          organizationId={orgId}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+          }}
+        />
+      )}
 
       {/* Remove Confirmation Dialog */}
       <AnimatePresence>

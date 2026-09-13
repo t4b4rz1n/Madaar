@@ -84,10 +84,9 @@ export const drawerItems: DrawerItem[] = [
     section: "Workspace",
     icon: <Chart21 variant="Outline" />,
     permissions: [
-      "org.manage_members",
-      "attendance.view_all",
+      "org.manage_settings",
       "report.view",
-      "finance.view_reports",
+      "project.manage"
     ],
     isPrimary: true,
   },

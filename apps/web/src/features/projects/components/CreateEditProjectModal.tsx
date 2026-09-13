@@ -129,10 +129,10 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       organization_id: selectedOrgId,
       description: formData.description || undefined,
       color: sanitizeColor(formData.color),
-      budget: formData.budget ? Number(formData.budget) : undefined,
+      budget: formData.budget ? Number(formData.budget) : null,
       budget_currency: formData.budget_currency,
-      start_date: formData.start_date || undefined,
-      deadline: formData.deadline || undefined,
+      start_date: formData.start_date || null,
+      deadline: formData.deadline || null,
     };
 
     const handleApiError = (err: any) => {

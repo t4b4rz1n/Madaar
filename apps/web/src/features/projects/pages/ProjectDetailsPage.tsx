@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -23,7 +24,7 @@ import {
   useUpdateProject,
   useDeleteMilestone,
 } from "../hooks/useProjects";
-import type { ProjectMember, Milestone, ProjectActivity } from "../types";
+import type { Project, ProjectMember, Milestone, ProjectActivity } from "../types";
 import { useTaskStore } from "../../tasks/store/useTaskStore";
 import { AddMemberModal } from "../components/AddMemberModal";
 import CumulativeFlowChart from "../components/CumulativeFlowChart";
@@ -32,27 +33,28 @@ import MilestoneBurndownChart from "../components/MilestoneBurndownChart";
 import { CreateMilestoneModal } from "../components/CreateMilestoneModal";
 import { EditMilestoneModal } from "../components/EditMilestoneModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { ProjectReportView } from "../components/ProjectReportView";
 import { toast } from "sonner";
 import { getUnlinkedTasks, getTask, updateTask, getMilestoneTasks } from "../../tasks/api/tasksApi";
 import { TaskSheet } from "../../tasks/components/TaskSheet";
 
-type TabType = "overview" | "members" | "milestones" | "activity" | "analytics";
+type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports";
 
 const DEFAULT_COLOR = "#6366f1";
 
 const statusStyles: Record<string, string> = {
-  active:    "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  draft:     "bg-base-200 text-base-content/65",
-  on_hold:   "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  active: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  draft: "bg-base-200 text-base-content/65",
+  on_hold: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   completed: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-  archived:  "bg-red-500/15 text-red-500",
+  archived: "bg-red-500/15 text-red-500",
 };
 
 const milestoneStatusConfig: Record<string, { label: string; cls: string }> = {
-  pending:     { label: "Pending",     cls: "bg-base-200 text-base-content/55" },
+  pending: { label: "Pending", cls: "bg-base-200 text-base-content/55" },
   in_progress: { label: "In Progress", cls: "bg-blue-500/15 text-blue-600" },
-  completed:   { label: "Done",        cls: "bg-emerald-500/15 text-emerald-600" },
-  cancelled:   { label: "Cancelled",   cls: "bg-red-500/15 text-red-500" },
+  completed: { label: "Done", cls: "bg-emerald-500/15 text-emerald-600" },
+  cancelled: { label: "Cancelled", cls: "bg-red-500/15 text-red-500" },
 };
 
 const getUserDisplayName = (member: ProjectMember) => {
@@ -84,6 +86,10 @@ function MilestoneItem({
   onEdit: (ms: Milestone) => void;
   onDelete: (ms: Milestone) => void;
 }) {
+  const { hasAnyPermission } = usePermissions();
+  const canManageProject = hasAnyPermission(["project.manage"]);
+
+
   const msCfg = milestoneStatusConfig[ms.status] ?? milestoneStatusConfig.pending;
   const [showChart, setShowChart] = useState(false);
   const setSelectedTaskId = useTaskStore(state => state.setSelectedTaskId);
@@ -120,22 +126,24 @@ function MilestoneItem({
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-            <button
-              onClick={() => onEdit(ms)}
-              className="p-1 rounded-md text-base-content/40 hover:text-primary hover:bg-base-200"
-              title="Edit Milestone"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            </button>
-            <button
-              onClick={() => onDelete(ms)}
-              className="p-1 rounded-md text-base-content/40 hover:text-error hover:bg-base-200"
-              title="Delete Milestone"
-            >
-              <Trash size={14} variant="Bold" />
-            </button>
-          </div>
+          {canManageProject && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+              <button
+                onClick={() => onEdit(ms)}
+                className="p-1 rounded-md text-base-content/40 hover:text-primary hover:bg-base-200"
+                title="Edit Milestone"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button
+                onClick={() => onDelete(ms)}
+                className="p-1 rounded-md text-base-content/40 hover:text-error hover:bg-base-200"
+                title="Delete Milestone"
+              >
+                <Trash size={14} variant="Bold" />
+              </button>
+            </div>
+          )}
           <div className="hidden sm:flex flex-col items-end gap-1 mr-2">
             <div className="text-[10px] font-medium text-base-content/60">{progressPercent}%</div>
             <div className="w-16 h-1.5 rounded-full bg-base-300 overflow-hidden">
@@ -194,15 +202,14 @@ function MilestoneItem({
                         </div>
                         <div className="flex items-center gap-2.5 shrink-0 opacity-70 group-hover/task:opacity-100 transition-opacity">
                           {task.priority && (
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                              task.priority === "critical"
-                                ? "bg-red-500/15 text-red-600 dark:text-red-400"
-                                : task.priority === "high"
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${task.priority === "critical"
+                              ? "bg-red-500/15 text-red-600 dark:text-red-400"
+                              : task.priority === "high"
                                 ? "bg-orange-500/15 text-orange-600 dark:text-orange-400"
                                 : task.priority === "medium"
-                                ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-500"
-                                : "bg-base-content/10 text-base-content/70"
-                            }`}>
+                                  ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-500"
+                                  : "bg-base-content/10 text-base-content/70"
+                              }`}>
                               {task.priority}
                             </span>
                           )}
@@ -230,11 +237,12 @@ function MilestoneItem({
 }
 
 const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
-  { id: "overview",   label: "Overview",    icon: <TaskSquare size={15} /> },
-  { id: "members",    label: "Members",     icon: <People size={15} /> },
-  { id: "milestones", label: "Milestones",  icon: <Flag size={15} /> },
-  { id: "activity",   label: "Activity",    icon: <Activity size={15} /> },
-  { id: "analytics",  label: "Analytics",   icon: <Chart size={15} /> },
+  { id: "overview", label: "Overview", icon: <TaskSquare size={15} /> },
+  { id: "members", label: "Members", icon: <People size={15} /> },
+  { id: "milestones", label: "Milestones", icon: <Flag size={15} /> },
+  { id: "activity", label: "Activity", icon: <Activity size={15} /> },
+  { id: "analytics", label: "Analytics", icon: <Chart size={15} /> },
+  { id: "reports", label: "Reports", icon: <Chart size={15} variant="Bold" /> },
 ];
 
 
@@ -297,9 +305,8 @@ function StatusDropdown({
                   onChange(opt.value);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-base-content/5 ${
-                  currentStatus === opt.value ? "bg-primary/10 font-bold text-primary" : "font-medium text-base-content"
-                }`}
+                className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-base-content/5 ${currentStatus === opt.value ? "bg-primary/10 font-bold text-primary" : "font-medium text-base-content"
+                  }`}
               >
                 {opt.label}
               </button>
@@ -321,9 +328,14 @@ function MilestonesTab({
 }: {
   milestones: Milestone[];
   projectId: string;
-  project: any;
-  onCreateMilestone: () => void;
+  project?: Project;
+  onCreateMilestone:
+  | (() => void)
+  | undefined;
 }) {
+  const { hasAnyPermission } = usePermissions();
+  const canManageProject = hasAnyPermission(["project.manage"]);
+
   // Calculate weighted progress
   const totalWeight = milestones.reduce((s, m) => s + (m.weight || 1), 0);
   const completedWeight = milestones
@@ -364,13 +376,15 @@ function MilestonesTab({
           <h3 className="text-sm font-bold text-base-content">
             Project Milestones ({milestones.length})
           </h3>
-          <button
-            type="button"
-            onClick={onCreateMilestone}
-            className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
-          >
-            <Add size={14} /> New Milestone
-          </button>
+          {canManageProject && (
+            <button
+              type="button"
+              onClick={onCreateMilestone}
+              className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
+            >
+              <Add size={14} /> New Milestone
+            </button>
+          )}
         </div>
 
         {/* Weighted progress bar */}
@@ -432,7 +446,7 @@ function MilestonesTab({
           <div className="flex items-center gap-2 border-b border-base-content/8 pb-3">
             <div className="flex items-center gap-1.5">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500 shrink-0">
-                <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5zM11 10v5h2v-5h-2zm0 6v2h2v-2h-2z"/>
+                <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5zM11 10v5h2v-5h-2zm0 6v2h2v-2h-2z" />
               </svg>
               <h3 className="text-sm font-bold text-base-content">
                 Unlinked Tasks
@@ -473,12 +487,11 @@ function MilestonesTab({
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-2">
                     {task.priority && (
-                      <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase ${
-                        task.priority === "critical" ? "bg-red-500/15 text-red-500" :
+                      <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase ${task.priority === "critical" ? "bg-red-500/15 text-red-500" :
                         task.priority === "high" ? "bg-orange-500/15 text-orange-500" :
-                        task.priority === "medium" ? "bg-amber-500/15 text-amber-600" :
-                        "bg-base-content/10 text-base-content/50"
-                      }`}>
+                          task.priority === "medium" ? "bg-amber-500/15 text-amber-600" :
+                            "bg-base-content/10 text-base-content/50"
+                        }`}>
                         {task.priority}
                       </span>
                     )}
@@ -520,12 +533,15 @@ export default function ProjectDetailsPage() {
   const updateProjectMutation = useUpdateProject();
 
 
-const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const setActiveProject = useTaskStore((state) => state.setActiveProject);
   const selectedTaskId = useTaskStore(state => state.selectedTaskId);
   const setSelectedTaskId = useTaskStore(state => state.setSelectedTaskId);
   const queryClient = useQueryClient();
+
+  const { hasAnyPermission } = usePermissions();
+  const canManageProject = hasAnyPermission(["project.manage"]);
 
   const taskQuery = useQuery({
     queryKey: ["task", selectedTaskId],
@@ -682,15 +698,14 @@ const { id } = useParams<{ id: string }>();
 
       {/* Navigation Tabs */}
       <div className="flex gap-1 overflow-x-auto rounded-xl border border-base-content/8 bg-base-100 p-1">
-        {tabs.map((tab) => (
+        {tabs.filter(t => t.id !== "reports" || (canManageProject || hasAnyPermission(["report.view"]))).map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
-              activeTab === tab.id
-                ? "bg-primary text-primary-content shadow-xs"
-                : "text-base-content/55 hover:bg-base-200 hover:text-base-content"
-            }`}
+            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${activeTab === tab.id
+              ? "bg-primary text-primary-content shadow-xs"
+              : "text-base-content/55 hover:bg-base-200 hover:text-base-content"
+              }`}
           >
             {tab.icon}
             <span>{tab.label}</span>
@@ -803,7 +818,7 @@ const { id } = useParams<{ id: string }>();
                       onClick={() => setActiveTab("members")}
                       className="text-xs font-bold text-primary hover:underline"
                     >
-                      Manage ({members.length})
+                      {canManageProject ? "Manage" : "View all"} ({members.length})
                     </button>
                   </div>
 
@@ -846,13 +861,15 @@ const { id } = useParams<{ id: string }>();
                 <h3 className="text-sm font-bold text-base-content">
                   Project Members &amp; Teams ({members.length})
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsAddMemberOpen(true)}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
-                >
-                  <Add size={14} /> Add Member
-                </button>
+                {canManageProject && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAddMemberOpen(true)}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
+                  >
+                    <Add size={14} /> Add Member
+                  </button>
+                )}
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -960,6 +977,10 @@ const { id } = useParams<{ id: string }>();
               <CycleLeadTimeReport projectId={id || ""} />
             </div>
           )}
+          {/* ── REPORTS TAB ── */}
+          {activeTab === "reports" && (
+            <ProjectReportView projectId={id || ""} />
+          )}
         </motion.div>
       </AnimatePresence>
 
@@ -970,10 +991,10 @@ const { id } = useParams<{ id: string }>();
         orgId={
           project?.organization
             ? String(
-                typeof project.organization === "object"
-                  ? (project.organization as any).id
-                  : project.organization
-              )
+              typeof project.organization === "object"
+                ? (project.organization as any).id
+                : project.organization
+            )
             : undefined
         }
       />

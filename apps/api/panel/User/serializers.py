@@ -31,6 +31,8 @@ class UserListSerializer(serializers.ModelSerializer):
     role_id = serializers.SerializerMethodField()
     role_name = serializers.SerializerMethodField()
     organization = serializers.SerializerMethodField()
+    salary_type = serializers.SerializerMethodField()
+    salary_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -46,6 +48,8 @@ class UserListSerializer(serializers.ModelSerializer):
             "role_id",
             "role_name",
             "organization",
+            "salary_type",
+            "salary_amount",
         ]
         ref_name = "users_panel"
 
@@ -114,6 +118,38 @@ class UserListSerializer(serializers.ModelSerializer):
             }
         return None
 
+    def _can_manage_salary(self, membership):
+        if not membership:
+            return False
+        request = self.context.get("request")
+        actor = request.user if request and request.user and request.user.is_authenticated else None
+        if not actor:
+            return False
+        if actor.is_superuser:
+            return True
+        org = membership.organization
+        if org.owner == actor:
+            return True
+        return OrganizationMembership.objects.filter(
+            user=actor,
+            organization=org,
+            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
+            is_deleted=False
+        ).exists()
+
+    def get_salary_type(self, obj):
+        membership, _ = self._get_active_membership_and_role(obj)
+        if membership and self._can_manage_salary(membership):
+            return membership.salary_type
+        return None
+
+    def get_salary_amount(self, obj):
+        membership, _ = self._get_active_membership_and_role(obj)
+        if membership and self._can_manage_salary(membership):
+            return str(membership.salary_amount) if membership.salary_amount else None
+        return None
+
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
@@ -122,6 +158,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     organization_id = serializers.UUIDField(required=False, write_only=True, allow_null=True)
     role_id = serializers.CharField(write_only=True, required=False, allow_null=True)
+    salary_type = serializers.CharField(write_only=True, required=False, allow_null=True)
+    salary_amount = serializers.DecimalField(max_digits=12, decimal_places=2, write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -136,6 +174,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "avatar",
             "organization_id",
             "role_id",
+            "salary_type",
+            "salary_amount",
         ]
         extra_kwargs = {
             "avatar": {"validators": []},
@@ -198,6 +238,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         organization_id = validated_data.pop("organization_id", None)
         role_id = validated_data.pop("role_id", None)
+        salary_type = validated_data.pop("salary_type", None)
+        salary_amount = validated_data.pop("salary_amount", None)
 
         org = None
         if organization_id:
@@ -243,17 +285,50 @@ class UserCreateSerializer(serializers.ModelSerializer):
                         invited_by=invited_by,
                     )
                     membership._skip_member_added_signal = True
-                    membership.save()
+
+                if salary_type is not None or salary_amount is not None:
+                    is_salary_manager = False
+                    if actor and actor.is_superuser:
+                        is_salary_manager = True
+                    elif actor and org.owner == actor:
+                        is_salary_manager = True
+                    elif actor:
+                        is_salary_manager = OrganizationMembership.objects.filter(
+                            user=actor,
+                            organization=org,
+                            role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
+                            is_deleted=False
+                        ).exists()
+                    if is_salary_manager:
+                        if salary_type is not None:
+                            membership.salary_type = salary_type
+                        if salary_amount is not None:
+                            membership.salary_amount = salary_amount
+
+                membership.save()
                 role_obj = None
                 if role_id:
-                    role_obj = (
-                        Role.objects.filter(id=role_id, organization=org, is_deleted=False).first()
-                        or Role.objects.filter(id=role_id, is_deleted=False).first()
-                        or Role.objects.filter(
-                            name__iexact=str(role_id), organization=org, is_deleted=False
-                        ).first()
-                        or Role.objects.filter(name__iexact=str(role_id), is_deleted=False).first()
-                    )
+                    import uuid
+                    try:
+                        role_uuid = uuid.UUID(role_id)
+                        role_obj = (
+                            Role.objects.filter(
+                                id=role_uuid, organization=org, is_deleted=False
+                            ).first()
+                            or Role.objects.filter(id=role_uuid, is_deleted=False).first()
+                        )
+                    except ValueError:
+                        pass
+
+                    if not role_obj:
+                        role_obj = (
+                            Role.objects.filter(
+                                name__iexact=str(role_id), organization=org, is_deleted=False
+                            ).first()
+                            or Role.objects.filter(
+                                name__iexact=str(role_id), is_deleted=False
+                            ).first()
+                        )
                     if role_obj:
                         membership.dynamic_roles.set([role_obj])
                         if role_obj.name.lower() in OrganizationMembership.Role.values:
@@ -313,6 +388,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=False)
     role_id = serializers.CharField(write_only=True, required=False, allow_null=True)
+    salary_type = serializers.CharField(write_only=True, required=False, allow_null=True)
+    salary_amount = serializers.DecimalField(max_digits=12, decimal_places=2, write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -325,6 +402,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "is_staff",
             "avatar",
             "role_id",
+            "salary_type",
+            "salary_amount",
         ]
         extra_kwargs = {
             "avatar": {"validators": []},
@@ -354,11 +433,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             validated_data.pop("is_staff")
 
         role_id = validated_data.pop("role_id", None)
+        salary_type = validated_data.pop("salary_type", None)
+        salary_amount = validated_data.pop("salary_amount", None)
 
         with transaction.atomic():
             user = super().update(instance, validated_data)
 
-            if role_id is not None:
+            if role_id is not None or salary_type is not None or salary_amount is not None:
                 raw_org_id = _extract_org_id(request)
                 org = None
 
@@ -391,22 +472,51 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                         user=user, organization=org, is_deleted=False
                     )
 
+                    if salary_type is not None or salary_amount is not None:
+                        is_salary_manager = False
+                        if actor and actor.is_superuser:
+                            is_salary_manager = True
+                        elif actor and org.owner == actor:
+                            is_salary_manager = True
+                        elif actor:
+                            is_salary_manager = OrganizationMembership.objects.filter(
+                                user=actor,
+                                organization=org,
+                                role__in=[OrganizationMembership.Role.OWNER, OrganizationMembership.Role.ADMIN],
+                                is_deleted=False
+                            ).exists()
+                        if is_salary_manager:
+                            if salary_type is not None:
+                                membership.salary_type = salary_type
+                            if salary_amount is not None:
+                                membership.salary_amount = salary_amount
+
                     if not role_id:
                         membership.dynamic_roles.clear()
                         membership.save()
                     else:
-                        role_obj = (
-                            Role.objects.filter(
-                                id=role_id, organization=org, is_deleted=False
-                            ).first()
-                            or Role.objects.filter(id=role_id, is_deleted=False).first()
-                            or Role.objects.filter(
-                                name__iexact=str(role_id), organization=org, is_deleted=False
-                            ).first()
-                            or Role.objects.filter(
-                                name__iexact=str(role_id), is_deleted=False
-                            ).first()
-                        )
+                        import uuid
+                        role_obj = None
+                        try:
+                            role_uuid = uuid.UUID(role_id)
+                            role_obj = (
+                                Role.objects.filter(
+                                    id=role_uuid, organization=org, is_deleted=False
+                                ).first()
+                                or Role.objects.filter(id=role_uuid, is_deleted=False).first()
+                            )
+                        except ValueError:
+                            pass
+                        
+                        if not role_obj:
+                            role_obj = (
+                                Role.objects.filter(
+                                    name__iexact=str(role_id), organization=org, is_deleted=False
+                                ).first()
+                                or Role.objects.filter(
+                                    name__iexact=str(role_id), is_deleted=False
+                                ).first()
+                            )
                         if role_obj:
                             membership.dynamic_roles.set([role_obj])
                             if role_obj.name.lower() in OrganizationMembership.Role.values:

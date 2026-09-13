@@ -13,6 +13,8 @@ export interface User {
   role_name?: string | null;
   avatar: string | null;
   organization?: { id: string; name: string } | null;
+  salary_type?: 'monthly' | 'hourly' | null;
+  salary_amount?: string | null;
 }
 
 
@@ -26,6 +28,8 @@ export interface UserFormData {
   is_staff: boolean;
   role_id: string | null;  // UUID
   organization_id?: string;
+  salary_type?: 'monthly' | 'hourly' | null;
+  salary_amount?: string | null;
 }
 
 export interface UserUpdateData {
@@ -36,4 +40,6 @@ export interface UserUpdateData {
   is_active: boolean;
   is_staff: boolean;
   role_id: string | null;  // UUID
+  salary_type?: 'monthly' | 'hourly' | null;
+  salary_amount?: string | null;
 }

@@ -55,6 +55,8 @@ export const CreateEditUserModal = ({
       is_active: true,
       is_staff: false,
       role_id: null,
+      salary_type: null,
+      salary_amount: null,
     },
   });
 
@@ -73,6 +75,8 @@ export const CreateEditUserModal = ({
         is_active: !!user.is_active,
         is_staff: !!user.is_staff,
         role_id: user.role_id ?? null,
+        salary_type: user.salary_type ?? null,
+        salary_amount: user.salary_amount ?? null,
         password: "",
       });
     } else {
@@ -85,6 +89,8 @@ export const CreateEditUserModal = ({
         is_active: true,
         is_staff: false,
         role_id: null,
+        salary_type: null,
+        salary_amount: null,
       });
     }
   }, [isOpen, user, reset]);
@@ -99,6 +105,8 @@ export const CreateEditUserModal = ({
         is_active: !!data.is_active,
         is_staff: !!data.is_staff,
         role_id: data.role_id ?? null,
+        salary_type: data.salary_type ?? null,
+        salary_amount: data.salary_amount ?? null,
       };
 
       updateMutation.mutate(
@@ -123,6 +131,8 @@ export const CreateEditUserModal = ({
       is_active: !!data.is_active,
       is_staff: !!data.is_staff,
       role_id: data.role_id ?? null,
+      salary_type: data.salary_type ?? null,
+      salary_amount: data.salary_amount ?? null,
       organization_id: resolvedOrganizationId,
     };
 

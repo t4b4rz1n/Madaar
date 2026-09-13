@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Lock, Message, TickSquare, User, Hierarchy } from "iconsax-reactjs";
+import { Lock, Message, TickSquare, User, Hierarchy, CardCoin, Coin1 } from "iconsax-reactjs";
 import { Controller } from "react-hook-form";
 import InputField from "../../../components/InputField";
 import { useAuthStore } from "../../auth/store/authStore";
@@ -24,8 +24,15 @@ export const UserForm = ({
     useRoles(organizationId ? { organization_id: organizationId } : undefined);
   const roles = rolesData?.results || [];
 
-  const currentUser = useAuthStore((state) => state.user);
+  const currentUser = useAuthStore((state) => state.user) as any;
   const canEditStaff = !!currentUser?.is_staff;
+  
+  const roleNameStr = (currentUser?.role_name || currentUser?.role?.name || "").toLowerCase();
+  
+  // If the user being edited already has a salary populated, it means the backend
+  // allowed us to see it, so we can edit it. Otherwise fallback to role check.
+  const formSalaryType = control._defaultValues?.salary_type;
+  const canEditSalary = canEditStaff || roleNameStr === "owner" || roleNameStr === "admin" || formSalaryType !== undefined;
 
   return (
     <motion.div
@@ -209,6 +216,91 @@ export const UserForm = ({
           )}
         />
       </div>
+
+      {canEditSalary && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Controller
+            name="salary_type"
+            control={control}
+            render={({ field }) => (
+              <div className="form-control w-full">
+                <label className="label mb-2" htmlFor="user-form-salary-type">
+                  <span className="label-text font-semibold">Salary Type</span>
+                </label>
+
+                <div className="relative">
+                  <select
+                    id="user-form-salary-type"
+                    name={field.name}
+                    ref={field.ref}
+                    value={field.value ?? ""}
+                    onBlur={field.onBlur}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value === "" ? null : e.target.value,
+                      )
+                    }
+                    className={`select select-bordered w-full pl-10 ${
+                      errors.salary_type ? "select-error" : ""
+                    }`}
+                  >
+                    <option value="">No Salary</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="hourly">Hourly</option>
+                  </select>
+
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
+                    <CardCoin size={18} />
+                  </div>
+                </div>
+
+                {errors.salary_type && (
+                  <span className="text-error text-xs mt-1">
+                    {errors.salary_type.message}
+                  </span>
+                )}
+              </div>
+            )}
+          />
+
+          <Controller
+            name="salary_amount"
+            control={control}
+            render={({ field }) => (
+              <label className="form-control w-full">
+                <div className="label mb-2">
+                  <span className="label-text font-semibold">Salary Amount</span>
+                  <span className="text-xs text-base-content/40">(Optional)</span>
+                </div>
+                <InputField
+                  {...field}
+                  value={
+                    field.value
+                      ? Number(field.value.toString().replace(/,/g, "")).toLocaleString("en-US")
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/,/g, "");
+                    // Allow empty or valid numbers, up to 12 digits
+                    if (rawValue === "" || (!isNaN(Number(rawValue)) && rawValue.length <= 12)) {
+                      field.onChange(rawValue);
+                    }
+                  }}
+                  placeholder="e.g. 12,000,000"
+                  type="text"
+                  classNameInput={errors.salary_amount ? "input-error" : ""}
+                  icon={<Coin1 size={18} />}
+                />
+                {errors.salary_amount && (
+                  <span className="text-error text-xs mt-1">
+                    {errors.salary_amount.message}
+                  </span>
+                )}
+              </label>
+            )}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-2 pt-2">
         <Controller

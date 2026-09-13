@@ -41,6 +41,8 @@ export interface OrganizationMember {
   role?: string;
   role_name?: string;
   role_display?: string;
+  salary_type?: 'monthly' | 'hourly' | null;
+  salary_amount?: string | null;
   created_at?: string;
 }
 
