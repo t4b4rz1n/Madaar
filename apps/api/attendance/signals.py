@@ -103,15 +103,21 @@ def notify_timer_started(sender, instance, created, **kwargs):
 
         project_id = None
         org_id = None
+        task_id = None
+        board_id = None
         if instance.task and instance.task.project:
             project_id = str(instance.task.project_id)
             org_id = str(instance.task.project.organization_id)
+            task_id = str(instance.task_id)
+            board_id = str(instance.task.status.board_id) if getattr(instance.task, "status", None) else None
 
         EventDispatcher.dispatch(
             event_type="timer_started",
             payload={
                 "organization_id": org_id,
                 "project_id": project_id,
+                "task_id": task_id,
+                "board_id": board_id,
                 "user_name": user_name,
                 "task_title": task_title,
             },

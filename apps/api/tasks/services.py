@@ -58,6 +58,7 @@ class BoardService:
             event_type="board_created",
             payload={
                 "project_id": str(project.id) if project else None,
+                "board_id": str(board.id),
                 "project_name": project.name if project else "—",
                 "organization_id": str(project.organization_id)
                 if project and project.organization_id

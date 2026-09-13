@@ -127,23 +127,7 @@ axiosClient.interceptors.response.use(
       }
     }
 
-    if (error?.response?.data) {
-      return Promise.reject(error.response.data);
-    }
-
-    if (error instanceof Error) {
-      return Promise.reject({
-        message: error.message,
-        data: {},
-        status: false,
-      });
-    }
-
-    return Promise.reject({
-      message: "An unknown error occurred",
-      data: {},
-      status: false,
-    });
+    return Promise.reject(error);
   }
 );
 

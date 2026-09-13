@@ -15,23 +15,26 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-def _get_event_link(event_type: str, payload: dict) -> str:
-    """Generate a relevant frontend link based on event type and payload."""
-    project_id = payload.get("project_id")
-    task_id = payload.get("task_id")
-    board_id = payload.get("board_id")
-    organization_id = payload.get("organization_id")
+import urllib.parse
 
-    if task_id and project_id:
-        # Route to task management page with query params
-        return f"/tasks?project={project_id}&board={board_id or ''}&task={task_id}"
-    if project_id:
-        return f"/projects/{project_id}"
-    if event_type in ("leave_requested", "leave_resolved"):
-        return "/attendance?tab=timeoff"
-    if organization_id:
-        return f"/organizations/{organization_id}"
-    return "/" 
+def _get_event_link(event_type: str, payload: dict) -> str:
+    """Pass event details to frontend via query string for client-side routing.
+    Only essential keys are included and mapped to short keys to ensure length < 255.
+    """
+    key_map = {
+        "project_id": "p",
+        "task_id": "t",
+        "board_id": "b",
+        "organization_id": "o"
+    }
+    
+    query = {"e": event_type}
+    for k, v in payload.items():
+        if k in key_map and isinstance(v, (str, int)) and v:
+            query[key_map[k]] = str(v)
+            
+    qs = urllib.parse.urlencode(query)
+    return f"/_routing?{qs}" 
 
 
 def process_rules_for_event(event_type: str, payload: dict):

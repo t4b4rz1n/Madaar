@@ -11,6 +11,7 @@ import type { Notification } from "../notifications/types";
 import { motionTokens } from "../../core/config/designTokens";
 
 import { formatDisplayDate } from "../../utils/date";
+import { buildNotificationLink } from "../notifications/utils/routing";
 
 const formatNotificationDate = (date: string) => {
   const value = new Date(date);
@@ -156,8 +157,9 @@ const NotificationRow = ({ notification, onClick }: { notification: Notification
   );
 
   if (notification.link) {
+    const finalLink = buildNotificationLink(notification.link);
     return (
-      <Link to={notification.link} onClick={onClick} className="motion-interactive flex gap-3 rounded-xl px-3 py-3 hover:bg-base-200">
+      <Link to={finalLink} onClick={onClick} className="motion-interactive flex gap-3 rounded-xl px-3 py-3 hover:bg-base-200">
         {content}
       </Link>
     );

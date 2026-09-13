@@ -79,6 +79,14 @@ def extract_organization_id(obj_or_request):
                         .values_list("organization_id", flat=True)
                         .first()
                     )
+                    
+                task_id = data.get("task") or data.get("task_id")
+                if task_id:
+                    from tasks.models import Task
+                    org_id = Task.objects.filter(id=task_id).values_list("project__organization_id", flat=True).first()
+                    if org_id:
+                        return org_id
+                        
                 org_id = data.get("organization") or data.get("organization_id")
                 if org_id:
                     return org_id
@@ -149,7 +157,16 @@ def extract_project_id(obj_or_request):
         try:
             data = getattr(obj_or_request, "data", {})
             if isinstance(data, dict):
-                return data.get("project") or data.get("project_id")
+                proj_id = data.get("project") or data.get("project_id")
+                if proj_id:
+                    return proj_id
+                
+                task_id = data.get("task") or data.get("task_id")
+                if task_id:
+                    from tasks.models import Task
+                    task = Task.objects.filter(id=task_id).values_list("project_id", flat=True).first()
+                    if task:
+                        return task
         except Exception:
             pass
 

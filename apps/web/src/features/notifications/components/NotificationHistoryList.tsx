@@ -9,6 +9,7 @@ import {
 import { formatDate } from "../../../utils/formatDate";
 import { useMarkNotificationSeen } from "../hooks/useNotifications";
 import type { Notification as NotificationType } from "../types";
+import { buildNotificationLink } from "../utils/routing";
 
 interface NotificationHistoryListProps {
   notifications: NotificationType[];
@@ -32,7 +33,7 @@ export const NotificationHistoryList = ({
       markSeen(notification.id);
     }
     if (notification.link) {
-      navigate(notification.link);
+      navigate(buildNotificationLink(notification.link));
     }
   };
 
