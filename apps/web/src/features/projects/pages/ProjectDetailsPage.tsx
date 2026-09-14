@@ -37,11 +37,12 @@ import { EditMilestoneModal } from "../components/EditMilestoneModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { ProjectReportView } from "../components/ProjectReportView";
 import { ProjectMemberSalaryPanel } from "../components/ProjectMemberSalaryPanel";
+import { ProjectBillingTab } from "../components/ProjectBillingTab";
 import { toast } from "sonner";
 import { getUnlinkedTasks, getTask, updateTask, getMilestoneTasks } from "../../tasks/api/tasksApi";
 import { TaskSheet } from "../../tasks/components/TaskSheet";
 
-type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports" | "salaries";
+type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports" | "salaries" | "billing";
 
 
 const DEFAULT_COLOR = "#6366f1";
@@ -248,6 +249,7 @@ const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
   { id: "analytics", label: "Analytics", icon: <Chart size={15} /> },
   { id: "reports", label: "Reports", icon: <Chart size={15} variant="Bold" /> },
   { id: "salaries", label: "Salaries", icon: <DollarCircle size={15} /> },
+  { id: "billing", label: "Billing", icon: <DollarCircle size={15} variant="Bold" /> },
 ];
 
 
@@ -711,6 +713,7 @@ export default function ProjectDetailsPage() {
         {tabs
           .filter(t => t.id !== "reports" || (canManageProject || hasAnyPermission(["report.view"])))
           .filter(t => t.id !== "salaries" || canViewSalaries)
+          .filter(t => t.id !== "billing" || canViewSalaries)
           .map((tab) => (
           <button
             key={tab.id}
@@ -997,6 +1000,10 @@ export default function ProjectDetailsPage() {
           {/* ── SALARIES TAB ── */}
           {activeTab === "salaries" && (
             <ProjectMemberSalaryPanel projectId={id || ""} members={members} />
+          )}
+          {/* ── BILLING TAB ── */}
+          {activeTab === "billing" && (
+            <ProjectBillingTab projectId={id || ""} />
           )}
         </motion.div>
       </AnimatePresence>
