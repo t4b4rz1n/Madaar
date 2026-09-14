@@ -323,9 +323,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     )
     def update_member_salary(self, request, pk=None, user_id=None):
         """Update the org-level salary for a specific member.
-
-        This will also propagate to all ProjectMembers where salary_override=False
-        (via the post_save signal on OrganizationMembership).
+        This creates or updates a SalaryConfig for the user in this organization.
         """
         organization = self.get_object()
 
@@ -340,12 +338,14 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         serializer = UpdateOrgMemberSalarySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if "salary_type" in serializer.validated_data:
-            membership.salary_type = serializer.validated_data["salary_type"]
-        if "salary_amount" in serializer.validated_data:
-            membership.salary_amount = serializer.validated_data["salary_amount"]
+        from finance.services import FinanceService
+        FinanceService.set_org_salary(
+            user=membership.user,
+            organization=organization,
+            payment_type=serializer.validated_data.get("salary_type"),
+            rate=serializer.validated_data.get("salary_amount")
+        )
 
-        membership.save(update_fields=["salary_type", "salary_amount", "updated_at"])
 
         response_serializer = OrganizationMemberSerializer(membership, context={"request": request})
         return Response(response_serializer.data, status=status.HTTP_200_OK)

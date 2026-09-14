@@ -165,12 +165,16 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
 
     def get_salary_type(self, obj):
         if self._can_manage_salary(obj):
-            return obj.salary_type
+            from finance.services import FinanceService
+            salary = FinanceService.get_effective_salary(obj.user, obj.organization)
+            return salary.get('payment_type') if salary else None
         return None
 
     def get_salary_amount(self, obj):
         if self._can_manage_salary(obj):
-            return str(obj.salary_amount) if obj.salary_amount else None
+            from finance.services import FinanceService
+            salary = FinanceService.get_effective_salary(obj.user, obj.organization)
+            return str(salary.get('rate')) if salary and salary.get('rate') is not None else None
         return None
 
 
@@ -183,7 +187,7 @@ class AddOrgMemberSerializer(serializers.Serializer):
         default=OrganizationMembership.Role.EMPLOYEE,
     )
     salary_type = serializers.ChoiceField(
-        choices=OrganizationMembership.SalaryType.choices,
+        choices=[("hourly", "Hourly"), ("monthly", "Monthly"), ("fixed", "Fixed")],
         required=False,
         allow_null=True,
     )
@@ -212,7 +216,7 @@ class AddOrgMemberSerializer(serializers.Serializer):
 class UpdateOrgMemberSalarySerializer(serializers.Serializer):
     """Serializer for updating a member's salary at the organization level."""
     salary_type = serializers.ChoiceField(
-        choices=OrganizationMembership.SalaryType.choices,
+        choices=[("hourly", "Hourly"), ("monthly", "Monthly"), ("fixed", "Fixed")],
         required=False,
         allow_null=True,
     )
