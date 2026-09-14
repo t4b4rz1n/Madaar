@@ -255,7 +255,7 @@ class FinanceService:
                 "project_name": project.name,
                 "payment_type": payment_type,
                 "rate": float(rate),
-                "total_worked_hours": float(total_hours) if payment_type == "hourly" else None,
+                "total_worked_hours": float(total_hours),
                 "total_earned": float(earned),
                 "total_paid": 0.0,
                 "current_balance": float(earned),
@@ -301,7 +301,6 @@ class FinanceService:
         if memberships is None:
             memberships = OrganizationMembership.objects.filter(
                 organization=organization,
-                is_active=True,
                 is_deleted=False,
             ).select_related("user")
 
@@ -405,34 +404,74 @@ class FinanceService:
         return report
 
     @classmethod
-    def get_project_billing(cls, project) -> dict:
+    def get_project_billing(cls, project, members=None) -> dict:
         """
         Build the ProjectBillingTab payload — one entry per member, plus totals.
+        Uses bulk prefetching to prevent N+1 queries.
         """
         from projects.models import ProjectMember
+        from finance.models import SalaryConfig
+        from attendance.models import TimeLog
 
-        members = ProjectMember.objects.filter(
-            project=project,
+        if members is None:
+            members = ProjectMember.objects.filter(
+                project=project,
+                is_active=True,
+                is_deleted=False,
+            ).select_related("user", "project__organization")
+
+        users = [m.user for m in members if m.user]
+        user_ids = [u.pk for u in users]
+
+        # Bulk fetch salary configs
+        configs = SalaryConfig.objects.filter(
+            user_id__in=user_ids,
+            organization=project.organization,
             is_active=True,
-            is_deleted=False,
-        ).select_related("user", "project__organization")
+            is_deleted=False
+        ).order_by("-created_at")
 
-        organization = project.organization
+        org_configs = {}
+        project_configs = {}
+        for c in configs:
+            if c.project_id == project.pk:
+                if c.user_id not in project_configs:
+                    project_configs[c.user_id] = c
+            elif not c.project_id:
+                if c.user_id not in org_configs:
+                    org_configs[c.user_id] = c
+
+        # Bulk fetch timelogs
+        timelogs = TimeLog.objects.filter(
+            user_id__in=user_ids,
+            task__project=project,
+            is_deleted=False
+        ).values("user_id").annotate(total=Sum("duration_seconds"))
+
+        timelog_map = {tl["user_id"]: tl["total"] or 0 for tl in timelogs}
+
         members_data = []
         total_cost = Decimal("0")
 
         for member in members:
             if not member.user:
                 continue
-            salary = cls.get_effective_salary(member.user, organization, project)
-            payment_type = salary.get("type")
-            rate = Decimal(str(salary.get("amount") or 0))
-            currency = salary.get("currency", "IRR")
 
-            total_hours = cls._get_worked_hours(member.user, project)
+            c = project_configs.get(member.user.pk)
+            if c:
+                payment_type, rate, override, currency = c.payment_type, c.rate, True, c.currency
+            else:
+                c = org_configs.get(member.user.pk)
+                if c:
+                    payment_type, rate, override, currency = c.payment_type, c.rate, False, c.currency
+                else:
+                    payment_type, rate, override, currency = None, Decimal("0"), False, "IRR"
+
+            seconds = timelog_map.get(member.user.pk, 0)
+            total_hours = Decimal(str(seconds)) / Decimal("3600")
 
             if payment_type == "hourly":
-                cost = rate * Decimal(str(total_hours)) if total_hours else Decimal("0")
+                cost = rate * total_hours if total_hours else Decimal("0")
             elif payment_type == "monthly":
                 cost = rate
             else:
@@ -450,8 +489,8 @@ class FinanceService:
                 "payment_type": payment_type,
                 "rate": float(rate),
                 "currency": currency,
-                "salary_override": salary.get("override", False),
-                "total_worked_hours": float(total_hours) if payment_type == "hourly" else None,
+                "salary_override": override,
+                "total_worked_hours": float(total_hours),
                 "total_cost": float(cost),
             })
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   DollarCircle,
@@ -44,7 +45,8 @@ const getUserName = (m: ProjectBillingMember) => {
 };
 
 export const ProjectBillingTab = ({ projectId }: ProjectBillingTabProps) => {
-  const { data, isLoading, error } = useProjectBilling(projectId);
+  const [page, setPage] = useState(1);
+  const { data, isLoading, error } = useProjectBilling(projectId, page);
 
   if (isLoading) return <PageLoader />;
 
@@ -261,6 +263,33 @@ export const ProjectBillingTab = ({ projectId }: ProjectBillingTabProps) => {
                 </tr>
               </tfoot>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {data.pagination && data.pagination.total_pages > 1 && (
+          <div className="mt-4 flex items-center justify-between border-t border-base-content/8 pt-4 text-sm">
+            <span className="text-base-content/50">
+              Showing page {data.pagination.current_page} of{" "}
+              {data.pagination.total_pages} (Total:{" "}
+              {data.pagination.total_results} members)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={!data.pagination.has_previous}
+                className="rounded-md border border-base-content/10 px-3 py-1 text-base-content hover:bg-base-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!data.pagination.has_next}
+                className="rounded-md border border-base-content/10 px-3 py-1 text-base-content hover:bg-base-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </motion.div>

@@ -16,7 +16,6 @@ def _get_user_org(request):
     membership = (
         OrganizationMembership.objects.filter(
             user=user,
-            is_active=True,
             is_deleted=False,
         )
         .select_related("organization")
@@ -78,7 +77,6 @@ class AdminFinanceReportView(APIView):
 
         qs = OrganizationMembership.objects.filter(
             organization=organization,
-            is_active=True,
             is_deleted=False,
         ).select_related("user").order_by("user__username")
 
@@ -152,5 +150,40 @@ class ProjectBillingView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        # Pagination and search
+        search = request.query_params.get("search", "").strip()
         data = FinanceService.get_project_billing(project)
+
+        if search:
+            q = search.lower()
+            data["members"] = [
+                m
+                for m in data["members"]
+                if q in m["username"].lower()
+                or q in m["first_name"].lower()
+                or q in m["last_name"].lower()
+            ]
+
+        total = len(data["members"])
+
+        try:
+            page = int(request.query_params.get("page", 1))
+            page_size = int(request.query_params.get("page_size", 20))
+        except ValueError:
+            page, page_size = 1, 20
+
+        start = (page - 1) * page_size
+        end = start + page_size
+        paginated_members = data["members"][start:end]
+        total_pages = max(1, (total + page_size - 1) // page_size)
+
+        data["members"] = paginated_members
+        data["pagination"] = {
+            "total_results": total,
+            "current_page": page,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }
+
         return Response(data)
