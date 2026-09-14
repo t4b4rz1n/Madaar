@@ -5,7 +5,7 @@ import { PermissionGuard } from '../../auth/components/PermissionGuard';
 import { UserRoute } from '../../../core/router/UserRoute';
 import PageLoader from '../../../components/PageLoader';
 import { TaskManagementPage } from '../pages/TaskManagementPage';
-import { StandupMatrix } from '../components/StandupMatrix';
+import { StandupsPage } from '../pages/StandupsPage';
 
 export const tasksRoutes: RouteObject[] = [
   {
@@ -26,7 +26,12 @@ export const tasksRoutes: RouteObject[] = [
     element: (
       <UserRoute>
         <Suspense fallback={<PageLoader />}>
-          <StandupMatrix />
+          <PermissionGuard
+            permissions={['org.manage_settings', 'report.view']}
+            fallback={<Navigate to="/dashboard" replace />}
+          >
+            <StandupsPage />
+          </PermissionGuard>
         </Suspense>
       </UserRoute>
     ),

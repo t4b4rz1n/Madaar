@@ -151,7 +151,9 @@ class OrganizationMembership(BaseModel):
     role = models.CharField(
         max_length=20,
         choices=Role.choices,
-        default=Role.EMPLOYEE,
+        null=True,
+        blank=True,
+        default=None,
     )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

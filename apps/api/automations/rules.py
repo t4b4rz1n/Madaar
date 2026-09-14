@@ -15,28 +15,6 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-<<<<<<< HEAD
-import urllib.parse
-
-def _get_event_link(event_type: str, payload: dict) -> str:
-    """Pass event details to frontend via query string for client-side routing.
-    Only essential keys are included and mapped to short keys to ensure length < 255.
-    """
-    key_map = {
-        "project_id": "p",
-        "task_id": "t",
-        "board_id": "b",
-        "organization_id": "o"
-    }
-    
-    query = {"e": event_type}
-    for k, v in payload.items():
-        if k in key_map and isinstance(v, (str, int)) and v:
-            query[key_map[k]] = str(v)
-            
-    qs = urllib.parse.urlencode(query)
-    return f"/_routing?{qs}" 
-=======
 def _get_event_link(event_type: str, payload: dict) -> str:
     """Generate a relevant frontend link based on event type and payload."""
     project_id = payload.get("project_id")
@@ -54,7 +32,6 @@ def _get_event_link(event_type: str, payload: dict) -> str:
     if organization_id:
         return f"/organizations/{organization_id}"
     return "/" 
->>>>>>> 54902c4 (fix: make task and leave request notifications link correctly)
 
 
 def process_rules_for_event(event_type: str, payload: dict):

@@ -205,7 +205,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
             # Resolve Role object and map to valid OrganizationMembership.Role choice
             role_obj = None
-            legacy_role = OrganizationMembership.Role.EMPLOYEE
+            legacy_role = None
             if raw_role:
                 role_obj = (
                     Role.objects.filter(
@@ -223,7 +223,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                     elif "admin" in name_lower:
                         legacy_role = OrganizationMembership.Role.ADMIN
                     else:
-                        legacy_role = OrganizationMembership.Role.EMPLOYEE
+                        legacy_role = None
                 elif raw_role in [c[0] for c in OrganizationMembership.Role.choices]:
                     legacy_role = raw_role
 

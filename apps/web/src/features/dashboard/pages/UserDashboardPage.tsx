@@ -20,6 +20,7 @@ import {
 } from "iconsax-reactjs";
 import { toast } from "sonner";
 import { useAuthStore } from "../../auth/store/authStore";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 import { getEmployeeDashboard } from "../api/dashboardApi";
 import {
   getTodayAttendance,
@@ -69,6 +70,8 @@ export const UserDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const timezone = useMemo(getTimezone, []);
+  const { hasAnyPermission } = usePermissions();
+  const isManager = hasAnyPermission(["org.manage_settings", "report.view"]);
 
   const [isStandupOpen, setStandupOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -466,9 +469,11 @@ export const UserDashboardPage = () => {
       </div>
 
       {/* ─── 3. Standup Matrix (full width, nothing beside) ─── */}
-      <div className="min-w-0">
-        <StandupMatrix title="Standup Matrix" />
-      </div>
+      {!isManager && (
+        <div className="min-w-0">
+          <StandupMatrix title="Standup Matrix" forceSelfView={true} />
+        </div>
+      )}
 
       {/* Standup & Task Modals */}
       <StandupModal

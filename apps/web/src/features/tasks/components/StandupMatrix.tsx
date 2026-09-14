@@ -16,6 +16,7 @@ import {
 import { getStandupGrid, getMyStandupGrid, updateStandupHours } from '../api/tasksApi';
 import { getProjects } from '../../projects/api/projectsApi';
 import { useAuthStore } from '../../auth/store/authStore';
+import { usePermissions } from '../../auth/hooks/usePermissions';
 import { STANDUP_STRINGS as S } from '../constants/standupStrings';
 import { StandupModal } from './StandupModal';
 import type { StandupGridData, StandupGridEntry, StandupGridMember } from '../types';
@@ -70,6 +71,7 @@ interface HourDrafts {
 
 interface StandupMatrixProps {
   title?: string;
+  forceSelfView?: boolean;
 }
 
 const cellKey = (rowId: string, isoDate: string): string => `${rowId}:${isoDate}`;
@@ -84,6 +86,7 @@ const cellKey = (rowId: string, isoDate: string): string => `${rowId}:${isoDate}
  */
 export const StandupMatrix: React.FC<StandupMatrixProps> = ({
   title = S.gridTitle,
+  forceSelfView = false,
 }) => {
   const queryClient = useQueryClient();
   const currentUserId = useAuthStore((state) => state.user?.id);
@@ -226,10 +229,9 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
    * a project member), or the project only exposes the caller. Without this
    * a regular member can get stuck on an empty team view.
    */
-  const isSelfView =
-    !selectedProjectId ||
-    gridQuery.isError ||
-    (Boolean(grid) && (grid?.members?.length ?? 0) <= 1);
+  const { isStaff, hasPermission } = usePermissions();
+  const canViewTeam = isStaff || hasPermission('org.manage_settings');
+  const isSelfView = forceSelfView || !canViewTeam;
 
   const myGridQuery = useQuery({
     queryKey: ['my-standup-grid', currentUserId, cursor.year, cursor.month, calendarPref],
@@ -584,7 +586,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
           <p className="mt-1 text-xs text-base-content/50">{S.noProjectsHint}</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-base-content/8 bg-base-100 shadow-sm">
+        <div className="rounded-2xl border border-base-content/8 bg-base-100 shadow-sm">
           {!canWrite && (
             <div className="border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-600 dark:text-amber-400">
               {S.viewerNotice}
@@ -592,7 +594,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
           )}
 
           {/* Matrix Header — month stepper, title, and project picker */}
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-base-content/8 bg-base-200/30 px-4 py-3">
+          <div className="relative z-[60] grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 rounded-t-2xl border-b border-base-content/8 bg-base-200/30 px-4 py-3">
             <div className="flex min-w-0 items-center gap-2">
               <button
                 type="button"
@@ -852,7 +854,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
           </div>
 
           {/* Footer Legend */}
-          <div className="flex flex-col justify-between gap-2 border-t border-base-content/8 px-4 py-3 bg-base-200/20 md:flex-row md:items-center text-xs">
+          <div className="flex flex-col justify-between gap-2 rounded-b-2xl border-t border-base-content/8 px-4 py-3 bg-base-200/20 md:flex-row md:items-center text-xs">
             <div className="flex flex-wrap items-center gap-4 text-base-content/60">
               <span className="flex items-center gap-1.5">
                 <span className="flex size-3 items-center justify-center rounded-full bg-emerald-500 text-white">

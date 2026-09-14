@@ -553,7 +553,7 @@ class IsAsyncStandupPermission(permissions.BasePermission):
 
             if PermissionService.has_permission(
                 request.user, "org.manage_settings", org_id
-            ) or PermissionService.has_permission(request.user, "project.manage", org_id):
+            ):
                 return True
         return False
 
@@ -575,7 +575,7 @@ class IsAsyncStandupPermission(permissions.BasePermission):
 
             if PermissionService.has_permission(
                 request.user, "org.manage_settings", org_id
-            ) or PermissionService.has_permission(request.user, "project.manage", org_id):
+            ):
                 return True
         return False
 

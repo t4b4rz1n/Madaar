@@ -67,8 +67,8 @@ export const drawerItems: DrawerItem[] = [
     link: "standups",
     section: "Workspace",
     icon: <NoteText variant="Outline" />,
-    permissions: ["task.view", "task.create", "project.view", "org.manage_settings"],
-    isPrimary: false,
+    permissions: ["org.manage_settings", "report.view"],
+    isPrimary: true,
   },
   {
     title: "Time & Attendance",

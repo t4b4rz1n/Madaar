@@ -17,7 +17,7 @@ export const formatDisplayDate = (
     if (formatStr === "MMMM dd, yyyy") {
       return doranDate.format("D MMMM YYYY");
     }
-    if (formatStr === "EEEE, d MMMM yyyy") {
+    if (formatStr === "EEEE, d MMMM yyyy" || formatStr === "EEEE, MMMM d, yyyy") {
       return doranDate.format("dddd، D MMMM YYYY");
     }
     if (formatStr === "MMM d, yyyy") {
