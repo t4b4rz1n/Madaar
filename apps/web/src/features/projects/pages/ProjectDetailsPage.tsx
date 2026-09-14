@@ -852,75 +852,131 @@ export default function ProjectDetailsPage() {
           )}
 
           {/* ── MEMBERS TAB ── */}
-          {activeTab === "members" && (
-            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
-              <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
-                <h3 className="text-sm font-bold text-base-content">
-                  Project Members &amp; Teams ({members.length})
-                </h3>
-                {canManageProject && (
-                  <button
-                    type="button"
-                    onClick={() => setIsAddMemberOpen(true)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
-                  >
-                    <Add size={14} /> Add Member
-                  </button>
-                )}
-              </div>
+          {activeTab === "members" && (() => {
+            const individualMembers = members.filter((m: ProjectMember) => !m.team);
+            const teamMembers = members.filter((m: ProjectMember) => !!m.team);
 
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Owner Card */}
-                <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="grid size-8 place-items-center rounded-lg bg-primary text-white text-xs font-bold shrink-0">
-                      <Crown size={15} />
+            return (
+              <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
+                <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
+                  <h3 className="text-sm font-bold text-base-content">
+                    Project Members &amp; Teams ({members.length})
+                  </h3>
+                  {canManageProject && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddMemberOpen(true)}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
+                    >
+                      <Add size={14} /> Add Member
+                    </button>
+                  )}
+                </div>
+
+                {/* Members Section */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-base-content uppercase tracking-wider">
+                    Members ({individualMembers.length + 1})
+                  </h4>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {/* Owner Card */}
+                    <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="grid size-8 place-items-center rounded-lg bg-primary text-white text-xs font-bold shrink-0">
+                          <Crown size={15} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-base-content truncate">{ownerName}</p>
+                          <p className="text-[10px] font-semibold text-primary">Owner</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-base-content truncate">{ownerName}</p>
-                      <p className="text-[10px] font-semibold text-primary">Owner</p>
-                    </div>
+
+                    {/* Assigned Users */}
+                    {individualMembers.map((m: ProjectMember) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between rounded-xl border border-base-content/8 bg-base-200/40 p-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
+                            {getUserDisplayName(m)[0]?.toUpperCase() || "U"}
+                          </div>
+                          <div className="min-w-0">
+                            <p dir="auto" className="text-xs font-bold text-base-content truncate">
+                              {getUserDisplayName(m)}
+                            </p>
+                            <p className="text-[10px] font-medium text-base-content/40 truncate">
+                              {m.specialty || "Member"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDeleteModalState({
+                              open: true,
+                              memberId: m.id,
+                              memberName: getUserDisplayName(m),
+                            })
+                          }
+                          className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
+                          aria-label="Remove member"
+                        >
+                          <Trash size={13} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Assigned Users & Teams */}
-                {members.map((m: ProjectMember) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center justify-between rounded-xl border border-base-content/8 bg-base-200/40 p-3"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
-                        {m.team ? <People size={15} /> : getUserDisplayName(m)[0]?.toUpperCase() || "U"}
-                      </div>
-                      <div className="min-w-0">
-                        <p dir="auto" className="text-xs font-bold text-base-content truncate">
-                          {getUserDisplayName(m)}
-                        </p>
-                        <p className="text-[10px] font-medium text-base-content/40 truncate">
-                          {m.specialty || (m.team ? "Team Squad" : "Member")}
-                        </p>
-                      </div>
+                {/* Teams Section */}
+                {teamMembers.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t border-base-content/8">
+                    <h4 className="text-xs font-bold text-base-content uppercase tracking-wider">
+                      Teams ({teamMembers.length})
+                    </h4>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {teamMembers.map((m: ProjectMember) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between rounded-xl border border-base-content/8 bg-base-200/40 p-3"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
+                              <People size={15} />
+                            </div>
+                            <div className="min-w-0">
+                              <p dir="auto" className="text-xs font-bold text-base-content truncate">
+                                {getUserDisplayName(m)}
+                              </p>
+                              <p className="text-[10px] font-medium text-base-content/40 truncate">
+                                {m.specialty || "Team Squad"}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDeleteModalState({
+                                open: true,
+                                memberId: m.id,
+                                memberName: getUserDisplayName(m),
+                              })
+                            }
+                            className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
+                            aria-label="Remove team"
+                          >
+                            <Trash size={13} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDeleteModalState({
-                          open: true,
-                          memberId: m.id,
-                          memberName: getUserDisplayName(m),
-                        })
-                      }
-                      className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
-                      aria-label="Remove member"
-                    >
-                      <Trash size={13} />
-                    </button>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ── MILESTONES TAB ── */}
           {activeTab === "milestones" && (
