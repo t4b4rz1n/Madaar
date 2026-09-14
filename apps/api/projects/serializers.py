@@ -322,19 +322,33 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
             is_deleted=False,
         ).exists()
 
+    def _get_salary_config(self, obj: ProjectMember):
+        if not hasattr(self, '_salary_configs_cache'):
+            self._salary_configs_cache = {}
+        cache_key = f"{obj.user_id}_{obj.project_id}"
+        if cache_key in self._salary_configs_cache:
+            return self._salary_configs_cache[cache_key]
+        
+        from finance.services import FinanceService
+        result = FinanceService.get_effective_salary(obj.user, obj.project.organization, obj.project)
+        
+        self._salary_configs_cache[cache_key] = result
+        return result
+
     def get_salary_type(self, obj: ProjectMember):
         if self._can_view_salary(obj):
-            return obj.salary_type
+            return self._get_salary_config(obj)["type"]
         return None
 
     def get_salary_amount(self, obj: ProjectMember):
         if self._can_view_salary(obj):
-            return str(obj.salary_amount) if obj.salary_amount is not None else None
+            amt = self._get_salary_config(obj)["amount"]
+            return str(amt) if amt is not None else None
         return None
 
     def get_salary_override(self, obj: ProjectMember):
         if self._can_view_salary(obj):
-            return obj.salary_override
+            return self._get_salary_config(obj)["override"]
         return None
 
 
@@ -364,9 +378,6 @@ class ProjectMemberWriteSerializer(serializers.ModelSerializer):
             "allocation_start_date",
             "allocation_end_date",
             "is_active",
-            "salary_type",
-            "salary_amount",
-            "salary_override",
         )
 
     def validate(self, attrs: dict) -> dict:

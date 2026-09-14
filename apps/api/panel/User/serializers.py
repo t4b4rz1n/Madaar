@@ -138,16 +138,21 @@ class UserListSerializer(serializers.ModelSerializer):
             is_deleted=False
         ).exists()
 
+    def _get_salary_config(self, membership):
+        from finance.services import FinanceService
+        return FinanceService.get_effective_salary(membership.user, membership.organization)
+
     def get_salary_type(self, obj):
         membership, _ = self._get_active_membership_and_role(obj)
         if membership and self._can_manage_salary(membership):
-            return membership.salary_type
+            return self._get_salary_config(membership).get("type")
         return None
 
     def get_salary_amount(self, obj):
         membership, _ = self._get_active_membership_and_role(obj)
         if membership and self._can_manage_salary(membership):
-            return str(membership.salary_amount) if membership.salary_amount else None
+            amt = self._get_salary_config(membership).get("amount")
+            return str(amt) if amt is not None else None
         return None
 
 
@@ -302,10 +307,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
                             is_deleted=False
                         ).exists()
                     if is_salary_manager:
-                        if salary_type is not None:
-                            membership.salary_type = salary_type
-                        if salary_amount is not None:
-                            membership.salary_amount = salary_amount
+                        from finance.services import FinanceService
+                        FinanceService.set_org_salary(
+                            user=user,
+                            organization=org,
+                            payment_type=salary_type,
+                            rate=salary_amount
+                        )
 
                 membership.save()
                 role_obj = None
@@ -498,11 +506,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                                 is_deleted=False
                             ).exists()
                         if is_salary_manager:
-                            if has_salary_type:
-                                membership.salary_type = salary_type
-                            if has_salary_amount:
-                                membership.salary_amount = salary_amount
-
+                            from finance.services import FinanceService
+                            FinanceService.set_org_salary(
+                                user=user,
+                                organization=org,
+                                payment_type=salary_type if has_salary_type else None,
+                                rate=salary_amount if has_salary_amount else None
+                            )
                     if not has_role_id:
                         # Only skip role update, keep existing dynamic_roles unless role_id was explicitly sent as null
                         pass

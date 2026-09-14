@@ -15,6 +15,7 @@ import {
   ChartSquare,
   Calendar,
   Timer1,
+  WalletMoney,
 } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 import type { User as AuthUser } from "../auth/types/authTypes";
@@ -98,6 +99,14 @@ export const drawerItems: DrawerItem[] = [
     permissions: ["report.view_team_lead"],
     isPrimary: true,
   },
+  {
+    title: "My Finances",
+    link: "finance/my-reports",
+    section: "Workspace",
+    icon: <WalletMoney variant="Outline" />,
+    defaultForMembers: true,
+    isPrimary: true,
+  },
 
   // Admin & Settings Navigation (Settings Modal & Command Menu)
   {
@@ -140,6 +149,13 @@ export const drawerItems: DrawerItem[] = [
     link: "discounts",
     section: "AdminSettings",
     icon: <DiscountShape variant="Outline" />,
+    permissions: ["finance.manage", "finance.view_reports"],
+  },
+  {
+    title: "Organization Finances",
+    link: "finance/admin",
+    section: "AdminSettings",
+    icon: <WalletMoney variant="Outline" />,
     permissions: ["finance.manage", "finance.view_reports"],
   },
 

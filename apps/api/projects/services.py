@@ -322,9 +322,6 @@ class ProjectMemberService:
             for attr, value in validated_data.items():
                 setattr(existing, attr, value)
             existing.is_active = True
-            # Copy org salary if not explicitly set and not already overridden
-            if not existing.salary_override and not validated_data.get("salary_amount"):
-                cls._copy_org_salary(existing, project)
             existing.save()
             member = existing
         elif reactivated:
@@ -332,18 +329,9 @@ class ProjectMemberService:
             reactivated.is_active = True
             for attr, value in validated_data.items():
                 setattr(reactivated, attr, value)
-            # Copy org salary if not explicitly set
-            if not validated_data.get("salary_amount"):
-                cls._copy_org_salary(reactivated, project)
             reactivated.save()
             member = reactivated
         else:
-            # Copy org salary before creation if not supplied in validated_data
-            if not validated_data.get("salary_amount"):
-                org_salary = cls._get_org_salary(user, project)
-                if org_salary:
-                    validated_data.setdefault("salary_type", org_salary["salary_type"])
-                    validated_data.setdefault("salary_amount", org_salary["salary_amount"])
             member = ProjectMember.objects.create(project=project, **validated_data)
 
         _ActivityLogger.log(
@@ -393,34 +381,6 @@ class ProjectMemberService:
 
         return cls.get_by_pk(member.pk)
 
-    @staticmethod
-    def _get_org_salary(user, project) -> dict | None:
-        """Return org-level salary info for a user in a project's organization."""
-        if not user:
-            return None
-        try:
-            from organizations.models import OrganizationMembership
-            membership = OrganizationMembership.objects.filter(
-                user=user,
-                organization=project.organization,
-                is_deleted=False,
-            ).first()
-            if membership and (membership.salary_type or membership.salary_amount):
-                return {
-                    "salary_type": membership.salary_type,
-                    "salary_amount": membership.salary_amount,
-                }
-        except Exception as exc:
-            logger.warning("Failed to fetch org salary for user %s: %s", user, exc)
-        return None
-
-    @classmethod
-    def _copy_org_salary(cls, member: "ProjectMember", project: Project) -> None:
-        """Copy org-level salary into a ProjectMember instance (does NOT save)."""
-        org_salary = cls._get_org_salary(member.user, project)
-        if org_salary:
-            member.salary_type = org_salary["salary_type"]
-            member.salary_amount = org_salary["salary_amount"]
 
 
     @classmethod
@@ -483,10 +443,13 @@ class ProjectMemberService:
         This marks ``salary_override=True`` so that future changes to the
         org-level salary will NOT cascade to this member in this project.
         """
-        member.salary_type = salary_type
-        member.salary_amount = salary_amount
-        member.salary_override = True
-        member.save(update_fields=["salary_type", "salary_amount", "salary_override", "updated_at"])
+        from finance.services import FinanceService
+        FinanceService.set_project_salary(
+            user=member.user,
+            project=member.project,
+            payment_type=salary_type,
+            rate=salary_amount
+        )
 
         _ActivityLogger.log(
             project=member.project,
@@ -516,9 +479,12 @@ class ProjectMemberService:
         Clears the ``salary_override`` flag so future org-level changes
         will again propagate to this member in this project.
         """
-        cls._copy_org_salary(member, member.project)
-        member.salary_override = False
-        member.save(update_fields=["salary_type", "salary_amount", "salary_override", "updated_at"])
+        from finance.services import FinanceService
+        FinanceService.reset_project_salary(
+            user=member.user,
+            project=member.project,
+        )
+
 
         _ActivityLogger.log(
             project=member.project,
