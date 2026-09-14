@@ -17,17 +17,17 @@ const ProfilePage = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-base-100 min-h-[calc(100vh-121px)] border border-base-content/8 rounded-2xl p-4 sm:p-6"
+      className="bg-transparent min-h-[calc(100vh-121px)] p-4 sm:p-6 lg:p-8 max-w-5xl"
     >
-      <motion.div variants={itemVariants} className="flex flex-col gap-1 border-b border-base-content/8 pb-4">
-        <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
-          Profile &amp; Account
+      <motion.div variants={itemVariants} className="flex flex-col gap-1 border-b border-base-content/10 pb-6 mb-8">
+        <h1 className="text-3xl font-black tracking-tight text-base-content">
+          Profile & Account
         </h1>
-        <p className="text-xs font-medium text-base-content/50">
-          Manage your personal information, security preferences and account settings.
+        <p className="text-sm font-semibold text-base-content/50 mt-1">
+          Manage your personal information, security preferences, and account settings.
         </p>
       </motion.div>
-      <motion.div variants={itemVariants} className="mt-6">
+      <motion.div variants={itemVariants}>
         <ProfileEditForm />
       </motion.div>
     </motion.div>

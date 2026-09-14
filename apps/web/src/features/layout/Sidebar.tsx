@@ -1,9 +1,8 @@
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft2, Logout, Setting2, User, Add } from "iconsax-reactjs";
+import { ArrowLeft2, Setting2, Add } from "iconsax-reactjs";
 import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useLogout } from "../auth/hooks/useAuth";
 import { useAuthStore } from "../auth/store/authStore";
 import { usePermissions } from "../auth/hooks/usePermissions";
 import { getVisibleDrawerItems } from "./DrawerItems";
@@ -49,7 +48,7 @@ export const Sidebar = () => {
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen } = useLayoutStore();
   const { activeProjectId, setActiveProject } = useTaskStore();
-  const logout = useLogout();
+  
 
   const { data: projects } = useQuery({
     queryKey: ["projects"],
@@ -288,67 +287,6 @@ export const Sidebar = () => {
               )}
             </AnimatePresence>
           </Link>
-
-          {/* User Profile dropdown */}
-          <div className="dropdown dropdown-top w-full">
-            <motion.button
-              type="button"
-              className={`motion-interactive flex w-full cursor-pointer items-center gap-3 rounded-xl border-0 bg-transparent p-2 text-start hover:bg-base-200 ${
-                isCollapsed ? "justify-center" : ""
-              }`}
-            >
-              <div className="avatar">
-                <div className="w-9 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
-                  {user?.profile_image_url ? (
-                    <img src={user.profile_image_url} alt="Profile" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-primary/10">
-                      <User size="18" className="text-primary" />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <AnimatePresence>
-                {!isCollapsed && (
-                  <motion.div
-                    variants={textVariants}
-                    initial="collapsed"
-                    animate="expanded"
-                    exit="collapsed"
-                    className="flex-grow overflow-hidden text-start"
-                  >
-                    <p className="truncate text-xs font-bold text-base-content">
-                      {user?.username || "User"}
-                    </p>
-                    <p className="truncate text-[0.65rem] text-base-content/55">
-                      {user?.email || "No email"}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu z-[1] mb-2 w-52 rounded-box border border-base-200 bg-base-100 p-2 shadow-xl"
-            >
-              <li className="menu-title px-4 py-2 text-xs font-semibold uppercase text-base-content/50">
-                Account
-              </li>
-              <li>
-                <Link to="profile" className="text-base-content/80">
-                  <User className="h-4 w-4" /> My Profile
-                </Link>
-              </li>
-              <div className="divider my-1"></div>
-              <li>
-                <button onClick={logout} className="text-error hover:bg-error/10">
-                  <Logout className="h-4 w-4" />
-                  Logout
-                </button>
-              </li>
-            </ul>
-          </div>
         </div>
       </motion.aside>
     </>

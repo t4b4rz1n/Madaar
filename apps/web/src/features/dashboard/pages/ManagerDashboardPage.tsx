@@ -1,12 +1,11 @@
 import { formatDisplayDate } from "../../../utils/date";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
   ArrowRight,
   Calendar,
   Flag,
   Chart21,
-  Clock,
   CloseCircle,
   Danger,
   People,
@@ -53,7 +52,7 @@ const formatHours = (seconds: number | null | undefined) => {
   return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
 };
 
-const formatDate = (value: string | null | undefined) => value ? formatDisplayDate(new Date(value), "MMM d") : "-";;
+const formatDate = (value: string | null | undefined) => value ? formatDisplayDate(new Date(value), "MMM d") : "-";
 
 const getInitials = (firstName?: string, lastName?: string, fallback = "?") =>
   `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || fallback;
@@ -81,7 +80,7 @@ const MetricCard = ({
   value: string | number;
   description: string;
   icon: ComponentType<any>;
-  tone?: "primary" | "warning" | "success" | "secondary";
+  tone?: "primary" | "warning" | "success" | "secondary" | "error";
 }) => (
   <motion.section whileHover={{ y: -2 }} transition={spring} className={`${panelClass} p-5`}>
     <div className="flex items-start justify-between gap-3">
@@ -90,7 +89,7 @@ const MetricCard = ({
         <p className="mt-3 text-3xl font-black tracking-tight text-base-content">{value}</p>
         <p className="mt-1 text-xs font-semibold text-base-content/45">{description}</p>
       </div>
-      <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${tone === "warning" ? "bg-warning/10 text-warning" : tone === "success" ? "bg-success/10 text-success" : tone === "secondary" ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary"}`}>
+      <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${tone === "warning" ? "bg-warning/10 text-warning" : tone === "success" ? "bg-success/10 text-success" : tone === "error" ? "bg-error/10 text-error" : tone === "secondary" ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary"}`}>
         <Icon size={21} />
       </span>
     </div>
@@ -145,9 +144,19 @@ const ManagerDashboardPage = () => {
   const membersKey = ["manager-members", timezone];
   const approvalsKey = ["approval-inbox"];
 
+  const [selectedProjectId, setSelectedProjectId] = useState<string | number | "">("");
+
   const dashboardQuery = useQuery<ManagerDashboard>({ queryKey: managerKey, queryFn: () => getManagerDashboard(null, timezone), staleTime: 30_000, refetchInterval: 60_000 });
+
+  // Removed useEffect that forced selecting a project
   const membersQuery = useQuery<ManagerMemberDetail[]>({ queryKey: membersKey, queryFn: () => getManagerMembers(null, timezone), enabled: dashboardQuery.isSuccess, staleTime: 30_000 });
   const approvalQuery = useQuery<TimeOffRequest[]>({ queryKey: approvalsKey, queryFn: () => getTimeOffRequests({ status: "pending" }), enabled: dashboardQuery.isSuccess, staleTime: 15_000, refetchInterval: 60_000 });
+
+  const { data: projectTasks, isLoading: isLoadingTasks } = useQuery<Task[]>({
+    queryKey: ["project-tasks", selectedProjectId],
+    queryFn: () => getTasks(selectedProjectId.toString()),
+    enabled: Boolean(selectedProjectId),
+  });
 
   const approvalMutation = useMutation({
     mutationFn: ({ id, action }: { id: string | number; action: "approve" | "reject" }) => action === "approve" ? approveTimeOffRequest(id) : rejectTimeOffRequest(id, ""),
@@ -164,85 +173,215 @@ const ManagerDashboardPage = () => {
 
   const dashboard = dashboardQuery.data;
   const members = membersQuery.data || [];
-  const workHours = dashboard?.work_hours || [];
-  const maxTasks = Math.max(...members.map(member => member.total_tasks), 1);
-  const workHoursByUser = new Map(workHours.map(member => [member.user_id.toString(), member.total_seconds]));
-  const totalTasks = dashboard?.task_stats.reduce((total, item) => total + item.count, 0) || 0;
-  const doneTasks = dashboard?.task_stats.filter(item => item.status_code?.toLowerCase() === "done").reduce((total, item) => total + item.count, 0) || 0;
-  const atRiskProjects = dashboard?.project_summary.filter(project => ["error", "warning"].includes(getHealth(project).tone)).length || 0;
-  const utilization = workHours.length && dashboard?.team_member_count ? Math.round(workHours.reduce((total, member) => total + Number(member.total_seconds || 0), 0) / (dashboard.team_member_count * 40 * 3600) * 100) : 0;
-  const decisionCount = (dashboard?.overdue_summary.total_overdue || 0) + atRiskProjects + (approvalQuery.data?.length || 0);
+  
   const isLoading = dashboardQuery.isLoading;
 
   if (isLoading) return <ManagerDashboardSkeleton />;
 
   if (dashboardQuery.isError || !dashboard) return <section className="mx-auto max-w-2xl py-14"><div className={`${panelClass} p-8 text-center`}><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-warning/10 text-warning"><Danger size={24} /></div><h1 className="mt-4 text-xl font-black text-base-content">Manager access is required</h1><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-base-content/55">This view is available to team leads, organization admins and owners. Your personal workspace is still available.</p><Link to="/dashboard" className="motion-interactive mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-primary-content">Go to today <ArrowRight size={15} /></Link></div></section>;
 
+  const selectedProject = dashboard.project_summary.find(p => p.id.toString() === selectedProjectId.toString());
+
+  // Global calculations
+  const globalWorkHours = dashboard.work_hours || [];
+  const maxTasks = Math.max(...members.map(member => member.total_tasks), 1);
+  const workHoursByUser = new Map(globalWorkHours.map(member => [member.user_id.toString(), member.total_seconds]));
+  const globalTotalTasks = dashboard.task_stats.reduce((total, item) => total + item.count, 0) || 0;
+  const globalDoneTasks = dashboard.task_stats.filter(item => item.status_code?.toLowerCase() === "done").reduce((total, item) => total + item.count, 0) || 0;
+  const atRiskProjects = dashboard.project_summary.filter(project => ["error", "warning"].includes(getHealth(project).tone)).length || 0;
+  const globalUtilization = globalWorkHours.length && dashboard.team_member_count ? Math.round(globalWorkHours.reduce((total, member) => total + Number(member.total_seconds || 0), 0) / (dashboard.team_member_count * 40 * 3600) * 100) : 0;
+  const globalDecisionCount = (dashboard.overdue_summary.total_overdue || 0) + atRiskProjects + (approvalQuery.data?.length || 0);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto max-w-[1480px] space-y-5 sm:space-y-6">
       <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div><div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-primary"><Chart21 size={15} /> Decision dashboard</div><h1 className="mt-2 text-3xl font-black tracking-tight text-base-content sm:text-4xl">See where the team needs you</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/55 sm:text-base">A calm view of workload, delivery risk and decisions waiting in your inbox.</p></div>
-        <div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/55"><Activity size={15} className="text-success" /> Live scope</span><button type="button" onClick={() => { void dashboardQuery.refetch(); void membersQuery.refetch(); void approvalQuery.refetch(); }} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/60 hover:border-primary/30 hover:text-primary"><Refresh2 size={15} /> Refresh</button></div>
+        <div>
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-primary">
+            <Chart21 size={15} /> {selectedProject ? 'Project Scope' : 'Decision Dashboard'}
+          </div>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-base-content sm:text-4xl">
+            {selectedProject ? selectedProject.name : 'See where the team needs you'}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/55 sm:text-base">
+            {selectedProject ? `Viewing specific workload and task focus for ${selectedProject.name}.` : 'A calm view of workload, delivery risk and decisions waiting in your inbox.'}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {dashboard.project_summary.length > 0 && (
+            <select 
+              value={selectedProjectId} 
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="select select-bordered select-sm rounded-xl text-xs font-bold h-10 border-base-content/10 bg-base-100 hover:border-primary/30"
+            >
+              <option value="">All Projects (Global Scope)</option>
+              {dashboard.project_summary.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
+          <span className="inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/55">
+            <Activity size={15} className="text-success" /> Live scope
+          </span>
+          <button type="button" onClick={() => { void dashboardQuery.refetch(); void membersQuery.refetch(); void approvalQuery.refetch(); }} className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/60 hover:border-primary/30 hover:text-primary">
+            <Refresh2 size={15} /> Refresh
+          </button>
+        </div>
       </section>
 
-      <section className={`${panelClass} flex flex-col gap-4 bg-gradient-to-br from-primary/[0.08] via-base-100 to-base-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6`}><div className="flex items-start gap-3"><div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-content"><Danger size={19} /></div><div><p className="text-xs font-black uppercase tracking-[0.14em] text-primary">Your decision queue</p><h2 className="mt-1 text-lg font-black text-base-content">{decisionCount === 0 ? "Everything looks steady" : `${decisionCount} signal${decisionCount === 1 ? "" : "s"} worth a look`}</h2><p className="mt-1 text-xs font-semibold text-base-content/50">{dashboard.overdue_summary.total_overdue} overdue tasks · {atRiskProjects} project risks · {approvalQuery.data?.length || 0} approvals</p></div></div><div className="flex items-center gap-2 text-xs font-bold text-base-content/50"><Calendar size={15} /> Updated just now</div></section>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><MetricCard label="Team" value={dashboard.team_member_count} description="people in your scope" icon={People} tone="primary" /><MetricCard label="Open work" value={Math.max(0, totalTasks - doneTasks)} description={`${doneTasks} completed tasks`} icon={TaskSquare} tone="secondary" /><MetricCard label="Overdue" value={dashboard.overdue_summary.total_overdue} description="needs attention" icon={Danger} tone="warning" /><MetricCard label="Utilization" value={`${utilization}%`} description="based on weekly focus time" icon={Timer1} tone="success" /></section>
-
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.8fr)]">
-        <section className={panelClass}>
-          <SectionHeading title="Team overview" description="A quick read on delivery and capacity" action={<span className="text-[11px] font-bold text-base-content/35">This week</span>} />
-          {dashboard.managed_team_count === 0 ? (
-            <div className="px-5 pb-6">
-              <div className="flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/5 p-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                  <People size={20} />
+      <AnimatePresence mode="wait">
+        {!selectedProject ? (
+          <motion.div 
+            key="global-scope" 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -10 }} 
+            transition={{ duration: 0.2 }}
+            className="space-y-5 sm:space-y-6"
+          >
+            <section className={`${panelClass} flex flex-col gap-4 bg-gradient-to-br from-primary/[0.08] via-base-100 to-base-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6`}>
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-content">
+                  <Danger size={19} />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-base-content">No teams connected yet</p>
-                  <p className="mt-1 text-xs text-base-content/55">Create a team and assign members to it so this section can display workload, attendance and delivery analytics .</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Link to="/teams" className="motion-interactive inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-black text-primary-content">
-                    <ArrowRight size={13} /> Manage Teams
-                  </Link>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">Your decision queue</p>
+                  <h2 className="mt-1 text-lg font-black text-base-content">{globalDecisionCount === 0 ? "Everything looks steady" : `${globalDecisionCount} signal${globalDecisionCount === 1 ? "" : "s"} worth a look`}</h2>
+                  <p className="mt-1 text-xs font-semibold text-base-content/50">{dashboard.overdue_summary.total_overdue} overdue tasks · {atRiskProjects} project risks · {approvalQuery.data?.length || 0} approvals</p>
                 </div>
               </div>
-            </div>
-          ) : (
-            <>
-              <div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[10px] font-black uppercase tracking-wider text-base-content/35 sm:grid"><span>Member</span><span>Workload</span><span className="text-end">Done</span><span className="text-end">Risk</span><span className="text-end">Focus</span></div>
-              {members.length === 0 ? <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">No team members are visible in this scope.</div> : <div>{members.slice(0, 8).map(member => <MemberRow key={member.id} member={member} maxTasks={maxTasks} workSeconds={workHoursByUser.get(member.id.toString()) || member.week_seconds || 0} />)}</div>}
-            </>
-          )}
-        </section>
-        <ApprovalInbox requests={approvalQuery.data || []} isLoading={approvalQuery.isLoading} pendingId={approvalMutation.isPending ? approvalMutation.variables?.id || null : null} onApprove={id => approvalMutation.mutate({ id, action: "approve" })} onReject={id => approvalMutation.mutate({ id, action: "reject" })} />
-      </section>
+              <div className="flex items-center gap-2 text-xs font-bold text-base-content/50"><Calendar size={15} /> Updated just now</div>
+            </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]"><WorkloadPanel dashboard={dashboard} /><ProjectHealth projects={dashboard.project_summary} /></section>
-      <ProjectFocusPanel projects={dashboard.project_summary} />
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricCard label="Team" value={dashboard.team_member_count} description="people in your scope" icon={People} tone="primary" />
+              <MetricCard label="Open work" value={Math.max(0, globalTotalTasks - globalDoneTasks)} description={`${globalDoneTasks} completed tasks`} icon={TaskSquare} tone="secondary" />
+              <MetricCard label="Overdue" value={dashboard.overdue_summary.total_overdue} description="needs attention" icon={Danger} tone="warning" />
+              <MetricCard label="Utilization" value={`${globalUtilization}%`} description="based on weekly focus time" icon={Timer1} tone="success" />
+            </section>
+
+            <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.8fr)]">
+              <section className={panelClass}>
+                <SectionHeading title="Team overview" description="A quick read on delivery and capacity" action={<span className="text-[11px] font-bold text-base-content/35">This week</span>} />
+                {dashboard.managed_team_count === 0 ? (
+                  <div className="px-5 pb-6">
+                    <div className="flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/5 p-5">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary"><People size={20} /></div>
+                      <div>
+                        <p className="text-sm font-black text-base-content">No teams connected yet</p>
+                        <p className="mt-1 text-xs text-base-content/55">Create a team and assign members to it so this section can display workload, attendance and delivery analytics .</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Link to="/teams" className="motion-interactive inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-black text-primary-content"><ArrowRight size={13} /> Manage Teams</Link>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[10px] font-black uppercase tracking-wider text-base-content/35 sm:grid"><span>Member</span><span>Workload</span><span className="text-end">Done</span><span className="text-end">Risk</span><span className="text-end">Focus</span></div>
+                    {members.length === 0 ? <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">No team members are visible in this scope.</div> : <div>{members.slice(0, 8).map(member => <MemberRow key={member.id} member={member} maxTasks={maxTasks} workSeconds={workHoursByUser.get(member.id.toString()) || member.week_seconds || 0} />)}</div>}
+                  </>
+                )}
+              </section>
+              <ApprovalInbox requests={approvalQuery.data || []} isLoading={approvalQuery.isLoading} pendingId={approvalMutation.isPending ? approvalMutation.variables?.id || null : null} onApprove={id => approvalMutation.mutate({ id, action: "approve" })} onReject={id => approvalMutation.mutate({ id, action: "reject" })} />
+            </section>
+
+            <section className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+              <WorkloadPanel taskStats={dashboard.task_stats} />
+              <ProjectHealth projects={dashboard.project_summary} />
+            </section>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="project-scope" 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -10 }} 
+            transition={{ duration: 0.2 }}
+            className="space-y-5 sm:space-y-6"
+          >
+            <ProjectSpecificView project={selectedProject!} tasks={projectTasks} isLoading={isLoadingTasks} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
 
-const WorkloadPanel = ({ dashboard }: { dashboard: ManagerDashboard }) => {
-  const total = Math.max(dashboard.task_stats.reduce((sum, stat) => sum + stat.count, 0), 1);
-  const palette = ["bg-primary", "bg-secondary", "bg-warning", "bg-success", "bg-error"];
-  return <section className={panelClass}><SectionHeading title="Workload" description="How active work is distributed by status" action={<span className="inline-flex items-center gap-1 text-[11px] font-bold text-base-content/35"><Clock size={13} /> {formatHours(dashboard.work_hours.reduce((sum, item) => sum + Number(item.total_seconds || 0), 0))} logged</span>} /><div className="px-5 pb-6"><div className="flex h-3 overflow-hidden rounded-full bg-base-200">{dashboard.task_stats.map((stat, index) => <motion.div key={`${stat.status_code}-${index}`} initial={{ width: 0 }} animate={{ width: `${(stat.count / total) * 100}%` }} transition={{ duration: 0.7, delay: index * 0.06 }} className={`${palette[index % palette.length]} min-w-1`} />)}</div><div className="mt-5 grid gap-3 sm:grid-cols-2">{dashboard.task_stats.map((stat, index) => <div key={`${stat.status_code}-legend`} className="flex items-center justify-between rounded-xl bg-base-200/60 px-3 py-2.5"><div className="flex min-w-0 items-center gap-2"><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${palette[index % palette.length]}`} /><span className="truncate text-xs font-bold text-base-content/60">{stat.status_name || stat.status_code || "Unsorted"}</span></div><span className="text-sm font-black text-base-content">{stat.count}</span></div>)}</div></div></section>;
+const ProjectSpecificView = ({ tasks, isLoading }: { project: ManagerProjectSummary, tasks?: Task[], isLoading: boolean }) => {
+  const allTasks = useMemo(() => tasks || [], [tasks]);
+  
+  const projTotalTasks = allTasks.length;
+  const projDoneTasks = allTasks.filter(t => t.is_finished || t.status_detail?.name.toLowerCase() === 'done').length;
+  const projOverdueTasks = allTasks.filter(t => !t.is_finished && t.due_date && new Date(t.due_date).getTime() < Date.now()).length;
+  const projBlockedTasks = allTasks.filter(t => !t.is_finished && t.is_blocked).length;
+
+  const taskStats = useMemo(() => {
+    const statsMap = new Map<string, { count: number; name: string; code: string }>();
+    allTasks.forEach(task => {
+      const code = task.status_detail?.code || "unknown";
+      const name = task.status_detail?.name || "Unsorted";
+      if (!statsMap.has(code)) {
+        statsMap.set(code, { count: 0, name, code });
+      }
+      statsMap.get(code)!.count += 1;
+    });
+    return Array.from(statsMap.values());
+  }, [allTasks]);
+
+  return (
+    <div className="space-y-5 sm:space-y-6">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Total Tasks" value={projTotalTasks} description="tracked in this project" icon={TaskSquare} tone="primary" />
+        <MetricCard label="Open work" value={Math.max(0, projTotalTasks - projDoneTasks)} description={`${projDoneTasks} completed`} icon={Activity} tone="secondary" />
+        <MetricCard label="Overdue" value={projOverdueTasks} description="past due date" icon={Danger} tone="warning" />
+        <MetricCard label="Blocked" value={projBlockedTasks} description="currently blocked" icon={CloseCircle} tone="error" />
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+        <WorkloadPanel taskStats={taskStats} />
+        <ProjectFocusPanel tasks={tasks} isLoading={isLoading} />
+      </section>
+    </div>
+  );
+};
+
+const WorkloadPanel = ({ taskStats }: { taskStats: { status_code?: string | null; status_name?: string | null; count: number; code?: string | null; name?: string | null }[] }) => {
+  const total = Math.max(taskStats.reduce((sum, stat) => sum + stat.count, 0), 1);
+  const palette = ["bg-primary", "bg-secondary", "bg-warning", "bg-success", "bg-error", "bg-info"];
+  return (
+    <section className={panelClass}>
+      <SectionHeading title="Workload" description="How active work is distributed by status" />
+      <div className="px-5 pb-6">
+        <div className="flex h-3 overflow-hidden rounded-full bg-base-200">
+          {taskStats.map((stat, index) => (
+            <motion.div 
+              key={`${stat.status_code || stat.code}-${index}`} 
+              initial={{ width: 0 }} 
+              animate={{ width: `${(stat.count / total) * 100}%` }} 
+              transition={{ duration: 0.7, delay: index * 0.06 }} 
+              className={`${palette[index % palette.length]} min-w-1`} 
+            />
+          ))}
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {taskStats.map((stat, index) => (
+            <div key={`${stat.status_code || stat.code}-legend`} className="flex items-center justify-between rounded-xl bg-base-200/60 px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${palette[index % palette.length]}`} />
+                <span className="truncate text-xs font-bold text-base-content/60">{stat.status_name || stat.name || stat.status_code || stat.code || "Unsorted"}</span>
+              </div>
+              <span className="text-sm font-black text-base-content">{stat.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 };
 
 const ManagerDashboardSkeleton = () => <div className="mx-auto max-w-[1480px] animate-pulse space-y-6"><div className="h-28 rounded-3xl bg-base-100" /><div className="h-28 rounded-3xl bg-base-100" /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[1, 2, 3, 4].map(item => <div key={item} className="h-32 rounded-2xl bg-base-100" />)}</div><div className="grid gap-5 xl:grid-cols-2"><div className="h-[30rem] rounded-2xl bg-base-100" /><div className="h-[30rem] rounded-2xl bg-base-100" /></div></div>;
 
-
-const ProjectFocusPanel = ({ projects }: { projects: ManagerProjectSummary[] }) => {
-  const [selectedProjectId, setSelectedProjectId] = useState<string | number | "">(projects[0]?.id || "");
-  
-  const { data: tasks, isLoading } = useQuery<Task[]>({
-    queryKey: ["project-tasks", selectedProjectId],
-    queryFn: () => getTasks(selectedProjectId.toString()),
-    enabled: Boolean(selectedProjectId),
-  });
-
+const ProjectFocusPanel = ({ tasks, isLoading }: { tasks?: Task[], isLoading: boolean }) => {
   const activeTasks = useMemo(() => {
     if (!tasks) return [];
     return tasks.filter(t => !t.is_finished);
@@ -267,24 +406,11 @@ const ProjectFocusPanel = ({ projects }: { projects: ManagerProjectSummary[] }) 
     });
   }, [activeTasks]);
 
-  if (projects.length === 0) return null;
-
   return (
     <section className={panelClass}>
       <SectionHeading 
         title="Project Focus" 
         description="See exactly what each person is working on" 
-        action={
-          <select 
-            value={selectedProjectId} 
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="select select-bordered select-sm rounded-xl text-xs font-bold"
-          >
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        } 
       />
       <div className="px-5 pb-6">
         {isLoading ? (
@@ -315,12 +441,12 @@ const ProjectFocusPanel = ({ projects }: { projects: ManagerProjectSummary[] }) 
                     <p className="text-[11px] font-semibold text-base-content/50">{group.tasks.length} active task{group.tasks.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2 madaar-scrollbar">
                   {group.tasks.map(task => (
-                    <div key={task.id} className="group/task flex items-center justify-between gap-4 rounded-xl bg-base-100 p-3 shadow-sm border border-base-content/5 transition hover:border-primary/20">
+                    <div key={task.id} className="group/task flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-xl bg-base-100 p-3 shadow-sm border border-base-content/5 transition hover:border-primary/20">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-base-content group-hover/task:text-primary transition-colors">{task.title}</p>
-                        <div className="mt-1.5 flex items-center gap-3 text-[10px] font-bold text-base-content/50">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[10px] font-bold text-base-content/50">
                           <span className="flex items-center gap-1.5"><Flag size={12} className={task.priority === 'critical' ? 'text-error' : task.priority === 'high' ? 'text-warning' : 'text-base-content/50'} /> {task.priority.toUpperCase()}</span>
                           {task.due_date && <span className="flex items-center gap-1.5"><Calendar size={12} /> {formatDate(task.due_date)}</span>}
                           {task.is_blocked && <span className="flex items-center gap-1.5 text-error bg-error/10 px-1.5 py-0.5 rounded-md"><CloseCircle size={10} /> Blocked</span>}
