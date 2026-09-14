@@ -1309,7 +1309,7 @@ class CumulativeFlowService:
             )
 
             counts: dict[str, int] = {code: 0 for code in status_codes}
-            for tid, (times, codes) in task_history.items():
+            for _tid, (times, codes) in task_history.items():
                 # Fast binary search for the last transition at or before day_end
                 idx = bisect.bisect_right(times, day_end_ts)
                 if idx > 0:
@@ -1454,7 +1454,7 @@ class MilestoneBurndownService:
 
         # Pre-compute and sort dates to avoid timezone conversion in the loop
         task_created_dates = sorted([t["created_at"].astimezone(user_tz).date() for t in tasks])
-        done_dates = sorted(list(first_done.values()))
+        done_dates = sorted(first_done.values())
 
         # Actual burndown & burnup
         actual_burndown = []

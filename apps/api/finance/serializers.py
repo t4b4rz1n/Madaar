@@ -15,5 +15,7 @@ class SetSalarySerializer(serializers.Serializer):
         choices=SalaryConfig.PaymentType.choices,
         required=True,
     )
-    salary_amount = serializers.DecimalField(max_digits=14, decimal_places=2, required=True, min_value=0)
+    salary_amount = serializers.DecimalField(
+        max_digits=14, decimal_places=2, required=True, min_value=0
+    )
     currency = serializers.CharField(max_length=10, required=False, default="IRR")

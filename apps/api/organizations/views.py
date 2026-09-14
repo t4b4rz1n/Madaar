@@ -194,7 +194,9 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 .prefetch_related("dynamic_roles")
                 .order_by("-created_at")
             )
-            serializer = OrganizationMemberSerializer(memberships, many=True, context={"request": request})
+            serializer = OrganizationMemberSerializer(
+                memberships, many=True, context={"request": request}
+            )
             return Response(serializer.data)
 
         elif request.method == "POST":
@@ -287,7 +289,9 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            response_serializer = OrganizationMemberSerializer(membership, context={"request": request})
+            response_serializer = OrganizationMemberSerializer(
+                membership, context={"request": request}
+            )
             status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
             return Response(response_serializer.data, status=status_code)
 
@@ -327,10 +331,14 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         """
         organization = self.get_object()
 
-        membership = OrganizationMembership.objects.filter(
-            organization=organization,
-            is_deleted=False,
-        ).filter(Q(user_id=user_id) | Q(id=user_id)).first()
+        membership = (
+            OrganizationMembership.objects.filter(
+                organization=organization,
+                is_deleted=False,
+            )
+            .filter(Q(user_id=user_id) | Q(id=user_id))
+            .first()
+        )
 
         if not membership:
             return Response({"detail": "Member not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -339,14 +347,13 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         from finance.services import FinanceService
+
         FinanceService.set_org_salary(
             user=membership.user,
             organization=organization,
             payment_type=serializer.validated_data.get("salary_type"),
-            rate=serializer.validated_data.get("salary_amount")
+            rate=serializer.validated_data.get("salary_amount"),
         )
-
 
         response_serializer = OrganizationMemberSerializer(membership, context={"request": request})
         return Response(response_serializer.data, status=status.HTTP_200_OK)
-

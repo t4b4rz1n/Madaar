@@ -305,16 +305,17 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
         actor = request.user
         if actor.is_superuser or actor.is_staff:
             return True
-            
-        if getattr(obj.project, 'owner_id', None) == actor.id:
+
+        if getattr(obj.project, "owner_id", None) == actor.id:
             return True
-            
+
         # Get the org from the project
         try:
             org = obj.project.organization
         except Exception:
             return False
         from organizations.models import OrganizationMembership
+
         return OrganizationMembership.objects.filter(
             user=actor,
             organization=org,
@@ -323,15 +324,18 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
         ).exists()
 
     def _get_salary_config(self, obj: ProjectMember):
-        if not hasattr(self, '_salary_configs_cache'):
+        if not hasattr(self, "_salary_configs_cache"):
             self._salary_configs_cache = {}
         cache_key = f"{obj.user_id}_{obj.project_id}"
         if cache_key in self._salary_configs_cache:
             return self._salary_configs_cache[cache_key]
-        
+
         from finance.services import FinanceService
-        result = FinanceService.get_effective_salary(obj.user, obj.project.organization, obj.project)
-        
+
+        result = FinanceService.get_effective_salary(
+            obj.user, obj.project.organization, obj.project
+        )
+
         self._salary_configs_cache[cache_key] = result
         return result
 

@@ -79,14 +79,19 @@ def extract_organization_id(obj_or_request):
                         .values_list("organization_id", flat=True)
                         .first()
                     )
-                    
+
                 task_id = data.get("task") or data.get("task_id")
                 if task_id:
                     from tasks.models import Task
-                    org_id = Task.objects.filter(id=task_id).values_list("project__organization_id", flat=True).first()
+
+                    org_id = (
+                        Task.objects.filter(id=task_id)
+                        .values_list("project__organization_id", flat=True)
+                        .first()
+                    )
                     if org_id:
                         return org_id
-                        
+
                 org_id = data.get("organization") or data.get("organization_id")
                 if org_id:
                     return org_id
@@ -160,11 +165,14 @@ def extract_project_id(obj_or_request):
                 proj_id = data.get("project") or data.get("project_id")
                 if proj_id:
                     return proj_id
-                
+
                 task_id = data.get("task") or data.get("task_id")
                 if task_id:
                     from tasks.models import Task
-                    task = Task.objects.filter(id=task_id).values_list("project_id", flat=True).first()
+
+                    task = (
+                        Task.objects.filter(id=task_id).values_list("project_id", flat=True).first()
+                    )
                     if task:
                         return task
         except Exception:
@@ -551,9 +559,7 @@ class IsAsyncStandupPermission(permissions.BasePermission):
         if org_id:
             from organizations.services import PermissionService
 
-            if PermissionService.has_permission(
-                request.user, "org.manage_settings", org_id
-            ):
+            if PermissionService.has_permission(request.user, "org.manage_settings", org_id):
                 return True
         return False
 
@@ -573,9 +579,7 @@ class IsAsyncStandupPermission(permissions.BasePermission):
         if org_id:
             from organizations.services import PermissionService
 
-            if PermissionService.has_permission(
-                request.user, "org.manage_settings", org_id
-            ):
+            if PermissionService.has_permission(request.user, "org.manage_settings", org_id):
                 return True
         return False
 

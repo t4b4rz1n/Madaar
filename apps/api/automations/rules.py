@@ -31,7 +31,7 @@ def _get_event_link(event_type: str, payload: dict) -> str:
         return "/attendance?tab=timeoff"
     if organization_id:
         return f"/organizations/{organization_id}"
-    return "/" 
+    return "/"
 
 
 def process_rules_for_event(event_type: str, payload: dict):

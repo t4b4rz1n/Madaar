@@ -275,7 +275,11 @@ class ProjectAPITests(APITestCase):
         url = f"/api/v1/projects/{self.project.id}/activities/?event_type=project_created"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for item in response.data.get("results", response.data):
+        for item in (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        ):
             self.assertEqual(item["event_type"], "project_created")
 
     def test_teams_endpoint(self):
@@ -297,7 +301,11 @@ class ProjectAPITests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get("/api/v1/projects/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get("results", response.data)
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
         if results:
             self.assertIn("status_display", results[0])
 
@@ -329,7 +337,11 @@ class ProjectAPITests(APITestCase):
         ProjectService.delete(project=self.project, actor=self.admin)
         response = self.client.get("/api/v1/projects/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get("results", response.data)
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
         project_ids = [p["id"] for p in results]
         self.assertNotIn(str(self.project.id), project_ids)
 
@@ -382,7 +394,11 @@ class ProjectAPITests(APITestCase):
 
         response = self.client.get("/api/v1/projects/?my_projects=true")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get("results", response.data)
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["name"], "My Proj")
 
@@ -413,6 +429,10 @@ class ProjectAPITests(APITestCase):
 
         response = self.client.get(f"{url}?upcoming=true")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get("results", response.data)
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["title"], "Upcoming")

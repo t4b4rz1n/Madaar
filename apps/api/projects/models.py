@@ -191,9 +191,6 @@ class ProjectMember(BaseModel):
     )
     is_active = models.BooleanField(_("Is active"), default=True, db_index=True)
 
-
-
-
     class Meta:
         verbose_name = _("Project Member")
         verbose_name_plural = _("Project Members")

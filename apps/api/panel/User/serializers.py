@@ -140,6 +140,7 @@ class UserListSerializer(serializers.ModelSerializer):
 
     def _get_salary_config(self, membership):
         from finance.services import FinanceService
+
         return FinanceService.get_effective_salary(membership.user, membership.organization)
 
     def get_salary_type(self, obj):
@@ -312,11 +313,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
                         ).exists()
                     if is_salary_manager:
                         from finance.services import FinanceService
+
                         FinanceService.set_org_salary(
                             user=user,
                             organization=org,
                             payment_type=salary_type,
-                            rate=salary_amount
+                            rate=salary_amount,
                         )
 
                 membership.save()
@@ -489,11 +491,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                     org = Organization.objects.filter(is_deleted=False).first()
 
                 if org:
-                    membership = (
-                        OrganizationMembership.objects.filter(
-                            user=user, organization=org, is_deleted=False
-                        ).first()
-                    )
+                    membership = OrganizationMembership.objects.filter(
+                        user=user, organization=org, is_deleted=False
+                    ).first()
                     if not membership:
                         membership = OrganizationMembership.objects.create(
                             user=user, organization=org, is_deleted=False
@@ -517,11 +517,12 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                             ).exists()
                         if is_salary_manager:
                             from finance.services import FinanceService
+
                             FinanceService.set_org_salary(
                                 user=user,
                                 organization=org,
                                 payment_type=salary_type if has_salary_type else None,
-                                rate=salary_amount if has_salary_amount else None
+                                rate=salary_amount if has_salary_amount else None,
                             )
                     if not has_role_id:
                         # Only skip role update, keep existing dynamic_roles unless role_id was explicitly sent as null

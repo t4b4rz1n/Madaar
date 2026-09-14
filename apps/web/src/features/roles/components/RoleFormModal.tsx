@@ -5,6 +5,8 @@ import { usePermissions } from "../hooks/useRoles";
 import { useOrganizations } from "../../organizations/hooks/useOrganizations";
 import type { Organization } from "../../organizations/types";
 
+// Permissions that are granted to all org members by default and should not appear in the role editor
+const HIDDEN_PERMISSIONS = ["attendance.view"];
 type RoleFormValues = {
   name: string;
   description: string;
@@ -44,9 +46,6 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
 
   // Load organizations for the selector (only when showOrgSelector is true)
   const { data: organizations = [] } = useOrganizations();
-
-  // Permissions that are granted to all org members by default and should not appear in the role editor
-  const HIDDEN_PERMISSIONS = ["attendance.view"];
 
   const filteredPermissions = useMemo(
     () => (permissionsData?.permissions || []).filter((p: Permission) => !HIDDEN_PERMISSIONS.includes(p.code)),

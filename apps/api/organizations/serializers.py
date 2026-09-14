@@ -166,15 +166,17 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
     def get_salary_type(self, obj):
         if self._can_manage_salary(obj):
             from finance.services import FinanceService
+
             salary = FinanceService.get_effective_salary(obj.user, obj.organization)
-            return salary.get('payment_type') if salary else None
+            return salary.get("payment_type") if salary else None
         return None
 
     def get_salary_amount(self, obj):
         if self._can_manage_salary(obj):
             from finance.services import FinanceService
+
             salary = FinanceService.get_effective_salary(obj.user, obj.organization)
-            return str(salary.get('rate')) if salary and salary.get('rate') is not None else None
+            return str(salary.get("rate")) if salary and salary.get("rate") is not None else None
         return None
 
 
@@ -215,6 +217,7 @@ class AddOrgMemberSerializer(serializers.Serializer):
 
 class UpdateOrgMemberSalarySerializer(serializers.Serializer):
     """Serializer for updating a member's salary at the organization level."""
+
     salary_type = serializers.ChoiceField(
         choices=[("hourly", "Hourly"), ("monthly", "Monthly"), ("fixed", "Fixed")],
         required=False,
@@ -229,7 +232,5 @@ class UpdateOrgMemberSalarySerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if "salary_type" not in attrs and "salary_amount" not in attrs:
-            raise serializers.ValidationError(
-                "Provide at least salary_type or salary_amount."
-            )
+            raise serializers.ValidationError("Provide at least salary_type or salary_amount.")
         return attrs

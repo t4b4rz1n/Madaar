@@ -33,15 +33,17 @@ class MyFinanceReportView(APIView):
     def get(self, request):
         user, organization = _get_user_org(request)
         if not organization:
-            return Response({
-                "user_id": str(user.pk),
-                "total_income": 0.0,
-                "total_paid": 0.0,
-                "current_balance": 0.0,
-                "currency": "IRR",
-                "projects": [],
-            })
-            
+            return Response(
+                {
+                    "user_id": str(user.pk),
+                    "total_income": 0.0,
+                    "total_paid": 0.0,
+                    "current_balance": 0.0,
+                    "currency": "IRR",
+                    "projects": [],
+                }
+            )
+
         data = FinanceService.get_user_finance_summary(user, organization)
         return Response(data)
 
@@ -77,19 +79,24 @@ class AdminFinanceReportView(APIView):
 
         search = request.query_params.get("search", "").strip()
 
-        from organizations.models import OrganizationMembership
         from django.db.models import Q
 
-        qs = OrganizationMembership.objects.filter(
-            organization=organization,
-            is_deleted=False,
-        ).select_related("user").order_by("user__username")
+        from organizations.models import OrganizationMembership
+
+        qs = (
+            OrganizationMembership.objects.filter(
+                organization=organization,
+                is_deleted=False,
+            )
+            .select_related("user")
+            .order_by("user__username")
+        )
 
         if search:
             qs = qs.filter(
-                Q(user__username__icontains=search) | 
-                Q(user__first_name__icontains=search) | 
-                Q(user__last_name__icontains=search)
+                Q(user__username__icontains=search)
+                | Q(user__first_name__icontains=search)
+                | Q(user__last_name__icontains=search)
             )
 
         total = qs.count()

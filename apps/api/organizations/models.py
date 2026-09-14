@@ -175,7 +175,6 @@ class OrganizationMembership(BaseModel):
         help_text="The new permission-based roles assigned to this member.",
     )
 
-
     class Meta:
         db_table = "organization_memberships"
         verbose_name = "Organization Membership"

@@ -138,7 +138,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
 
     const handleApiError = (err: any) => {
       console.error("Project action error:", err);
-      
+
       if (err?.response?.status === 403 || err?.status_code === 403 || err?.status === 403) {
         toast.error("You do not have permission to perform this action.");
         return;

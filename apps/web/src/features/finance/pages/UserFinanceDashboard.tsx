@@ -170,7 +170,7 @@ export const UserFinanceDashboard = () => {
               <FolderOpen size={18} />
               <h3 className="text-sm font-semibold tracking-wide">Your Projects</h3>
             </div>
-            
+
             <div className="flex flex-row overflow-x-auto pb-2 space-x-3 lg:flex-col lg:space-x-0 lg:space-y-3 lg:pb-0 scrollbar-thin scrollbar-thumb-base-300">
               {dashboard.projects.map((project) => (
                 <button
@@ -214,7 +214,7 @@ export const UserFinanceDashboard = () => {
                  >
                     {/* Decorative Header Background */}
                     <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/10 to-transparent" />
-                    
+
                     <div className="relative p-6 sm:p-8">
                       <div className="flex items-center gap-3">
                         <div className="grid size-12 place-items-center rounded-xl bg-primary/20 text-primary">

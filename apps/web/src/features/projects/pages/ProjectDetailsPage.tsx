@@ -645,7 +645,7 @@ export default function ProjectDetailsPage() {
   };
 
   const ownerName = getProjectOwnerName();
-  
+
   const isOwner = project.owner?.id === user?.id;
   const isSuperUser = user?.is_staff;
   const canViewSalaries = isSuperUser || isOwner;

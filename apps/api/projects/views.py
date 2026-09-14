@@ -356,7 +356,6 @@ class ProjectMemberViewSet(NestedProjectMixin, viewsets.ModelViewSet):
         return Response(ProjectMemberReadSerializer(updated, context={"request": request}).data)
 
 
-
 # ---------------------------------------------------------------------------
 # Milestone ViewSet (nested: /projects/<project_pk>/milestones/)
 # ---------------------------------------------------------------------------

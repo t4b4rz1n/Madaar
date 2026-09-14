@@ -380,8 +380,6 @@ class ProjectMemberService:
 
         return cls.get_by_pk(member.pk)
 
-
-
     @classmethod
     @transaction.atomic
     def update(
@@ -443,11 +441,9 @@ class ProjectMemberService:
         org-level salary will NOT cascade to this member in this project.
         """
         from finance.services import FinanceService
+
         FinanceService.set_project_salary(
-            user=member.user,
-            project=member.project,
-            payment_type=salary_type,
-            rate=salary_amount
+            user=member.user, project=member.project, payment_type=salary_type, rate=salary_amount
         )
 
         _ActivityLogger.log(
@@ -479,11 +475,11 @@ class ProjectMemberService:
         will again propagate to this member in this project.
         """
         from finance.services import FinanceService
+
         FinanceService.reset_project_salary(
             user=member.user,
             project=member.project,
         )
-
 
         _ActivityLogger.log(
             project=member.project,
@@ -500,7 +496,6 @@ class ProjectMemberService:
             actor,
         )
         return cls.get_by_pk(member.pk)
-
 
 
 # ---------------------------------------------------------------------------

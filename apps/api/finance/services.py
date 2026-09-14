@@ -15,7 +15,7 @@ import logging
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Sum
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class FinanceService:
 
     @classmethod
     @transaction.atomic
-    def set_org_salary(cls, *, user, organization, payment_type: str, rate) -> "SalaryConfig":
+    def set_org_salary(cls, *, user, organization, payment_type: str, rate):
         """Create or update the org-level (default) salary for a user."""
         from finance.models import SalaryConfig
 
@@ -54,7 +54,7 @@ class FinanceService:
 
     @classmethod
     @transaction.atomic
-    def set_project_salary(cls, *, user, project, payment_type: str | None = None, rate=None) -> "SalaryConfig":
+    def set_project_salary(cls, *, user, project, payment_type: str | None = None, rate=None):
         """Create or update a project-level salary override for a user."""
         from finance.models import SalaryConfig
 
@@ -172,7 +172,14 @@ class FinanceService:
                 "rate": org_config.rate,
             }
 
-        return {"type": None, "amount": None, "override": False, "currency": "IRR", "payment_type": None, "rate": None}
+        return {
+            "type": None,
+            "amount": None,
+            "override": False,
+            "currency": "IRR",
+            "payment_type": None,
+            "rate": None,
+        }
 
     # ------------------------------------------------------------------
     # Finance reporting
@@ -184,28 +191,22 @@ class FinanceService:
         Build the UserFinanceDashboard payload for a given user.
         Aggregates earnings per project (based on hours logged × rate or monthly rate).
         """
-        from projects.models import ProjectMember
-        from finance.models import SalaryConfig
         from attendance.models import TimeLog
+        from finance.models import SalaryConfig
+        from projects.models import ProjectMember
 
-        memberships = (
-            ProjectMember.objects.filter(
-                user=user,
-                project__organization=organization,
-                is_active=True,
-                is_deleted=False,
-            )
-            .select_related("project__organization")
-        )
-        
+        memberships = ProjectMember.objects.filter(
+            user=user,
+            project__organization=organization,
+            is_active=True,
+            is_deleted=False,
+        ).select_related("project__organization")
+
         projects = [m.project for m in memberships]
         project_ids = [p.pk for p in projects]
 
         configs = SalaryConfig.objects.filter(
-            user=user,
-            organization=organization,
-            is_active=True,
-            is_deleted=False
+            user=user, organization=organization, is_active=True, is_deleted=False
         ).order_by("-created_at")
 
         org_config = None
@@ -218,23 +219,28 @@ class FinanceService:
                 if not org_config:
                     org_config = c
 
-        timelogs = TimeLog.objects.filter(
-            user=user,
-            task__project_id__in=project_ids,
-            is_deleted=False
-        ).values("task__project_id").annotate(total=Sum("duration_seconds"))
-        
+        timelogs = (
+            TimeLog.objects.filter(user=user, task__project_id__in=project_ids, is_deleted=False)
+            .values("task__project_id")
+            .annotate(total=Sum("duration_seconds"))
+        )
+
         timelog_map = {tl["task__project_id"]: tl["total"] or 0 for tl in timelogs}
 
         projects_data = []
         total_earned = Decimal("0")
-        
+
         for project in projects:
             c = project_configs.get(project.pk)
             if c:
                 payment_type, rate, override, currency = c.payment_type, c.rate, True, c.currency
             elif org_config:
-                payment_type, rate, override, currency = org_config.payment_type, org_config.rate, False, org_config.currency
+                payment_type, rate, override, currency = (
+                    org_config.payment_type,
+                    org_config.rate,
+                    False,
+                    org_config.currency,
+                )
             else:
                 payment_type, rate, override, currency = None, Decimal("0"), False, "IRR"
 
@@ -250,18 +256,20 @@ class FinanceService:
 
             total_earned += earned
 
-            projects_data.append({
-                "project_id": str(project.pk),
-                "project_name": project.name,
-                "payment_type": payment_type,
-                "rate": float(rate),
-                "total_worked_hours": float(total_hours),
-                "total_earned": float(earned),
-                "total_paid": 0.0,
-                "current_balance": float(earned),
-                "currency": currency,
-                "salary_override": override,
-            })
+            projects_data.append(
+                {
+                    "project_id": str(project.pk),
+                    "project_name": project.name,
+                    "payment_type": payment_type,
+                    "rate": float(rate),
+                    "total_worked_hours": float(total_hours),
+                    "total_earned": float(earned),
+                    "total_paid": 0.0,
+                    "current_balance": float(earned),
+                    "currency": currency,
+                    "salary_override": override,
+                }
+            )
 
         return {
             "user_id": str(user.pk),
@@ -277,6 +285,7 @@ class FinanceService:
         """Return total logged hours for a user in a project (from attendance/time logs)."""
         try:
             from attendance.models import TimeLog
+
             result = TimeLog.objects.filter(
                 user=user,
                 task__project=project,
@@ -293,10 +302,10 @@ class FinanceService:
         Build the AdminFinanceDashboard payload — one entry per user.
         Uses bulk prefetching to prevent N+1 queries.
         """
+        from attendance.models import TimeLog
+        from finance.models import SalaryConfig
         from organizations.models import OrganizationMembership
         from projects.models import ProjectMember
-        from finance.models import SalaryConfig
-        from attendance.models import TimeLog
 
         if memberships is None:
             memberships = OrganizationMembership.objects.filter(
@@ -325,10 +334,7 @@ class FinanceService:
 
         # 2. Salary Configs
         configs = SalaryConfig.objects.filter(
-            user_id__in=user_ids,
-            organization=organization,
-            is_active=True,
-            is_deleted=False
+            user_id__in=user_ids, organization=organization, is_active=True, is_deleted=False
         ).order_by("-created_at")
 
         org_configs = {}
@@ -342,11 +348,13 @@ class FinanceService:
                     org_configs[c.user_id] = c
 
         # 3. TimeLogs Aggregation
-        timelogs = TimeLog.objects.filter(
-            user_id__in=user_ids,
-            task__project_id__in=project_ids,
-            is_deleted=False
-        ).values("user_id", "task__project_id").annotate(total=Sum("duration_seconds"))
+        timelogs = (
+            TimeLog.objects.filter(
+                user_id__in=user_ids, task__project_id__in=project_ids, is_deleted=False
+            )
+            .values("user_id", "task__project_id")
+            .annotate(total=Sum("duration_seconds"))
+        )
 
         timelog_map = {}
         for tl in timelogs:
@@ -355,10 +363,20 @@ class FinanceService:
         def _get_eff_salary(u_id, p_id):
             c = project_configs.get((u_id, p_id))
             if c:
-                return {"type": c.payment_type, "amount": c.rate, "override": True, "currency": c.currency}
+                return {
+                    "type": c.payment_type,
+                    "amount": c.rate,
+                    "override": True,
+                    "currency": c.currency,
+                }
             c = org_configs.get(u_id)
             if c:
-                return {"type": c.payment_type, "amount": c.rate, "override": False, "currency": c.currency}
+                return {
+                    "type": c.payment_type,
+                    "amount": c.rate,
+                    "override": False,
+                    "currency": c.currency,
+                }
             return {"type": None, "amount": None, "override": False, "currency": "IRR"}
 
         report = []
@@ -389,17 +407,19 @@ class FinanceService:
 
                 total_earned += earned
 
-            report.append({
-                "user_id": str(user.pk),
-                "username": user.username,
-                "first_name": user.first_name or "",
-                "last_name": user.last_name or "",
-                "active_projects": len(projects),
-                "total_income": float(total_earned),
-                "total_paid": 0.0,
-                "current_balance": float(total_earned),
-                "currency": currency,
-            })
+            report.append(
+                {
+                    "user_id": str(user.pk),
+                    "username": user.username,
+                    "first_name": user.first_name or "",
+                    "last_name": user.last_name or "",
+                    "active_projects": len(projects),
+                    "total_income": float(total_earned),
+                    "total_paid": 0.0,
+                    "current_balance": float(total_earned),
+                    "currency": currency,
+                }
+            )
 
         return report
 
@@ -409,9 +429,9 @@ class FinanceService:
         Build the ProjectBillingTab payload — one entry per member, plus totals.
         Uses bulk prefetching to prevent N+1 queries.
         """
-        from projects.models import ProjectMember
-        from finance.models import SalaryConfig
         from attendance.models import TimeLog
+        from finance.models import SalaryConfig
+        from projects.models import ProjectMember
 
         if members is None:
             members = ProjectMember.objects.filter(
@@ -428,7 +448,7 @@ class FinanceService:
             user_id__in=user_ids,
             organization=project.organization,
             is_active=True,
-            is_deleted=False
+            is_deleted=False,
         ).order_by("-created_at")
 
         org_configs = {}
@@ -442,11 +462,11 @@ class FinanceService:
                     org_configs[c.user_id] = c
 
         # Bulk fetch timelogs
-        timelogs = TimeLog.objects.filter(
-            user_id__in=user_ids,
-            task__project=project,
-            is_deleted=False
-        ).values("user_id").annotate(total=Sum("duration_seconds"))
+        timelogs = (
+            TimeLog.objects.filter(user_id__in=user_ids, task__project=project, is_deleted=False)
+            .values("user_id")
+            .annotate(total=Sum("duration_seconds"))
+        )
 
         timelog_map = {tl["user_id"]: tl["total"] or 0 for tl in timelogs}
 
@@ -463,7 +483,12 @@ class FinanceService:
             else:
                 c = org_configs.get(member.user.pk)
                 if c:
-                    payment_type, rate, override, currency = c.payment_type, c.rate, False, c.currency
+                    payment_type, rate, override, currency = (
+                        c.payment_type,
+                        c.rate,
+                        False,
+                        c.currency,
+                    )
                 else:
                     payment_type, rate, override, currency = None, Decimal("0"), False, "IRR"
 
@@ -479,20 +504,22 @@ class FinanceService:
 
             total_cost += cost
 
-            members_data.append({
-                "user_id": str(member.user.pk),
-                "username": member.user.username,
-                "first_name": member.user.first_name or "",
-                "last_name": member.user.last_name or "",
-                "specialty": member.specialty or "",
-                "allocation_percentage": member.allocation_percentage,
-                "payment_type": payment_type,
-                "rate": float(rate),
-                "currency": currency,
-                "salary_override": override,
-                "total_worked_hours": float(total_hours),
-                "total_cost": float(cost),
-            })
+            members_data.append(
+                {
+                    "user_id": str(member.user.pk),
+                    "username": member.user.username,
+                    "first_name": member.user.first_name or "",
+                    "last_name": member.user.last_name or "",
+                    "specialty": member.specialty or "",
+                    "allocation_percentage": member.allocation_percentage,
+                    "payment_type": payment_type,
+                    "rate": float(rate),
+                    "currency": currency,
+                    "salary_override": override,
+                    "total_worked_hours": float(total_hours),
+                    "total_cost": float(cost),
+                }
+            )
 
         return {
             "project_id": str(project.pk),

@@ -78,7 +78,7 @@ export const CreateEditTeamModal = ({
         await createTeam.mutateAsync({ ...data, organization: organizationId });
       }
       onClose();
-    } catch (error) {
+    } catch {
       // Error is handled by the mutation callbacks
     }
   });
