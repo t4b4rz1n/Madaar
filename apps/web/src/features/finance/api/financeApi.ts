@@ -1,7 +1,12 @@
-// apps/web/src/features/finance/api/financeApi.ts
 import { useQuery } from "@tanstack/react-query";
 import ApiService from "../../../core/api/apiService";
-import type { UserFinanceDashboard, AdminFinanceReport } from "../types/financeTypes";
+import type {
+  UserFinanceDashboard,
+  AdminFinanceReport,
+  ProjectBilling,
+} from "../types/financeTypes";
+
+// ─── User personal dashboard ────────────────────────────────────────────────
 
 export const useMyFinanceDashboard = () => {
   return useQuery({
@@ -10,8 +15,11 @@ export const useMyFinanceDashboard = () => {
       const response = await ApiService.get<UserFinanceDashboard>("/finance/my-reports/");
       return response.data;
     },
+    retry: 1,
   });
 };
+
+// ─── Admin org-wide report ───────────────────────────────────────────────────
 
 export interface FinanceFilters {
   page?: number;
@@ -19,7 +27,6 @@ export interface FinanceFilters {
   search?: string;
 }
 
-// Assuming standard paginated response structure for Madaar
 interface PaginatedData<T> {
   results: T[];
   total_results: number;
@@ -38,8 +45,52 @@ export const useAdminFinanceReports = (filters: FinanceFilters) => {
       if (filters.page_size) params.append("page_size", filters.page_size.toString());
       if (filters.search) params.append("search", filters.search);
 
-      const response = await ApiService.get<PaginatedData<AdminFinanceReport>>(`/finance/admin/reports/?${params.toString()}`);
+      const response = await ApiService.get<PaginatedData<AdminFinanceReport>>(
+        `/finance/admin/reports/?${params.toString()}`
+      );
       return response.data;
     },
+    retry: 1,
   });
+};
+
+// ─── Project billing breakdown ───────────────────────────────────────────────
+
+export const useProjectBilling = (projectId: string | null) => {
+  return useQuery({
+    queryKey: ["finance", "project-billing", projectId],
+    queryFn: async () => {
+      const response = await ApiService.get<ProjectBilling>(
+        `/finance/projects/${projectId}/billing/`
+      );
+      return response.data;
+    },
+    enabled: Boolean(projectId),
+    retry: 1,
+  });
+};
+
+// ─── Update project member salary ────────────────────────────────────────────
+
+export const updateProjectMemberSalary = async (
+  projectId: string | number,
+  memberId: string | number,
+  data: { salary_type?: string | null; salary_amount?: string | null }
+) => {
+  const response = await ApiService.patch(
+    `/projects/${projectId}/members/${memberId}/salary/`,
+    data
+  );
+  return response.data;
+};
+
+export const resetProjectMemberSalary = async (
+  projectId: string | number,
+  memberId: string | number
+) => {
+  const response = await ApiService.post(
+    `/projects/${projectId}/members/${memberId}/salary/reset/`,
+    {}
+  );
+  return response.data;
 };
