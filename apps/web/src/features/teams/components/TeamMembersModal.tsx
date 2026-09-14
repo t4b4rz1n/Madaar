@@ -181,17 +181,24 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                           />
                         ) : (
                           <>
-                            {member.user_details?.first_name?.[0]?.toUpperCase() || "?"}
-                            {member.user_details?.last_name?.[0]?.toUpperCase() || ""}
+                            {member.user_details?.username?.[0]?.toUpperCase() || member.user_details?.first_name?.[0]?.toUpperCase() || member.user_details?.email?.[0]?.toUpperCase() || "?"}
+                            {(!member.user_details?.username && member.user_details?.first_name) ? member.user_details?.last_name?.[0]?.toUpperCase() || "" : ""}
                           </>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-base-content truncate">
-                          {member.user_details
-                            ? `${member.user_details.first_name} ${member.user_details.last_name}`
-                            : "Unknown User"}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm text-base-content truncate">
+                            {member.user_details
+                              ? member.user_details.username || `${member.user_details.first_name || ""} ${member.user_details.last_name || ""}`.trim() || member.user_details.email || "Unknown User"
+                              : "Unknown User"}
+                          </p>
+                          {String(member.user) === String(team?.lead_id) && (
+                            <span className="badge badge-primary badge-sm badge-outline text-[10px] h-5 px-1.5 font-semibold">
+                              Leader
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-base-content/50 truncate">
                           {member.user_details?.email || ""}
                         </p>

@@ -3,6 +3,9 @@
 export interface UserBasicInfo {
   first_name: string;
   last_name: string;
+  username?: string;
+  email?: string;
+  avatar?: string | null;
 }
 
 export interface Team {
@@ -29,6 +32,7 @@ export interface TeamMemberUser {
   id: number;
   first_name: string;
   last_name: string;
+  username?: string;
   email: string;
   avatar: string | null;
 }
