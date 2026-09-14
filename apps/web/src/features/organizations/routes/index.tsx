@@ -31,7 +31,17 @@ export const organizationsRoutes: RouteObject[] = [
     path: "organizations/:orgId",
     element: (
       <Suspense fallback={<PageLoader />}>
-        <OrganizationDetailPage />
+        <PermissionGuard
+          permissions={[
+            "org.view",
+            "org.manage_settings",
+            "org.manage_members",
+            "org.manage_roles",
+          ]}
+          fallback={<Navigate to="/dashboard" replace />}
+        >
+          <OrganizationDetailPage />
+        </PermissionGuard>
       </Suspense>
     ),
   },
