@@ -4,6 +4,7 @@ import {
   Activity,
   ArrowRight,
   Calendar,
+  Flag,
   Chart21,
   Clock,
   CloseCircle,
@@ -14,7 +15,9 @@ import {
   TickCircle,
   Timer1,
 } from "iconsax-reactjs";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { getTasks } from "../../tasks/api/tasksApi";
+import type { Task } from "../../tasks/types";
 import type { ComponentType, ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -217,6 +220,7 @@ const ManagerDashboardPage = () => {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]"><WorkloadPanel dashboard={dashboard} /><ProjectHealth projects={dashboard.project_summary} /></section>
+      <ProjectFocusPanel projects={dashboard.project_summary} />
     </motion.div>
   );
 };
@@ -228,5 +232,115 @@ const WorkloadPanel = ({ dashboard }: { dashboard: ManagerDashboard }) => {
 };
 
 const ManagerDashboardSkeleton = () => <div className="mx-auto max-w-[1480px] animate-pulse space-y-6"><div className="h-28 rounded-3xl bg-base-100" /><div className="h-28 rounded-3xl bg-base-100" /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[1, 2, 3, 4].map(item => <div key={item} className="h-32 rounded-2xl bg-base-100" />)}</div><div className="grid gap-5 xl:grid-cols-2"><div className="h-[30rem] rounded-2xl bg-base-100" /><div className="h-[30rem] rounded-2xl bg-base-100" /></div></div>;
+
+
+const ProjectFocusPanel = ({ projects }: { projects: ManagerProjectSummary[] }) => {
+  const [selectedProjectId, setSelectedProjectId] = useState<string | number | "">(projects[0]?.id || "");
+  
+  const { data: tasks, isLoading } = useQuery<Task[]>({
+    queryKey: ["project-tasks", selectedProjectId],
+    queryFn: () => getTasks(selectedProjectId.toString()),
+    enabled: Boolean(selectedProjectId),
+  });
+
+  const activeTasks = useMemo(() => {
+    if (!tasks) return [];
+    return tasks.filter(t => !t.is_finished);
+  }, [tasks]);
+
+  const tasksByUser = useMemo(() => {
+    const grouped = new Map<string, { user: any, tasks: Task[] }>();
+    activeTasks.forEach(task => {
+      const assigneeId = task.assignee_detail?.id || "unassigned";
+      if (!grouped.has(assigneeId.toString())) {
+        grouped.set(assigneeId.toString(), {
+          user: task.assignee_detail || { id: "unassigned", username: "Unassigned", first_name: "Unassigned", last_name: "" },
+          tasks: []
+        });
+      }
+      grouped.get(assigneeId.toString())!.tasks.push(task);
+    });
+    return Array.from(grouped.values()).sort((a, b) => {
+      if (a.user.id === "unassigned") return 1;
+      if (b.user.id === "unassigned") return -1;
+      return (a.user.first_name || "").localeCompare(b.user.first_name || "");
+    });
+  }, [activeTasks]);
+
+  if (projects.length === 0) return null;
+
+  return (
+    <section className={panelClass}>
+      <SectionHeading 
+        title="Project Focus" 
+        description="See exactly what each person is working on" 
+        action={
+          <select 
+            value={selectedProjectId} 
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            className="select select-bordered select-sm rounded-xl text-xs font-bold"
+          >
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        } 
+      />
+      <div className="px-5 pb-6">
+        {isLoading ? (
+          <div className="space-y-4 animate-pulse">
+            <div className="h-20 bg-base-200 rounded-2xl"></div>
+            <div className="h-20 bg-base-200 rounded-2xl"></div>
+          </div>
+        ) : tasksByUser.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-success/10 text-success mb-3">
+              <TickCircle size={24} />
+            </div>
+            <p className="text-sm font-bold text-base-content">No active tasks</p>
+            <p className="text-xs font-semibold text-base-content/50 mt-1">Everyone is caught up on this project.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {tasksByUser.map(group => (
+              <div key={group.user.id} className="rounded-2xl border border-base-content/10 bg-base-200/30 p-4 transition duration-200 hover:border-primary/25 hover:shadow-sm">
+                <div className="flex items-center gap-3 mb-3 pb-3 border-b border-base-content/5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-black text-primary">
+                    {getInitials(group.user.first_name, group.user.last_name, group.user.username?.[0]?.toUpperCase())}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-base-content">
+                      {group.user.id === "unassigned" ? "Unassigned" : `${group.user.first_name || ""} ${group.user.last_name || ""}`.trim() || group.user.username}
+                    </h3>
+                    <p className="text-[11px] font-semibold text-base-content/50">{group.tasks.length} active task{group.tasks.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {group.tasks.map(task => (
+                    <div key={task.id} className="group/task flex items-center justify-between gap-4 rounded-xl bg-base-100 p-3 shadow-sm border border-base-content/5 transition hover:border-primary/20">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-base-content group-hover/task:text-primary transition-colors">{task.title}</p>
+                        <div className="mt-1.5 flex items-center gap-3 text-[10px] font-bold text-base-content/50">
+                          <span className="flex items-center gap-1.5"><Flag size={12} className={task.priority === 'critical' ? 'text-error' : task.priority === 'high' ? 'text-warning' : 'text-base-content/50'} /> {task.priority.toUpperCase()}</span>
+                          {task.due_date && <span className="flex items-center gap-1.5"><Calendar size={12} /> {formatDate(task.due_date)}</span>}
+                          {task.is_blocked && <span className="flex items-center gap-1.5 text-error bg-error/10 px-1.5 py-0.5 rounded-md"><CloseCircle size={10} /> Blocked</span>}
+                        </div>
+                      </div>
+                      <div className="shrink-0">
+                        <span className="inline-flex rounded-lg bg-base-200 px-2 py-1 text-[10px] font-bold text-base-content/70">
+                          {task.status_detail?.name || 'In Progress'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
 
 export default ManagerDashboardPage;
