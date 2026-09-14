@@ -132,11 +132,12 @@ export const Sidebar = () => {
               </span>
             </li>
             {primaryItems.map((item, index) => {
+              const itemPath = item.link.startsWith("/") ? item.link : `/${item.link}`;
               const isActive =
                 item.link === "dashboard"
                   ? location.pathname === "/" || location.pathname === "/dashboard"
-                  : location.pathname === `/${item.link}` ||
-                    location.pathname.startsWith(`/${item.link}/`);
+                  : location.pathname === itemPath ||
+                    location.pathname.startsWith(`${itemPath}/`);
 
               return (
                 <motion.li
@@ -147,7 +148,7 @@ export const Sidebar = () => {
                   animate="visible"
                 >
                   <Link
-                    to={`/${item.link}`}
+                    to={itemPath}
                     onClick={() => setSidebarOpen(false)}
                     className={`motion-interactive flex h-11 items-center gap-3 overflow-hidden rounded-xl px-3 ${
                       isActive

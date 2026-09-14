@@ -105,8 +105,10 @@ export default function OrganizationDetailPage() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["finance"] });
       setMemberToRemove(null);
     },
   });

@@ -72,17 +72,24 @@ class AdminFinanceReportView(APIView):
             )
 
         search = request.query_params.get("search", "").strip()
-        data = FinanceService.get_org_finance_report(organization)
+
+        from organizations.models import OrganizationMembership
+        from django.db.models import Q
+
+        qs = OrganizationMembership.objects.filter(
+            organization=organization,
+            is_active=True,
+            is_deleted=False,
+        ).select_related("user").order_by("user__username")
 
         if search:
-            q = search.lower()
-            data = [
-                r
-                for r in data
-                if q in r["username"].lower()
-                or q in r["first_name"].lower()
-                or q in r["last_name"].lower()
-            ]
+            qs = qs.filter(
+                Q(user__username__icontains=search) | 
+                Q(user__first_name__icontains=search) | 
+                Q(user__last_name__icontains=search)
+            )
+
+        total = qs.count()
 
         # Simple pagination
         try:
@@ -91,15 +98,16 @@ class AdminFinanceReportView(APIView):
         except ValueError:
             page, page_size = 1, 20
 
-        total = len(data)
         start = (page - 1) * page_size
         end = start + page_size
-        paginated = data[start:end]
+        paginated_memberships = list(qs[start:end])
         total_pages = max(1, (total + page_size - 1) // page_size)
+
+        data = FinanceService.get_org_finance_report(organization, paginated_memberships)
 
         return Response(
             {
-                "results": paginated,
+                "results": data,
                 "total_results": total,
                 "current_page": page,
                 "total_pages": total_pages,
