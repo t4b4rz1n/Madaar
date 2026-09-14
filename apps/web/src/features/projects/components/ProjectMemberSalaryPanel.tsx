@@ -43,6 +43,7 @@ export const ProjectMemberSalaryPanel = ({
     onSuccess: () => {
       toast.success("Project salary updated");
       queryClient.invalidateQueries({ queryKey: ["project-members", String(projectId)] });
+      queryClient.invalidateQueries({ queryKey: ["finance"] });
       setEditState(null);
     },
     onError: () => toast.error("Failed to update salary"),
@@ -54,6 +55,7 @@ export const ProjectMemberSalaryPanel = ({
     onSuccess: () => {
       toast.success("Salary reset to organization level");
       queryClient.invalidateQueries({ queryKey: ["project-members", String(projectId)] });
+      queryClient.invalidateQueries({ queryKey: ["finance"] });
     },
     onError: () => toast.error("Failed to reset salary"),
   });

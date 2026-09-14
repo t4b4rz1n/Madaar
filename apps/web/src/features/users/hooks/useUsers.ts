@@ -37,6 +37,7 @@ export const useCreateUser = () => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
       await queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       await queryClient.invalidateQueries({ queryKey: ["roles"] });
+      await queryClient.invalidateQueries({ queryKey: ["finance"] });
       toast.success("User created successfully");
     },
     onError: (error: any) => {
@@ -60,6 +61,7 @@ export const useUpdateUser = () => {
       await queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       await queryClient.invalidateQueries({ queryKey: ["roles"] });
       await queryClient.invalidateQueries({ queryKey: ["current-user-profile"] });
+      await queryClient.invalidateQueries({ queryKey: ["finance"] });
       toast.success("User updated successfully");
     },
     onError: (error: any) => {

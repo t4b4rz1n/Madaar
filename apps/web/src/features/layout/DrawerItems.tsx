@@ -101,7 +101,7 @@ export const drawerItems: DrawerItem[] = [
   },
   {
     title: "My Finances",
-    link: "finance/my-reports",
+    link: "/finance/my-reports",
     section: "Workspace",
     icon: <WalletMoney variant="Outline" />,
     defaultForMembers: true,

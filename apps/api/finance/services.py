@@ -184,8 +184,9 @@ class FinanceService:
         Build the UserFinanceDashboard payload for a given user.
         Aggregates earnings per project (based on hours logged × rate or monthly rate).
         """
-        from attendance.models import AttendanceLog
         from projects.models import ProjectMember
+        from finance.models import SalaryConfig
+        from attendance.models import TimeLog
 
         memberships = (
             ProjectMember.objects.filter(
@@ -196,22 +197,52 @@ class FinanceService:
             )
             .select_related("project__organization")
         )
+        
+        projects = [m.project for m in memberships]
+        project_ids = [p.pk for p in projects]
+
+        configs = SalaryConfig.objects.filter(
+            user=user,
+            organization=organization,
+            is_active=True,
+            is_deleted=False
+        ).order_by("-created_at")
+
+        org_config = None
+        project_configs = {}
+        for c in configs:
+            if c.project_id:
+                if c.project_id not in project_configs:
+                    project_configs[c.project_id] = c
+            else:
+                if not org_config:
+                    org_config = c
+
+        timelogs = TimeLog.objects.filter(
+            user=user,
+            task__project_id__in=project_ids,
+            is_deleted=False
+        ).values("task__project_id").annotate(total=Sum("duration_seconds"))
+        
+        timelog_map = {tl["task__project_id"]: tl["total"] or 0 for tl in timelogs}
 
         projects_data = []
         total_earned = Decimal("0")
+        
+        for project in projects:
+            c = project_configs.get(project.pk)
+            if c:
+                payment_type, rate, override, currency = c.payment_type, c.rate, True, c.currency
+            elif org_config:
+                payment_type, rate, override, currency = org_config.payment_type, org_config.rate, False, org_config.currency
+            else:
+                payment_type, rate, override, currency = None, Decimal("0"), False, "IRR"
 
-        for membership in memberships:
-            project = membership.project
-            salary = cls.get_effective_salary(user, organization, project)
-            payment_type = salary.get("type")
-            rate = Decimal(str(salary.get("amount") or 0))
-            currency = salary.get("currency", "IRR")
-
-            # Calculate worked hours this month from attendance logs
-            total_hours = cls._get_worked_hours(user, project)
+            seconds = timelog_map.get(project.pk, 0)
+            total_hours = Decimal(str(seconds)) / Decimal("3600")
 
             if payment_type == "hourly":
-                earned = rate * Decimal(str(total_hours)) if total_hours else Decimal("0")
+                earned = rate * total_hours if total_hours else Decimal("0")
             elif payment_type == "monthly":
                 earned = rate  # flat monthly salary
             else:
@@ -226,10 +257,10 @@ class FinanceService:
                 "rate": float(rate),
                 "total_worked_hours": float(total_hours) if payment_type == "hourly" else None,
                 "total_earned": float(earned),
-                "total_paid": 0.0,   # payment tracking is a future feature
+                "total_paid": 0.0,
                 "current_balance": float(earned),
                 "currency": currency,
-                "salary_override": salary.get("override", False),
+                "salary_override": override,
             })
 
         return {
@@ -245,7 +276,7 @@ class FinanceService:
     def _get_worked_hours(cls, user, project) -> Decimal:
         """Return total logged hours for a user in a project (from attendance/time logs)."""
         try:
-            from tasks.models import TimeLog
+            from attendance.models import TimeLog
             result = TimeLog.objects.filter(
                 user=user,
                 task__project=project,
@@ -257,18 +288,79 @@ class FinanceService:
             return Decimal("0")
 
     @classmethod
-    def get_org_finance_report(cls, organization) -> list:
+    def get_org_finance_report(cls, organization, memberships=None) -> list:
         """
         Build the AdminFinanceDashboard payload — one entry per user.
+        Uses bulk prefetching to prevent N+1 queries.
         """
         from organizations.models import OrganizationMembership
         from projects.models import ProjectMember
+        from finance.models import SalaryConfig
+        from attendance.models import TimeLog
 
-        memberships = OrganizationMembership.objects.filter(
-            organization=organization,
+        if memberships is None:
+            memberships = OrganizationMembership.objects.filter(
+                organization=organization,
+                is_active=True,
+                is_deleted=False,
+            ).select_related("user")
+
+        users = [m.user for m in memberships if m.user]
+        user_ids = [u.pk for u in users]
+        if not user_ids:
+            return []
+
+        # 1. Active Projects per user
+        project_members = ProjectMember.objects.filter(
+            user_id__in=user_ids,
+            project__organization=organization,
             is_active=True,
             is_deleted=False,
-        ).select_related("user")
+        ).select_related("project")
+
+        user_projects_map = {uid: [] for uid in user_ids}
+        project_ids = set()
+        for pm in project_members:
+            user_projects_map[pm.user_id].append(pm.project)
+            project_ids.add(pm.project_id)
+
+        # 2. Salary Configs
+        configs = SalaryConfig.objects.filter(
+            user_id__in=user_ids,
+            organization=organization,
+            is_active=True,
+            is_deleted=False
+        ).order_by("-created_at")
+
+        org_configs = {}
+        project_configs = {}
+        for c in configs:
+            if c.project_id:
+                if (c.user_id, c.project_id) not in project_configs:
+                    project_configs[(c.user_id, c.project_id)] = c
+            else:
+                if c.user_id not in org_configs:
+                    org_configs[c.user_id] = c
+
+        # 3. TimeLogs Aggregation
+        timelogs = TimeLog.objects.filter(
+            user_id__in=user_ids,
+            task__project_id__in=project_ids,
+            is_deleted=False
+        ).values("user_id", "task__project_id").annotate(total=Sum("duration_seconds"))
+
+        timelog_map = {}
+        for tl in timelogs:
+            timelog_map[(tl["user_id"], tl["task__project_id"])] = tl["total"] or 0
+
+        def _get_eff_salary(u_id, p_id):
+            c = project_configs.get((u_id, p_id))
+            if c:
+                return {"type": c.payment_type, "amount": c.rate, "override": True, "currency": c.currency}
+            c = org_configs.get(u_id)
+            if c:
+                return {"type": c.payment_type, "amount": c.rate, "override": False, "currency": c.currency}
+            return {"type": None, "amount": None, "override": False, "currency": "IRR"}
 
         report = []
         for membership in memberships:
@@ -276,25 +368,38 @@ class FinanceService:
             if not user:
                 continue
 
-            active_projects = ProjectMember.objects.filter(
-                user=user,
-                project__organization=organization,
-                is_active=True,
-                is_deleted=False,
-            ).count()
+            projects = user_projects_map[user.pk]
+            total_earned = Decimal("0")
+            currency = "IRR"
 
-            summary = cls.get_user_finance_summary(user, organization)
+            for project in projects:
+                salary = _get_eff_salary(user.pk, project.pk)
+                payment_type = salary["type"]
+                rate = Decimal(str(salary["amount"] or 0))
+                currency = salary["currency"]
+
+                seconds = timelog_map.get((user.pk, project.pk), 0)
+                total_hours = Decimal(str(seconds)) / Decimal("3600")
+
+                if payment_type == "hourly":
+                    earned = rate * total_hours if total_hours else Decimal("0")
+                elif payment_type == "monthly":
+                    earned = rate
+                else:
+                    earned = Decimal("0")
+
+                total_earned += earned
 
             report.append({
                 "user_id": str(user.pk),
                 "username": user.username,
                 "first_name": user.first_name or "",
                 "last_name": user.last_name or "",
-                "active_projects": active_projects,
-                "total_income": summary["total_income"],
-                "total_paid": summary["total_paid"],
-                "current_balance": summary["current_balance"],
-                "currency": summary["currency"],
+                "active_projects": len(projects),
+                "total_income": float(total_earned),
+                "total_paid": 0.0,
+                "current_balance": float(total_earned),
+                "currency": currency,
             })
 
         return report
