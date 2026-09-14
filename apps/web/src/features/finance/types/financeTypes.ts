@@ -58,4 +58,11 @@ export interface ProjectBilling {
   total_cost: number;
   currency: string;
   members: ProjectBillingMember[];
+  pagination?: {
+    total_results: number;
+    current_page: number;
+    total_pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+  };
 }

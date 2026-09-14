@@ -56,12 +56,12 @@ export const useAdminFinanceReports = (filters: FinanceFilters) => {
 
 // ─── Project billing breakdown ───────────────────────────────────────────────
 
-export const useProjectBilling = (projectId: string | null) => {
+export const useProjectBilling = (projectId: string | null, page: number = 1) => {
   return useQuery({
-    queryKey: ["finance", "project-billing", projectId],
+    queryKey: ["finance", "project-billing", projectId, page],
     queryFn: async () => {
       const response = await ApiService.get<ProjectBilling>(
-        `/finance/projects/${projectId}/billing/`
+        `/finance/projects/${projectId}/billing/?page=${page}`
       );
       return response.data;
     },
