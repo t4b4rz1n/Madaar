@@ -151,13 +151,7 @@ export const drawerItems: DrawerItem[] = [
     icon: <DiscountShape variant="Outline" />,
     permissions: ["finance.manage", "finance.view_reports"],
   },
-  {
-    title: "Organization Finances",
-    link: "finance/admin",
-    section: "AdminSettings",
-    icon: <WalletMoney variant="Outline" />,
-    permissions: ["finance.manage", "finance.view_reports"],
-  },
+
 
   // Support & System
   {

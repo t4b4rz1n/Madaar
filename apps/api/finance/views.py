@@ -33,10 +33,15 @@ class MyFinanceReportView(APIView):
     def get(self, request):
         user, organization = _get_user_org(request)
         if not organization:
-            return Response(
-                {"detail": _("You are not a member of any active organization.")},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({
+                "user_id": str(user.pk),
+                "total_income": 0.0,
+                "total_paid": 0.0,
+                "current_balance": 0.0,
+                "currency": "IRR",
+                "projects": [],
+            })
+            
         data = FinanceService.get_user_finance_summary(user, organization)
         return Response(data)
 
