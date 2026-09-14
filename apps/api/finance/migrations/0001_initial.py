@@ -11,8 +11,8 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("organizations", "0014_alter_organizationmembership_role"),
-        ("projects", "0001_initial"),
+        ("organizations", "0018_remove_organizationmembership_salary_amount_and_more"),
+        ("projects", "0015_remove_projectmember_salary_amount_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
