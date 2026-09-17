@@ -136,3 +136,5 @@ node_modules/
 skills/
 AGENTS.md
 SKILL.md
+.python_history
+*.history
