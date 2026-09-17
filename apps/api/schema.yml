@@ -1,0 +1,5093 @@
+openapi: 3.0.3
+info:
+  title: Madaar API
+  version: 1.0.0
+  description: Madaar backend API documentation
+paths:
+  /api/v1/accounts/profile/:
+    get:
+      operationId: accounts_profile_retrieve
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdate'
+          description: ''
+    put:
+      operationId: accounts_profile_update
+      tags:
+      - accounts
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdate'
+          description: ''
+    patch:
+      operationId: accounts_profile_partial_update
+      tags:
+      - accounts
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdate'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyTokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MyTokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MyTokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/login/refresh/:
+    post:
+      operationId: auth_login_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegister'
+          description: ''
+  /api/v1/dashboard/feedbacks/:
+    get:
+      operationId: dashboard_feedbacks_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFeedbackList'
+          description: ''
+    post:
+      operationId: dashboard_feedbacks_create
+      tags:
+      - dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+  /api/v1/dashboard/feedbacks/{id}/:
+    get:
+      operationId: dashboard_feedbacks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+  /api/v1/dashboard/notifications/:
+    get:
+      operationId: dashboard_notifications_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/v1/dashboard/notifications/{id}/:
+    get:
+      operationId: dashboard_notifications_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/dashboard/notifications/{id}/mark-seen/:
+    patch:
+      operationId: dashboard_notifications_mark_seen_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/dashboard/notifications/mark-all-seen/:
+    post:
+      operationId: dashboard_notifications_mark_all_seen_create
+      tags:
+      - dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/dashboard/notifications/unread/:
+    get:
+      operationId: dashboard_notifications_unread_retrieve
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/panel/discounts:
+    get:
+      operationId: panel_discounts_list
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+      - in: query
+        name: code__icontains
+        schema:
+          type: string
+      - in: query
+        name: created_at_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_at_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: expiration_date_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: expiration_date_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: max_usage
+        schema:
+          type: integer
+      - in: query
+        name: max_usage__gte
+        schema:
+          type: integer
+      - in: query
+        name: max_usage__lte
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: percent
+        schema:
+          type: integer
+      - in: query
+        name: percent__gte
+        schema:
+          type: integer
+      - in: query
+        name: percent__lte
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStaffDiscountCodeList'
+          description: ''
+    post:
+      operationId: panel_discounts_create
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDiscountCode'
+          description: ''
+  /api/v1/panel/discounts/:
+    get:
+      operationId: panel_discounts_list_2
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+      - in: query
+        name: code__icontains
+        schema:
+          type: string
+      - in: query
+        name: created_at_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_at_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: expiration_date_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: expiration_date_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: max_usage
+        schema:
+          type: integer
+      - in: query
+        name: max_usage__gte
+        schema:
+          type: integer
+      - in: query
+        name: max_usage__lte
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: percent
+        schema:
+          type: integer
+      - in: query
+        name: percent__gte
+        schema:
+          type: integer
+      - in: query
+        name: percent__lte
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStaffDiscountCodeList'
+          description: ''
+    post:
+      operationId: panel_discounts_create_2
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDiscountCode'
+          description: ''
+  /api/v1/panel/discounts/{id}/:
+    get:
+      operationId: panel_discounts_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Discount Code.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDiscountCode'
+          description: ''
+    put:
+      operationId: panel_discounts_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Discount Code.
+        required: true
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffDiscountCodeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDiscountCode'
+          description: ''
+    patch:
+      operationId: panel_discounts_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Discount Code.
+        required: true
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffDiscountCodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffDiscountCodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffDiscountCodeRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDiscountCode'
+          description: ''
+    delete:
+      operationId: panel_discounts_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Discount Code.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/panel/feedbacks/:
+    get:
+      operationId: panel_feedbacks_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStaffFeedbackList'
+          description: ''
+  /api/v1/panel/feedbacks/{id}/:
+    get:
+      operationId: panel_feedbacks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Feedback.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffFeedback'
+          description: ''
+    delete:
+      operationId: panel_feedbacks_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Feedback.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/panel/notifications/send-broadcast/:
+    post:
+      operationId: panel_notifications_send_broadcast_create
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/panel/ticket-types/:
+    get:
+      operationId: panel_ticket_types_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paginatedticket_type_panelList'
+          description: ''
+    post:
+      operationId: panel_ticket_types_create
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ticket_type_panelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ticket_type_panelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ticket_type_panelRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ticket_type_panel'
+          description: ''
+  /api/v1/panel/ticket-types/{id}/:
+    get:
+      operationId: panel_ticket_types_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ticket Type.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ticket_type_panel'
+          description: ''
+    put:
+      operationId: panel_ticket_types_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ticket Type.
+        required: true
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ticket_type_panelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ticket_type_panelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ticket_type_panelRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ticket_type_panel'
+          description: ''
+    patch:
+      operationId: panel_ticket_types_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ticket Type.
+        required: true
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patchedticket_type_panelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Patchedticket_type_panelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Patchedticket_type_panelRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ticket_type_panel'
+          description: ''
+    delete:
+      operationId: panel_ticket_types_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ticket Type.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/panel/tickets/:
+    get:
+      operationId: panel_tickets_list
+      parameters:
+      - in: query
+        name: created_at_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_at_before
+        schema:
+          type: string
+          format: date
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: priority
+        schema:
+          type: string
+          enum:
+          - high
+          - low
+          - medium
+          - urgent
+        description: |-
+          * `low` - Low
+          * `medium` - Medium
+          * `high` - High
+          * `urgent` - Urgent
+      - in: query
+        name: priority__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - answered
+          - closed
+          - in_progress
+          - open
+        description: |-
+          * `open` - Open
+          * `answered` - Answered
+          * `closed` - Closed
+          * `in_progress` - In Progress
+      - in: query
+        name: status__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - in: query
+        name: ticket_type
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: user
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paginatedtickets_panelList'
+          description: ''
+  /api/v1/panel/tickets/{id}/:
+    get:
+      operationId: panel_tickets_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ticket.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ticket_panel'
+          description: ''
+    patch:
+      operationId: panel_tickets_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ticket.
+        required: true
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patchedstaff_ticket_update_panelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Patchedstaff_ticket_update_panelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Patchedstaff_ticket_update_panelRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/staff_ticket_update_panel'
+          description: ''
+    delete:
+      operationId: panel_tickets_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ticket.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/panel/tickets/{id}/messages/:
+    get:
+      operationId: panel_tickets_messages_list
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paginatedmessages_panelList'
+          description: ''
+    post:
+      operationId: panel_tickets_messages_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - panel
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/message_panelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/message_panelRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/message_panelRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_panel'
+          description: ''
+  /api/v1/panel/tickets/messages/{id}/:
+    get:
+      operationId: panel_tickets_messages_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messages_panel'
+          description: ''
+    patch:
+      operationId: panel_tickets_messages_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patchedmessages_panelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Patchedmessages_panelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Patchedmessages_panelRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messages_panel'
+          description: ''
+    delete:
+      operationId: panel_tickets_messages_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/panel/users/:
+    get:
+      operationId: panel_users_list
+      parameters:
+      - in: query
+        name: created_at_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_at_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_joined
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: email
+        schema:
+          type: string
+      - in: query
+        name: email__icontains
+        schema:
+          type: string
+      - in: query
+        name: first_name__icontains
+        schema:
+          type: string
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_staff
+        schema:
+          type: boolean
+      - in: query
+        name: last_name__icontains
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: username
+        schema:
+          type: string
+      - in: query
+        name: username__icontains
+        schema:
+          type: string
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paginatedusers_panelList'
+          description: ''
+    post:
+      operationId: panel_users_create
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/user_panelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/user_panelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/user_panelRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user_panel'
+          description: ''
+  /api/v1/panel/users/{id}/:
+    get:
+      operationId: panel_users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this User.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user_panel__update'
+          description: ''
+    patch:
+      operationId: panel_users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this User.
+        required: true
+      tags:
+      - panel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patcheduser_panel__updateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Patcheduser_panel__updateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Patcheduser_panel__updateRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user_panel__update'
+          description: ''
+    delete:
+      operationId: panel_users_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this User.
+        required: true
+      tags:
+      - panel
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/projects/:
+    get:
+      operationId: projects_list
+      description: Returns all non-deleted projects accessible to the authenticated
+        user.
+      summary: List projects
+      parameters:
+      - in: query
+        name: budget_max
+        schema:
+          type: number
+      - in: query
+        name: budget_min
+        schema:
+          type: number
+      - in: query
+        name: deadline_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: deadline_before
+        schema:
+          type: string
+          format: date
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: organization
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: owner
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: start_date_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - archived
+          - completed
+          - draft
+          - on_hold
+        description: |-
+          * `draft` - Draft
+          * `active` - Active
+          * `on_hold` - On hold
+          * `completed` - Completed
+          * `archived` - Archived
+      - in: query
+        name: team
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjectListList'
+          description: ''
+    post:
+      operationId: projects_create
+      description: Create a new project. Requires org-admin or staff role.
+      summary: Create a project
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectWrite'
+          description: ''
+  /api/v1/projects/{id}/:
+    get:
+      operationId: projects_retrieve
+      description: Full project detail including members and milestones.
+      summary: Retrieve a project
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Project.
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDetail'
+          description: ''
+    put:
+      operationId: projects_update
+      description: CRUD for Projects with search, filtering and ordering.
+      summary: Update a project
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Project.
+        required: true
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectWrite'
+          description: ''
+    patch:
+      operationId: projects_partial_update
+      description: CRUD for Projects with search, filtering and ordering.
+      summary: Partially update a project
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Project.
+        required: true
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectWriteRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectWrite'
+          description: ''
+    delete:
+      operationId: projects_destroy
+      description: CRUD for Projects with search, filtering and ordering.
+      summary: Soft-delete a project
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Project.
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/projects/{id}/archive/:
+    post:
+      operationId: projects_archive_create
+      description: Convenience endpoint to move a project to ARCHIVED status.
+      summary: Archive a project
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Project.
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectList'
+          description: ''
+  /api/v1/projects/{id}/complete/:
+    post:
+      operationId: projects_complete_create
+      description: Convenience endpoint to move a project to COMPLETED status.
+      summary: Complete a project
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Project.
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectList'
+          description: ''
+  /api/v1/projects/{id}/teams/:
+    get:
+      operationId: projects_teams_list
+      description: Returns a list of all teams involved in this project (both the
+        main team and member teams).
+      summary: List project teams
+      parameters:
+      - in: query
+        name: budget_max
+        schema:
+          type: number
+      - in: query
+        name: budget_min
+        schema:
+          type: number
+      - in: query
+        name: deadline_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: deadline_before
+        schema:
+          type: string
+          format: date
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Project.
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: organization
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: owner
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: start_date_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - archived
+          - completed
+          - draft
+          - on_hold
+        description: |-
+          * `draft` - Draft
+          * `active` - Active
+          * `on_hold` - On hold
+          * `completed` - Completed
+          * `archived` - Archived
+      - in: query
+        name: team
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTeamMinimalList'
+          description: ''
+  /api/v1/projects/{project_pk}/activities/:
+    get:
+      operationId: projects_activities_list
+      description: Returns the live activity timeline for a project.
+      summary: List project activities
+      parameters:
+      - in: query
+        name: entity_type
+        schema:
+          type: string
+          enum:
+          - member
+          - milestone
+          - project
+          - task
+        description: |-
+          * `project` - Project
+          * `member` - Member
+          * `milestone` - Milestone
+          * `task` - Task
+      - in: query
+        name: event_type
+        schema:
+          type: string
+          enum:
+          - member_added
+          - member_removed
+          - member_updated
+          - milestone_completed
+          - milestone_created
+          - milestone_deleted
+          - milestone_updated
+          - project_created
+          - project_deleted
+          - project_updated
+          - task_completed
+          - task_created
+          - task_updated
+        description: |-
+          * `project_created` - Project created
+          * `project_updated` - Project updated
+          * `project_deleted` - Project deleted
+          * `member_added` - Member added
+          * `member_updated` - Member updated
+          * `member_removed` - Member removed
+          * `milestone_created` - Milestone created
+          * `milestone_updated` - Milestone updated
+          * `milestone_completed` - Milestone completed
+          * `milestone_deleted` - Milestone deleted
+          * `task_created` - Task created
+          * `task_updated` - Task updated
+          * `task_completed` - Task completed
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjectActivityList'
+          description: ''
+  /api/v1/projects/{project_pk}/activities/{id}/:
+    get:
+      operationId: projects_activities_retrieve
+      description: Read-only activity feed for a Project.
+      summary: Retrieve a project activity entry
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectActivity'
+          description: ''
+  /api/v1/projects/{project_pk}/members/:
+    get:
+      operationId: projects_members_list
+      description: CRUD for ProjectMembers, nested under a Project.
+      summary: List project members
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: query
+        name: specialty
+        schema:
+          type: string
+      - in: query
+        name: team
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: user
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjectMemberReadList'
+          description: ''
+    post:
+      operationId: projects_members_create
+      description: CRUD for ProjectMembers, nested under a Project.
+      summary: Add a project member
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberWriteRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberWrite'
+          description: ''
+  /api/v1/projects/{project_pk}/members/{id}/:
+    get:
+      operationId: projects_members_retrieve
+      description: CRUD for ProjectMembers, nested under a Project.
+      summary: Retrieve a project member
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberRead'
+          description: ''
+    put:
+      operationId: projects_members_update
+      description: CRUD for ProjectMembers, nested under a Project.
+      summary: Update a project member
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberWriteRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberWrite'
+          description: ''
+    patch:
+      operationId: projects_members_partial_update
+      description: CRUD for ProjectMembers, nested under a Project.
+      summary: Partially update a project member
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectMemberWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectMemberWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectMemberWriteRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberWrite'
+          description: ''
+    delete:
+      operationId: projects_members_destroy
+      description: CRUD for ProjectMembers, nested under a Project.
+      summary: Remove a project member
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/projects/{project_pk}/milestones/:
+    get:
+      operationId: projects_milestones_list
+      description: CRUD for Milestones, nested under a Project.
+      summary: List milestones
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - completed
+          - in_progress
+          - pending
+        description: |-
+          * `pending` - Pending
+          * `in_progress` - In progress
+          * `completed` - Completed
+          * `cancelled` - Cancelled
+      - in: query
+        name: target_date_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: target_date_before
+        schema:
+          type: string
+          format: date
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMilestoneList'
+          description: ''
+    post:
+      operationId: projects_milestones_create
+      description: CRUD for Milestones, nested under a Project.
+      summary: Create a milestone
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MilestoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MilestoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MilestoneRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Milestone'
+          description: ''
+  /api/v1/projects/{project_pk}/milestones/{id}/:
+    get:
+      operationId: projects_milestones_retrieve
+      description: CRUD for Milestones, nested under a Project.
+      summary: Retrieve a milestone
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Milestone'
+          description: ''
+    put:
+      operationId: projects_milestones_update
+      description: CRUD for Milestones, nested under a Project.
+      summary: Update a milestone
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MilestoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MilestoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MilestoneRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Milestone'
+          description: ''
+    patch:
+      operationId: projects_milestones_partial_update
+      description: CRUD for Milestones, nested under a Project.
+      summary: Partially update a milestone
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMilestoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMilestoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMilestoneRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Milestone'
+          description: ''
+    delete:
+      operationId: projects_milestones_destroy
+      description: CRUD for Milestones, nested under a Project.
+      summary: Soft-delete a milestone
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/support/ticket-types/:
+    get:
+      operationId: support_ticket_types_list
+      description: Read-only ticket categories available to authenticated users.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - support
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTicketTypeList'
+          description: ''
+  /api/v1/support/ticket-types/{id}/:
+    get:
+      operationId: support_ticket_types_retrieve
+      description: Read-only ticket categories available to authenticated users.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ticket Type.
+        required: true
+      tags:
+      - support
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketType'
+          description: ''
+  /api/v1/support/tickets/:
+    get:
+      operationId: support_tickets_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - support
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTicketListList'
+          description: ''
+    post:
+      operationId: support_tickets_create
+      tags:
+      - support
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TicketCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TicketCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketCreate'
+          description: ''
+  /api/v1/support/tickets/{id}/:
+    get:
+      operationId: support_tickets_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - support
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetail'
+          description: ''
+  /api/v1/support/tickets/{id}/messages/:
+    get:
+      operationId: support_tickets_messages_list
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - support
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMessageList'
+          description: ''
+    post:
+      operationId: support_tickets_messages_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - support
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MessageCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MessageCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageCreate'
+          description: ''
+  /api/v1/support/tickets/{id}/set-status/:
+    patch:
+      operationId: support_tickets_set_status_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - support
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTicketStatusUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTicketStatusUpdateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTicketStatusUpdateRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketStatusUpdate'
+          description: ''
+  /api/v1/support/tickets/messages/{id}/:
+    get:
+      operationId: support_tickets_messages_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - support
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+components:
+  schemas:
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        file:
+          type: string
+          format: uri
+          pattern: (?:jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|zip|rar|txt|csv)$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        file_type:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - file
+      - file_type
+      - id
+    EntityTypeEnum:
+      enum:
+      - project
+      - member
+      - milestone
+      - task
+      type: string
+      description: |-
+        * `project` - Project
+        * `member` - Member
+        * `milestone` - Milestone
+        * `task` - Task
+    EventTypeEnum:
+      enum:
+      - project_created
+      - project_updated
+      - project_deleted
+      - member_added
+      - member_updated
+      - member_removed
+      - milestone_created
+      - milestone_updated
+      - milestone_completed
+      - milestone_deleted
+      - task_created
+      - task_updated
+      - task_completed
+      type: string
+      description: |-
+        * `project_created` - Project created
+        * `project_updated` - Project updated
+        * `project_deleted` - Project deleted
+        * `member_added` - Member added
+        * `member_updated` - Member updated
+        * `member_removed` - Member removed
+        * `milestone_created` - Milestone created
+        * `milestone_updated` - Milestone updated
+        * `milestone_completed` - Milestone completed
+        * `milestone_deleted` - Milestone deleted
+        * `task_created` - Task created
+        * `task_updated` - Task updated
+        * `task_completed` - Task completed
+    Feedback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        subject:
+          type: string
+          maxLength: 255
+        text:
+          type: string
+          title: Message Text
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - subject
+      - text
+    FeedbackRequest:
+      type: object
+      properties:
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 255
+        text:
+          type: string
+          minLength: 1
+          title: Message Text
+      required:
+      - subject
+      - text
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        sender:
+          allOf:
+          - $ref: '#/components/schemas/message_sender_dashboard'
+          readOnly: true
+        text:
+          type: string
+          title: Message Text
+        seen:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+          readOnly: true
+      required:
+      - attachments
+      - created_at
+      - id
+      - seen
+      - sender
+      - text
+      - updated_at
+    MessageCreate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        text:
+          type: string
+          title: Message Text
+      required:
+      - id
+      - text
+    MessageCreateRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          title: Message Text
+        attachments:
+          type: array
+          items:
+            type: string
+            format: binary
+          writeOnly: true
+      required:
+      - text
+    Milestone:
+      type: object
+      description: |-
+        Read/write serialiser for milestones.
+
+        ``completed_at`` is managed by the service layer and is therefore
+        read-only via the API.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        project:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MilestoneStatusEnum'
+        status_display:
+          type: string
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        target_date:
+          type: string
+          format: date
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        sequence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Phase order
+        weight:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Weight/Percentage of this milestone in overall project progress
+            (e.g. 1 to 100)
+        task_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - completed_at
+      - created_at
+      - id
+      - project
+      - status_display
+      - target_date
+      - task_count
+      - title
+      - updated_at
+    MilestoneRequest:
+      type: object
+      description: |-
+        Read/write serialiser for milestones.
+
+        ``completed_at`` is managed by the service layer and is therefore
+        read-only via the API.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MilestoneStatusEnum'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        target_date:
+          type: string
+          format: date
+        sequence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Phase order
+        weight:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Weight/Percentage of this milestone in overall project progress
+            (e.g. 1 to 100)
+      required:
+      - target_date
+      - title
+    MilestoneStatusEnum:
+      enum:
+      - pending
+      - in_progress
+      - completed
+      - cancelled
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `in_progress` - In progress
+        * `completed` - Completed
+        * `cancelled` - Cancelled
+    MyTokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        link:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+        seen:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - link
+      - text
+    NotificationRequest:
+      type: object
+      properties:
+        seen:
+          type: boolean
+    OrganizationMinimal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - id
+      - name
+      - slug
+    PaginatedFeedbackList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Feedback'
+    PaginatedMessageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+    PaginatedMilestoneList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Milestone'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PaginatedProjectActivityList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectActivity'
+    PaginatedProjectListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectList'
+    PaginatedProjectMemberReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectMemberRead'
+    PaginatedStaffDiscountCodeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffDiscountCode'
+    PaginatedStaffFeedbackList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffFeedback'
+    PaginatedTeamMinimalList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMinimal'
+    PaginatedTicketListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketList'
+    PaginatedTicketTypeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketType'
+    Paginatedmessages_panelList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/messages_panel'
+    Paginatedticket_type_panelList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ticket_type_panel'
+    Paginatedtickets_panelList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/tickets_panel'
+    Paginatedusers_panelList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/users_panel'
+    PatchedMilestoneRequest:
+      type: object
+      description: |-
+        Read/write serialiser for milestones.
+
+        ``completed_at`` is managed by the service layer and is therefore
+        read-only via the API.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MilestoneStatusEnum'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        target_date:
+          type: string
+          format: date
+        sequence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Phase order
+        weight:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Weight/Percentage of this milestone in overall project progress
+            (e.g. 1 to 100)
+    PatchedNotificationRequest:
+      type: object
+      properties:
+        seen:
+          type: boolean
+    PatchedProjectMemberWriteRequest:
+      type: object
+      description: Flat write serialiser for adding / updating project members.
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        team_id:
+          type: string
+          format: uuid
+          nullable: true
+        specialty:
+          type: string
+          description: Specialty/Skill, e.g., Frontend, UI/UX
+          maxLength: 100
+        allocation_percentage:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Percentage of user's work capacity dedicated to this project
+            (1-100%)
+        allocation_start_date:
+          type: string
+          format: date
+          nullable: true
+        allocation_end_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+    PatchedProjectWriteRequest:
+      type: object
+      description: Flat write serialiser for create / update operations.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+          nullable: true
+        team_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusB9aEnum'
+        budget:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        budget_currency:
+          type: string
+          minLength: 1
+          maxLength: 10
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+    PatchedStaffDiscountCodeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          description: Unique discount code like SUMMER2025
+          maxLength: 50
+        description:
+          type: string
+          nullable: true
+        percent:
+          type: integer
+          maximum: 100
+          minimum: 1
+          title: Discount Percentage
+          description: Percentage between 1 and 100
+        max_usage:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Usage Count
+          description: Total number of times this code can be used
+        expiration_date:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+    PatchedTicketStatusUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TicketStatusUpdateStatusEnum'
+    PatchedUserUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+    Patchedmessages_panelRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          title: Message Text
+    Patchedstaff_ticket_update_panelRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 250
+        status:
+          $ref: '#/components/schemas/Status3afEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        ticket_type:
+          type: string
+          format: uuid
+    Patchedticket_type_panelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Type Name
+          maxLength: 100
+    Patcheduser_panel__updateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_staff:
+          type: boolean
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+    PriorityEnum:
+      enum:
+      - low
+      - medium
+      - high
+      - urgent
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
+        * `urgent` - Urgent
+    ProjectActivity:
+      type: object
+      description: Read-only serialiser for the project activity feed.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        project:
+          type: string
+          format: uuid
+          readOnly: true
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        event_type:
+          allOf:
+          - $ref: '#/components/schemas/EventTypeEnum'
+          readOnly: true
+        event_type_display:
+          type: string
+          readOnly: true
+        entity_type:
+          allOf:
+          - $ref: '#/components/schemas/EntityTypeEnum'
+          readOnly: true
+        entity_id:
+          type: string
+          readOnly: true
+          nullable: true
+        metadata:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - actor
+      - created_at
+      - entity_id
+      - entity_type
+      - event_type
+      - event_type_display
+      - id
+      - metadata
+      - project
+    ProjectDetail:
+      type: object
+      description: |-
+        Full-detail serialiser — includes nested members and milestones.
+
+        Nested collections are capped at 50 items to prevent unbounded
+        memory usage.  For full paginated access, use the dedicated
+        ``/members/`` and ``/milestones/`` endpoints.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        organization:
+          allOf:
+          - $ref: '#/components/schemas/OrganizationMinimal'
+          readOnly: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/TeamMinimal'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusB9aEnum'
+          readOnly: true
+        status_display:
+          type: string
+          readOnly: true
+        budget:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        budget_currency:
+          type: string
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        member_count:
+          type: integer
+          readOnly: true
+          default: 0
+        task_count:
+          type: integer
+          readOnly: true
+          default: 0
+        milestone_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        members:
+          type: string
+          readOnly: true
+        milestones:
+          type: string
+          readOnly: true
+      required:
+      - archived_at
+      - budget
+      - budget_currency
+      - completed_at
+      - created_at
+      - deadline
+      - description
+      - id
+      - member_count
+      - members
+      - milestone_count
+      - milestones
+      - name
+      - organization
+      - owner
+      - start_date
+      - status
+      - status_display
+      - task_count
+      - team
+      - updated_at
+    ProjectList:
+      type: object
+      description: Lightweight serialiser used for list endpoints.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        organization:
+          allOf:
+          - $ref: '#/components/schemas/OrganizationMinimal'
+          readOnly: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/TeamMinimal'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusB9aEnum'
+          readOnly: true
+        status_display:
+          type: string
+          readOnly: true
+        budget:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        budget_currency:
+          type: string
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        member_count:
+          type: integer
+          readOnly: true
+          default: 0
+        task_count:
+          type: integer
+          readOnly: true
+          default: 0
+        milestone_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - archived_at
+      - budget
+      - budget_currency
+      - completed_at
+      - created_at
+      - deadline
+      - description
+      - id
+      - member_count
+      - milestone_count
+      - name
+      - organization
+      - owner
+      - start_date
+      - status
+      - status_display
+      - task_count
+      - team
+      - updated_at
+    ProjectMemberRead:
+      type: object
+      description: Rich read serialiser for project members.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/TeamMinimal'
+          readOnly: true
+        specialty:
+          type: string
+          readOnly: true
+          description: Specialty/Skill, e.g., Frontend, UI/UX
+        allocation_percentage:
+          type: integer
+          readOnly: true
+          description: Percentage of user's work capacity dedicated to this project
+            (1-100%)
+        allocation_start_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        allocation_end_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - allocation_end_date
+      - allocation_percentage
+      - allocation_start_date
+      - created_at
+      - id
+      - is_active
+      - specialty
+      - team
+      - updated_at
+      - user
+    ProjectMemberWrite:
+      type: object
+      description: Flat write serialiser for adding / updating project members.
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        team_id:
+          type: string
+          format: uuid
+          nullable: true
+        specialty:
+          type: string
+          description: Specialty/Skill, e.g., Frontend, UI/UX
+          maxLength: 100
+        allocation_percentage:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Percentage of user's work capacity dedicated to this project
+            (1-100%)
+        allocation_start_date:
+          type: string
+          format: date
+          nullable: true
+        allocation_end_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+    ProjectMemberWriteRequest:
+      type: object
+      description: Flat write serialiser for adding / updating project members.
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        team_id:
+          type: string
+          format: uuid
+          nullable: true
+        specialty:
+          type: string
+          description: Specialty/Skill, e.g., Frontend, UI/UX
+          maxLength: 100
+        allocation_percentage:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Percentage of user's work capacity dedicated to this project
+            (1-100%)
+        allocation_start_date:
+          type: string
+          format: date
+          nullable: true
+        allocation_end_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+    ProjectWrite:
+      type: object
+      description: Flat write serialiser for create / update operations.
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+          nullable: true
+        team_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusB9aEnum'
+        budget:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        budget_currency:
+          type: string
+          maxLength: 10
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - name
+      - organization_id
+    ProjectWriteRequest:
+      type: object
+      description: Flat write serialiser for create / update operations.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+          nullable: true
+        team_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusB9aEnum'
+        budget:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        budget_currency:
+          type: string
+          minLength: 1
+          maxLength: 10
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - name
+      - organization_id
+    StaffDiscountCode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          description: Unique discount code like SUMMER2025
+          maxLength: 50
+        description:
+          type: string
+          nullable: true
+        percent:
+          type: integer
+          maximum: 100
+          minimum: 1
+          title: Discount Percentage
+          description: Percentage between 1 and 100
+        max_usage:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Usage Count
+          description: Total number of times this code can be used
+        current_usage:
+          type: integer
+          readOnly: true
+          title: Current Usage Count
+        expiration_date:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_expired:
+          type: string
+          readOnly: true
+        is_fully_used:
+          type: string
+          readOnly: true
+      required:
+      - code
+      - created_at
+      - current_usage
+      - id
+      - is_expired
+      - is_fully_used
+      - percent
+    StaffDiscountCodeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          description: Unique discount code like SUMMER2025
+          maxLength: 50
+        description:
+          type: string
+          nullable: true
+        percent:
+          type: integer
+          maximum: 100
+          minimum: 1
+          title: Discount Percentage
+          description: Percentage between 1 and 100
+        max_usage:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Usage Count
+          description: Total number of times this code can be used
+        expiration_date:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+      required:
+      - code
+      - percent
+    StaffFeedback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          type: string
+          readOnly: true
+        subject:
+          type: string
+          maxLength: 255
+        text:
+          type: string
+          title: Message Text
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - subject
+      - text
+      - user
+    Status3afEnum:
+      enum:
+      - open
+      - answered
+      - closed
+      - in_progress
+      type: string
+      description: |-
+        * `open` - Open
+        * `answered` - Answered
+        * `closed` - Closed
+        * `in_progress` - In Progress
+    StatusB9aEnum:
+      enum:
+      - draft
+      - active
+      - on_hold
+      - completed
+      - archived
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `active` - Active
+        * `on_hold` - On hold
+        * `completed` - Completed
+        * `archived` - Archived
+    TeamMinimal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+    TicketCreate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 250
+        ticket_type:
+          type: string
+          format: uuid
+          nullable: true
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+      required:
+      - id
+      - title
+    TicketCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 250
+        ticket_type:
+          type: string
+          format: uuid
+          nullable: true
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        text:
+          type: string
+          writeOnly: true
+          minLength: 1
+          title: Initial Message
+        attachments:
+          type: array
+          items:
+            type: string
+            format: binary
+          writeOnly: true
+      required:
+      - text
+      - title
+    TicketDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 250
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ticket_user_dashboard'
+          readOnly: true
+        ticket_type:
+          $ref: '#/components/schemas/TicketType'
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        status:
+          $ref: '#/components/schemas/Status3afEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - created_at
+      - id
+      - ticket_type
+      - title
+      - updated_at
+      - user
+    TicketList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 250
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ticket_user_dashboard'
+          readOnly: true
+        ticket_type:
+          type: string
+          readOnly: true
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        status:
+          $ref: '#/components/schemas/Status3afEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - ticket_type
+      - title
+      - updated_at
+      - user
+    TicketStatusUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TicketStatusUpdateStatusEnum'
+      required:
+      - status
+    TicketStatusUpdateStatusEnum:
+      enum:
+      - closed
+      type: string
+      description: '* `closed` - Closed'
+    TicketType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Type Name
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    UserMinimal:
+      type: object
+      description: Compact user representation for nested embedding.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+      required:
+      - avatar
+      - email
+      - full_name
+      - id
+      - username
+    UserRegister:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - email
+      - first_name
+      - last_name
+      - username
+    UserRegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+      - password_confirm
+      - username
+    UserUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+        avatar_url:
+          type: string
+          readOnly: true
+      required:
+      - avatar_url
+      - email
+      - first_name
+      - last_name
+      - username
+    UserUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - first_name
+      - last_name
+    attachment_panel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        file:
+          type: string
+          format: uri
+          pattern: (?:jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|zip|rar|txt|csv)$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        file_type:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - file
+      - file_type
+      - id
+    attachment_panelRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          pattern: (?:jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|zip|rar|txt|csv)$
+      required:
+      - file
+    message_panel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        text:
+          type: string
+          title: Message Text
+      required:
+      - id
+      - text
+    message_panelRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          title: Message Text
+        attachments:
+          type: array
+          items:
+            type: string
+            format: binary
+          writeOnly: true
+      required:
+      - text
+    message_sender_dashboard:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+        is_staff:
+          type: boolean
+      required:
+      - username
+    message_sender_panel:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+        is_staff:
+          type: boolean
+      required:
+      - username
+    message_sender_panelRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 50
+        is_staff:
+          type: boolean
+      required:
+      - username
+    messages_panel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        sender:
+          allOf:
+          - $ref: '#/components/schemas/message_sender_panel'
+          readOnly: true
+        text:
+          type: string
+          title: Message Text
+        seen:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/attachment_panel'
+          readOnly: true
+      required:
+      - attachments
+      - created_at
+      - id
+      - seen
+      - sender
+      - text
+      - updated_at
+    staff_ticket_update_panel:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 250
+        status:
+          $ref: '#/components/schemas/Status3afEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        ticket_type:
+          type: string
+          format: uuid
+      required:
+      - title
+    ticket_panel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 250
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ticket_user_panel'
+          readOnly: true
+        ticket_type:
+          $ref: '#/components/schemas/ticket_type_panel'
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        status:
+          $ref: '#/components/schemas/Status3afEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - created_at
+      - id
+      - ticket_type
+      - title
+      - updated_at
+      - user
+    ticket_type_panel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Type Name
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+    ticket_type_panelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Type Name
+          maxLength: 100
+      required:
+      - name
+    ticket_user_dashboard:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          maxLength: 254
+      required:
+      - email
+      - username
+    ticket_user_panel:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          maxLength: 254
+      required:
+      - email
+      - username
+    tickets_panel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 250
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ticket_user_panel'
+          readOnly: true
+        ticket_type:
+          type: string
+          readOnly: true
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        status:
+          $ref: '#/components/schemas/Status3afEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - ticket_type
+      - title
+      - updated_at
+      - user
+    user_panel:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_staff:
+          type: boolean
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - email
+      - first_name
+      - last_name
+      - username
+    user_panelRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_staff:
+          type: boolean
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+      - username
+    user_panel__update:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_staff:
+          type: boolean
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - first_name
+      - last_name
+      - username
+    users_panel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_staff:
+          type: boolean
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - email
+      - first_name
+      - id
+      - last_name
+      - username
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+servers:
+- url: http://localhost:8000
+  description: Development
+tags:
+- name: auth
+  description: Authentication endpoints
+- name: accounts
+  description: User account management
+- name: organizations
+  description: Organisation and team management
+- name: projects
+  description: Project, member, milestone and activity management
+- name: panel
+  description: Panel management
+- name: dashboard
+  description: Dashboard endpoints
+- name: support
+  description: Support endpoints
+- name: billing
+  description: Billing and payments

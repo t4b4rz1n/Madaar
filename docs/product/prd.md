@@ -1,0 +1,1 @@
+﻿Product requirements for Madar.

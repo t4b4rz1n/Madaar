@@ -1,0 +1,36 @@
+import { DoranDate } from "@doranjs/core";
+import { format as dateFnsFormat } from "date-fns";
+import { useAuthStore } from "../features/auth/store/authStore";
+
+export const formatDisplayDate = (
+  date: Date | string,
+  formatStr: string = "yyyy-MM-dd"
+): string => {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "";
+
+  const preference = useAuthStore.getState().user?.calendar_preference || "gregorian";
+
+  if (preference === "jalali") {
+    const doranDate = DoranDate.fromGregorian(d);
+    if (formatStr === "MMMM dd, yyyy") {
+      return doranDate.format("D MMMM YYYY");
+    }
+    if (formatStr === "EEEE, d MMMM yyyy" || formatStr === "EEEE, MMMM d, yyyy") {
+      return doranDate.format("dddd، D MMMM YYYY");
+    }
+    if (formatStr === "MMM d, yyyy") {
+      return doranDate.format("D MMMM YYYY");
+    }
+    if (formatStr === "MMM d, HH:mm") {
+      return doranDate.format("D MMMM, HH:mm");
+    }
+    if (formatStr === "yyyy-MM-dd") {
+      return doranDate.format("YYYY-MM-DD");
+    }
+    return doranDate.format(formatStr.replace(/y/g, "Y").replace(/d/g, "D").replace(/MMM/g, "MMMM").replace(/EEE/g, "dddd").replace(/MMMMMM/g, "MMMM"));
+  }
+
+  return dateFnsFormat(d, formatStr);
+};

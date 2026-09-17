@@ -1,0 +1,168 @@
+name: madar
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: madar_db
+    environment:
+      POSTGRES_DB: madar_db
+      POSTGRES_USER: madar_user
+      POSTGRES_PASSWORD: madar_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U madar_user -d madar_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - network
+
+  redis:
+    image: redis:7-alpine
+    container_name: madar_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - network
+
+  minio:
+    image: minio/minio:latest
+    container_name: madar_minio
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_password
+    command: server --console-address ":9001" /data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - network
+
+  setup-minio:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: madar_minio_setup
+    command: python scripts/setup-minio.py
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - path: ./apps/api/.env
+        required: true
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - network
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: madar_api
+    command: sh scripts/entrypoint.sh
+    volumes:
+      - ./apps/api:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: ./apps/api/.env
+        required: true
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      setup-minio:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_API_VERSION: v1
+        VITE_API_TIMEOUT: "30000"
+    container_name: madar_web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - network
+
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: madar_worker
+    command: celery -A config worker -l info
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - path: ./apps/api/.env
+        required: true
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - network
+
+  beat:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: madar_beat
+    command: celery -A config beat -l info -s /tmp/celerybeat-schedule
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - path: ./apps/api/.env
+        required: true
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - network
+
+networks:
+  network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:

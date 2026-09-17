@@ -1,0 +1,128 @@
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
+
+from automations.events import EventDispatcher
+
+from .models import Attendance, TimeLog, TimeOffRequest
+
+User = get_user_model()
+
+
+@receiver(pre_save, sender=TimeOffRequest)
+def cache_previous_timeoff_state(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            old = TimeOffRequest.objects.get(pk=instance.pk)
+            instance.__original_status = old.status
+        except TimeOffRequest.DoesNotExist:
+            instance.__original_status = None
+    else:
+        instance.__original_status = None
+
+
+@receiver(post_save, sender=TimeOffRequest)
+def handle_approved_timeoff(sender, instance, created, **kwargs):
+    # Original logic for updating Attendance on Approved.
+    # Only apply when the status *transitions* into APPROVED, so editing an
+    # already-approved request (e.g. changing the note) does NOT double-count
+    # overtime. __original_status is set by cache_previous_timeoff_state (pre_save).
+    old_status = getattr(instance, "__original_status", None)
+    if (
+        old_status != TimeOffRequest.Status.APPROVED
+        and instance.status == TimeOffRequest.Status.APPROVED
+    ):
+        date = instance.start_datetime.date()
+        duration = (instance.end_datetime - instance.start_datetime).total_seconds() / 60
+
+        attendance, _ = Attendance.objects.get_or_create(
+            user=instance.user,
+            date=date,
+            defaults={"organization": instance.organization},
+        )
+
+        if instance.request_type == TimeOffRequest.Type.OVERTIME:
+            attendance.overtime_minutes = int(attendance.overtime_minutes) + int(duration)
+        elif instance.request_type in [
+            TimeOffRequest.Type.VACATION,
+            TimeOffRequest.Type.SICK,
+            TimeOffRequest.Type.HOURLY,
+        ]:
+            pass
+
+        attendance.save(update_fields=["overtime_minutes"])
+
+    # New Event Automations
+    user_name = instance.user.get_full_name() or instance.user.username
+    leave_type_label = instance.get_request_type_display()
+
+    if created:
+        # 14. leave_requested
+        # ✅ Now uses permission-based resolution: notify all users with leave.approve permission
+        # instead of hardcoded OWNER/ADMIN role names.
+        # This means any custom role with leave.approve will also receive the notification.
+        EventDispatcher.dispatch(
+            event_type="leave_requested",
+            payload={
+                "organization_id": str(instance.organization_id),
+                "requester_id": str(instance.user_id),
+                "user_name": user_name,
+                "leave_type": leave_type_label,
+            },
+        )
+    else:
+        # 15. leave_resolved
+        old_status = getattr(instance, "__original_status", None)
+        if old_status == TimeOffRequest.Status.PENDING and instance.status in [
+            TimeOffRequest.Status.APPROVED,
+            TimeOffRequest.Status.REJECTED,
+        ]:
+            status_label = instance.get_status_display()
+            EventDispatcher.dispatch(
+                event_type="leave_resolved",
+                payload={
+                    "target_user_id": str(instance.user_id),
+                    "requester_id": str(instance.user_id),
+                    "status": status_label,
+                },
+            )
+
+
+@receiver(post_save, sender=TimeLog)
+def notify_timer_started(sender, instance, created, **kwargs):
+    """
+    16. timer_started
+    ✅ Now uses permission-based resolution via the automations catalog:
+    The catalog's default_recipients for timer_started are
+    [HAS_PERM_ORG_MANAGE, HAS_PERM_PROJECT_MANAGE], so no need to manually
+    resolve managers here — just dispatch the event and let rules.py handle it.
+    """
+    if created and instance.is_active:
+        user_name = instance.user.get_full_name() or instance.user.username
+        task_title = instance.task.title if instance.task else "General Work"
+
+        project_id = None
+        org_id = None
+        task_id = None
+        board_id = None
+        if instance.task and instance.task.project:
+            project_id = str(instance.task.project_id)
+            org_id = str(instance.task.project.organization_id)
+            task_id = str(instance.task_id)
+            board_id = (
+                str(instance.task.status.board_id)
+                if getattr(instance.task, "status", None)
+                else None
+            )
+
+        EventDispatcher.dispatch(
+            event_type="timer_started",
+            payload={
+                "organization_id": org_id,
+                "project_id": project_id,
+                "task_id": task_id,
+                "board_id": board_id,
+                "user_name": user_name,
+                "task_title": task_title,
+            },
+        )

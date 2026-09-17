@@ -1,0 +1,39 @@
+import { Suspense } from "react";
+import type { RouteObject } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
+import { PermissionGuard } from '../../auth/components/PermissionGuard';
+import { UserRoute } from '../../../core/router/UserRoute';
+import PageLoader from '../../../components/PageLoader';
+import { TaskManagementPage } from '../pages/TaskManagementPage';
+import { StandupsPage } from '../pages/StandupsPage';
+
+export const tasksRoutes: RouteObject[] = [
+  {
+    path: 'tasks',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PermissionGuard
+          permissions={['task.view', 'board.view', 'task.create', 'task.manage_all']}
+          fallback={<Navigate to="/dashboard" replace />}
+        >
+          <TaskManagementPage />
+        </PermissionGuard>
+      </Suspense>
+    ),
+  },
+  {
+    path: 'standups',
+    element: (
+      <UserRoute>
+        <Suspense fallback={<PageLoader />}>
+          <PermissionGuard
+            permissions={['org.manage_settings', 'report.view']}
+            fallback={<Navigate to="/dashboard" replace />}
+          >
+            <StandupsPage />
+          </PermissionGuard>
+        </Suspense>
+      </UserRoute>
+    ),
+  },
+];

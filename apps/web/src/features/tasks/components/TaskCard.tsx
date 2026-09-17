@@ -1,0 +1,568 @@
+import { formatDisplayDate } from "../../../utils/date";
+import { createPortal } from "react-dom";
+import { useEffect, useState, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Calendar1, Flag,
+  CloseCircle,
+  More,
+  Play,
+  Profile2User,
+  Stop,
+  TaskSquare,
+  TickCircle,
+  Trash,
+} from "iconsax-reactjs";
+import { toast } from "sonner";
+import { ConfirmationModal } from "../../../components/ConfirmationModal";
+import { deleteTask, getProjectMembers, updateTask } from "../api/tasksApi";
+import { useTaskStore } from "../store/useTaskStore";
+import type { Task } from "../types";
+import type { TimeLog } from "../../attendance/types";
+import { LiveActivityIndicator } from "./LiveActivityIndicator";
+
+interface TaskCardProps {
+  task: Task;
+  onClick: () => void;
+  onPlayTimer?: (taskId: string | number) => void;
+  onStopTimer?: (taskId: string | number) => void;
+  onMarkDone?: (taskId: string | number) => void;
+  onToggleDone?: (taskId: string | number) => void;
+  activeTimer?: TimeLog | null;
+  onDueDateClick?: () => void;
+}
+
+
+const priorityLeftBorder: Record<Task["priority"], string> = {
+  low:      "#e2e8f0",
+  medium:   "#93c5fd",
+  high:     "#fde047",
+  critical: "#fca5a5",
+};
+
+
+
+import { useAuthStore } from "../../auth/store/authStore";
+import { usePermissions } from "../../auth/hooks/usePermissions";
+
+export const TaskCard: React.FC<TaskCardProps> = ({
+  task,
+  onClick,
+  onPlayTimer,
+  onStopTimer,
+  onMarkDone,
+  onToggleDone,
+  activeTimer,
+  onDueDateClick,
+}) => {
+  const currentUser = useAuthStore((state) => state.user);
+  const { hasPermission, isStaff } = usePermissions();
+
+  const currentUserId = currentUser?.id;
+  const isAssignee = Boolean(
+    currentUserId &&
+      (String(task.assignee) === String(currentUserId) ||
+        String(task.assignee_detail?.id) === String(currentUserId))
+  );
+  const isReporter = Boolean(
+    currentUserId &&
+      (String(task.reporter) === String(currentUserId) ||
+        String((task as any).reporter_detail?.id) === String(currentUserId))
+  );
+  const canManageAll = hasPermission("task.manage_all") || isStaff;
+  const canEditTask = canManageAll || isAssignee || isReporter || hasPermission("task.create");
+  const canDeleteTask = canManageAll || isReporter;
+
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showMembersMenu, setShowMembersMenu] = useState(false);
+  const [isAssigneePopoverOpen, setIsAssigneePopoverOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const assigneeTriggerRef = useRef<HTMLButtonElement>(null);
+  const queryClient = useQueryClient();
+
+
+  const isActuallyDone = Boolean(task.is_finished);
+  const isOverdue = Boolean(
+    task.due_date && new Date(task.due_date).getTime() < Date.now() && !isActuallyDone
+  );
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteTask(task.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Task deleted");
+    },
+    onError: (error: any) =>
+      toast.error(error.response?.data?.detail || "Could not delete task."),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: Partial<Task>) => updateTask(task.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["taskActivities", task.id] });
+    },
+    onError: (error: any) =>
+      toast.error(error.response?.data?.detail || "Could not update task."),
+  });
+
+  const storeProjectId = useTaskStore((state) => state.activeProjectId);
+  const effectiveProjectId = task.project || storeProjectId;
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["projectUsers", effectiveProjectId],
+    queryFn: async () => {
+      if (!effectiveProjectId) return [];
+      const members = await getProjectMembers(effectiveProjectId.toString());
+      return (members || [])
+        .map((member: any) => member?.user)
+        .filter((u: any) => Boolean(u && u.id));
+    },
+    enabled: Boolean(effectiveProjectId),
+    staleTime: 30_000,
+  });
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setShowMembersMenu(false);
+    setIsAssigneePopoverOpen(false);
+  };
+
+  const initials = task.assignee_detail
+    ? (task.assignee_detail.first_name || task.assignee_detail.last_name
+        ? `${task.assignee_detail.first_name?.[0] || ""}${task.assignee_detail.last_name?.[0] || ""}`
+        : task.assignee_detail.username?.[0] || "?").toUpperCase()
+    : "";
+
+
+  const timerBelongsToTask = Boolean(
+    activeTimer && activeTimer.task.toString() === task.id.toString()
+  );
+  const timerIsRunning = Boolean(task.is_active_timer_running || timerBelongsToTask);
+  const [now, setNow] = useState(Date.now());
+  const [localStartedAt, setLocalStartedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!timerIsRunning) {
+      setLocalStartedAt(null);
+      return undefined;
+    }
+    setLocalStartedAt((prev) => prev || Date.now());
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [timerIsRunning]);
+
+  const elapsedSeconds = timerBelongsToTask && activeTimer
+    ? Math.max(
+        0,
+        Math.floor((now - new Date(activeTimer.start_time).getTime()) / 1000) +
+          Number(activeTimer.duration_seconds || 0)
+      )
+    : timerIsRunning && localStartedAt
+    ? Number(task.spent_seconds || 0) + Math.max(0, Math.floor((now - localStartedAt) / 1000))
+    : Number(task.spent_seconds || 0);
+
+  const formattedElapsed = [
+    Math.floor(elapsedSeconds / 3600),
+    Math.floor((elapsedSeconds % 3600) / 60),
+    elapsedSeconds % 60,
+  ]
+    .map((part) => part.toString().padStart(2, "0"))
+    .join(":");
+
+
+  return (
+    <>
+      <article
+        onClick={onClick}
+        className={`group relative cursor-pointer rounded-2xl border bg-base-100 p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+          isOverdue
+            ? "border-red-500/30"
+            : task.is_blocked
+            ? "border-amber-500/30"
+            : "border-base-content/8 hover:border-base-content/20"
+        } ${isActuallyDone ? "opacity-60" : ""}`}
+        style={{
+          borderLeftWidth: "3px",
+          borderLeftColor: priorityLeftBorder[task.priority],
+        }}
+        aria-label={`Open task ${task.key}: ${task.title}`}
+      >
+        {/* Loading overlay */}
+        {(updateMutation.isPending || deleteMutation.isPending) && (
+          <div className="absolute inset-0 z-20 grid place-items-center rounded-2xl bg-base-100/75 backdrop-blur-[2px]">
+            <span className="loading loading-spinner loading-sm text-primary" />
+          </div>
+        )}
+
+        {/* ─── Top Hover Options Menu ─── */}
+        <button
+          ref={menuTriggerRef}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMenuOpen(true);
+          }}
+          className="absolute top-2 right-2 z-10 grid size-6 place-items-center rounded-lg text-base-content/35 opacity-0 group-hover:opacity-100 hover:bg-base-200 hover:text-base-content transition duration-150"
+          aria-label={`Actions for ${task.title}`}
+        >
+          <More size={14} />
+        </button>
+
+        {/* ─── Title & Checkbox (Inline with dir="auto") ─── */}
+        <div className="flex items-start gap-2 pr-4" dir="auto">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              (onToggleDone || onMarkDone)?.(task.id);
+            }}
+            className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded transition ${
+              isActuallyDone
+                ? "bg-emerald-500 text-white"
+                : "border border-base-content/25 hover:border-emerald-500 hover:bg-emerald-500/10"
+            }`}
+            title={isActuallyDone ? "Mark incomplete" : "Mark done"}
+          >
+            {isActuallyDone && <TickCircle size={11} variant="Bold" />}
+          </button>
+
+          <div className="min-w-0 flex-1">
+            <h3
+              dir="auto"
+              className={`text-[12.5px] font-semibold leading-snug tracking-tight ${
+                isActuallyDone
+                  ? "text-base-content/35 line-through"
+                  : "text-base-content"
+              }`}
+            >
+              {task.title}
+            </h3>
+          </div>
+        </div>
+
+        {/* ─── Footer: Assignee Avatar, Metadata & Timer ─── */}
+        <div className="mt-3 flex items-center justify-between border-t border-base-content/6 pt-2">
+
+          <div className="flex items-center gap-3">
+            {/* Assignee Interactive Trigger */}
+            <button
+              ref={assigneeTriggerRef}
+              type="button"
+              disabled={!canEditTask}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (canEditTask) {
+                  setIsAssigneePopoverOpen(!isAssigneePopoverOpen);
+                }
+              }}
+              className={`rounded-full p-0.5 transition ${
+                canEditTask ? "hover:ring-2 hover:ring-primary/30" : "cursor-default"
+              }`}
+              title={
+                task.assignee_detail
+                  ? `Assigned to ${task.assignee_detail.first_name || task.assignee_detail.username}`
+                  : canEditTask
+                  ? "Assign member"
+                  : "Unassigned"
+              }
+            >
+
+              <div className="relative shrink-0">
+                <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shadow-xs">
+                  {task.assignee_detail?.avatar_url || task.assignee_detail?.avatar ? (
+                    <img
+                      src={
+                        task.assignee_detail.avatar_url ||
+                        task.assignee_detail.avatar
+                      }
+                      alt=""
+                      className="size-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    initials || <Profile2User size={12} className="text-base-content/45" />
+                  )}
+                </span>
+
+                {task.project && (
+                  <div className="absolute -bottom-1 -right-1 z-10">
+                    <LiveActivityIndicator
+                      projectId={task.project.toString()}
+                      taskId={task.id}
+                    />
+                  </div>
+                )}
+              </div>
+            </button>
+
+            {/* ─── Task Metadata (Due Date, Checklist & Milestone) ─── */}
+            {(task.due_date || (task.checklist_stats && task.checklist_stats.total > 0) || task.milestone_detail) && (
+              <div className="flex flex-wrap items-center gap-2.5 text-[10px] font-medium text-base-content/40">
+                {task.due_date && (
+                  <div className={`flex items-center gap-1 ${isOverdue && !isActuallyDone ? 'text-red-500 font-bold bg-red-500/10 px-1.5 py-0.5 rounded-md -ml-1' : ''}`} title="Due date">
+                    <Calendar1 size={13} variant={isOverdue && !isActuallyDone ? "Bold" : "Linear"} />
+                    <span>{formatDisplayDate(task.due_date, "MMM d")}</span>
+                  </div>
+                )}
+                {task.milestone_detail && (
+                  <div className="flex items-center gap-1 max-w-[100px]" title="Milestone">
+                    <Flag size={13} className="shrink-0" />
+                    <span className="truncate">{task.milestone_detail.title}</span>
+                  </div>
+                )}
+                {task.checklist_stats && task.checklist_stats.total > 0 && (
+                  <div className={`flex items-center gap-1 ${task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? 'text-emerald-500 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded-md -ml-1' : ''}`} title="Checklist items">
+                    <TaskSquare size={13} variant={task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? "Bold" : "Linear"} />
+                    <span>{task.checklist_stats.done}/{task.checklist_stats.total}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Timer controls (visible always if running, or on hover if not running) */}
+          <div className={`flex items-center gap-1.5 shrink-0 transition-opacity duration-150 ${timerIsRunning ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+            {timerIsRunning && (
+              <span className="font-mono text-[10px] font-bold tabular-nums text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                {formattedElapsed}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (timerIsRunning) onStopTimer?.(task.id);
+                else onPlayTimer?.(task.id);
+              }}
+              className={`grid size-6.5 place-items-center rounded-lg transition ${
+                timerIsRunning
+                  ? "bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                  : "bg-base-200/80 text-base-content/45 hover:bg-primary/10 hover:text-primary"
+              }`}
+              title={timerIsRunning ? "Stop timer" : "Start timer"}
+            >
+              {timerIsRunning ? <Stop size={13} /> : <Play size={13} />}
+            </button>
+          </div>
+        </div>
+      </article>
+
+      {/* ─── Direct Assignee Quick Select Popover Portal ─── */}
+      {isAssigneePopoverOpen &&
+        assigneeTriggerRef.current &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={closeMenu} />
+            <div
+              className="fixed z-50 w-48 max-h-60 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[12px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+              style={{
+                top: assigneeTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
+                  ? assigneeTriggerRef.current.getBoundingClientRect().top - 4
+                  : assigneeTriggerRef.current.getBoundingClientRect().bottom + 4,
+                transform: assigneeTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
+                  ? 'translateY(-100%)'
+                  : 'none',
+                left: assigneeTriggerRef.current.getBoundingClientRect().left,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-2 py-1 text-[10px] font-bold text-base-content/40 uppercase tracking-wider">
+                Assign to
+              </div>
+
+              {/* Unassigned Option */}
+              <button
+                type="button"
+                className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition ${
+                  !task.assignee ? "bg-primary/10 text-primary font-bold" : "hover:bg-base-200"
+                }`}
+                onClick={() => {
+                  updateMutation.mutate({ assignee: undefined });
+                  closeMenu();
+                }}
+              >
+                <Profile2User size={14} className="text-base-content/40" />
+                <span>Unassigned</span>
+              </button>
+
+              {/* Users List */}
+              {users.map((user: any) => {
+                const isSelected = String(task.assignee) === String(user.id);
+                return (
+                  <button
+                    type="button"
+                    key={user.id}
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition ${
+                      isSelected
+                        ? "bg-primary/10 text-primary font-bold"
+                        : "hover:bg-base-200"
+                    }`}
+                    onClick={() => {
+                      updateMutation.mutate({ assignee: user.id });
+                      closeMenu();
+                    }}
+                  >
+                    <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shrink-0">
+                      {(user.first_name?.[0] || user.full_name?.[0] || user.username?.[0] || user.email?.[0] || "?").toUpperCase()}
+                    </span>
+                    <span className="truncate flex items-center gap-1">
+                      <span>
+                        {user.first_name || user.last_name
+                          ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+                          : user.full_name || user.username || user.email || "Unknown Member"}
+                      </span>
+                      {user.username && (
+                        <span className="text-[9px] text-base-content/40 font-normal">
+                          (@{user.username})
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {users.length === 0 && (
+                <div className="px-2 py-2 text-[11px] text-base-content/40">
+                  No members found
+                </div>
+              )}
+            </div>
+          </>,
+          document.body
+        )}
+
+      {/* Dropdown Menu Portal */}
+      {isMenuOpen &&
+        menuTriggerRef.current &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={closeMenu} />
+            <div
+              className="fixed z-50 w-52 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[12px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+              style={{
+                top: menuTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
+                  ? menuTriggerRef.current.getBoundingClientRect().top - 4
+                  : menuTriggerRef.current.getBoundingClientRect().bottom + 4,
+                transform: menuTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
+                  ? 'translateY(-100%)'
+                  : 'none',
+                left: menuTriggerRef.current.getBoundingClientRect().right - 208,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {showMembersMenu ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowMembersMenu(false)}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-base-content/50 hover:bg-base-200"
+                  >
+                    <CloseCircle size={15} /> Back
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 hover:bg-base-200"
+                    onClick={() => {
+                      updateMutation.mutate({ assignee: undefined });
+                      closeMenu();
+                    }}
+                  >
+                    <Profile2User size={15} /> Unassigned
+                  </button>
+                  {users.map((user: any) => (
+                    <button
+                      type="button"
+                      key={user.id}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                      onClick={() => {
+                        updateMutation.mutate({ assignee: user.id });
+                        closeMenu();
+                      }}
+                    >
+                      <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] text-primary">
+                        {(user.first_name?.[0] || user.full_name?.[0] || user.username?.[0] || user.email?.[0] || "?").toUpperCase()}
+                      </span>
+                      <span className="truncate">
+                        {user.first_name || user.last_name
+                          ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+                          : user.full_name || user.username || user.email || "Unknown Member"}
+                      </span>
+                    </button>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                    onClick={() => {
+                      closeMenu();
+                      onClick();
+                    }}
+                  >
+                    <TaskSquare size={15} className="text-primary" /> Open task sheet
+                  </button>
+
+                  {canEditTask && (
+                    <>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                        onClick={() => setShowMembersMenu(true)}
+                      >
+                        <Profile2User size={15} className="text-base-content/50" /> Change assignee
+                      </button>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                        onClick={() => {
+                          closeMenu();
+                          onDueDateClick?.();
+                        }}
+                      >
+                        <Calendar1 size={15} className="text-base-content/50" />
+                        <span className="flex-1">Due date</span>
+                      </button>
+                    </>
+                  )}
+
+                  {canDeleteTask && (
+                    <>
+                      <div className="my-1 h-px bg-base-content/8" />
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-red-500 hover:bg-red-50"
+                        onClick={() => {
+                          closeMenu();
+                          setIsDeleteModalOpen(true);
+                        }}
+                      >
+                        <Trash size={15} /> Delete task
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </>,
+          document.body
+        )}
+
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => {
+          setIsDeleteModalOpen(false);
+          deleteMutation.mutate();
+        }}
+        title="Delete task?"
+        message={`This will remove "${task.title}" from the workspace.`}
+      />
+    </>
+  );
+};

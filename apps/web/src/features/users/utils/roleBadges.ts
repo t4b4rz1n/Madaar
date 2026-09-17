@@ -1,0 +1,95 @@
+import {
+  Code1,
+  Crown,
+  Headphone,
+  Hierarchy,
+  User,
+  MoneyArchive,
+  Setting,
+} from "iconsax-reactjs";
+
+import type { Role } from "../../roles/types";
+
+const roleBadgeClassMap: Record<string, string> = {
+  "Super Admin":
+    "bg-gradient-to-r from-fuchsia-500/20 via-pink-500/20 to-rose-500/20 text-fuchsia-300 border border-fuchsia-400/30 shadow-[0_0_12px_rgba(217,70,239,0.18)]",
+
+  Support:
+    "bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-blue-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_12px_rgba(34,211,238,0.18)]",
+
+  "Regular User":
+    "bg-gradient-to-r from-slate-400/10 to-zinc-300/10 text-base-content/75 border border-base-content/10 shadow-sm",
+
+  Frontend:
+    "bg-gradient-to-r from-pink-500/20 via-violet-500/20 to-purple-500/20 text-pink-300 border border-pink-400/30 shadow-[0_0_12px_rgba(236,72,153,0.18)]",
+
+  Backend:
+    "bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-lime-500/20 text-emerald-300 border border-emerald-400/30 shadow-[0_0_12px_rgba(16,185,129,0.18)]",
+
+  Accountant:
+    "bg-gradient-to-r from-violet-500/20 via-indigo-500/20 to-purple-500/20 text-violet-300 border border-violet-400/30 shadow-[0_0_12px_rgba(139,92,246,0.18)]",
+};
+
+const roleIconMap = {
+  "Super Admin": Crown,
+  Support: Headphone,
+  "Regular User": User,
+  Frontend: Code1,
+  Backend: Hierarchy,
+  Accountant: MoneyArchive,
+} as const;
+
+const dynamicColorPalettes = [
+  "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-300 border border-emerald-500/20",
+  "bg-gradient-to-r from-purple-500/10 to-indigo-500/10 text-purple-300 border border-purple-500/20",
+  "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 border border-amber-500/20",
+  "bg-gradient-to-r from-pink-500/10 to-rose-500/10 text-pink-300 border border-pink-500/20",
+  "bg-gradient-to-r from-sky-500/10 to-cyan-500/10 text-sky-300 border border-sky-500/20",
+];
+
+const getHashCode = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash);
+};
+
+export const getRoleBadgeClass = (roleName: string): string => {
+  if (roleBadgeClassMap[roleName]) {
+    return roleBadgeClassMap[roleName];
+  }
+
+  const hash = getHashCode(roleName);
+  const index = hash % dynamicColorPalettes.length;
+  return dynamicColorPalettes[index];
+};
+
+export const getRoleIcon = (roleName: string) => {
+  if (roleName in roleIconMap) {
+    return roleIconMap[roleName as keyof typeof roleIconMap];
+  }
+  return Setting;
+};
+
+export const getRoleName = (
+  roleId: string | number | null | undefined,
+  roles: Role[],
+  directRoleName?: string | null,
+): string | null => {
+  if (directRoleName) return directRoleName;
+  if (!roleId) return null;
+
+  const match = roles.find(
+    (role) =>
+      String(role.id) === String(roleId) ||
+      role.name.toLowerCase() === String(roleId).toLowerCase(),
+  );
+  if (match) return match.name;
+
+  if (typeof roleId === "string" && !roleId.includes("-") && isNaN(Number(roleId))) {
+    return roleId.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  return null;
+};

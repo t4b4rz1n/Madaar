@@ -1,0 +1,4 @@
+interface:
+  display_name: "Madar Product Development"
+  short_description: "Apply Madar product and architecture rules"
+  default_prompt: "Use $madar-product-development to plan and implement this Madaar feature."
