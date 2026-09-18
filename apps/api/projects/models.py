@@ -133,6 +133,10 @@ class Project(BaseModel):
 class ProjectMember(BaseModel):
     """Resource Allocation: Assigning users/resources to a project based on specialty and capacity allocation."""
 
+    class SalaryType(models.TextChoices):
+        MONTHLY = "monthly", _("Monthly")
+        HOURLY = "hourly", _("Hourly")
+
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,

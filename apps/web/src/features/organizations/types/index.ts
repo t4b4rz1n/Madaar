@@ -13,6 +13,7 @@ export interface Organization {
   name: string;
   slug: string;
   description?: string;
+  currency?: string;
   status: OrganizationStatus;
   status_display?: string;
   owner?: OrganizationOwner | null;
@@ -27,6 +28,7 @@ export interface OrganizationPayload {
   name: string;
   slug?: string;
   description?: string;
+  currency?: string;
   status: OrganizationStatus;
 }
 
@@ -49,4 +51,11 @@ export interface OrganizationMember {
 export interface AddExistingMemberPayload {
   user_id: string;
   role_id?: string | null;
+  salary_type?: "monthly" | "hourly" | null;
+  salary_amount?: string | number | null;
+}
+
+export interface UpdateMemberSalaryPayload {
+  salary_type?: "monthly" | "hourly" | null;
+  salary_amount?: string | number | null;
 }

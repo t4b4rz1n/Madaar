@@ -2,6 +2,7 @@ import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePermissions } from "../../auth/hooks/usePermissions";
+import { useAuthStore } from "../../auth/store/authStore";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -14,6 +15,7 @@ import {
   Crown,
   Flag,
   Chart,
+  DollarCircle,
 } from "iconsax-reactjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -35,11 +37,14 @@ import { CreateMilestoneModal } from "../components/CreateMilestoneModal";
 import { EditMilestoneModal } from "../components/EditMilestoneModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { ProjectReportView } from "../components/ProjectReportView";
+import { ProjectMemberSalaryPanel } from "../components/ProjectMemberSalaryPanel";
+import { ProjectBillingTab } from "../components/ProjectBillingTab";
 import { toast } from "sonner";
 import { getUnlinkedTasks, getTask, updateTask, getMilestoneTasks } from "../../tasks/api/tasksApi";
 import { TaskSheet } from "../../tasks/components/TaskSheet";
 
-type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports";
+type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports" | "salaries" | "billing";
+
 
 const DEFAULT_COLOR = "#6366f1";
 
@@ -240,6 +245,8 @@ const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
   { id: "activity", label: "Activity", icon: <Activity size={15} /> },
   { id: "analytics", label: "Analytics", icon: <Chart size={15} /> },
   { id: "reports", label: "Reports", icon: <Chart size={15} variant="Bold" /> },
+  { id: "salaries", label: "Salaries", icon: <DollarCircle size={15} /> },
+  { id: "billing", label: "Billing", icon: <DollarCircle size={15} variant="Bold" /> },
 ];
 
 
@@ -528,6 +535,7 @@ function MilestonesTab({
 export default function ProjectDetailsPage() {
 
   const updateProjectMutation = useUpdateProject();
+  const user = useAuthStore((state) => state.user);
 
 
   const { id } = useParams<{ id: string }>();
@@ -638,6 +646,10 @@ export default function ProjectDetailsPage() {
 
   const ownerName = getProjectOwnerName();
 
+  const isOwner = project.owner?.id === user?.id;
+  const isSuperUser = user?.is_staff;
+  const canViewSalaries = isSuperUser || isOwner;
+
   return (
     <div key={id} className="space-y-5 pb-10">
       {/* Top Header */}
@@ -695,7 +707,11 @@ export default function ProjectDetailsPage() {
 
       {/* Navigation Tabs */}
       <div className="flex gap-1 overflow-x-auto rounded-xl border border-base-content/8 bg-base-100 p-1">
-        {tabs.filter(t => t.id !== "reports" || (canManageProject || hasAnyPermission(["report.view"]))).map((tab) => (
+        {tabs
+          .filter(t => t.id !== "reports" || (canManageProject || hasAnyPermission(["report.view"])))
+          .filter(t => t.id !== "salaries" || canViewSalaries)
+          .filter(t => t.id !== "billing" || canViewSalaries)
+          .map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -1033,6 +1049,14 @@ export default function ProjectDetailsPage() {
           {/* ── REPORTS TAB ── */}
           {activeTab === "reports" && (
             <ProjectReportView projectId={id || ""} />
+          )}
+          {/* ── SALARIES TAB ── */}
+          {activeTab === "salaries" && (
+            <ProjectMemberSalaryPanel projectId={id || ""} members={members} />
+          )}
+          {/* ── BILLING TAB ── */}
+          {activeTab === "billing" && (
+            <ProjectBillingTab projectId={id || ""} />
           )}
         </motion.div>
       </AnimatePresence>

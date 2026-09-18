@@ -13,6 +13,11 @@ class Organization(BaseModel):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, db_index=True)
     description = models.TextField(blank=True)
+    currency = models.CharField(
+        max_length=10,
+        default="IRR",
+        help_text="Default currency for the organization",
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -168,20 +173,6 @@ class OrganizationMembership(BaseModel):
         blank=True,
         verbose_name="Dynamic Roles",
         help_text="The new permission-based roles assigned to this member.",
-    )
-    salary_type = models.CharField(
-        max_length=20,
-        choices=SalaryType.choices,
-        null=True,
-        blank=True,
-        help_text="Type of salary: monthly or hourly",
-    )
-    salary_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="The amount of salary",
     )
 
     class Meta:

@@ -1,6 +1,6 @@
 import ApiService from "../../../core/api/apiService";
 import type { Organization, OrganizationMember, OrganizationPayload } from "../types";
-import type { AddExistingMemberPayload } from "../types";
+import type { AddExistingMemberPayload, UpdateMemberSalaryPayload } from "../types";
 
 const unwrap = <T>(response: unknown): T => {
   const value = response as { data?: unknown } | null;
@@ -68,4 +68,19 @@ export const addExistingMember = async (
 /** Remove a member from the organization */
 export const removeMember = async (orgId: string, userId: string): Promise<void> => {
   await ApiService.delete(`/organizations/${orgId}/members/${userId}/`);
+};
+
+/** Update a member's salary at the organization level.
+ *  Changes propagate automatically to all project memberships where salary_override=false.
+ */
+export const updateMemberSalary = async (
+  orgId: string,
+  userId: string,
+  data: UpdateMemberSalaryPayload,
+): Promise<OrganizationMember> => {
+  const response = await ApiService.patch<OrganizationMember>(
+    `/organizations/${orgId}/members/${userId}/salary/`,
+    data,
+  );
+  return unwrap<OrganizationMember>(response);
 };

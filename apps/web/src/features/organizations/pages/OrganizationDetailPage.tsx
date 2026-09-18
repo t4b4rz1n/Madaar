@@ -56,10 +56,13 @@ const getInitials = (name: string): string => {
   return (name[0] || "?").toUpperCase();
 };
 
+import { usePermissions } from "../../auth/hooks/usePermissions";
+
 export default function OrganizationDetailPage() {
   const { orgId } = useParams<{ orgId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { hasPermission } = usePermissions();
   const [isCreateMemberOpen, setIsCreateMemberOpen] = useState(false);
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
@@ -106,8 +109,10 @@ export default function OrganizationDetailPage() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["finance"] });
       setMemberToRemove(null);
     },
   });
@@ -180,38 +185,46 @@ export default function OrganizationDetailPage() {
             </div>
           </div>
           <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:justify-end lg:w-auto">
-            <button
-              type="button"
-              onClick={() => setIsCreateMemberOpen(true)}
-              className="btn btn-primary btn-sm rounded-xl gap-2 shadow-sm shadow-primary/15"
-            >
-              <Add size={16} />
-              Create member
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsCreateTeamOpen(true)}
-              className="btn btn-outline btn-sm rounded-xl gap-2"
-            >
-              <Profile2User size={16} />
-              Create team
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsCreateProjectOpen(true)}
-              className="btn btn-outline btn-sm rounded-xl gap-2"
-            >
-              <FolderFavorite size={16} />
-              Create project
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/organizations/${orgId}/roles`)}
-              className="btn btn-outline btn-sm rounded-xl gap-2"
-            >
-              <Shield size={16} />
-              Roles Management
-            </button>
+            {hasPermission("org.manage_members") && (
+              <button
+                type="button"
+                onClick={() => setIsCreateMemberOpen(true)}
+                className="btn btn-primary btn-sm rounded-xl gap-2 shadow-sm shadow-primary/15"
+              >
+                <Add size={16} />
+                Create member
+              </button>
+            )}
+            {hasPermission("org.manage_settings") && (
+              <button
+                type="button"
+                onClick={() => setIsCreateTeamOpen(true)}
+                className="btn btn-outline btn-sm rounded-xl gap-2"
+              >
+                <Profile2User size={16} />
+                Create team
+              </button>
+            )}
+            {hasPermission("project.create") && (
+              <button
+                type="button"
+                onClick={() => setIsCreateProjectOpen(true)}
+                className="btn btn-outline btn-sm rounded-xl gap-2"
+              >
+                <FolderFavorite size={16} />
+                Create project
+              </button>
+            )}
+            {hasPermission("org.manage_roles") && (
+              <button
+                type="button"
+                onClick={() => navigate(`/organizations/${orgId}/roles`)}
+                className="btn btn-outline btn-sm rounded-xl gap-2"
+              >
+                <Shield size={16} />
+                Roles Management
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -257,6 +270,7 @@ export default function OrganizationDetailPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                   onClick={() => {
+                    if (!hasPermission("org.manage_members")) return;
                     const nameParts = (member.full_name || "").trim().split(/\s+/);
                     setSelectedUserToEdit({
                       id: member.user_id,
@@ -272,7 +286,7 @@ export default function OrganizationDetailPage() {
                       salary_amount: member.salary_amount || null
                     });
                   }}
-                  className="madaar-surface group relative flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-madaar-raised cursor-pointer"
+                  className={`madaar-surface group relative flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-madaar-raised ${hasPermission("org.manage_members") ? "cursor-pointer" : ""}`}
                 >
                   <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                     {getInitials(getUserDisplayName(member))}
@@ -297,17 +311,19 @@ export default function OrganizationDetailPage() {
                       )}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMemberToRemove(member);
-                    }}
-                    className="btn btn-ghost btn-square btn-sm rounded-xl text-error/60 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-error/10 hover:text-error"
-                    title="Remove from organization"
-                  >
-                    <Trash size={16} />
-                  </button>
+                  {hasPermission("org.manage_members") && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMemberToRemove(member);
+                      }}
+                      className="btn btn-ghost btn-square btn-sm rounded-xl text-error/60 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-error/10 hover:text-error"
+                      title="Remove from organization"
+                    >
+                      <Trash size={16} />
+                    </button>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>

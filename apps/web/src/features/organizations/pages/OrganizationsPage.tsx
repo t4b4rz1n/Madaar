@@ -25,7 +25,7 @@ const statusLabels: Record<OrganizationStatus, string> = {
   archived: "Archived",
 };
 
-const emptyForm = (): OrganizationPayload => ({ name: "", description: "", status: "active" });
+const emptyForm = (): OrganizationPayload => ({ name: "", description: "", currency: "IRR", status: "active" });
 
 const getErrorMessage = (error: any, fallback: string): string => {
   const data = error?.response?.data ?? error?.data ?? error;
@@ -60,6 +60,7 @@ function OrganizationFormModal({
       ? {
         name: organization.name,
         description: organization.description || "",
+        currency: organization.currency || "IRR",
         status: organization.status,
       }
       : emptyForm(),
@@ -71,6 +72,7 @@ function OrganizationFormModal({
         ? {
           name: organization.name,
           description: organization.description || "",
+          currency: organization.currency || "IRR",
           status: organization.status,
         }
         : emptyForm(),
@@ -148,6 +150,8 @@ function OrganizationFormModal({
                 placeholder="What does this organization do?"
               />
             </div>
+
+
 
             {organization && (
               <div className="space-y-2">

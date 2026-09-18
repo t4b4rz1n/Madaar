@@ -17,6 +17,7 @@ import { automationsRoutes } from "../../features/automations/routes";
 import { tasksRoutes } from "../../features/tasks/routes";
 import { attendanceRoutes } from "../../features/attendance/routes";
 import { organizationsRoutes } from "../../features/organizations/routes";
+import { financeRoutes } from "../../features/finance/routes";
 
 const NotFoundPage = lazy(() => import("../../pages/NotFoundPage"));
 const SettingsPage = lazy(() => import("../../pages/SettingsPage"));
@@ -48,6 +49,7 @@ export const routes: RouteObject[] = [
       ...notificationsRoutes,
       ...profileRoutes,
       ...ticketsRoutes,
+      ...financeRoutes,
       {
         path: "settings",
         element: <SettingsPage />,

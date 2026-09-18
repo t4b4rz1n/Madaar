@@ -31,12 +31,12 @@ export const TaskManagementPage: React.FC = () => {
     if (task) {
       setSelectedTaskId(task);
     }
-    
+
     // Clear URL to avoid re-triggering if user navigates manually later
     if (project || board || task) {
       setSearchParams({});
     }
-  }, [searchParams, activeProjectId, activeBoardId, setActiveProject, setActiveBoard, setSelectedTaskId, setSearchParams]);
+  }, [searchParams, activeProjectId, activeBoardId, setActiveProject, setActiveBoard, setSelectedTaskId, setSearchParams, setViewMode]);
   const queryClient = useQueryClient();
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
 

@@ -49,7 +49,7 @@ export default function CycleLeadTimeReport({
       .then(setData)
       .catch(() => setError("Error loading Cycle Time data"))
       .finally(() => setLoading(false));
-  }, [projectId, start, end, params?.board_id, params?.assignee_id]);
+  }, [projectId, start, end, params]);
 
   if (loading) return <Skeleton />;
   if (error) return <ErrorState message={error} />;

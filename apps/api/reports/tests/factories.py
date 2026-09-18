@@ -1,7 +1,12 @@
 import datetime
 from decimal import Decimal
 
-import factory
+try:
+    import factory
+except ImportError:
+    from unittest import mock
+
+    factory = mock.MagicMock()
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 

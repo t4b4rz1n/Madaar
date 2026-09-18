@@ -22,6 +22,9 @@ def _get_event_link(event_type: str, payload: dict) -> str:
     board_id = payload.get("board_id")
     organization_id = payload.get("organization_id")
 
+    if event_type == "standup_submitted":
+        return "/standups"
+
     if task_id and project_id:
         # Route to task management page with query params
         return f"/tasks?project={project_id}&board={board_id or ''}&task={task_id}"
@@ -31,7 +34,7 @@ def _get_event_link(event_type: str, payload: dict) -> str:
         return "/attendance?tab=timeoff"
     if organization_id:
         return f"/organizations/{organization_id}"
-    return "/" 
+    return "/"
 
 
 def process_rules_for_event(event_type: str, payload: dict):

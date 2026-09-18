@@ -123,16 +123,6 @@ COMPATIBILITY_ROLE_PERMISSIONS_MAP = {
         "notification.view",
         "report.view",
     ],
-    "hr": [
-        "org.view",
-        "user.view",
-        "role.view",
-        "org.manage_members",
-        "attendance.view",
-        "attendance.view_all",
-        "leave.approve",
-        "notification.view",
-    ],
 }
 
 # Dynamically injected for users who are Team.leader
@@ -179,27 +169,5 @@ SYSTEM_DEFAULT_ROLES = [
         "description": "Financial and payroll management access.",
         "is_protected": False,
         "permissions": COMPATIBILITY_ROLE_PERMISSIONS_MAP["accountant"],
-    },
-    {
-        "name": "HR",
-        "description": "Human resources and attendance/leave management access.",
-        "is_protected": False,
-        "permissions": COMPATIBILITY_ROLE_PERMISSIONS_MAP["hr"],
-    },
-    {
-        "name": "Designer",
-        "description": "UI/UX & Graphic design specialist with project task access.",
-        "is_protected": False,
-        "permissions": [
-            "org.view",
-            "user.view",
-            "role.view",
-            "project.view",
-            "task.view",
-            "task.create",
-            "board.view",
-            "attendance.view",
-            "notification.view",
-        ],
     },
 ]

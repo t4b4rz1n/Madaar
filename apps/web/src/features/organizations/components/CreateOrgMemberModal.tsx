@@ -12,6 +12,7 @@ import {
   Sms,
   Profile2User,
   Shield,
+  DollarCircle,
 } from "iconsax-reactjs";
 import { createPortal } from "react-dom";
 import { z } from "zod";
@@ -38,9 +39,12 @@ const createOrgMemberSchema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
   role_id: z.string().nullable().optional(),
+  salary_type: z.enum(["monthly", "hourly"]).nullable().optional(),
+  salary_amount: z.string().optional().nullable(),
 });
 
 type OrgMemberFormData = z.infer<typeof createOrgMemberSchema>;
+
 
 export const CreateOrgMemberModal = ({
   orgId,
@@ -53,6 +57,8 @@ export const CreateOrgMemberModal = ({
   const [activeTab, setActiveTab] = useState<MemberTab>(initialTab);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
+  const [selectedSalaryType, setSelectedSalaryType] = useState<"monthly" | "hourly" | "">("");
+  const [selectedSalaryAmount, setSelectedSalaryAmount] = useState<string>("");
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -79,14 +85,16 @@ export const CreateOrgMemberModal = ({
   const roles = rolesData?.results ?? [];
 
   const addExistingMutation = useMutation({
-    mutationFn: (data: { user_id: string; role_id?: string | null }) =>
+    mutationFn: (data: { user_id: string; role_id?: string | null; salary_type?: "monthly" | "hourly" | null; salary_amount?: string | null }) =>
       addExistingMember(orgId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
       queryClient.invalidateQueries({ queryKey: ["users", "unassigned"] });
+      queryClient.invalidateQueries({ queryKey: ["finance"] });
       toast.success("Member added successfully");
       handleClose();
     },
@@ -113,6 +121,8 @@ export const CreateOrgMemberModal = ({
       first_name: "",
       last_name: "",
       role_id: null,
+      salary_type: null,
+      salary_amount: null,
     },
   });
 
@@ -124,12 +134,17 @@ export const CreateOrgMemberModal = ({
       first_name: "",
       last_name: "",
       role_id: null,
+      salary_type: null,
+      salary_amount: null,
     });
     setSelectedUserId("");
     setSelectedRoleId("");
+    setSelectedSalaryType("");
+    setSelectedSalaryAmount("");
     setUserSearch("");
     setIsUserDropdownOpen(false);
   };
+
 
   const handleClose = () => {
     resetForm();
@@ -163,6 +178,8 @@ export const CreateOrgMemberModal = ({
     addExistingMutation.mutate({
       user_id: selectedUserId,
       role_id: selectedRoleId,
+      salary_type: selectedSalaryType || null,
+      salary_amount: selectedSalaryAmount || null,
     });
   };
 
@@ -177,6 +194,8 @@ export const CreateOrgMemberModal = ({
       is_staff: false,
       role_id: data.role_id ?? null,
       organization_id: orgId,
+      salary_type: data.salary_type ?? null,
+      salary_amount: data.salary_amount ?? null,
     };
     createMutation.mutate(payload, {
       onSuccess: (response: any) => {
@@ -193,6 +212,7 @@ export const CreateOrgMemberModal = ({
       },
     });
   });
+
 
   const isLoading = createMutation.isPending || addExistingMutation.isPending;
 
@@ -360,6 +380,35 @@ export const CreateOrgMemberModal = ({
                     </select>
                   </div>
 
+                  {/* Salary fields */}
+                  <div>
+                    <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                      <DollarCircle size={11} className="inline mr-1" />
+                      Salary (Optional)
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={selectedSalaryType}
+                        onChange={(e) => setSelectedSalaryType(e.target.value as "monthly" | "hourly" | "")}
+                        className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
+                      >
+                        <option value="">No salary</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="hourly">Hourly</option>
+                      </select>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={selectedSalaryAmount}
+                        onChange={(e) => setSelectedSalaryAmount(e.target.value)}
+                        placeholder="Amount"
+                        disabled={!selectedSalaryType}
+                        className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35 disabled:opacity-40"
+                      />
+                    </div>
+                  </div>
+
                   <div className="pt-3 flex items-center justify-end gap-2 border-t border-base-content/8">
                     <button
                       type="button"
@@ -375,7 +424,7 @@ export const CreateOrgMemberModal = ({
                       disabled={isLoading || !selectedUserId}
                       className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
                     >
-                      {isLoading ? "AddingΓÇª" : "Add Member"}
+                      {isLoading ? "Adding…" : "Add Member"}
                     </button>
                   </div>
                 </>
@@ -527,6 +576,46 @@ export const CreateOrgMemberModal = ({
                         <option key={r.id} value={String(r.id)}>{r.name}</option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Salary */}
+                  <div>
+                    <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                      <DollarCircle size={11} className="inline mr-1" />
+                      Salary (Optional)
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Controller
+                        name="salary_type"
+                        control={control}
+                        render={({ field }) => (
+                          <select
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value || null)}
+                            className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
+                          >
+                            <option value="">No salary</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="hourly">Hourly</option>
+                          </select>
+                        )}
+                      />
+                      <Controller
+                        name="salary_amount"
+                        control={control}
+                        render={({ field }) => (
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value || null)}
+                            placeholder="Amount"
+                            className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                          />
+                        )}
+                      />
+                    </div>
                   </div>
 
                   <div className="pt-3 flex items-center justify-end gap-2 border-t border-base-content/8">

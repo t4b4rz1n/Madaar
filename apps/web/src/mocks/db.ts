@@ -305,30 +305,12 @@ export let mockRoles: MockRole[] = [
   },
   // --- Adding business roles according to requirements document ---
   {
-    id: 6,
-    name: "Team Lead",
-    description:
-      "Team lead; managing teams, coordinating members, and reviewing tickets.",
-    is_active: true,
-    is_staff: false,
-    permissions: ["teams.view", "teams.manage", "tickets.view", "users.view"],
-  },
-  {
     id: 7,
     name: "Accountant",
     description: "Accountant; viewing discount codes and financial tickets.",
     is_active: true,
     is_staff: false,
     permissions: ["discounts.view", "tickets.view"],
-  },
-  {
-    id: 8,
-    name: "HR",
-    description:
-      "Human Resources; managing personnel status, users, and reviewing internal tickets.",
-    is_active: true,
-    is_staff: false,
-    permissions: ["users.manage", "tickets.view"],
   },
 ];
 

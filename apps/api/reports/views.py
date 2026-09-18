@@ -274,13 +274,11 @@ class CumulativeFlowView(APIView):
         try:
             # Re-use the same accessible queryset that the project list uses.
             # This ensures that if they can see the project, they can see its reports.
-            project = ProjectService.get_accessible_queryset(user).get(
-                pk=project_id, is_deleted=False
-            )
-        except Project.DoesNotExist:
+            ProjectService.get_accessible_queryset(user).get(pk=project_id, is_deleted=False)
+        except Project.DoesNotExist as err:
             from rest_framework.exceptions import PermissionDenied
 
-            raise PermissionDenied("You do not have access to this project.")
+            raise PermissionDenied("You do not have access to this project.") from err
 
     @staticmethod
     def _parse_date(value) -> datetime.date | None:
@@ -288,8 +286,8 @@ class CumulativeFlowView(APIView):
             return None
         try:
             return datetime.date.fromisoformat(value)
-        except ValueError:
-            raise ParseError(f"Invalid date format: '{value}'. Use YYYY-MM-DD.")
+        except ValueError as err:
+            raise ParseError(f"Invalid date format: '{value}'. Use YYYY-MM-DD.") from err
 
 
 # ---------------------------------------------------------------------------
@@ -342,17 +340,17 @@ class MilestoneBurndownView(APIView):
             return
         try:
             m = Milestone.objects.select_related("project").get(pk=milestone_id, is_deleted=False)
-        except Milestone.DoesNotExist:
-            raise NotFound("Milestone not found.")
+        except Milestone.DoesNotExist as err:
+            raise NotFound("Milestone not found.") from err
 
         from projects.services import ProjectService
 
         try:
             ProjectService.get_accessible_queryset(user).get(pk=m.project_id, is_deleted=False)
-        except Exception:
+        except Exception as err:
             from rest_framework.exceptions import PermissionDenied
 
-            raise PermissionDenied("You do not have access to this project.")
+            raise PermissionDenied("You do not have access to this project.") from err
 
 
 # ---------------------------------------------------------------------------
@@ -440,8 +438,8 @@ class CycleLeadTimeView(APIView):
             return None
         try:
             return datetime.date.fromisoformat(value)
-        except ValueError:
-            raise ParseError(f"Invalid date format: '{value}'. Use YYYY-MM-DD.")
+        except ValueError as err:
+            raise ParseError(f"Invalid date format: '{value}'. Use YYYY-MM-DD.") from err
 
     def _check_project_access(self, user, project_id):
         if user.is_staff or user.is_superuser:
@@ -451,10 +449,8 @@ class CycleLeadTimeView(APIView):
 
         try:
             # Re-use the same accessible queryset that the project list uses.
-            project = ProjectService.get_accessible_queryset(user).get(
-                pk=project_id, is_deleted=False
-            )
-        except Project.DoesNotExist:
+            ProjectService.get_accessible_queryset(user).get(pk=project_id, is_deleted=False)
+        except Project.DoesNotExist as err:
             from rest_framework.exceptions import PermissionDenied
 
-            raise PermissionDenied("You do not have access to this project.")
+            raise PermissionDenied("You do not have access to this project.") from err

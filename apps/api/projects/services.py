@@ -425,6 +425,78 @@ class ProjectMemberService:
         )
         logger.info("Member %s removed from project %s (by %s)", member.pk, project.pk, actor)
 
+    @classmethod
+    @transaction.atomic
+    def update_salary(
+        cls,
+        *,
+        member: ProjectMember,
+        actor,
+        salary_type: str | None,
+        salary_amount,
+    ) -> ProjectMember:
+        """Set a project-level salary override for a member.
+
+        This marks ``salary_override=True`` so that future changes to the
+        org-level salary will NOT cascade to this member in this project.
+        """
+        from finance.services import FinanceService
+
+        FinanceService.set_project_salary(
+            user=member.user, project=member.project, payment_type=salary_type, rate=salary_amount
+        )
+
+        _ActivityLogger.log(
+            project=member.project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.MEMBER_UPDATED,
+            entity_type=ProjectActivity.EntityType.MEMBER,
+            entity_id=member.pk,
+            metadata={
+                "salary_type": salary_type,
+                "salary_amount": str(salary_amount) if salary_amount is not None else None,
+                "salary_override": True,
+            },
+        )
+        logger.info(
+            "Project-level salary set for member %s in project %s (by %s)",
+            member.pk,
+            member.project_id,
+            actor,
+        )
+        return cls.get_by_pk(member.pk)
+
+    @classmethod
+    @transaction.atomic
+    def reset_salary_to_org(cls, *, member: ProjectMember, actor) -> ProjectMember:
+        """Reset a member's salary back to the org-level value.
+
+        Clears the ``salary_override`` flag so future org-level changes
+        will again propagate to this member in this project.
+        """
+        from finance.services import FinanceService
+
+        FinanceService.reset_project_salary(
+            user=member.user,
+            project=member.project,
+        )
+
+        _ActivityLogger.log(
+            project=member.project,
+            actor=actor,
+            event_type=ProjectActivity.EventType.MEMBER_UPDATED,
+            entity_type=ProjectActivity.EntityType.MEMBER,
+            entity_id=member.pk,
+            metadata={"salary_override": False, "reset_to_org": True},
+        )
+        logger.info(
+            "Salary reset to org-level for member %s in project %s (by %s)",
+            member.pk,
+            member.project_id,
+            actor,
+        )
+        return cls.get_by_pk(member.pk)
+
 
 # ---------------------------------------------------------------------------
 # MilestoneService

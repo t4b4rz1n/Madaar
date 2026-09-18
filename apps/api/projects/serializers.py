@@ -274,6 +274,9 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
 
     user = UserMinimalSerializer(read_only=True)
     team = TeamMinimalSerializer(read_only=True)
+    salary_type = serializers.SerializerMethodField()
+    salary_amount = serializers.SerializerMethodField()
+    salary_override = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectMember
@@ -286,10 +289,71 @@ class ProjectMemberReadSerializer(serializers.ModelSerializer):
             "allocation_start_date",
             "allocation_end_date",
             "is_active",
+            "salary_type",
+            "salary_amount",
+            "salary_override",
             "created_at",
             "updated_at",
         )
         read_only_fields = fields
+
+    def _can_view_salary(self, obj: ProjectMember) -> bool:
+        """Only org owners, project owners, and superusers can see salary details."""
+        request = self.context.get("request")
+        if not request or not request.user or not request.user.is_authenticated:
+            return False
+        actor = request.user
+        if actor.is_superuser or actor.is_staff:
+            return True
+
+        if getattr(obj.project, "owner_id", None) == actor.id:
+            return True
+
+        # Get the org from the project
+        try:
+            org = obj.project.organization
+        except Exception:
+            return False
+        from organizations.models import OrganizationMembership
+
+        return OrganizationMembership.objects.filter(
+            user=actor,
+            organization=org,
+            role=OrganizationMembership.Role.OWNER,
+            is_deleted=False,
+        ).exists()
+
+    def _get_salary_config(self, obj: ProjectMember):
+        if not hasattr(self, "_salary_configs_cache"):
+            self._salary_configs_cache = {}
+        cache_key = f"{obj.user_id}_{obj.project_id}"
+        if cache_key in self._salary_configs_cache:
+            return self._salary_configs_cache[cache_key]
+
+        from finance.services import FinanceService
+
+        result = FinanceService.get_effective_salary(
+            obj.user, obj.project.organization, obj.project
+        )
+
+        self._salary_configs_cache[cache_key] = result
+        return result
+
+    def get_salary_type(self, obj: ProjectMember):
+        if self._can_view_salary(obj):
+            return self._get_salary_config(obj)["type"]
+        return None
+
+    def get_salary_amount(self, obj: ProjectMember):
+        if self._can_view_salary(obj):
+            amt = self._get_salary_config(obj)["amount"]
+            return str(amt) if amt is not None else None
+        return None
+
+    def get_salary_override(self, obj: ProjectMember):
+        if self._can_view_salary(obj):
+            return self._get_salary_config(obj)["override"]
+        return None
 
 
 class ProjectMemberWriteSerializer(serializers.ModelSerializer):

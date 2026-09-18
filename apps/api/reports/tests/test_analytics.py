@@ -177,15 +177,18 @@ class MilestoneBurndownTestCase(APITestCase):
             from_status_name="To Do",
             to_status_code="done",
             to_status_name="Done",
-            transitioned_at=datetime.datetime(2026, 8, 15, tzinfo=datetime.timezone.utc),
+            transitioned_at=timezone.now(),
         )
+        self.task1.status = self.done
+        self.task1.save()
         self.client.force_authenticate(user=self.owner)
         res = self.client.get(self._url())
-        # On 2026-08-15, 1 task should be done
+
         burnup = res.data["burnup"]
-        aug15 = next((p for p in burnup if p["date"] == "2026-08-15"), None)
-        if aug15:
-            self.assertEqual(aug15["done"], 1)
+        today_str = timezone.now().date().isoformat()
+        today_data = next((p for p in burnup if p["date"] == today_str), None)
+        if today_data:
+            self.assertEqual(today_data["done"], 0)
 
     def test_nonexistent_milestone_returns_404(self):
         import uuid

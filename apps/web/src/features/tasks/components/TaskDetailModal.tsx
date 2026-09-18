@@ -43,7 +43,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
   const [isMembersMenuOpen, setIsMembersMenuOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const membersButtonRef = useRef<HTMLDivElement>(null);
-  
+
 
   // Local state for optimistic UI updates
   const [localAssignee, setLocalAssignee] = useState<any>(task.assignee_detail || null);

@@ -33,6 +33,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
+            "currency",
             "status",
             "status_display",
             "owner",
@@ -164,12 +165,18 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
 
     def get_salary_type(self, obj):
         if self._can_manage_salary(obj):
-            return obj.salary_type
+            from finance.services import FinanceService
+
+            salary = FinanceService.get_effective_salary(obj.user, obj.organization)
+            return salary.get("payment_type") if salary else None
         return None
 
     def get_salary_amount(self, obj):
         if self._can_manage_salary(obj):
-            return str(obj.salary_amount) if obj.salary_amount else None
+            from finance.services import FinanceService
+
+            salary = FinanceService.get_effective_salary(obj.user, obj.organization)
+            return str(salary.get("rate")) if salary and salary.get("rate") is not None else None
         return None
 
 
@@ -180,6 +187,17 @@ class AddOrgMemberSerializer(serializers.Serializer):
         allow_null=True,
         allow_blank=True,
         default=OrganizationMembership.Role.EMPLOYEE,
+    )
+    salary_type = serializers.ChoiceField(
+        choices=[("hourly", "Hourly"), ("monthly", "Monthly"), ("fixed", "Fixed")],
+        required=False,
+        allow_null=True,
+    )
+    salary_amount = serializers.DecimalField(
+        max_digits=20,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
     )
 
     class Meta:
@@ -195,3 +213,24 @@ class AddOrgMemberSerializer(serializers.Serializer):
             raise serializers.ValidationError("User is not active.")
 
         return value
+
+
+class UpdateOrgMemberSalarySerializer(serializers.Serializer):
+    """Serializer for updating a member's salary at the organization level."""
+
+    salary_type = serializers.ChoiceField(
+        choices=[("hourly", "Hourly"), ("monthly", "Monthly"), ("fixed", "Fixed")],
+        required=False,
+        allow_null=True,
+    )
+    salary_amount = serializers.DecimalField(
+        max_digits=20,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+    )
+
+    def validate(self, attrs):
+        if "salary_type" not in attrs and "salary_amount" not in attrs:
+            raise serializers.ValidationError("Provide at least salary_type or salary_amount.")
+        return attrs

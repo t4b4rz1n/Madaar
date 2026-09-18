@@ -78,8 +78,9 @@ class BoardAndStatusTestCase(APITestCase):
             {"title": "Board P2", "project": self.project2.id},
         )
         res = self.client.get(reverse("task-board-list"), {"project": self.project.id})
-        self.assertEqual(len(res.data["results"]), 1)
-        self.assertEqual(res.data["results"][0]["title"], "Main Board")
+        results = res.data["results"] if isinstance(res.data, dict) else res.data
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["title"], "Main Board")
 
     def test_reorder_boards(self):
         """Board reorder endpoint should update order values."""
@@ -151,7 +152,8 @@ class BoardAndStatusTestCase(APITestCase):
     def test_filter_statuses_by_board(self):
         """Statuses should be filterable by board."""
         res = self.client.get(reverse("task-status-list"), {"board": self.board.id})
-        self.assertEqual(len(res.data["results"]), 4)
+        results = res.data["results"] if isinstance(res.data, dict) else res.data
+        self.assertEqual(len(results), 4)
 
     def test_board_activities_endpoint(self):
         """Board activities endpoint should return activity logs."""
@@ -349,7 +351,9 @@ class TasksRBACTestCase(APITestCase):
         """HR and Accountant roles should have no access to tasks by default."""
         self.client.force_authenticate(user=self.hr)
         res = self.client.get(reverse("task-list"))
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        results = res.data["results"] if isinstance(res.data, dict) else res.data
+        self.assertEqual(len(results), 0)
 
         res = self.client.post(
             reverse("task-list"),
