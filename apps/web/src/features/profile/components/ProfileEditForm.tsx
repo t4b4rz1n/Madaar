@@ -156,7 +156,7 @@ export const ProfileEditForm = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
         {/* Column 1: Profile & Personal Info */}
         <div className="flex flex-col gap-6">
@@ -232,7 +232,7 @@ export const ProfileEditForm = () => {
 
         </div>
 
-        {/* Column 2: Security */}
+        {/* Column 2: Security & Preferences */}
         <div className="flex flex-col gap-6">
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6">
             <h3 className="font-bold text-base-content mb-4">Account Security</h3>
@@ -281,10 +281,6 @@ export const ProfileEditForm = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Column 3: Preferences & Notifications */}
-        <div className="flex flex-col gap-6">
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6">
             <h3 className="font-bold text-base-content mb-4">Account Preferences</h3>
             <div className="space-y-6">
