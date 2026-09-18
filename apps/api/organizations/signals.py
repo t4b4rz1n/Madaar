@@ -2,7 +2,14 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from automations.events import EventDispatcher
-from organizations.models import Organization, OrganizationMembership, Permission, Role, TeamMembership
+from organizations.models import (
+    Organization,
+    OrganizationMembership,
+    Permission,
+    Role,
+    TeamMembership,
+)
+
 _DEFAULT_ROLE_PERMISSIONS = {
     "Owner": [
         "notification.view",
