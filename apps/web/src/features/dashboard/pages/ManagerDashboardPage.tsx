@@ -173,7 +173,7 @@ const ManagerDashboardPage = () => {
 
   const dashboard = dashboardQuery.data;
   const members = membersQuery.data || [];
-  
+
   const isLoading = dashboardQuery.isLoading;
 
   if (isLoading) return <ManagerDashboardSkeleton />;
@@ -208,8 +208,8 @@ const ManagerDashboardPage = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {dashboard.project_summary.length > 0 && (
-            <select 
-              value={selectedProjectId} 
+            <select
+              value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
               className="select select-bordered select-sm rounded-xl text-xs font-bold h-10 border-base-content/10 bg-base-100 hover:border-primary/30"
             >
@@ -230,11 +230,11 @@ const ManagerDashboardPage = () => {
 
       <AnimatePresence mode="wait">
         {!selectedProject ? (
-          <motion.div 
-            key="global-scope" 
-            initial={{ opacity: 0, y: 10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            exit={{ opacity: 0, y: -10 }} 
+          <motion.div
+            key="global-scope"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="space-y-5 sm:space-y-6"
           >
@@ -291,11 +291,11 @@ const ManagerDashboardPage = () => {
             </section>
           </motion.div>
         ) : (
-          <motion.div 
-            key="project-scope" 
-            initial={{ opacity: 0, y: 10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            exit={{ opacity: 0, y: -10 }} 
+          <motion.div
+            key="project-scope"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="space-y-5 sm:space-y-6"
           >
@@ -307,9 +307,9 @@ const ManagerDashboardPage = () => {
   );
 };
 
-const ProjectSpecificView = ({ tasks, isLoading }: { project: ManagerProjectSummary, tasks?: Task[], isLoading: boolean }) => {
+const ProjectSpecificView = ({ project, tasks, isLoading }: { project: ManagerProjectSummary, tasks?: Task[], isLoading: boolean }) => {
   const allTasks = useMemo(() => tasks || [], [tasks]);
-  
+
   const projTotalTasks = allTasks.length;
   const projDoneTasks = allTasks.filter(t => t.is_finished || t.status_detail?.name.toLowerCase() === 'done').length;
   const projOverdueTasks = allTasks.filter(t => !t.is_finished && t.due_date && new Date(t.due_date).getTime() < Date.now()).length;
@@ -328,8 +328,37 @@ const ProjectSpecificView = ({ tasks, isLoading }: { project: ManagerProjectSumm
     return Array.from(statsMap.values());
   }, [allTasks]);
 
+  const health = getHealth(project);
+
   return (
     <div className="space-y-5 sm:space-y-6">
+      <section className={`${panelClass} flex flex-col gap-4 bg-gradient-to-br from-primary/[0.08] via-base-100 to-base-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6`}>
+        <div className="flex items-start gap-3">
+          <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-white ${health.tone === "error" ? "bg-error" : health.tone === "warning" ? "bg-warning" : "bg-success"}`}>
+            <Chart21 size={19} />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">Project Health</p>
+            <div className="mt-1 flex items-center gap-2">
+              <h2 className="text-lg font-black text-base-content">{health.label}</h2>
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${health.tone === "error" ? "bg-error/10 text-error" : health.tone === "warning" ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>{Math.round(health.progress * 100)}% Completed</span>
+            </div>
+            <p className="mt-1 text-xs font-semibold text-base-content/50">
+              Due {formatDate(project.deadline)} · {project.active_member_count} contributors
+            </p>
+          </div>
+        </div>
+        <div className="w-full sm:w-1/3">
+          <div className="flex items-center justify-between text-xs font-bold text-base-content/50 mb-1">
+            <span>Progress</span>
+            <span>{Math.round(health.progress * 100)}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-base-200">
+            <div className={`h-full rounded-full ${health.tone === "error" ? "bg-error" : health.tone === "warning" ? "bg-warning" : "bg-success"}`} style={{ width: `${Math.round(health.progress * 100)}%` }} />
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Total Tasks" value={projTotalTasks} description="tracked in this project" icon={TaskSquare} tone="primary" />
         <MetricCard label="Open work" value={Math.max(0, projTotalTasks - projDoneTasks)} description={`${projDoneTasks} completed`} icon={Activity} tone="secondary" />
@@ -354,12 +383,12 @@ const WorkloadPanel = ({ taskStats }: { taskStats: { status_code?: string | null
       <div className="px-5 pb-6">
         <div className="flex h-3 overflow-hidden rounded-full bg-base-200">
           {taskStats.map((stat, index) => (
-            <motion.div 
-              key={`${stat.status_code || stat.code}-${index}`} 
-              initial={{ width: 0 }} 
-              animate={{ width: `${(stat.count / total) * 100}%` }} 
-              transition={{ duration: 0.7, delay: index * 0.06 }} 
-              className={`${palette[index % palette.length]} min-w-1`} 
+            <motion.div
+              key={`${stat.status_code || stat.code}-${index}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${(stat.count / total) * 100}%` }}
+              transition={{ duration: 0.7, delay: index * 0.06 }}
+              className={`${palette[index % palette.length]} min-w-1`}
             />
           ))}
         </div>
@@ -408,9 +437,9 @@ const ProjectFocusPanel = ({ tasks, isLoading }: { tasks?: Task[], isLoading: bo
 
   return (
     <section className={panelClass}>
-      <SectionHeading 
-        title="Project Focus" 
-        description="See exactly what each person is working on" 
+      <SectionHeading
+        title="Project Focus"
+        description="See exactly what each person is working on"
       />
       <div className="px-5 pb-6">
         {isLoading ? (

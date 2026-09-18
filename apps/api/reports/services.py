@@ -518,10 +518,14 @@ class ManagerDashboardService:
         )
 
     @staticmethod
-    def _get_task_stats(member_ids):
+    def _get_task_stats(member_ids, admin_org_ids=None):
+        q_filter = Q(assignee_id__in=member_ids)
+        if admin_org_ids:
+            q_filter |= Q(assignee__isnull=True, project__organization_id__in=admin_org_ids)
+
         return list(
             Task.objects.filter(
-                assignee_id__in=member_ids,
+                q_filter,
                 is_deleted=False,
                 project__is_deleted=False,
             )
@@ -535,9 +539,13 @@ class ManagerDashboardService:
         )
 
     @staticmethod
-    def _get_overdue_tasks(member_ids, now):
+    def _get_overdue_tasks(member_ids, now, admin_org_ids=None):
+        q_filter = Q(assignee_id__in=member_ids)
+        if admin_org_ids:
+            q_filter |= Q(assignee__isnull=True, project__organization_id__in=admin_org_ids)
+
         qs = Task.objects.filter(
-            assignee_id__in=member_ids,
+            q_filter,
             is_deleted=False,
             due_date__lt=now,
             project__is_deleted=False,
@@ -782,10 +790,14 @@ class ManagerDashboardService:
         # when no real team exists, even if org members are visible).
         if team_id:
             managed_team_count = 1
+            admin_org_ids_for_tasks = None
         elif user.is_staff or user.is_superuser:
-            from organizations.models import Team
+            from organizations.models import Organization, Team
 
             managed_team_count = Team.objects.filter(is_deleted=False).count()
+            admin_org_ids_for_tasks = list(
+                Organization.objects.filter(is_deleted=False).values_list("id", flat=True)
+            )
         else:
             admin_org_ids = cls._get_admin_org_ids(user)
             if admin_org_ids:
@@ -795,8 +807,10 @@ class ManagerDashboardService:
                     organization_id__in=admin_org_ids,
                     is_deleted=False,
                 ).count()
+                admin_org_ids_for_tasks = admin_org_ids
             else:
                 managed_team_count = len(cls.get_managed_team_ids(user))
+                admin_org_ids_for_tasks = None
 
         now = timezone.now()
         today_start, today_end = get_user_today_range(tz_name)
@@ -809,8 +823,8 @@ class ManagerDashboardService:
         result = {
             "team_member_count": len(member_ids),
             "managed_team_count": managed_team_count,
-            "task_stats": cls._get_task_stats(member_ids),
-            "overdue_summary": cls._get_overdue_tasks(member_ids, now),
+            "task_stats": cls._get_task_stats(member_ids, admin_org_ids_for_tasks),
+            "overdue_summary": cls._get_overdue_tasks(member_ids, now, admin_org_ids_for_tasks),
             "work_hours": cls._get_work_hours(member_ids, week_start_date, week_end_date),
             "members_attendance": cls._get_members_attendance(member_ids, today_local_date),
             "project_summary": cls._get_project_summary(member_ids),

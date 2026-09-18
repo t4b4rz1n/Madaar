@@ -572,7 +572,7 @@ export default function ProjectDetailsPage() {
     if (tabFromUrl && tabFromUrl !== activeTab) {
       setActiveTabState(tabFromUrl);
     }
-    
+
     const taskFromUrl = searchParams.get("task");
     if (taskFromUrl) {
       setSelectedTaskId(taskFromUrl);

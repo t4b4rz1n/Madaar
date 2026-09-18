@@ -48,7 +48,7 @@ export const Sidebar = () => {
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen } = useLayoutStore();
   const { activeProjectId, setActiveProject } = useTaskStore();
-  
+
 
   const { data: projects } = useQuery({
     queryKey: ["projects"],
