@@ -1,169 +1,19 @@
-import { Lock, Sms, TickCircle } from "iconsax-reactjs";
-import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
-import InputField from "../../../components/InputField";
-import { useAuthStore } from "../../auth/store/authStore";
-import { useUpdateProfile, useTelegramMagicLink, useProfileQuery } from "../hooks/useProfile";
-import type { ProfileUpdateData } from "../types";
+const fs = require('fs');
+const path = require('path');
 
-export const ProfileEditForm = () => {
-  const [isWaitingForTelegram, setIsWaitingForTelegram] = useState(false);
-  const user = useAuthStore((state) => state.user);
+const file = path.join('apps', 'web', 'src', 'features', 'profile', 'components', 'ProfileEditForm.tsx');
+let content = fs.readFileSync(file, 'utf8');
 
-  // Timeout for waiting state
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    if (isWaitingForTelegram && !user?.telegram_connected) {
-      timeoutId = setTimeout(() => {
-        setIsWaitingForTelegram(false);
-        toast.info("Telegram connection timed out. Please try again.");
-      }, 60000); // 1 minute
-    }
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isWaitingForTelegram, user?.telegram_connected]);
-
-  // Only poll if we are waiting and the user is NOT connected yet
-  const shouldPoll = isWaitingForTelegram && !user?.telegram_connected;
-  useProfileQuery(shouldPoll ? 3000 : false);
-
-  const updateMutation = useUpdateProfile();
-  const telegramMutation = useTelegramMagicLink();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
-
-  const {
-    control,
-    handleSubmit,
-    watch,
-    reset,
-    formState: { isDirty },
-  } = useForm<ProfileUpdateData>({
-    values: {
-      first_name: user?.first_name || "",
-      last_name: user?.last_name || "",
-      password: "",
-      password_confirm: "",
-      notify_via_email: user?.notify_via_email ?? true,
-      notify_via_telegram: user?.notify_via_telegram ?? false,
-      calendar_preference: user?.calendar_preference || "gregorian",
-    },
-  });
-
-  useEffect(() => {
-    return () => {
-      if (profileImagePreview) URL.revokeObjectURL(profileImagePreview);
-    };
-  }, [profileImagePreview]);
-
-  if (!user) {
-    return (
-      <div className="text-center text-error py-10">
-        Error loading profile information.
-      </div>
-    );
-  }
-
-
-  const handleProfileImageChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Only JPG and PNG images are supported.");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Profile image must be smaller than 5 MB.");
-      return;
-    }
-
-    setProfileImage(file);
-    setProfileImagePreview(URL.createObjectURL(file));
-  };
-
-  const onSubmit = (data: ProfileUpdateData) => {
-    if (data.password || data.password_confirm) {
-      if (data.password !== data.password_confirm) {
-        toast.error("Passwords do not match.");
-        return;
-      }
-      if (!data.password || data.password.length < 8) {
-        toast.error("Password must be at least 8 characters.");
-        return;
-      }
-    }
-
-    const updateData: ProfileUpdateData = {};
-
-    if (data.first_name !== user.first_name) {
-      updateData.first_name = data.first_name;
-    }
-    if (data.last_name !== user.last_name) {
-      updateData.last_name = data.last_name;
-    }
-    if (data.password && data.password_confirm) {
-      updateData.password = data.password;
-      updateData.password_confirm = data.password_confirm;
-    }
-    if (data.notify_via_email !== user.notify_via_email) {
-      updateData.notify_via_email = data.notify_via_email;
-    }
-    if (data.notify_via_telegram !== user.notify_via_telegram) {
-      updateData.notify_via_telegram = data.notify_via_telegram;
-    }
-    if (data.calendar_preference !== user.calendar_preference) {
-      updateData.calendar_preference = data.calendar_preference;
-    }
-    if (profileImage) {
-      updateData.avatar = profileImage;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      toast.info("No changes to save.");
-      return;
-    }
-
-    updateMutation.mutate(updateData, {
-      onSuccess: () => {
-        reset({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          password: "",
-          password_confirm: "",
-          notify_via_email: data.notify_via_email,
-          notify_via_telegram: data.notify_via_telegram,
-          calendar_preference: data.calendar_preference,
-        });
-        setProfileImage(null);
-        setProfileImagePreview(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      },
-    });
-  };
-
-  const currentProfileImage =
-    profileImagePreview || user.profile_image_url || "/images/base-logo2.png";
-
-
-
-  return (
+const newJSX = `  return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
 
         {/* Column 1: Profile & Personal Info */}
         <div className="flex flex-col gap-6">
 
           {/* Profile Picture Card */}
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6 flex flex-col items-center text-center">
-            <h3 className="font-bold text-base-content self-start mb-4">Profile Photo</h3>
+            <h3 className="font-bold text-base-content self-start mb-4">Profile Picture</h3>
 
             <button
               type="button"
@@ -184,7 +34,7 @@ export const ProfileEditForm = () => {
             <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handleProfileImageChange} className="hidden" />
 
             <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-outline rounded-lg bg-base-100 mb-4">
-              Update Photo
+              Change Photo
             </button>
 
             <h2 className="font-bold text-xl text-base-content">{user.first_name} {user.last_name}</h2>
@@ -197,7 +47,7 @@ export const ProfileEditForm = () => {
 
           {/* Personal Details Card */}
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6">
-            <h3 className="font-bold text-base-content mb-4">Personal Information</h3>
+            <h3 className="font-bold text-base-content mb-4">Personal Details</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-base-content/70 mb-1">First Name</label>
@@ -232,34 +82,34 @@ export const ProfileEditForm = () => {
 
         </div>
 
-        {/* Column 2: Security & Preferences */}
+        {/* Column 2: Security */}
         <div className="flex flex-col gap-6">
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6">
-            <h3 className="font-bold text-base-content mb-4">Account Security</h3>
+            <h3 className="font-bold text-base-content mb-4">Security</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">New Password</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">New Password (hashed)</label>
                 <Controller
                   name="password"
                   control={control}
                   render={({ field }) => (
-                    <InputField {...field} value={field.value || ""} type="password" placeholder="••••••••" classNameInput="!bg-base-100 !h-10" />
+                    <InputField {...field} value={field.value || ""} type="password" placeholder="Hashed" classNameInput="!bg-base-100 !h-10" />
                   )}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">Confirm New Password</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">Confirm Password (hashed)</label>
                 <Controller
                   name="password_confirm"
                   control={control}
                   render={({ field }) => (
-                    <InputField {...field} value={field.value || ""} type="password" placeholder="••••••••" classNameInput="!bg-base-100 !h-10" />
+                    <InputField {...field} value={field.value || ""} type="password" placeholder="Hashed" classNameInput="!bg-base-100 !h-10" />
                   )}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">Password Strength</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">Password strength</label>
                 <div className="flex gap-1 h-1.5 mt-2">
                   <div className="flex-1 rounded-full bg-success"></div>
                   <div className="flex-1 rounded-full bg-success"></div>
@@ -281,8 +131,12 @@ export const ProfileEditForm = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Column 3: Preferences & Notifications */}
+        <div className="flex flex-col gap-6">
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6">
-            <h3 className="font-bold text-base-content mb-4">Account Preferences</h3>
+            <h3 className="font-bold text-base-content mb-4">Preferences & Notifications</h3>
             <div className="space-y-6">
 
               <div>
@@ -333,7 +187,7 @@ export const ProfileEditForm = () => {
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold text-base-content mb-2">Telegram Integration</h4>
+                <h4 className="text-sm font-semibold text-base-content mb-2">Telegram Connection</h4>
                 <div className="flex flex-col gap-2">
                   {user.telegram_connected ? (
                     <div className="flex items-center justify-center gap-2 w-full btn btn-sm h-10 btn-outline text-success border-success/30 hover:bg-success hover:text-success-content pointer-events-none">
@@ -395,3 +249,14 @@ export const ProfileEditForm = () => {
     </form>
   );
 };
+`;
+
+const replaceStart = '  return (\n    <form onSubmit={handleSubmit(onSubmit)} className="space-y-12 pb-24">';
+const replaceIdx = content.indexOf(replaceStart);
+if (replaceIdx === -1) {
+  console.log('Error: Could not find return statement in ProfileEditForm.tsx');
+  process.exit(1);
+}
+
+const newContent = content.substring(0, replaceIdx) + newJSX;
+fs.writeFileSync(file, newContent, 'utf8');

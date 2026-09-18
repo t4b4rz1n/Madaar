@@ -1,6 +1,6 @@
 import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 import { useAuthStore } from "../../auth/store/authStore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -554,8 +554,34 @@ export default function ProjectDetailsPage() {
     enabled: !!selectedTaskId,
   });
 
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as TabType) || "overview";
+  const [activeTab, setActiveTabState] = useState<TabType>(initialTab);
 
+  // Sync state to URL without full navigation
+  const setActiveTab = (tab: TabType) => {
+    setActiveTabState(tab);
+    setSearchParams(prev => {
+      prev.set("tab", tab);
+      return prev;
+    }, { replace: true });
+  };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab") as TabType;
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTabState(tabFromUrl);
+    }
+
+    const taskFromUrl = searchParams.get("task");
+    if (taskFromUrl) {
+      setSelectedTaskId(taskFromUrl);
+      setSearchParams(prev => {
+        prev.delete("task");
+        return prev;
+      }, { replace: true });
+    }
+  }, [searchParams, activeTab, setSelectedTaskId, setSearchParams]);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isCreateMilestoneOpen, setIsCreateMilestoneOpen] = useState(false);
   const [deleteModalState, setDeleteModalState] = useState<{
