@@ -6,6 +6,8 @@ export type ProjectStatus =
   | "completed"
   | "archived";
 
+export type ViewMode = "table" | "grid" | "orbit";
+
 export type ProjectListParams =
   | URLSearchParams
   | {
@@ -134,7 +136,7 @@ export interface ProjectActivity {
   event_type_display?: string;
   entity_type: string;
   entity_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 
