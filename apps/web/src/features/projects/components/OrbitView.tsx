@@ -15,13 +15,21 @@ import {
   motion,
   useReducedMotion,
 } from "framer-motion";
-import { useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type SetStateAction } from "react";
 import type { Milestone, Project, ProjectMember } from "../types";
 
 interface OrbitViewProps {
   project: Project;
   members?: ProjectMember[];
   milestones?: Milestone[];
+  isPlaying?: boolean;
+  onPlayPauseChange?: (playing: boolean | ((prev: boolean) => boolean)) => void;
+  zoom?: number;
+  onZoomChange?: (zoom: number | ((prev: number) => number)) => void;
+  rotation?: number;
+  onRotationChange?: (rotation: number | ((prev: number) => number)) => void;
+  filter?: string;
+  onFilterChange?: (filter: string) => void;
 }
 
 interface RingDefinition {
@@ -56,8 +64,36 @@ const statusClasses: Record<Project["status"], string> = {
   active: "bg-success text-success-content",
   draft: "bg-base-100 text-base-content/70",
   on_hold: "bg-warning text-warning-content",
-  completed: "bg-info text-info-content",
-  archived: "bg-error text-error-content",
+  completed: "bg-success text-success-content",
+  archived: "bg-neutral text-neutral-content",
+};
+
+const sunStyles: Record<Project["status"], { surface: string; glow: string; inner: string }> = {
+  completed: {
+    surface: "border-success/30 bg-success/15 text-success",
+    glow: "bg-success/20 shadow-[0_0_55px_color-mix(in_srgb,var(--color-success)_35%,transparent)]",
+    inner: "border-success/25 bg-success/10",
+  },
+  active: {
+    surface: "border-primary/30 bg-primary/15 text-primary",
+    glow: "bg-primary/20 shadow-[0_0_55px_color-mix(in_srgb,var(--color-primary)_35%,transparent)]",
+    inner: "border-primary/25 bg-primary/10",
+  },
+  on_hold: {
+    surface: "border-warning/35 bg-warning/15 text-warning",
+    glow: "bg-warning/20 shadow-[0_0_55px_color-mix(in_srgb,var(--color-warning)_38%,transparent)]",
+    inner: "border-warning/30 bg-warning/10",
+  },
+  archived: {
+    surface: "border-base-content/20 bg-base-200 text-base-content/65",
+    glow: "bg-base-content/10 shadow-[0_0_45px_color-mix(in_srgb,var(--color-base-content)_18%,transparent)]",
+    inner: "border-base-content/15 bg-base-100/45",
+  },
+  draft: {
+    surface: "border-secondary/25 bg-secondary/12 text-secondary",
+    glow: "bg-secondary/15 shadow-[0_0_45px_color-mix(in_srgb,var(--color-secondary)_25%,transparent)]",
+    inner: "border-secondary/20 bg-secondary/8",
+  },
 };
 
 const clampZoom = (value: number) =>
@@ -72,7 +108,7 @@ const getMemberName = (member: ProjectMember) => {
 };
 
 const getMemberRole = (member: ProjectMember) =>
-  member.specialty || (member.team ? "Team" : "Member");
+  member.specialty?.trim() || "Team Member";
 
 const getInitials = (name: string) =>
   name
@@ -247,20 +283,112 @@ function ClusterDetails({
   );
 }
 
+function ProjectDetails({
+  project,
+  memberCount,
+  progress,
+  statusLabel,
+  onClose,
+}: {
+  project: Project;
+  memberCount: number;
+  progress: number;
+  statusLabel: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="relative p-5" dir="auto">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute end-3 top-3 grid size-10 place-items-center rounded-xl text-base-content/45 transition hover:bg-base-200 hover:text-base-content active:scale-95"
+        aria-label="Close project details"
+      >
+        <CloseCircle size={20} />
+      </button>
+
+      <div className="pe-12">
+        <p className="text-base font-black leading-tight text-base-content">{project.name}</p>
+        <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${statusClasses[project.status]}`}>
+          {statusLabel}
+        </span>
+      </div>
+
+      <div className="mt-5 rounded-2xl bg-base-200/65 p-4">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-base-content/55">Project progress</span>
+          <span className={`font-black ${progress === 100 ? "text-success" : "text-primary"}`}>{progress}%</span>
+        </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-base-300">
+          <div
+            className={`h-full rounded-full transition-[width] duration-300 ${progress === 100 ? "bg-success" : "bg-primary"}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
+        <div className="rounded-xl bg-base-200/65 p-3">
+          <dt className="text-[10px] font-semibold text-base-content/45">Deadline</dt>
+          <dd className="mt-1 font-bold text-base-content">{formatDeadline(project.deadline)}</dd>
+        </div>
+        <div className="rounded-xl bg-base-200/65 p-3">
+          <dt className="text-[10px] font-semibold text-base-content/45">Team size</dt>
+          <dd className="mt-1 font-bold text-base-content">{memberCount} {memberCount === 1 ? "member" : "members"}</dd>
+        </div>
+      </dl>
+
+      <div className="mt-3 rounded-xl bg-base-200/65 p-3">
+        <p className="text-[10px] font-semibold text-base-content/45">Description</p>
+        <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-base-content/75">
+          {project.description || "No description provided."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function OrbitView({
   project,
   members = [],
   milestones = [],
+  isPlaying: controlledIsPlaying,
+  onPlayPauseChange,
+  zoom: controlledZoom,
+  onZoomChange,
+  rotation: controlledRotation,
+  onRotationChange,
+  filter: controlledFilter,
+  onFilterChange,
 }: OrbitViewProps) {
   const reduceMotion = useReducedMotion();
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [filter, setFilter] = useState("all");
+  const [localIsPlaying, setLocalIsPlaying] = useState(true);
+  const [localZoom, setLocalZoom] = useState(1);
+  const [localRotation, setLocalRotation] = useState(0);
+  const [localFilter, setLocalFilter] = useState("all");
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<ProjectMember | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<MemberCluster | null>(null);
   const activePointers = useRef(new Map<number, { x: number; y: number }>());
   const lastPinchDistance = useRef<number | null>(null);
+
+  const isPlaying = controlledIsPlaying ?? localIsPlaying;
+  const zoom = controlledZoom ?? localZoom;
+  const rotation = controlledRotation ?? localRotation;
+  const filter = controlledFilter ?? localFilter;
+  const setIsPlaying = onPlayPauseChange ?? setLocalIsPlaying;
+  const setZoom = onZoomChange ?? setLocalZoom;
+  const setRotation = onRotationChange ?? setLocalRotation;
+  const setFilter = onFilterChange ?? setLocalFilter;
+
+  useEffect(() => {
+    if (!isProjectModalOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsProjectModalOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isProjectModalOpen]);
 
   const teamNames = useMemo(
     () => Array.from(new Set(members.flatMap((member) => member.team?.name ? [member.team.name] : []))),
@@ -304,7 +432,9 @@ export function OrbitView({
     return index % rings.length;
   };
 
-  const updateZoom = (nextZoom: number) => setZoom(clampZoom(nextZoom));
+  const updateZoom = (nextZoom: SetStateAction<number>) => {
+    setZoom((current) => clampZoom(typeof nextZoom === "function" ? nextZoom(current) : nextZoom));
+  };
   const resetView = () => {
     setZoom(1);
     setRotation(0);
@@ -327,7 +457,7 @@ export function OrbitView({
       const [first, second] = points;
       const distance = Math.hypot(second.x - first.x, second.y - first.y);
       if (lastPinchDistance.current !== null) {
-        updateZoom(zoom + (distance - lastPinchDistance.current) / 320);
+        updateZoom((current) => current + (distance - lastPinchDistance.current!) / 320);
       }
       lastPinchDistance.current = distance;
       return;
@@ -346,6 +476,7 @@ export function OrbitView({
 
   const progress = Math.min(100, Math.max(0, project.progress_percentage ?? 0));
   const statusLabel = project.status_display || project.status.replace("_", " ");
+  const sunStyle = sunStyles[project.status];
   const closePanels = () => {
     setSelectedMember(null);
     setSelectedCluster(null);
@@ -353,7 +484,11 @@ export function OrbitView({
 
   return (
     <section className="relative isolate h-[70vh] min-h-[460px] max-h-[640px] w-full overflow-hidden rounded-2xl border border-base-content/8 bg-base-100 shadow-sm md:h-[620px]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,color-mix(in_srgb,var(--color-warning)_18%,transparent),transparent_20%),radial-gradient(circle_at_50%_50%,color-mix(in_srgb,var(--color-secondary)_12%,transparent),transparent_56%)]" />
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spin-reverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+      `}</style>
+      <div className={`pointer-events-none absolute inset-[24%] rounded-full blur-3xl ${sunStyle.glow}`} />
       <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(circle,color-mix(in_srgb,var(--color-base-content)_18%,transparent)_1px,transparent_1px)] [background-size:28px_28px]" />
 
       <div className="absolute start-4 top-4 z-30 hidden sm:block">
@@ -361,8 +496,8 @@ export function OrbitView({
           isPlaying={isPlaying}
           showPlayLabel
           onTogglePlaying={() => setIsPlaying((playing) => !playing)}
-          onZoomOut={() => updateZoom(zoom - ZOOM_STEP)}
-          onZoomIn={() => updateZoom(zoom + ZOOM_STEP)}
+          onZoomOut={() => updateZoom((value) => value - ZOOM_STEP)}
+          onZoomIn={() => updateZoom((value) => value + ZOOM_STEP)}
           onReset={resetView}
           onRotateLeft={() => setRotation((value) => value - 16)}
           onRotateRight={() => setRotation((value) => value + 16)}
@@ -389,8 +524,8 @@ export function OrbitView({
         <OrbitControls
           isPlaying={isPlaying}
           onTogglePlaying={() => setIsPlaying((playing) => !playing)}
-          onZoomOut={() => updateZoom(zoom - ZOOM_STEP)}
-          onZoomIn={() => updateZoom(zoom + ZOOM_STEP)}
+          onZoomOut={() => updateZoom((value) => value - ZOOM_STEP)}
+          onZoomIn={() => updateZoom((value) => value + ZOOM_STEP)}
           onReset={resetView}
           onRotateLeft={() => setRotation((value) => value - 16)}
           onRotateRight={() => setRotation((value) => value + 16)}
@@ -406,12 +541,12 @@ export function OrbitView({
         onWheel={(event) => {
           if (!event.ctrlKey) return;
           event.preventDefault();
-          updateZoom(zoom - event.deltaY * 0.002);
+          updateZoom((value) => value - event.deltaY * 0.002);
         }}
         aria-label="Interactive project orbit. Drag to rotate and pinch to zoom."
       >
         <motion.div
-          className="absolute inset-x-[5%] bottom-[20%] top-[18%] sm:bottom-[4%] sm:top-[17%] md:inset-x-[12%] md:top-[13%]"
+          className="absolute inset-0 m-auto aspect-square w-[88%] max-w-[560px] sm:w-[82%] md:w-[76%]"
           animate={{ scale: zoom }}
           transition={{ type: "spring", stiffness: 180, damping: 24 }}
         >
@@ -447,10 +582,13 @@ export function OrbitView({
                 className="pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rtl:translate-x-1/2"
                 style={{ width: `${ring.size}%` }}
               >
-                <motion.div
+                <div
                   className="absolute inset-0"
-                  animate={isPlaying && !reduceMotion ? { rotate: 360 } : undefined}
-                  transition={{ duration, ease: "linear", repeat: Infinity }}
+                  style={{
+                    animation: `spin ${duration}s linear infinite`,
+                    animationPlayState: isPlaying && !reduceMotion ? "running" : "paused",
+                    willChange: "transform",
+                  }}
                 >
                   {displayedMembers.map((member, memberIndex) => {
                     const angle = (360 / Math.max(1, renderedNodeCount)) * memberIndex + ringIndex * 31;
@@ -467,9 +605,12 @@ export function OrbitView({
                           top: `${50 + Math.sin(radians) * 50}%`,
                         }}
                       >
-                        <motion.div
-                          animate={isPlaying && !reduceMotion ? { rotate: -360 } : undefined}
-                          transition={{ duration, ease: "linear", repeat: Infinity }}
+                        <div
+                          style={{
+                            animation: `spin-reverse ${duration}s linear infinite`,
+                            animationPlayState: isPlaying && !reduceMotion ? "running" : "paused",
+                            willChange: "transform",
+                          }}
                         >
                           <div className="group relative" data-orbit-node>
                         <button
@@ -491,12 +632,15 @@ export function OrbitView({
                           )}
                           <span className="absolute end-0.5 top-0.5 size-2 rounded-full border border-secondary bg-success" />
                         </button>
-                        <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] start-1/2 z-40 hidden w-max max-w-44 -translate-x-1/2 rounded-xl border border-base-content/10 bg-base-100/95 px-3 py-2 text-center shadow-xl backdrop-blur-xl group-hover:md:block group-focus-within:md:block rtl:translate-x-1/2">
+                        <span className="pointer-events-none absolute start-1/2 top-[calc(100%+0.25rem)] max-w-24 -translate-x-1/2 truncate rounded-full border border-secondary/20 bg-base-100/90 px-1.5 py-0.5 text-[10px] font-bold text-secondary shadow-sm backdrop-blur-sm md:hidden rtl:translate-x-1/2">
+                          {role}
+                        </span>
+                        <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] start-1/2 z-40 hidden w-max max-w-44 -translate-x-1/2 rounded-xl border border-base-content/10 bg-base-100/95 px-3 py-2 text-center shadow-xl backdrop-blur-xl group-hover:block group-focus-within:block rtl:translate-x-1/2">
                           <p dir="auto" className="max-w-36 truncate text-[11px] font-bold text-base-content">{name}</p>
                           <p dir="auto" className="mt-0.5 max-w-36 truncate text-[9px] font-semibold text-secondary">{role}</p>
                         </div>
                           </div>
-                        </motion.div>
+                        </div>
                       </div>
                     );
                   })}
@@ -513,9 +657,12 @@ export function OrbitView({
                           top: `${50 + Math.sin(radians) * 50}%`,
                         }}
                       >
-                        <motion.div
-                          animate={isPlaying && !reduceMotion ? { rotate: -360 } : undefined}
-                          transition={{ duration, ease: "linear", repeat: Infinity }}
+                        <div
+                          style={{
+                            animation: `spin-reverse ${duration}s linear infinite`,
+                            animationPlayState: isPlaying && !reduceMotion ? "running" : "paused",
+                            willChange: "transform",
+                          }}
                         >
                           <div data-orbit-node>
                             <button
@@ -531,41 +678,54 @@ export function OrbitView({
                               +{remainingMembers.length}
                             </button>
                           </div>
-                        </motion.div>
+                        </div>
                       </div>
                     );
                   })()}
-                </motion.div>
+                </div>
               </div>
             );
           })}
           </motion.div>
 
-          <div
-            className="absolute start-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rtl:translate-x-1/2"
-          >
+          <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
             <motion.div
+              className="relative grid h-[24%] w-[24%] place-items-center sm:h-[20%] sm:w-[20%]"
               animate={reduceMotion ? undefined : { scale: [1, 1.035, 1] }}
               transition={{ duration: 4.5, ease: "easeInOut", repeat: Infinity }}
             >
-            <div className="absolute inset-[-48%] -z-10 rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--color-warning)_25%,transparent)_0%,transparent_70%)] blur-2xl" />
-            <div
-              className="grid size-22 place-items-center rounded-full border border-warning/45 p-1.5 text-warning-content shadow-[0_0_55px_color-mix(in_srgb,var(--color-warning)_38%,transparent)] sm:size-28 sm:p-2 md:size-36"
-              style={{
-                background: "radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--color-warning-content) 22%, transparent), transparent 30%), linear-gradient(135deg, var(--color-warning), color-mix(in srgb, var(--color-warning) 72%, var(--color-error)))",
+            <div className={`absolute inset-[-48%] -z-10 rounded-full blur-2xl ${sunStyle.glow}`} />
+
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsProjectModalOpen(true);
               }}
+              className={`pointer-events-auto relative grid size-full place-items-center rounded-full border p-2 text-center shadow-lg transition active:scale-95 sm:hidden ${sunStyle.surface}`}
+              data-orbit-node
+              aria-label={`Open details for ${project.name}`}
             >
-              <div className="grid size-full place-items-center rounded-full border border-warning-content/20 bg-warning-content/10 p-1 text-center backdrop-blur-sm sm:p-2 md:p-3">
+              <span dir="auto" className="line-clamp-2 max-w-[80%] text-[9px] font-black leading-tight">{project.name}</span>
+              <span className="absolute bottom-[14%] start-1/2 flex -translate-x-1/2 items-center gap-0.5 rtl:translate-x-1/2" aria-hidden="true">
+                <span className="size-1 rounded-full bg-current opacity-45" />
+                <span className="size-1 rounded-full bg-current opacity-75" />
+                <span className="size-1 rounded-full bg-current" />
+              </span>
+            </button>
+
+            <div className={`hidden size-full place-items-center rounded-full border p-2 text-current sm:grid ${sunStyle.surface}`}>
+              <div className={`grid size-full place-items-center rounded-full border p-2 text-center backdrop-blur-sm md:p-3 ${sunStyle.inner}`}>
                 <div className="min-w-0">
-                  <p dir="auto" className="line-clamp-2 text-[8px] font-black leading-tight text-warning-content sm:text-[10px] md:text-xs">{project.name}</p>
+                  <p dir="auto" className="line-clamp-2 text-[10px] font-black leading-tight md:text-xs">{project.name}</p>
                   <div
-                    className="mx-auto mt-0.5 grid size-7 place-items-center rounded-full sm:mt-1 sm:size-9 md:size-11"
-                    style={{ background: `conic-gradient(var(--color-warning-content) ${progress * 3.6}deg, color-mix(in srgb, var(--color-warning-content) 22%, transparent) 0deg)` }}
+                    className={`mx-auto mt-1 grid size-9 place-items-center rounded-full md:size-11 ${progress === 100 ? "text-success" : "text-current"}`}
+                    style={{ background: `conic-gradient(currentColor ${progress * 3.6}deg, color-mix(in srgb, currentColor 18%, transparent) 0deg)` }}
                   >
-                    <div className="grid size-5 place-items-center rounded-full bg-warning text-[7px] font-black text-warning-content sm:size-7 sm:text-[9px] md:size-8 md:text-[10px]">{progress}%</div>
+                    <div className="grid size-7 place-items-center rounded-full bg-base-100 text-[9px] font-black text-base-content md:size-8 md:text-[10px]">{progress}%</div>
                   </div>
-                  <span className={`mt-0.5 inline-flex max-w-full truncate rounded-full px-1.5 py-0.5 text-[6px] font-black uppercase leading-none tracking-wide sm:mt-1 sm:px-2 sm:text-[7px] md:text-[8px] ${statusClasses[project.status]}`}>{statusLabel}</span>
-                  <p className="mt-0.5 flex max-w-full items-center justify-center gap-0.5 truncate text-[6px] font-bold leading-none text-warning-content/85 sm:text-[7px] md:mt-1 md:gap-1 md:text-[9px]"><Calendar1 size={8} className="shrink-0" /> <span className="truncate">{formatDeadline(project.deadline)}</span></p>
+                  <span className={`mt-1 inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[7px] font-black uppercase leading-none tracking-wide md:text-[8px] ${statusClasses[project.status]}`}>{statusLabel}</span>
+                  <p className="mt-1 flex max-w-full items-center justify-center gap-1 truncate text-[7px] font-bold leading-none opacity-80 md:text-[9px]"><Calendar1 size={8} className="shrink-0" /> <span className="truncate">{formatDeadline(project.deadline)}</span></p>
                 </div>
               </div>
             </div>
@@ -579,6 +739,41 @@ export function OrbitView({
           No members match this filter.
         </div>
       )}
+
+      <AnimatePresence>
+        {isProjectModalOpen && (
+          <>
+            <motion.button
+              type="button"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-neutral/35 backdrop-blur-[2px] sm:hidden"
+              onClick={() => setIsProjectModalOpen(false)}
+              aria-label="Close project details"
+            />
+            <motion.aside
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${project.name} project details`}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28 }}
+              transition={{ type: "spring", bounce: 0.12, duration: 0.32 }}
+              className="fixed inset-x-0 bottom-0 z-50 max-h-[82vh] overflow-y-auto rounded-t-3xl border border-base-content/10 bg-base-100/95 shadow-2xl backdrop-blur-xl sm:hidden"
+            >
+              <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-base-content/15" />
+              <ProjectDetails
+                project={project}
+                memberCount={members.length}
+                progress={progress}
+                statusLabel={statusLabel}
+                onClose={() => setIsProjectModalOpen(false)}
+              />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {(selectedMember || selectedCluster) && (

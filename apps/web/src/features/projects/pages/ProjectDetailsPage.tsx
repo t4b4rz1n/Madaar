@@ -558,6 +558,10 @@ export default function ProjectDetailsPage() {
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [orbitPlaying, setOrbitPlaying] = useState<boolean>(true);
+  const [orbitZoom, setOrbitZoom] = useState<number>(1);
+  const [orbitRotation, setOrbitRotation] = useState<number>(0);
+  const [orbitFilter, setOrbitFilter] = useState<string>("all");
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isCreateMilestoneOpen, setIsCreateMilestoneOpen] = useState(false);
@@ -763,7 +767,19 @@ export default function ProjectDetailsPage() {
                     exit={{ opacity: 0, y: -6, scale: 0.99 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <OrbitView project={project} members={members} milestones={milestones} />
+                    <OrbitView
+                      project={project}
+                      members={members}
+                      milestones={milestones}
+                      isPlaying={orbitPlaying}
+                      onPlayPauseChange={setOrbitPlaying}
+                      zoom={orbitZoom}
+                      onZoomChange={setOrbitZoom}
+                      rotation={orbitRotation}
+                      onRotationChange={setOrbitRotation}
+                      filter={orbitFilter}
+                      onFilterChange={setOrbitFilter}
+                    />
                   </motion.div>
                 ) : (
                   <motion.div
