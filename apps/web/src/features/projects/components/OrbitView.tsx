@@ -82,6 +82,43 @@ const statusClasses: Record<Project["status"], string> = {
     "bg-base-content/10 text-base-content/60 border border-base-content/15",
 };
 
+const overflowStatusClasses: Record<
+  Project["status"],
+  { ring: string; button: string; chip: string }
+> = {
+  draft: {
+    ring: "border-secondary/55",
+    button:
+      "border-secondary/35 bg-secondary/10 text-secondary hover:border-secondary/60 hover:bg-secondary/20",
+    chip: "border-secondary/50 bg-secondary/10 text-secondary",
+  },
+  active: {
+    ring: "border-success/55",
+    button:
+      "border-success/35 bg-success/10 text-success hover:border-success/60 hover:bg-success/20",
+    chip: "border-success/50 bg-success/10 text-success",
+  },
+  on_hold: {
+    ring: "border-warning/55",
+    button:
+      "border-warning/35 bg-warning/10 text-warning hover:border-warning/60 hover:bg-warning/20",
+    chip: "border-warning/50 bg-warning/10 text-warning",
+  },
+  completed: {
+    ring: "border-info/55",
+    button:
+      "border-info/35 bg-info/10 text-info hover:border-info/60 hover:bg-info/20",
+    chip: "border-info/50 bg-info/10 text-info",
+  },
+  archived: {
+    ring: "border-base-content/35",
+    button:
+      "border-base-content/25 bg-base-content/8 text-base-content/60 hover:border-base-content/45 hover:bg-base-content/12",
+    chip:
+      "border-base-content/30 bg-base-content/8 text-base-content/60",
+  },
+};
+
 const sunStyles: Record<
   Project["status"],
   { surface: string; glow: string; inner: string }
@@ -645,19 +682,19 @@ export function OrbitView({
     [members],
   );
 
-  const ringMode = teamNames.length > 0 ? "teams" : "milestones";
+  const ringMode = milestones.length > 0 ? "milestones" : "teams";
   const allRingLabels = useMemo<RingLabel[]>(() => {
-    if (teamNames.length > 0) {
-      return teamNames.map((team, index) => ({
-        id: `team-${team}-${index}`,
-        label: team,
-      }));
-    }
     if (milestones.length > 0) {
       return milestones.map((milestone) => ({
         id: `milestone-${milestone.id}`,
         label: milestone.title,
         status: milestone.status,
+      }));
+    }
+    if (teamNames.length > 0) {
+      return teamNames.map((team, index) => ({
+        id: `team-${team}-${index}`,
+        label: team,
       }));
     }
     return ["Inner orbit", "Core team", "Outer orbit"].map((label, index) => ({
@@ -682,7 +719,7 @@ export function OrbitView({
             ...visibleLabels,
             {
               id: "overflow",
-              label: `+${allRingLabels.length - 3} More Milestones`,
+              label: `+${allRingLabels.length - 3} More ${ringMode === "milestones" ? "Milestones" : "Teams"}`,
               isOverflow: true,
             },
           ]
@@ -693,32 +730,37 @@ export function OrbitView({
       id: item.id,
       label: item.label,
       isOverflow: item.isOverflow,
-      size: count === 1 ? 72 : 48 + (index * 36) / (count - 1),
+      size:
+        count === 1
+          ? 72
+          : 48 + (index * 36) / (count - 1) + (item.isOverflow ? 9 : 0),
     }));
-  }, [allRingLabels]);
+  }, [allRingLabels, ringMode]);
 
-  const visibleMembers = useMemo(() => {
-    if (filter === "all") return members;
+  const memberMatchesFilter = (member: ProjectMember) => {
+    if (filter === "all") return true;
     const [kind, value] = filter.split(":", 2);
-    return members.filter((member) =>
-      kind === "team"
-        ? member.team?.name === value
-        : getMemberRole(member) === value,
-    );
-  }, [filter, members]);
+    if (kind === "team") return member.team?.name === value;
+    if (kind === "role") return getMemberRole(member) === value;
+    if (kind === "status") return member.is_active === (value === "active");
+    return true;
+  };
+
+  const matchingMemberCount = members.filter(memberMatchesFilter).length;
+  const nonOverflowRings = rings.filter((ring) => !ring.isOverflow);
+  const maxMemberRingIndex = Math.min(2, nonOverflowRings.length - 1);
 
   const memberRingIndex = (member: ProjectMember, index: number) => {
-    if (member.team) {
+    if (maxMemberRingIndex < 0) return -1;
+    if (ringMode === "teams" && member.team) {
       const matchingRing = allRingLabels.findIndex(
         (ring) => ring.label === member.team?.name,
       );
       if (matchingRing >= 0) {
-        return overflowLabels.length > 0 && matchingRing >= 3
-          ? 3
-          : matchingRing;
+        return Math.min(matchingRing, maxMemberRingIndex);
       }
     }
-    return index % rings.length;
+    return index % (maxMemberRingIndex + 1);
   };
 
   const updateZoom = (nextZoom: SetStateAction<number>) => {
@@ -780,6 +822,11 @@ export function OrbitView({
   const statusLabel =
     project.status_display || project.status.replace("_", " ");
   const sunStyle = sunStyles[project.status] ?? sunStyles.draft;
+  const overflowStatusStyle =
+    overflowStatusClasses[project.status] ?? overflowStatusClasses.draft;
+  const toggleFilter = (nextFilter: string) => {
+    setFilter(filter === nextFilter ? "all" : nextFilter);
+  };
   const closePanels = () => {
     setSelectedMember(null);
     setSelectedCluster(null);
@@ -830,6 +877,8 @@ export function OrbitView({
                 Role: {role}
               </option>
             ))}
+            <option value="status:active">Status: Active</option>
+            <option value="status:inactive">Status: Inactive</option>
           </select>
         </label>
       </div>
@@ -872,9 +921,9 @@ export function OrbitView({
             {rings.map((ring) => (
               <div
                 key={ring.id}
-                className={`pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full rtl:translate-x-1/2 ${
+                className={`pointer-events-none absolute start-1/2 top-1/2 z-10 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full rtl:translate-x-1/2 ${
                   ring.isOverflow
-                    ? "border-2 border-dashed border-warning/55 [border-dasharray:9_7]"
+                    ? `border-2 border-dashed [border-dasharray:9_7] ${overflowStatusStyle.ring}`
                     : "border border-base-content/18 dark:border-base-content/10 [[data-theme=dark]_&]:border-base-content/10"
                 }`}
                 style={{ width: `${ring.size}%` }}
@@ -882,7 +931,7 @@ export function OrbitView({
                 {ring.isOverflow ? (
                   <button
                     type="button"
-                    className="pointer-events-auto absolute start-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-warning/35 bg-base-100/90 px-2.5 py-1 text-[10px] font-bold text-warning shadow-md backdrop-blur-md transition hover:border-warning/60 hover:bg-warning/10 active:scale-95 sm:text-xs rtl:translate-x-1/2"
+                    className={`pointer-events-auto absolute start-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-bold shadow-md backdrop-blur-md transition active:scale-95 sm:text-xs rtl:translate-x-1/2 ${overflowStatusStyle.button}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       setSelectedMember(null);
@@ -903,7 +952,7 @@ export function OrbitView({
             ))}
 
             {rings.map((ring, ringIndex) => {
-              const ringMembers = visibleMembers.filter(
+              const ringMembers = members.filter(
                 (member, index) => memberRingIndex(member, index) === ringIndex,
               );
               const displayedMembers =
@@ -920,7 +969,7 @@ export function OrbitView({
               return (
                 <div
                   key={`nodes-${ring.id}`}
-                  className="pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rtl:translate-x-1/2"
+                  className="pointer-events-none absolute start-1/2 top-1/2 z-40 aspect-square -translate-x-1/2 -translate-y-1/2 rtl:translate-x-1/2"
                   style={{ width: `${ring.size}%` }}
                 >
                   <div
@@ -939,11 +988,19 @@ export function OrbitView({
                       const radians = ((angle - 90) * Math.PI) / 180;
                       const name = getMemberName(member);
                       const role = getMemberRole(member);
+                      const isFilterActive = filter !== "all";
+                      const isMatchingFilter = memberMatchesFilter(member);
 
                       return (
                         <div
                           key={member.id}
-                          className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
+                          className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+                            isFilterActive && !isMatchingFilter
+                              ? "pointer-events-none scale-95 opacity-25 grayscale"
+                              : isFilterActive
+                                ? "z-40 scale-105 opacity-100"
+                                : "z-40 opacity-100"
+                          }`}
                           style={{
                             left: `${50 + Math.cos(radians) * 50}%`,
                             top: `${50 + Math.sin(radians) * 50}%`,
@@ -967,22 +1024,26 @@ export function OrbitView({
                                   setSelectedCluster(null);
                                   setSelectedMember(member);
                                 }}
-                                className="relative grid size-11 min-h-10 min-w-10 place-items-center overflow-hidden rounded-2xl border border-base-content/20 bg-base-100/40 text-[11px] font-black text-base-content shadow-lg backdrop-blur-md transition duration-200 hover:scale-110 hover:border-primary/50 hover:bg-base-100/60 md:size-12"
+                                className={`relative grid size-9 min-h-8 min-w-8 place-items-center rounded-2xl border border-base-content/20 bg-base-100/40 text-[10px] font-black text-base-content shadow-lg backdrop-blur-md transition duration-200 hover:scale-110 hover:border-primary/50 hover:bg-base-100/60 md:size-10 ${
+                                  isFilterActive && isMatchingFilter
+                                    ? "ring-2 ring-primary/45 ring-offset-2 ring-offset-base-100/60"
+                                    : ""
+                                }`}
                                 aria-label={`Open details for ${name}`}
                               >
                                 {member.user?.avatar ? (
                                   <img
                                     src={member.user.avatar}
                                     alt=""
-                                    className="size-full object-cover"
+                                    className="size-full rounded-[inherit] object-cover"
                                   />
                                 ) : member.team ? (
-                                  <People size={18} />
+                                  <People size={15} />
                                 ) : (
                                   getInitials(name)
                                 )}
                                 <span
-                                  className={`absolute end-0.5 top-0.5 size-2.5 rounded-full border border-base-100 ${
+                                  className={`absolute end-0 top-0 size-2 rounded-full border border-base-100 ${
                                     member.is_active
                                       ? "bg-success shadow-[0_0_8px_color-mix(in_srgb,var(--color-success)_80%,transparent)]"
                                       : "bg-base-content/30"
@@ -992,7 +1053,7 @@ export function OrbitView({
                               <span className="pointer-events-none absolute start-1/2 top-[calc(100%+0.25rem)] max-w-24 -translate-x-1/2 truncate rounded-full border border-secondary/20 bg-base-100/90 px-1.5 py-0.5 text-[10px] font-bold text-secondary shadow-sm backdrop-blur-sm md:hidden rtl:translate-x-1/2">
                                 {role}
                               </span>
-                              <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] start-1/2 z-40 hidden w-max max-w-44 -translate-x-1/2 rounded-xl border border-base-content/10 bg-base-100/95 px-3 py-2 text-center shadow-xl backdrop-blur-xl group-hover:block group-focus-within:block rtl:translate-x-1/2">
+                              <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] start-1/2 z-50 hidden w-max max-w-44 -translate-x-1/2 rounded-xl border border-base-content/10 bg-base-100/95 px-3 py-2 text-center shadow-xl backdrop-blur-xl group-hover:block group-focus-within:block rtl:translate-x-1/2">
                                 <p
                                   dir="auto"
                                   className="max-w-36 truncate text-[11px] font-bold text-base-content"
@@ -1014,6 +1075,12 @@ export function OrbitView({
                     {remainingMembers.length > 0 &&
                       (() => {
                         const clusterIndex = displayedMembers.length;
+                        const isFilterActive = filter !== "all";
+                        const matchingClusterMembers = remainingMembers.filter(
+                          memberMatchesFilter,
+                        );
+                        const isMatchingFilter =
+                          matchingClusterMembers.length > 0;
                         const angle =
                           (360 / renderedNodeCount) * clusterIndex +
                           ringIndex * 31;
@@ -1021,7 +1088,14 @@ export function OrbitView({
 
                         return (
                           <div
-                            className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
+                            key={`cluster-${ring.id}`}
+                            className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+                              isFilterActive && !isMatchingFilter
+                                ? "pointer-events-none scale-95 opacity-25 grayscale"
+                                : isFilterActive
+                                  ? "z-40 scale-105 opacity-100"
+                                  : "z-40 opacity-100"
+                            }`}
                             style={{
                               left: `${50 + Math.cos(radians) * 50}%`,
                               top: `${50 + Math.sin(radians) * 50}%`,
@@ -1045,13 +1119,26 @@ export function OrbitView({
                                     setSelectedMember(null);
                                     setSelectedCluster({
                                       label: ring.label,
-                                      members: remainingMembers,
+                                      members: isFilterActive
+                                        ? matchingClusterMembers
+                                        : remainingMembers,
                                     });
                                   }}
-                                  className="grid size-11 min-h-10 min-w-10 place-items-center rounded-2xl border-2 border-secondary/35 bg-base-100 text-[11px] font-black text-secondary shadow-[0_8px_25px_color-mix(in_srgb,var(--color-secondary)_22%,transparent)] transition duration-200 hover:scale-110 hover:border-secondary hover:bg-secondary hover:text-secondary-content active:scale-95 md:size-12"
-                                  aria-label={`Show ${remainingMembers.length} more members in ${ring.label}`}
+                                  className={`grid size-9 min-h-8 min-w-8 place-items-center rounded-2xl border-2 border-secondary/35 bg-base-100 text-[10px] font-black text-secondary shadow-[0_8px_25px_color-mix(in_srgb,var(--color-secondary)_22%,transparent)] transition duration-200 hover:scale-110 hover:border-secondary hover:bg-secondary hover:text-secondary-content active:scale-95 md:size-10 ${
+                                    isFilterActive && isMatchingFilter
+                                      ? "ring-2 ring-primary/45 ring-offset-2 ring-offset-base-100/60"
+                                      : ""
+                                  }`}
+                                  aria-label={`Show ${
+                                    isFilterActive
+                                      ? matchingClusterMembers.length
+                                      : remainingMembers.length
+                                  } more members in ${ring.label}`}
                                 >
-                                  +{remainingMembers.length}
+                                  +
+                                  {isFilterActive
+                                    ? matchingClusterMembers.length
+                                    : remainingMembers.length}
                                 </button>
                               </div>
                             </div>
@@ -1064,7 +1151,7 @@ export function OrbitView({
             })}
           </motion.div>
 
-          <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+          <div className="pointer-events-none absolute inset-0 z-40 grid place-items-center">
             <motion.div
               className="relative grid h-[24%] w-[24%] place-items-center sm:h-[20%] sm:w-[20%]"
               animate={reduceMotion ? undefined : { scale: [1, 1.035, 1] }}
@@ -1171,6 +1258,62 @@ export function OrbitView({
                 </div>
                 <div className="mt-3 border-t border-base-content/10 pt-3">
                   <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
+                    Teams
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {teamNames.map((team) => {
+                      const teamFilter = `team:${team}`;
+                      return (
+                        <button
+                          key={teamFilter}
+                          type="button"
+                          onClick={() => toggleFilter(teamFilter)}
+                          className={`max-w-full truncate rounded-full px-2 py-0.5 text-[9px] font-semibold transition active:scale-95 ${
+                            filter === teamFilter
+                              ? "bg-secondary/20 text-secondary ring-2 ring-secondary/20"
+                              : "bg-base-200/80 text-base-content/60 hover:bg-secondary/10 hover:text-secondary"
+                          }`}
+                          aria-pressed={filter === teamFilter}
+                        >
+                          {team}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="mt-3 border-t border-base-content/10 pt-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
+                    Member status
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleFilter("status:active")}
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-bold transition active:scale-95 ${
+                        filter === "status:active"
+                          ? "border-success/45 bg-success/20 text-success ring-2 ring-success/20"
+                          : "border-success/30 bg-success/10 text-success hover:bg-success/20"
+                      }`}
+                      aria-pressed={filter === "status:active"}
+                    >
+                      Active
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleFilter("status:inactive")}
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-bold transition active:scale-95 ${
+                        filter === "status:inactive"
+                          ? "border-base-content/30 bg-base-content/15 text-base-content/70 ring-2 ring-base-content/15"
+                          : "border-base-content/15 bg-base-content/8 text-base-content/60 hover:bg-base-content/12"
+                      }`}
+                      aria-pressed={filter === "status:inactive"}
+                    >
+                      Inactive
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-3 border-t border-base-content/10 pt-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
                     Orbit layers
                   </p>
                   <p className="mt-1 text-[10px] leading-relaxed text-base-content/65">
@@ -1179,18 +1322,26 @@ export function OrbitView({
                       " The dashed outer ring groups all remaining labels."}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {rings.map((ring) => (
-                      <span
-                        key={`legend-${ring.id}`}
-                        className={`max-w-full truncate rounded-full px-2 py-0.5 text-[9px] font-semibold ${
-                          ring.isOverflow
-                            ? "border border-dashed border-warning/50 text-warning"
-                            : "bg-base-200/80 text-base-content/60"
-                        }`}
-                      >
-                        {ring.label}
-                      </span>
-                    ))}
+                    {rings.map((ring) => {
+                      if (ring.isOverflow) {
+                        return (
+                          <span
+                            key={`legend-${ring.id}`}
+                            className={`max-w-full truncate rounded-full border border-dashed px-2 py-0.5 text-[9px] font-semibold ${overflowStatusStyle.chip}`}
+                          >
+                            {ring.label}
+                          </span>
+                        );
+                      }
+                      return (
+                        <span
+                          key={`legend-${ring.id}`}
+                          className="max-w-full truncate rounded-full bg-base-200/80 px-2 py-0.5 text-[9px] font-semibold text-base-content/60"
+                        >
+                          {ring.label}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
@@ -1211,7 +1362,7 @@ export function OrbitView({
         </div>
       </div>
 
-      {visibleMembers.length === 0 && (
+      {filter !== "all" && matchingMemberCount === 0 && (
         <div className="pointer-events-none absolute inset-x-4 bottom-5 z-20 mx-auto max-w-sm rounded-xl border border-base-content/8 bg-base-100/85 px-4 py-3 text-center text-xs font-semibold text-base-content/50 backdrop-blur-xl">
           No members match this filter.
         </div>
