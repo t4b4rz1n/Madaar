@@ -38,16 +38,19 @@ interface OrbitViewProps {
 }
 
 interface RingDefinition {
-  id: string;
+  id: string | number;
   label: string;
   size: number;
   isOverflow?: boolean;
+  status?: Milestone["status"];
+  progress?: number;
 }
 
 interface RingLabel {
-  id: string;
+  id: string | number;
   label: string;
   status?: Milestone["status"];
+  progress?: number;
 }
 
 interface MemberCluster {
@@ -688,11 +691,29 @@ export function OrbitView({
   const ringMode = milestones.length > 0 ? "milestones" : "teams";
   const allRingLabels = useMemo<RingLabel[]>(() => {
     if (milestones.length > 0) {
-      return milestones.map((milestone) => ({
-        id: `milestone-${milestone.id}`,
-        label: milestone.title,
-        status: milestone.status,
-      }));
+      return milestones.map((milestone) => {
+        const taskCount = milestone.task_count ?? 0;
+        const completedTaskCount = milestone.completed_task_count ?? 0;
+        const progress =
+          milestone.status === "completed"
+            ? 100
+            : taskCount > 0
+              ? Math.min(
+                  100,
+                  Math.max(
+                    0,
+                    Math.round((completedTaskCount / taskCount) * 100),
+                  ),
+                )
+              : 0;
+
+        return {
+          id: milestone.id,
+          label: milestone.title,
+          status: milestone.status,
+          progress,
+        };
+      });
     }
     if (teamNames.length > 0) {
       return teamNames.map((team, index) => ({
@@ -733,6 +754,8 @@ export function OrbitView({
       id: item.id,
       label: item.label,
       isOverflow: item.isOverflow,
+      status: item.status,
+      progress: item.progress,
       size:
         count === 1
           ? 72
@@ -967,8 +990,20 @@ export function OrbitView({
                     {ring.label}
                   </button>
                 ) : (
-                  <span className="absolute start-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-base-content/10 bg-base-100/80 px-2 py-0.5 text-xs font-medium text-base-content/70 backdrop-blur-xs dark:bg-base-300/60 dark:text-base-content/50 [[data-theme=dark]_&]:bg-base-300/60 [[data-theme=dark]_&]:text-base-content/50 rtl:translate-x-1/2">
-                    {ring.label}
+                  <span className="absolute start-1/2 top-0 inline-flex max-w-[calc(100%_-_1rem)] -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-base-content/10 bg-base-100/80 px-2 py-0.5 text-xs font-medium text-base-content/70 backdrop-blur-xs dark:bg-base-300/60 dark:text-base-content/50 [[data-theme=dark]_&]:bg-base-300/60 [[data-theme=dark]_&]:text-base-content/50 rtl:translate-x-1/2">
+                    <span className="truncate">{ring.label}</span>
+                    {ringMode === "milestones" && ring.status && (
+                      <span
+                        className={`shrink-0 rounded px-1 text-[10px] font-bold ${
+                          milestoneStatusClasses[ring.status] ??
+                          milestoneStatusClasses.pending
+                        }`}
+                      >
+                        {ring.status === "completed"
+                          ? "Done"
+                          : `${ring.progress ?? 0}%`}
+                      </span>
+                    )}
                   </span>
                 )}
               </div>
@@ -1265,109 +1300,161 @@ export function OrbitView({
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                 animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
-                className="absolute bottom-[calc(100%+0.5rem)] end-0 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-base-content/10 bg-base-100/80 p-3 shadow-xl backdrop-blur-md"
+                className="absolute bottom-[calc(100%+0.5rem)] end-0 max-h-[calc(100vh-6rem)] w-64 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100/80 p-3 shadow-xl backdrop-blur-md"
+                role="region"
+                aria-label="Orbit filters and guide"
               >
-                <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
-                  Project status
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {statusLegendItems.map((item) => (
-                    <span
-                      key={item.status}
-                      className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${statusClasses[item.status] ?? statusClasses.draft}`}
+                {filter !== "all" ? (
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/10 px-2.5 py-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span
+                        className="size-1.5 shrink-0 rounded-full bg-primary"
+                        aria-hidden="true"
+                      />
+                      <p className="truncate text-[10px] font-bold text-primary">
+                        Filter active
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFilter("all")}
+                      className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-[9px] font-bold text-primary-content transition hover:bg-primary/90 active:scale-95"
                     >
-                      {item.label}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-3 border-t border-base-content/10 pt-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
-                    Teams
+                      Clear Filter
+                    </button>
+                  </div>
+                ) : (
+                  <p className="rounded-xl bg-base-200/70 px-2.5 py-2 text-[9px] leading-relaxed text-base-content/55">
+                    Click a team or status to highlight matching nodes.
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {teamNames.map((team) => {
-                      const teamFilter = `team:${team}`;
-                      return (
-                        <button
-                          key={teamFilter}
-                          type="button"
-                          onClick={() => toggleFilter(teamFilter)}
-                          className={`max-w-full truncate rounded-full px-2 py-0.5 text-[9px] font-semibold transition active:scale-95 ${
-                            filter === teamFilter
-                              ? "bg-secondary/20 text-secondary ring-2 ring-secondary/20"
-                              : "bg-base-200/80 text-base-content/60 hover:bg-secondary/10 hover:text-secondary"
-                          }`}
-                          aria-pressed={filter === teamFilter}
+                )}
+
+                <section className="mt-3" aria-labelledby="orbit-filter-heading">
+                  <p
+                    id="orbit-filter-heading"
+                    className="text-[10px] font-bold uppercase tracking-wider text-base-content/50"
+                  >
+                    Filters
+                  </p>
+
+                  <div className="mt-2.5">
+                    <p className="text-[9px] font-semibold text-base-content/60">
+                      Teams
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {teamNames.map((team) => {
+                        const teamFilter = `team:${team}`;
+                        return (
+                          <button
+                            key={teamFilter}
+                            type="button"
+                            onClick={() => toggleFilter(teamFilter)}
+                            className={`max-w-full truncate rounded-full px-2.5 py-1 text-[9px] font-semibold transition active:scale-95 ${
+                              filter === teamFilter
+                                ? "bg-primary text-primary-content ring-1 ring-primary"
+                                : "bg-base-200 text-base-content/65 hover:bg-primary/10 hover:text-primary"
+                            }`}
+                            aria-pressed={filter === teamFilter}
+                          >
+                            {team}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5">
+                    <p className="text-[9px] font-semibold text-base-content/60">
+                      Member status
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleFilter("status:active")}
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold transition active:scale-95 ${
+                          filter === "status:active"
+                            ? "border-primary bg-primary text-primary-content ring-1 ring-primary"
+                            : "border-success/20 bg-base-200 text-success hover:border-success/40"
+                        }`}
+                        aria-pressed={filter === "status:active"}
+                      >
+                        Active
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleFilter("status:inactive")}
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold transition active:scale-95 ${
+                          filter === "status:inactive"
+                            ? "border-primary bg-primary text-primary-content ring-1 ring-primary"
+                            : "border-base-content/15 bg-base-200 text-base-content/60 hover:border-base-content/30"
+                        }`}
+                        aria-pressed={filter === "status:inactive"}
+                      >
+                        Inactive
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                <hr className="my-2.5 border-base-content/10" />
+
+                <section aria-labelledby="orbit-guide-heading">
+                  <p
+                    id="orbit-guide-heading"
+                    className="text-[10px] font-bold uppercase tracking-wider text-base-content/50"
+                  >
+                    Guide &amp; Statuses
+                  </p>
+
+                  <div className="mt-2.5">
+                    <p className="text-[9px] font-semibold text-base-content/60">
+                      Project status
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {statusLegendItems.map((item) => (
+                        <span
+                          key={item.status}
+                          className={`pointer-events-none inline-flex cursor-default rounded-full px-2 py-0.5 text-[9px] font-bold opacity-80 ${statusClasses[item.status] ?? statusClasses.draft}`}
                         >
-                          {team}
-                        </button>
-                      );
-                    })}
+                          {item.label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <div className="mt-3 border-t border-base-content/10 pt-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
-                    Member status
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => toggleFilter("status:active")}
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-bold transition active:scale-95 ${
-                        filter === "status:active"
-                          ? "border-success/45 bg-success/20 text-success ring-2 ring-success/20"
-                          : "border-success/30 bg-success/10 text-success hover:bg-success/20"
-                      }`}
-                      aria-pressed={filter === "status:active"}
-                    >
-                      Active
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleFilter("status:inactive")}
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-bold transition active:scale-95 ${
-                        filter === "status:inactive"
-                          ? "border-base-content/30 bg-base-content/15 text-base-content/70 ring-2 ring-base-content/15"
-                          : "border-base-content/15 bg-base-content/8 text-base-content/60 hover:bg-base-content/12"
-                      }`}
-                      aria-pressed={filter === "status:inactive"}
-                    >
-                      Inactive
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-3 border-t border-base-content/10 pt-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
-                    Orbit layers
-                  </p>
-                  <p className="mt-1 text-[10px] leading-relaxed text-base-content/65">
-                    Each ring represents a {ringMode === "teams" ? "team" : "milestone"}.
-                    {overflowLabels.length > 0 &&
-                      " The dashed outer ring groups all remaining labels."}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {rings.map((ring) => {
-                      if (ring.isOverflow) {
+
+                  <div className="mt-3">
+                    <p className="text-[9px] font-semibold text-base-content/60">
+                      Orbit layers
+                    </p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-base-content/65">
+                      Each ring represents a {ringMode === "teams" ? "team" : "milestone"}.
+                      {overflowLabels.length > 0 &&
+                        " The dashed outer ring groups all remaining labels."}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {rings.map((ring) => {
+                        if (ring.isOverflow) {
+                          return (
+                            <span
+                              key={`legend-${ring.id}`}
+                              className={`pointer-events-none max-w-full cursor-default truncate rounded-full border border-dashed px-2 py-0.5 text-[9px] font-semibold opacity-80 ${overflowStatusStyle.chip}`}
+                            >
+                              {ring.label}
+                            </span>
+                          );
+                        }
                         return (
                           <span
                             key={`legend-${ring.id}`}
-                            className={`max-w-full truncate rounded-full border border-dashed px-2 py-0.5 text-[9px] font-semibold ${overflowStatusStyle.chip}`}
+                            className="pointer-events-none max-w-full cursor-default truncate rounded-full bg-base-200/80 px-2 py-0.5 text-[9px] font-semibold text-base-content/60 opacity-80"
                           >
                             {ring.label}
                           </span>
                         );
-                      }
-                      return (
-                        <span
-                          key={`legend-${ring.id}`}
-                          className="max-w-full truncate rounded-full bg-base-200/80 px-2 py-0.5 text-[9px] font-semibold text-base-content/60"
-                        >
-                          {ring.label}
-                        </span>
-                      );
-                    })}
+                      })}
+                    </div>
                   </div>
-                </div>
+                </section>
               </motion.div>
             )}
           </AnimatePresence>
