@@ -15,3 +15,12 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
+
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    'reset-kudos-budget-monthly': {
+        'task': 'gamification.tasks.reset_monthly_kudos_budget',
+        'schedule': crontab(day_of_month='1', hour='0', minute='0'),
+    },
+}

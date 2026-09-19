@@ -67,6 +67,7 @@ LOCAL_APPS = [
     "automations.apps.AutomationsConfig",
     "reports.apps.ReportsConfig",
     "finance.apps.FinanceConfig",
+    "gamification.apps.GamificationConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

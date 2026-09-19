@@ -6,6 +6,7 @@ import authRoutes from "../../features/auth/routes";
 import discountsRoutes from "../../features/discounts/routes";
 import { teamsRoutes } from "../../features/teams/routes";
 import { projectsRoutes } from "../../features/projects/routes";
+import { gamificationRoutes } from "../../features/gamification/routes";
 import { MainLayout } from "../../features/layout/MainLayout";
 import notificationsRoutes from "../../features/notifications/routes";
 import profileRoutes from "../../features/profile/routes";
@@ -50,6 +51,10 @@ export const routes: RouteObject[] = [
       ...profileRoutes,
       ...ticketsRoutes,
       ...financeRoutes,
+      {
+        path: "gamification",
+        children: gamificationRoutes,
+      },
       {
         path: "settings",
         element: <SettingsPage />,

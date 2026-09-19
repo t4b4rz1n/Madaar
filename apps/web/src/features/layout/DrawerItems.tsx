@@ -16,6 +16,7 @@ import {
   Calendar,
   Timer1,
   WalletMoney,
+  MedalStar,
 } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 import type { User as AuthUser } from "../auth/types/authTypes";
@@ -107,6 +108,22 @@ export const drawerItems: DrawerItem[] = [
     defaultForMembers: true,
     isPrimary: true,
   },
+  {
+    title: "Rewards & Leaderboard",
+    link: "gamification",
+    section: "Workspace",
+    icon: <MedalStar variant="Outline" />,
+    defaultForMembers: true,
+    isPrimary: true,
+  },
+  {
+    title: "Gamification Admin",
+    link: "gamification/admin",
+    section: "Workspace",
+    icon: <MedalStar variant="Bold" />,
+    staffOnly: true,
+    isPrimary: true,
+  },
 
   // Admin & Settings Navigation (Settings Modal & Command Menu)
   {
@@ -187,7 +204,8 @@ export const getVisibleDrawerItems = (
 ) =>
   drawerItems.filter((item) => {
     if (primaryOnly && !item.isPrimary) return false;
-    if (item.staffOnly && !user?.is_staff) return false;
+    // staffOnly → visible to Django staff OR users with org.manage_settings
+    if (item.staffOnly && !user?.is_staff && !hasAnyPermission(["org.manage_settings"])) return false;
     if (
       item.requiresOrgAdmin &&
       !user?.can_manage_automations &&
