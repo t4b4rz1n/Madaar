@@ -10,12 +10,15 @@ import {
   SearchZoomIn,
   SearchZoomOut,
 } from "iconsax-reactjs";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
-  AnimatePresence,
-  motion,
-  useReducedMotion,
-} from "framer-motion";
-import { useEffect, useMemo, useRef, useState, type PointerEvent, type SetStateAction } from "react";
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent,
+  type SetStateAction,
+} from "react";
 import type { Milestone, Project, ProjectMember } from "../types";
 
 interface OrbitViewProps {
@@ -61,38 +64,50 @@ const MAX_RING_NODES = 8;
 const VISIBLE_RING_MEMBERS = MAX_RING_NODES - 1;
 
 const statusClasses: Record<Project["status"], string> = {
-  active: "bg-success text-success-content",
-  draft: "bg-base-100 text-base-content/70",
-  on_hold: "bg-warning text-warning-content",
-  completed: "bg-success text-success-content",
-  archived: "bg-neutral text-neutral-content",
+  active:
+    "bg-success/20 text-success border border-success/30 backdrop-blur-sm",
+  draft:
+    "bg-base-300/40 text-base-content/70 border border-base-content/10 backdrop-blur-sm",
+  on_hold:
+    "bg-warning/20 text-warning border border-warning/30 backdrop-blur-sm",
+  completed: "bg-info/20 text-info border border-info/30 backdrop-blur-sm",
+  archived:
+    "bg-base-content/10 text-base-content/60 border border-base-content/15",
 };
 
-const sunStyles: Record<Project["status"], { surface: string; glow: string; inner: string }> = {
-  completed: {
-    surface: "border-success/30 bg-success/15 text-success",
-    glow: "bg-success/20 shadow-[0_0_55px_color-mix(in_srgb,var(--color-success)_35%,transparent)]",
-    inner: "border-success/25 bg-success/10",
-  },
+const sunStyles: Record<
+  Project["status"],
+  { surface: string; glow: string; inner: string }
+> = {
   active: {
-    surface: "border-primary/30 bg-primary/15 text-primary",
-    glow: "bg-primary/20 shadow-[0_0_55px_color-mix(in_srgb,var(--color-primary)_35%,transparent)]",
-    inner: "border-primary/25 bg-primary/10",
+    surface:
+      "border-success/30 bg-base-100/60 text-success backdrop-blur-xl shadow-lg",
+    glow: "bg-success/15 shadow-[0_0_65px_color-mix(in_srgb,var(--color-success)_30%,transparent)]",
+    inner: "border-success/20 bg-success/10 backdrop-blur-sm",
+  },
+  completed: {
+    surface:
+      "border-info/30 bg-base-100/60 text-info backdrop-blur-xl shadow-lg",
+    glow: "bg-info/15 shadow-[0_0_65px_color-mix(in_srgb,var(--color-info)_30%,transparent)]",
+    inner: "border-info/20 bg-info/10 backdrop-blur-sm",
   },
   on_hold: {
-    surface: "border-warning/35 bg-warning/15 text-warning",
-    glow: "bg-warning/20 shadow-[0_0_55px_color-mix(in_srgb,var(--color-warning)_38%,transparent)]",
-    inner: "border-warning/30 bg-warning/10",
-  },
-  archived: {
-    surface: "border-base-content/20 bg-base-200 text-base-content/65",
-    glow: "bg-base-content/10 shadow-[0_0_45px_color-mix(in_srgb,var(--color-base-content)_18%,transparent)]",
-    inner: "border-base-content/15 bg-base-100/45",
+    surface:
+      "border-warning/35 bg-base-100/60 text-warning backdrop-blur-xl shadow-lg",
+    glow: "bg-warning/15 shadow-[0_0_65px_color-mix(in_srgb,var(--color-warning)_32%,transparent)]",
+    inner: "border-warning/25 bg-warning/10 backdrop-blur-sm",
   },
   draft: {
-    surface: "border-secondary/25 bg-secondary/12 text-secondary",
-    glow: "bg-secondary/15 shadow-[0_0_45px_color-mix(in_srgb,var(--color-secondary)_25%,transparent)]",
-    inner: "border-secondary/20 bg-secondary/8",
+    surface:
+      "border-secondary/30 bg-base-100/60 text-secondary backdrop-blur-xl shadow-lg",
+    glow: "bg-secondary/15 shadow-[0_0_50px_color-mix(in_srgb,var(--color-secondary)_25%,transparent)]",
+    inner: "border-secondary/20 bg-secondary/10 backdrop-blur-sm",
+  },
+  archived: {
+    surface:
+      "border-base-content/15 bg-base-200/50 text-base-content/55 backdrop-blur-md",
+    glow: "bg-base-content/8 shadow-[0_0_35px_color-mix(in_srgb,var(--color-base-content)_12%,transparent)]",
+    inner: "border-base-content/10 bg-base-100/30",
   },
 };
 
@@ -103,8 +118,15 @@ const getMemberName = (member: ProjectMember) => {
   if (member.team) return member.team.name;
   if (!member.user) return "Project member";
 
-  const fullName = `${member.user.first_name ?? ""} ${member.user.last_name ?? ""}`.trim();
-  return fullName || member.user.full_name || member.user.username || member.user.email || "Project member";
+  const fullName =
+    `${member.user.first_name ?? ""} ${member.user.last_name ?? ""}`.trim();
+  return (
+    fullName ||
+    member.user.full_name ||
+    member.user.username ||
+    member.user.email ||
+    "Project member"
+  );
 };
 
 const getMemberRole = (member: ProjectMember) =>
@@ -147,28 +169,61 @@ function OrbitControls({
       <button
         type="button"
         onClick={onTogglePlaying}
-        className={showPlayLabel
-          ? "inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold text-base-content/70 transition duration-150 hover:bg-base-200 hover:text-base-content active:scale-95"
-          : buttonClassName}
-        aria-label={isPlaying ? "Pause orbit animation" : "Play orbit animation"}
+        className={
+          showPlayLabel
+            ? "inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold text-base-content/70 transition duration-150 hover:bg-base-200 hover:text-base-content active:scale-95"
+            : buttonClassName
+        }
+        aria-label={
+          isPlaying ? "Pause orbit animation" : "Play orbit animation"
+        }
       >
-        {isPlaying ? <Pause size={15} variant="Bold" /> : <Play size={15} variant="Bold" />}
+        {isPlaying ? (
+          <Pause size={15} variant="Bold" />
+        ) : (
+          <Play size={15} variant="Bold" />
+        )}
         {showPlayLabel && <span>{isPlaying ? "Pause" : "Play"}</span>}
       </button>
-      <button type="button" onClick={onZoomOut} className={buttonClassName} aria-label="Zoom out">
+      <button
+        type="button"
+        onClick={onZoomOut}
+        className={buttonClassName}
+        aria-label="Zoom out"
+      >
         <SearchZoomOut size={16} />
       </button>
-      <button type="button" onClick={onZoomIn} className={buttonClassName} aria-label="Zoom in">
+      <button
+        type="button"
+        onClick={onZoomIn}
+        className={buttonClassName}
+        aria-label="Zoom in"
+      >
         <SearchZoomIn size={16} />
       </button>
-      <button type="button" onClick={onReset} className={buttonClassName} aria-label="Reset orbit view">
+      <button
+        type="button"
+        onClick={onReset}
+        className={buttonClassName}
+        aria-label="Reset orbit view"
+      >
         <Refresh2 size={16} />
       </button>
       <div className="flex border-s border-base-content/10 ps-0.5">
-        <button type="button" onClick={onRotateLeft} className={buttonClassName} aria-label="Rotate orbit left">
+        <button
+          type="button"
+          onClick={onRotateLeft}
+          className={buttonClassName}
+          aria-label="Rotate orbit left"
+        >
           <ArrowLeft2 size={15} />
         </button>
-        <button type="button" onClick={onRotateRight} className={buttonClassName} aria-label="Rotate orbit right">
+        <button
+          type="button"
+          onClick={onRotateRight}
+          className={buttonClassName}
+          aria-label="Rotate orbit right"
+        >
           <ArrowRight2 size={15} />
         </button>
       </div>
@@ -199,7 +254,11 @@ function MemberDetails({
       <div className="flex items-center gap-3 pe-9">
         <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-secondary text-sm font-black text-secondary-content shadow-lg shadow-secondary/20">
           {member.user?.avatar ? (
-            <img src={member.user.avatar} alt="" className="size-full object-cover" />
+            <img
+              src={member.user.avatar}
+              alt=""
+              className="size-full object-cover"
+            />
           ) : (
             getInitials(name)
           )}
@@ -213,12 +272,20 @@ function MemberDetails({
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
         <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">Allocation</dt>
-          <dd className="mt-1 font-bold text-base-content">{member.allocation_percentage}%</dd>
+          <dt className="text-[10px] font-semibold text-base-content/45">
+            Allocation
+          </dt>
+          <dd className="mt-1 font-bold text-base-content">
+            {member.allocation_percentage}%
+          </dd>
         </div>
         <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">Team</dt>
-          <dd className="mt-1 truncate font-bold text-base-content">{member.team?.name || "Independent"}</dd>
+          <dt className="text-[10px] font-semibold text-base-content/45">
+            Team
+          </dt>
+          <dd className="mt-1 truncate font-bold text-base-content">
+            {member.team?.name || "Independent"}
+          </dd>
         </div>
       </dl>
     </div>
@@ -245,9 +312,12 @@ function ClusterDetails({
         <CloseCircle size={19} />
       </button>
       <div className="pe-10">
-        <p className="truncate text-sm font-bold text-base-content">{cluster.label}</p>
+        <p className="truncate text-sm font-bold text-base-content">
+          {cluster.label}
+        </p>
         <p className="mt-1 text-xs font-medium text-base-content/55">
-          {cluster.members.length} more {cluster.members.length === 1 ? "member" : "members"}
+          {cluster.members.length} more{" "}
+          {cluster.members.length === 1 ? "member" : "members"}
         </p>
       </div>
       <div className="mt-4 grid gap-2">
@@ -264,7 +334,11 @@ function ClusterDetails({
             >
               <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary text-[10px] font-black text-secondary-content">
                 {member.user?.avatar ? (
-                  <img src={member.user.avatar} alt="" className="size-full object-cover" />
+                  <img
+                    src={member.user.avatar}
+                    alt=""
+                    className="size-full object-cover"
+                  />
                 ) : member.team ? (
                   <People size={16} />
                 ) : (
@@ -272,8 +346,12 @@ function ClusterDetails({
                 )}
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-xs font-bold text-base-content">{name}</span>
-                <span className="mt-0.5 block truncate text-[10px] font-medium text-base-content/55">{role}</span>
+                <span className="block truncate text-xs font-bold text-base-content">
+                  {name}
+                </span>
+                <span className="mt-0.5 block truncate text-[10px] font-medium text-base-content/55">
+                  {role}
+                </span>
               </span>
             </button>
           );
@@ -308,16 +386,26 @@ function ProjectDetails({
       </button>
 
       <div className="pe-12">
-        <p className="text-base font-black leading-tight text-base-content">{project.name}</p>
-        <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${statusClasses[project.status]}`}>
+        <p className="text-base font-black leading-tight text-base-content">
+          {project.name}
+        </p>
+        <span
+          className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${statusClasses[project.status]}`}
+        >
           {statusLabel}
         </span>
       </div>
 
       <div className="mt-5 rounded-2xl bg-base-200/65 p-4">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-base-content/55">Project progress</span>
-          <span className={`font-black ${progress === 100 ? "text-success" : "text-primary"}`}>{progress}%</span>
+          <span className="font-semibold text-base-content/55">
+            Project progress
+          </span>
+          <span
+            className={`font-black ${progress === 100 ? "text-success" : "text-primary"}`}
+          >
+            {progress}%
+          </span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-base-300">
           <div
@@ -329,17 +417,27 @@ function ProjectDetails({
 
       <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
         <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">Deadline</dt>
-          <dd className="mt-1 font-bold text-base-content">{formatDeadline(project.deadline)}</dd>
+          <dt className="text-[10px] font-semibold text-base-content/45">
+            Deadline
+          </dt>
+          <dd className="mt-1 font-bold text-base-content">
+            {formatDeadline(project.deadline)}
+          </dd>
         </div>
         <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">Team size</dt>
-          <dd className="mt-1 font-bold text-base-content">{memberCount} {memberCount === 1 ? "member" : "members"}</dd>
+          <dt className="text-[10px] font-semibold text-base-content/45">
+            Team size
+          </dt>
+          <dd className="mt-1 font-bold text-base-content">
+            {memberCount} {memberCount === 1 ? "member" : "members"}
+          </dd>
         </div>
       </dl>
 
       <div className="mt-3 rounded-xl bg-base-200/65 p-3">
-        <p className="text-[10px] font-semibold text-base-content/45">Description</p>
+        <p className="text-[10px] font-semibold text-base-content/45">
+          Description
+        </p>
         <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-base-content/75">
           {project.description || "No description provided."}
         </p>
@@ -367,8 +465,12 @@ export function OrbitView({
   const [localRotation, setLocalRotation] = useState(0);
   const [localFilter, setLocalFilter] = useState("all");
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<ProjectMember | null>(null);
-  const [selectedCluster, setSelectedCluster] = useState<MemberCluster | null>(null);
+  const [selectedMember, setSelectedMember] = useState<ProjectMember | null>(
+    null,
+  );
+  const [selectedCluster, setSelectedCluster] = useState<MemberCluster | null>(
+    null,
+  );
   const activePointers = useRef(new Map<number, { x: number; y: number }>());
   const lastPinchDistance = useRef<number | null>(null);
 
@@ -391,7 +493,14 @@ export function OrbitView({
   }, [isProjectModalOpen]);
 
   const teamNames = useMemo(
-    () => Array.from(new Set(members.flatMap((member) => member.team?.name ? [member.team.name] : []))),
+    () =>
+      Array.from(
+        new Set(
+          members.flatMap((member) =>
+            member.team?.name ? [member.team.name] : [],
+          ),
+        ),
+      ),
     [members],
   );
 
@@ -401,11 +510,12 @@ export function OrbitView({
   );
 
   const rings = useMemo<RingDefinition[]>(() => {
-    const labels = teamNames.length > 0
-      ? teamNames
-      : milestones.length > 0
-        ? milestones.map((milestone) => milestone.title)
-        : ["Inner orbit", "Core team", "Outer orbit"];
+    const labels =
+      teamNames.length > 0
+        ? teamNames
+        : milestones.length > 0
+          ? milestones.map((milestone) => milestone.title)
+          : ["Inner orbit", "Core team", "Outer orbit"];
     const visibleLabels = labels.slice(0, 4);
     const count = Math.max(1, visibleLabels.length);
 
@@ -420,20 +530,26 @@ export function OrbitView({
     if (filter === "all") return members;
     const [kind, value] = filter.split(":", 2);
     return members.filter((member) =>
-      kind === "team" ? member.team?.name === value : getMemberRole(member) === value,
+      kind === "team"
+        ? member.team?.name === value
+        : getMemberRole(member) === value,
     );
   }, [filter, members]);
 
   const memberRingIndex = (member: ProjectMember, index: number) => {
     if (member.team) {
-      const matchingRing = rings.findIndex((ring) => ring.label === member.team?.name);
+      const matchingRing = rings.findIndex(
+        (ring) => ring.label === member.team?.name,
+      );
       if (matchingRing >= 0) return matchingRing;
     }
     return index % rings.length;
   };
 
   const updateZoom = (nextZoom: SetStateAction<number>) => {
-    setZoom((current) => clampZoom(typeof nextZoom === "function" ? nextZoom(current) : nextZoom));
+    setZoom((current) =>
+      clampZoom(typeof nextZoom === "function" ? nextZoom(current) : nextZoom),
+    );
   };
   const resetView = () => {
     setZoom(1);
@@ -441,23 +557,34 @@ export function OrbitView({
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("[data-orbit-node], button, select")) return;
+    if (
+      (event.target as HTMLElement).closest("[data-orbit-node], button, select")
+    )
+      return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    activePointers.current.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+    });
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const previous = activePointers.current.get(event.pointerId);
     if (!previous) return;
 
-    activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    activePointers.current.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+    });
     const points = Array.from(activePointers.current.values());
 
     if (points.length >= 2) {
       const [first, second] = points;
       const distance = Math.hypot(second.x - first.x, second.y - first.y);
       if (lastPinchDistance.current !== null) {
-        updateZoom((current) => current + (distance - lastPinchDistance.current!) / 320);
+        updateZoom(
+          (current) => current + (distance - lastPinchDistance.current!) / 320,
+        );
       }
       lastPinchDistance.current = distance;
       return;
@@ -475,7 +602,8 @@ export function OrbitView({
   };
 
   const progress = Math.min(100, Math.max(0, project.progress_percentage ?? 0));
-  const statusLabel = project.status_display || project.status.replace("_", " ");
+  const statusLabel =
+    project.status_display || project.status.replace("_", " ");
   const sunStyle = sunStyles[project.status];
   const closePanels = () => {
     setSelectedMember(null);
@@ -488,7 +616,9 @@ export function OrbitView({
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes spin-reverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
       `}</style>
-      <div className={`pointer-events-none absolute inset-[24%] rounded-full blur-3xl ${sunStyle.glow}`} />
+      <div
+        className={`pointer-events-none absolute inset-[24%] rounded-full blur-3xl ${sunStyle.glow}`}
+      />
       <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(circle,color-mix(in_srgb,var(--color-base-content)_18%,transparent)_1px,transparent_1px)] [background-size:28px_28px]" />
 
       <div className="absolute start-4 top-4 z-30 hidden sm:block">
@@ -514,8 +644,16 @@ export function OrbitView({
             className="select h-8 min-h-0 max-w-32 border-0 bg-transparent px-1 text-[10px] font-bold shadow-none focus:outline-none sm:max-w-36 sm:text-[11px]"
           >
             <option value="all">All members</option>
-            {teamNames.map((team) => <option key={`team:${team}`} value={`team:${team}`}>Team: {team}</option>)}
-            {roleNames.map((role) => <option key={`role:${role}`} value={`role:${role}`}>Role: {role}</option>)}
+            {teamNames.map((team) => (
+              <option key={`team:${team}`} value={`team:${team}`}>
+                Team: {team}
+              </option>
+            ))}
+            {roleNames.map((role) => (
+              <option key={`role:${role}`} value={`role:${role}`}>
+                Role: {role}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -555,180 +693,251 @@ export function OrbitView({
             animate={{ rotate: rotation }}
             transition={{ type: "spring", stiffness: 180, damping: 24 }}
           >
-          {rings.map((ring) => (
-            <div
-              key={ring.id}
-              className="pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-base-content/20 [border-dasharray:5_5] dark:border-base-content/10 [[data-theme=dark]_&]:border-base-content/10 rtl:translate-x-1/2"
-              style={{ width: `${ring.size}%` }}
-            >
-              <span className="absolute start-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-base-content/10 bg-base-100/80 px-2 py-0.5 text-xs font-medium text-base-content/70 backdrop-blur-xs dark:bg-base-300/60 dark:text-base-content/50 [[data-theme=dark]_&]:bg-base-300/60 [[data-theme=dark]_&]:text-base-content/50 rtl:translate-x-1/2">
-                {ring.label}
-              </span>
-            </div>
-          ))}
-
-          {rings.map((ring, ringIndex) => {
-            const ringMembers = visibleMembers.filter((member, index) => memberRingIndex(member, index) === ringIndex);
-            const displayedMembers = ringMembers.length > MAX_RING_NODES
-              ? ringMembers.slice(0, VISIBLE_RING_MEMBERS)
-              : ringMembers;
-            const remainingMembers = ringMembers.slice(displayedMembers.length);
-            const renderedNodeCount = displayedMembers.length + (remainingMembers.length > 0 ? 1 : 0);
-            const duration = 30 + ringIndex * 11;
-
-            return (
+            {rings.map((ring) => (
               <div
-                key={`nodes-${ring.id}`}
-                className="pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rtl:translate-x-1/2"
+                key={ring.id}
+                className="pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-base-content/20 [border-dasharray:5_5] dark:border-base-content/10 [[data-theme=dark]_&]:border-base-content/10 rtl:translate-x-1/2"
                 style={{ width: `${ring.size}%` }}
               >
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    animation: `spin ${duration}s linear infinite`,
-                    animationPlayState: isPlaying && !reduceMotion ? "running" : "paused",
-                    willChange: "transform",
-                  }}
-                >
-                  {displayedMembers.map((member, memberIndex) => {
-                    const angle = (360 / Math.max(1, renderedNodeCount)) * memberIndex + ringIndex * 31;
-                    const radians = ((angle - 90) * Math.PI) / 180;
-                    const name = getMemberName(member);
-                    const role = getMemberRole(member);
-
-                    return (
-                      <div
-                        key={member.id}
-                        className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
-                        style={{
-                          left: `${50 + Math.cos(radians) * 50}%`,
-                          top: `${50 + Math.sin(radians) * 50}%`,
-                        }}
-                      >
-                        <div
-                          style={{
-                            animation: `spin-reverse ${duration}s linear infinite`,
-                            animationPlayState: isPlaying && !reduceMotion ? "running" : "paused",
-                            willChange: "transform",
-                          }}
-                        >
-                          <div className="group relative" data-orbit-node>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedCluster(null);
-                            setSelectedMember(member);
-                          }}
-                          className="relative grid size-11 min-h-10 min-w-10 place-items-center overflow-hidden rounded-2xl border-2 border-secondary/35 bg-secondary text-[11px] font-black text-secondary-content shadow-[0_8px_25px_color-mix(in_srgb,var(--color-secondary)_35%,transparent)] transition duration-200 hover:scale-110 hover:border-secondary md:size-12"
-                          aria-label={`Open details for ${name}`}
-                        >
-                          {member.user?.avatar ? (
-                            <img src={member.user.avatar} alt="" className="size-full object-cover" />
-                          ) : member.team ? (
-                            <People size={18} />
-                          ) : (
-                            getInitials(name)
-                          )}
-                          <span className="absolute end-0.5 top-0.5 size-2 rounded-full border border-secondary bg-success" />
-                        </button>
-                        <span className="pointer-events-none absolute start-1/2 top-[calc(100%+0.25rem)] max-w-24 -translate-x-1/2 truncate rounded-full border border-secondary/20 bg-base-100/90 px-1.5 py-0.5 text-[10px] font-bold text-secondary shadow-sm backdrop-blur-sm md:hidden rtl:translate-x-1/2">
-                          {role}
-                        </span>
-                        <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] start-1/2 z-40 hidden w-max max-w-44 -translate-x-1/2 rounded-xl border border-base-content/10 bg-base-100/95 px-3 py-2 text-center shadow-xl backdrop-blur-xl group-hover:block group-focus-within:block rtl:translate-x-1/2">
-                          <p dir="auto" className="max-w-36 truncate text-[11px] font-bold text-base-content">{name}</p>
-                          <p dir="auto" className="mt-0.5 max-w-36 truncate text-[9px] font-semibold text-secondary">{role}</p>
-                        </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {remainingMembers.length > 0 && (() => {
-                    const clusterIndex = displayedMembers.length;
-                    const angle = (360 / renderedNodeCount) * clusterIndex + ringIndex * 31;
-                    const radians = ((angle - 90) * Math.PI) / 180;
-
-                    return (
-                      <div
-                        className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
-                        style={{
-                          left: `${50 + Math.cos(radians) * 50}%`,
-                          top: `${50 + Math.sin(radians) * 50}%`,
-                        }}
-                      >
-                        <div
-                          style={{
-                            animation: `spin-reverse ${duration}s linear infinite`,
-                            animationPlayState: isPlaying && !reduceMotion ? "running" : "paused",
-                            willChange: "transform",
-                          }}
-                        >
-                          <div data-orbit-node>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setSelectedMember(null);
-                                setSelectedCluster({ label: ring.label, members: remainingMembers });
-                              }}
-                              className="grid size-11 min-h-10 min-w-10 place-items-center rounded-2xl border-2 border-secondary/35 bg-base-100 text-[11px] font-black text-secondary shadow-[0_8px_25px_color-mix(in_srgb,var(--color-secondary)_22%,transparent)] transition duration-200 hover:scale-110 hover:border-secondary hover:bg-secondary hover:text-secondary-content active:scale-95 md:size-12"
-                              aria-label={`Show ${remainingMembers.length} more members in ${ring.label}`}
-                            >
-                              +{remainingMembers.length}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
+                <span className="absolute start-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-base-content/10 bg-base-100/80 px-2 py-0.5 text-xs font-medium text-base-content/70 backdrop-blur-xs dark:bg-base-300/60 dark:text-base-content/50 [[data-theme=dark]_&]:bg-base-300/60 [[data-theme=dark]_&]:text-base-content/50 rtl:translate-x-1/2">
+                  {ring.label}
+                </span>
               </div>
-            );
-          })}
+            ))}
+
+            {rings.map((ring, ringIndex) => {
+              const ringMembers = visibleMembers.filter(
+                (member, index) => memberRingIndex(member, index) === ringIndex,
+              );
+              const displayedMembers =
+                ringMembers.length > MAX_RING_NODES
+                  ? ringMembers.slice(0, VISIBLE_RING_MEMBERS)
+                  : ringMembers;
+              const remainingMembers = ringMembers.slice(
+                displayedMembers.length,
+              );
+              const renderedNodeCount =
+                displayedMembers.length + (remainingMembers.length > 0 ? 1 : 0);
+              const duration = 30 + ringIndex * 11;
+
+              return (
+                <div
+                  key={`nodes-${ring.id}`}
+                  className="pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rtl:translate-x-1/2"
+                  style={{ width: `${ring.size}%` }}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      animation: `spin ${duration}s linear infinite`,
+                      animationPlayState:
+                        isPlaying && !reduceMotion ? "running" : "paused",
+                      willChange: "transform",
+                    }}
+                  >
+                    {displayedMembers.map((member, memberIndex) => {
+                      const angle =
+                        (360 / Math.max(1, renderedNodeCount)) * memberIndex +
+                        ringIndex * 31;
+                      const radians = ((angle - 90) * Math.PI) / 180;
+                      const name = getMemberName(member);
+                      const role = getMemberRole(member);
+
+                      return (
+                        <div
+                          key={member.id}
+                          className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
+                          style={{
+                            left: `${50 + Math.cos(radians) * 50}%`,
+                            top: `${50 + Math.sin(radians) * 50}%`,
+                          }}
+                        >
+                          <div
+                            style={{
+                              animation: `spin-reverse ${duration}s linear infinite`,
+                              animationPlayState:
+                                isPlaying && !reduceMotion
+                                  ? "running"
+                                  : "paused",
+                              willChange: "transform",
+                            }}
+                          >
+                            <div className="group relative" data-orbit-node>
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setSelectedCluster(null);
+                                  setSelectedMember(member);
+                                }}
+                                className="relative grid size-11 min-h-10 min-w-10 place-items-center overflow-hidden rounded-2xl border border-base-content/20 bg-base-100/40 text-[11px] font-black text-base-content shadow-lg backdrop-blur-md transition duration-200 hover:scale-110 hover:border-primary/50 hover:bg-base-100/60 md:size-12"
+                                aria-label={`Open details for ${name}`}
+                              >
+                                {member.user?.avatar ? (
+                                  <img
+                                    src={member.user.avatar}
+                                    alt=""
+                                    className="size-full object-cover"
+                                  />
+                                ) : member.team ? (
+                                  <People size={18} />
+                                ) : (
+                                  getInitials(name)
+                                )}
+                                <span className="absolute end-0.5 top-0.5 size-2.5 rounded-full border border-base-100 bg-success shadow-[0_0_8px_color-mix(in_srgb,var(--color-success)_80%,transparent)]" />
+                              </button>
+                              <span className="pointer-events-none absolute start-1/2 top-[calc(100%+0.25rem)] max-w-24 -translate-x-1/2 truncate rounded-full border border-secondary/20 bg-base-100/90 px-1.5 py-0.5 text-[10px] font-bold text-secondary shadow-sm backdrop-blur-sm md:hidden rtl:translate-x-1/2">
+                                {role}
+                              </span>
+                              <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] start-1/2 z-40 hidden w-max max-w-44 -translate-x-1/2 rounded-xl border border-base-content/10 bg-base-100/95 px-3 py-2 text-center shadow-xl backdrop-blur-xl group-hover:block group-focus-within:block rtl:translate-x-1/2">
+                                <p
+                                  dir="auto"
+                                  className="max-w-36 truncate text-[11px] font-bold text-base-content"
+                                >
+                                  {name}
+                                </p>
+                                <p
+                                  dir="auto"
+                                  className="mt-0.5 max-w-36 truncate text-[9px] font-semibold text-secondary"
+                                >
+                                  {role}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {remainingMembers.length > 0 &&
+                      (() => {
+                        const clusterIndex = displayedMembers.length;
+                        const angle =
+                          (360 / renderedNodeCount) * clusterIndex +
+                          ringIndex * 31;
+                        const radians = ((angle - 90) * Math.PI) / 180;
+
+                        return (
+                          <div
+                            className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
+                            style={{
+                              left: `${50 + Math.cos(radians) * 50}%`,
+                              top: `${50 + Math.sin(radians) * 50}%`,
+                            }}
+                          >
+                            <div
+                              style={{
+                                animation: `spin-reverse ${duration}s linear infinite`,
+                                animationPlayState:
+                                  isPlaying && !reduceMotion
+                                    ? "running"
+                                    : "paused",
+                                willChange: "transform",
+                              }}
+                            >
+                              <div data-orbit-node>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelectedMember(null);
+                                    setSelectedCluster({
+                                      label: ring.label,
+                                      members: remainingMembers,
+                                    });
+                                  }}
+                                  className="grid size-11 min-h-10 min-w-10 place-items-center rounded-2xl border-2 border-secondary/35 bg-base-100 text-[11px] font-black text-secondary shadow-[0_8px_25px_color-mix(in_srgb,var(--color-secondary)_22%,transparent)] transition duration-200 hover:scale-110 hover:border-secondary hover:bg-secondary hover:text-secondary-content active:scale-95 md:size-12"
+                                  aria-label={`Show ${remainingMembers.length} more members in ${ring.label}`}
+                                >
+                                  +{remainingMembers.length}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                  </div>
+                </div>
+              );
+            })}
           </motion.div>
 
           <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
             <motion.div
               className="relative grid h-[24%] w-[24%] place-items-center sm:h-[20%] sm:w-[20%]"
               animate={reduceMotion ? undefined : { scale: [1, 1.035, 1] }}
-              transition={{ duration: 4.5, ease: "easeInOut", repeat: Infinity }}
-            >
-            <div className={`absolute inset-[-48%] -z-10 rounded-full blur-2xl ${sunStyle.glow}`} />
-
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setIsProjectModalOpen(true);
+              transition={{
+                duration: 4.5,
+                ease: "easeInOut",
+                repeat: Infinity,
               }}
-              className={`pointer-events-auto relative grid size-full place-items-center rounded-full border p-2 text-center shadow-lg transition active:scale-95 sm:hidden ${sunStyle.surface}`}
-              data-orbit-node
-              aria-label={`Open details for ${project.name}`}
             >
-              <span dir="auto" className="line-clamp-2 max-w-[80%] text-[9px] font-black leading-tight">{project.name}</span>
-              <span className="absolute bottom-[14%] start-1/2 flex -translate-x-1/2 items-center gap-0.5 rtl:translate-x-1/2" aria-hidden="true">
-                <span className="size-1 rounded-full bg-current opacity-45" />
-                <span className="size-1 rounded-full bg-current opacity-75" />
-                <span className="size-1 rounded-full bg-current" />
-              </span>
-            </button>
+              <div
+                className={`absolute inset-[-48%] -z-10 rounded-full blur-2xl ${sunStyle.glow}`}
+              />
 
-            <div className={`hidden size-full place-items-center rounded-full border p-2 text-current sm:grid ${sunStyle.surface}`}>
-              <div className={`grid size-full place-items-center rounded-full border p-2 text-center backdrop-blur-sm md:p-3 ${sunStyle.inner}`}>
-                <div className="min-w-0">
-                  <p dir="auto" className="line-clamp-2 text-[10px] font-black leading-tight md:text-xs">{project.name}</p>
-                  <div
-                    className={`mx-auto mt-1 grid size-9 place-items-center rounded-full md:size-11 ${progress === 100 ? "text-success" : "text-current"}`}
-                    style={{ background: `conic-gradient(currentColor ${progress * 3.6}deg, color-mix(in srgb, currentColor 18%, transparent) 0deg)` }}
-                  >
-                    <div className="grid size-7 place-items-center rounded-full bg-base-100 text-[9px] font-black text-base-content md:size-8 md:text-[10px]">{progress}%</div>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsProjectModalOpen(true);
+                }}
+                className={`pointer-events-auto relative grid size-full place-items-center rounded-full border p-2 text-center shadow-lg transition active:scale-95 sm:hidden ${sunStyle.surface}`}
+                data-orbit-node
+                aria-label={`Open details for ${project.name}`}
+              >
+                <span
+                  dir="auto"
+                  className="line-clamp-2 max-w-[80%] text-[9px] font-black leading-tight"
+                >
+                  {project.name}
+                </span>
+                <span
+                  className="absolute bottom-[14%] start-1/2 flex -translate-x-1/2 items-center gap-0.5 rtl:translate-x-1/2"
+                  aria-hidden="true"
+                >
+                  <span className="size-1 rounded-full bg-current opacity-45" />
+                  <span className="size-1 rounded-full bg-current opacity-75" />
+                  <span className="size-1 rounded-full bg-current" />
+                </span>
+              </button>
+
+              <div
+                className={`hidden size-full place-items-center rounded-full border p-2 text-current sm:grid ${sunStyle.surface}`}
+              >
+                <div
+                  className={`grid size-full place-items-center rounded-full border p-2 text-center backdrop-blur-sm md:p-3 ${sunStyle.inner}`}
+                >
+                  <div className="min-w-0">
+                    <p
+                      dir="auto"
+                      className="line-clamp-2 text-[10px] font-black leading-tight md:text-xs"
+                    >
+                      {project.name}
+                    </p>
+                    <div
+                      className={`mx-auto mt-1 grid size-9 place-items-center rounded-full md:size-11 ${progress === 100 ? "text-success" : "text-current"}`}
+                      style={{
+                        background: `conic-gradient(currentColor ${progress * 3.6}deg, color-mix(in srgb, currentColor 18%, transparent) 0deg)`,
+                      }}
+                    >
+                      <div className="grid size-7 place-items-center rounded-full bg-base-100 text-[9px] font-black text-base-content md:size-8 md:text-[10px]">
+                        {progress}%
+                      </div>
+                    </div>
+                    <span
+                      className={`mt-1 inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[7px] font-black uppercase leading-none tracking-wide md:text-[8px] ${statusClasses[project.status]}`}
+                    >
+                      {statusLabel}
+                    </span>
+                    <p className="mt-1 flex max-w-full items-center justify-center gap-1 truncate text-[7px] font-bold leading-none opacity-80 md:text-[9px]">
+                      <Calendar1 size={8} className="shrink-0" />{" "}
+                      <span className="truncate">
+                        {formatDeadline(project.deadline)}
+                      </span>
+                    </p>
                   </div>
-                  <span className={`mt-1 inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[7px] font-black uppercase leading-none tracking-wide md:text-[8px] ${statusClasses[project.status]}`}>{statusLabel}</span>
-                  <p className="mt-1 flex max-w-full items-center justify-center gap-1 truncate text-[7px] font-bold leading-none opacity-80 md:text-[9px]"><Calendar1 size={8} className="shrink-0" /> <span className="truncate">{formatDeadline(project.deadline)}</span></p>
                 </div>
               </div>
-            </div>
             </motion.div>
           </div>
         </motion.div>
