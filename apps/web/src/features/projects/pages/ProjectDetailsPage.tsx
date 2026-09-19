@@ -672,9 +672,11 @@ export default function ProjectDetailsPage() {
 
   const ownerName = getProjectOwnerName();
 
+  const { hasPermission } = usePermissions();
+
   const isOwner = project.owner?.id === user?.id;
   const isSuperUser = user?.is_staff;
-  const canViewSalaries = isSuperUser || isOwner;
+  const canViewSalaries = isSuperUser || isOwner || hasPermission("org.manage_settings");
 
   return (
     <div key={id} className="space-y-5 pb-10">
