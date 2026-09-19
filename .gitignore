@@ -138,3 +138,5 @@ AGENTS.md
 SKILL.md
 .python_history
 *.history
+# Ignore bash history
+*.bash_history
