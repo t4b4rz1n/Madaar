@@ -39,6 +39,13 @@ interface RingDefinition {
   id: string;
   label: string;
   size: number;
+  isOverflow?: boolean;
+}
+
+interface RingLabel {
+  id: string;
+  label: string;
+  status?: Milestone["status"];
 }
 
 interface MemberCluster {
@@ -111,12 +118,29 @@ const sunStyles: Record<
   },
 };
 
+const milestoneStatusClasses: Record<Milestone["status"], string> = {
+  pending: "bg-base-300 text-base-content/60",
+  in_progress: "bg-info/15 text-info",
+  completed: "bg-success/15 text-success",
+  cancelled: "bg-error/15 text-error",
+};
+
+const statusLegendItems: Array<{
+  status: Project["status"];
+  label: string;
+}> = [
+  { status: "draft", label: "Draft" },
+  { status: "active", label: "Active" },
+  { status: "on_hold", label: "On hold" },
+  { status: "completed", label: "Completed" },
+  { status: "archived", label: "Archived" },
+];
+
 const clampZoom = (value: number) =>
   Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
 
 const getMemberName = (member: ProjectMember) => {
-  if (member.team) return member.team.name;
-  if (!member.user) return "Project member";
+  if (!member.user) return member.team?.name || "Project member";
 
   const fullName =
     `${member.user.first_name ?? ""} ${member.user.last_name ?? ""}`.trim();
@@ -239,7 +263,18 @@ function MemberDetails({
   onClose: () => void;
 }) {
   const name = getMemberName(member);
-  const role = getMemberRole(member);
+  const role =
+    (member as ProjectMember & { role?: string }).role?.trim() || "Team Member";
+  const memberWithMilestone = member as ProjectMember & {
+    milestone?: Pick<Milestone, "title" | "status"> | null;
+    current_milestone?: Pick<Milestone, "title" | "status"> | null;
+  };
+  const currentMilestone =
+    memberWithMilestone.current_milestone ?? memberWithMilestone.milestone;
+  const allocation = Math.min(
+    100,
+    Math.max(0, Number(member.allocation_percentage) || 0),
+  );
 
   return (
     <div className="relative p-5" dir="auto">
@@ -265,19 +300,32 @@ function MemberDetails({
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-base-content">{name}</p>
-          <span className="mt-1 inline-flex rounded-full bg-secondary/12 px-2 py-0.5 text-[10px] font-bold text-secondary">
-            {role}
-          </span>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex rounded-full bg-secondary/12 px-2 py-0.5 text-[10px] font-bold text-secondary">
+              {role}
+            </span>
+            {member.specialty?.trim() && (
+              <span className="inline-flex rounded-full border border-base-content/10 bg-base-200/70 px-2 py-0.5 text-[10px] font-semibold text-base-content/60">
+                {member.specialty}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-      <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
-        <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">
-            Allocation
-          </dt>
-          <dd className="mt-1 font-bold text-base-content">
-            {member.allocation_percentage}%
-          </dd>
+      <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
+        <div className="rounded-xl bg-base-200/65 p-3 sm:col-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <dt className="text-[10px] font-semibold text-base-content/45">
+              Allocation
+            </dt>
+            <dd className="font-bold text-base-content">{allocation}%</dd>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-base-300">
+            <div
+              className="h-full rounded-full bg-secondary transition-[width] duration-300"
+              style={{ width: `${allocation}%` }}
+            />
+          </div>
         </div>
         <div className="rounded-xl bg-base-200/65 p-3">
           <dt className="text-[10px] font-semibold text-base-content/45">
@@ -287,6 +335,39 @@ function MemberDetails({
             {member.team?.name || "Independent"}
           </dd>
         </div>
+        <div className="rounded-xl bg-base-200/65 p-3">
+          <dt className="text-[10px] font-semibold text-base-content/45">
+            Status
+          </dt>
+          <dd className="mt-1 flex items-center gap-1.5 font-bold text-base-content">
+            <span
+              className={`size-2 rounded-full ${member.is_active ? "bg-success" : "bg-base-content/25"}`}
+            />
+            {member.is_active ? "Active" : "Inactive"}
+          </dd>
+        </div>
+        {currentMilestone?.title && (
+          <div className="rounded-xl bg-base-200/65 p-3 sm:col-span-2">
+            <dt className="text-[10px] font-semibold text-base-content/45">
+              Current milestone
+            </dt>
+            <dd className="mt-1 flex min-w-0 items-center justify-between gap-2">
+              <span className="truncate font-bold text-base-content">
+                {currentMilestone.title}
+              </span>
+              {currentMilestone.status && (
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold capitalize ${
+                    milestoneStatusClasses[currentMilestone.status] ??
+                    milestoneStatusClasses.pending
+                  }`}
+                >
+                  {currentMilestone.status.replace("_", " ")}
+                </span>
+              )}
+            </dd>
+          </div>
+        )}
       </dl>
     </div>
   );
@@ -361,6 +442,59 @@ function ClusterDetails({
   );
 }
 
+function OverflowDetails({
+  labels,
+  mode,
+  onClose,
+}: {
+  labels: RingLabel[];
+  mode: "teams" | "milestones";
+  onClose: () => void;
+}) {
+  return (
+    <div className="relative p-5" dir="auto">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute end-3 top-3 grid size-9 place-items-center rounded-xl text-base-content/45 transition hover:bg-base-200 hover:text-base-content"
+        aria-label="Close overflow milestones"
+      >
+        <CloseCircle size={19} />
+      </button>
+      <div className="pe-10">
+        <p className="text-sm font-bold text-base-content">
+          Remaining {mode === "teams" ? "teams" : "milestones"}
+        </p>
+        <p className="mt-1 text-xs font-medium text-base-content/55">
+          These labels share the dashed overflow ring.
+        </p>
+      </div>
+      <ul className="mt-4 grid gap-2">
+        {labels.map((item) => (
+          <li
+            key={item.id}
+            className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-base-content/8 bg-base-200/55 px-3 py-2.5"
+          >
+            <span className="truncate text-xs font-bold text-base-content">
+              {item.label}
+            </span>
+            {item.status && (
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold capitalize ${
+                  milestoneStatusClasses[item.status] ??
+                  milestoneStatusClasses.pending
+                }`}
+              >
+                {item.status.replace("_", " ")}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ProjectDetails({
   project,
   memberCount,
@@ -390,7 +524,7 @@ function ProjectDetails({
           {project.name}
         </p>
         <span
-          className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${statusClasses[project.status]}`}
+          className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${statusClasses[project.status] ?? statusClasses.draft}`}
         >
           {statusLabel}
         </span>
@@ -471,6 +605,8 @@ export function OrbitView({
   const [selectedCluster, setSelectedCluster] = useState<MemberCluster | null>(
     null,
   );
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
+  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
   const activePointers = useRef(new Map<number, { x: number; y: number }>());
   const lastPinchDistance = useRef<number | null>(null);
 
@@ -509,22 +645,57 @@ export function OrbitView({
     [members],
   );
 
-  const rings = useMemo<RingDefinition[]>(() => {
-    const labels =
-      teamNames.length > 0
-        ? teamNames
-        : milestones.length > 0
-          ? milestones.map((milestone) => milestone.title)
-          : ["Inner orbit", "Core team", "Outer orbit"];
-    const visibleLabels = labels.slice(0, 4);
-    const count = Math.max(1, visibleLabels.length);
-
-    return visibleLabels.map((label, index) => ({
-      id: `${label}-${index}`,
+  const ringMode = teamNames.length > 0 ? "teams" : "milestones";
+  const allRingLabels = useMemo<RingLabel[]>(() => {
+    if (teamNames.length > 0) {
+      return teamNames.map((team, index) => ({
+        id: `team-${team}-${index}`,
+        label: team,
+      }));
+    }
+    if (milestones.length > 0) {
+      return milestones.map((milestone) => ({
+        id: `milestone-${milestone.id}`,
+        label: milestone.title,
+        status: milestone.status,
+      }));
+    }
+    return ["Inner orbit", "Core team", "Outer orbit"].map((label, index) => ({
+      id: `fallback-${index}`,
       label,
-      size: count === 1 ? 72 : 48 + (index * 36) / (count - 1),
     }));
   }, [milestones, teamNames]);
+
+  const overflowLabels = useMemo(
+    () => (allRingLabels.length > 4 ? allRingLabels.slice(3) : []),
+    [allRingLabels],
+  );
+
+  const rings = useMemo<RingDefinition[]>(() => {
+    const hasOverflow = allRingLabels.length > 4;
+    const visibleLabels = hasOverflow
+      ? allRingLabels.slice(0, 3)
+      : allRingLabels;
+    const renderedLabels: Array<RingLabel & { isOverflow?: boolean }> =
+      hasOverflow
+        ? [
+            ...visibleLabels,
+            {
+              id: "overflow",
+              label: `+${allRingLabels.length - 3} More Milestones`,
+              isOverflow: true,
+            },
+          ]
+        : visibleLabels;
+    const count = Math.max(1, renderedLabels.length);
+
+    return renderedLabels.map((item, index) => ({
+      id: item.id,
+      label: item.label,
+      isOverflow: item.isOverflow,
+      size: count === 1 ? 72 : 48 + (index * 36) / (count - 1),
+    }));
+  }, [allRingLabels]);
 
   const visibleMembers = useMemo(() => {
     if (filter === "all") return members;
@@ -538,10 +709,14 @@ export function OrbitView({
 
   const memberRingIndex = (member: ProjectMember, index: number) => {
     if (member.team) {
-      const matchingRing = rings.findIndex(
+      const matchingRing = allRingLabels.findIndex(
         (ring) => ring.label === member.team?.name,
       );
-      if (matchingRing >= 0) return matchingRing;
+      if (matchingRing >= 0) {
+        return overflowLabels.length > 0 && matchingRing >= 3
+          ? 3
+          : matchingRing;
+      }
     }
     return index % rings.length;
   };
@@ -604,10 +779,11 @@ export function OrbitView({
   const progress = Math.min(100, Math.max(0, project.progress_percentage ?? 0));
   const statusLabel =
     project.status_display || project.status.replace("_", " ");
-  const sunStyle = sunStyles[project.status];
+  const sunStyle = sunStyles[project.status] ?? sunStyles.draft;
   const closePanels = () => {
     setSelectedMember(null);
     setSelectedCluster(null);
+    setIsOverflowOpen(false);
   };
 
   return (
@@ -696,12 +872,33 @@ export function OrbitView({
             {rings.map((ring) => (
               <div
                 key={ring.id}
-                className="pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-base-content/20 [border-dasharray:5_5] dark:border-base-content/10 [[data-theme=dark]_&]:border-base-content/10 rtl:translate-x-1/2"
+                className={`pointer-events-none absolute start-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full rtl:translate-x-1/2 ${
+                  ring.isOverflow
+                    ? "border-2 border-dashed border-warning/55 [border-dasharray:9_7]"
+                    : "border border-base-content/18 dark:border-base-content/10 [[data-theme=dark]_&]:border-base-content/10"
+                }`}
                 style={{ width: `${ring.size}%` }}
               >
-                <span className="absolute start-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-base-content/10 bg-base-100/80 px-2 py-0.5 text-xs font-medium text-base-content/70 backdrop-blur-xs dark:bg-base-300/60 dark:text-base-content/50 [[data-theme=dark]_&]:bg-base-300/60 [[data-theme=dark]_&]:text-base-content/50 rtl:translate-x-1/2">
-                  {ring.label}
-                </span>
+                {ring.isOverflow ? (
+                  <button
+                    type="button"
+                    className="pointer-events-auto absolute start-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-warning/35 bg-base-100/90 px-2.5 py-1 text-[10px] font-bold text-warning shadow-md backdrop-blur-md transition hover:border-warning/60 hover:bg-warning/10 active:scale-95 sm:text-xs rtl:translate-x-1/2"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedMember(null);
+                      setSelectedCluster(null);
+                      setIsOverflowOpen(true);
+                    }}
+                    data-orbit-node
+                    aria-label={`Show ${overflowLabels.length} overflow milestones`}
+                  >
+                    {ring.label}
+                  </button>
+                ) : (
+                  <span className="absolute start-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-base-content/10 bg-base-100/80 px-2 py-0.5 text-xs font-medium text-base-content/70 backdrop-blur-xs dark:bg-base-300/60 dark:text-base-content/50 [[data-theme=dark]_&]:bg-base-300/60 [[data-theme=dark]_&]:text-base-content/50 rtl:translate-x-1/2">
+                    {ring.label}
+                  </span>
+                )}
               </div>
             ))}
 
@@ -784,7 +981,13 @@ export function OrbitView({
                                 ) : (
                                   getInitials(name)
                                 )}
-                                <span className="absolute end-0.5 top-0.5 size-2.5 rounded-full border border-base-100 bg-success shadow-[0_0_8px_color-mix(in_srgb,var(--color-success)_80%,transparent)]" />
+                                <span
+                                  className={`absolute end-0.5 top-0.5 size-2.5 rounded-full border border-base-100 ${
+                                    member.is_active
+                                      ? "bg-success shadow-[0_0_8px_color-mix(in_srgb,var(--color-success)_80%,transparent)]"
+                                      : "bg-base-content/30"
+                                  }`}
+                                />
                               </button>
                               <span className="pointer-events-none absolute start-1/2 top-[calc(100%+0.25rem)] max-w-24 -translate-x-1/2 truncate rounded-full border border-secondary/20 bg-base-100/90 px-1.5 py-0.5 text-[10px] font-bold text-secondary shadow-sm backdrop-blur-sm md:hidden rtl:translate-x-1/2">
                                 {role}
@@ -925,7 +1128,7 @@ export function OrbitView({
                       </div>
                     </div>
                     <span
-                      className={`mt-1 inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[7px] font-black uppercase leading-none tracking-wide md:text-[8px] ${statusClasses[project.status]}`}
+                      className={`mt-1 inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[7px] font-black uppercase leading-none tracking-wide md:text-[8px] ${statusClasses[project.status] ?? statusClasses.draft}`}
                     >
                       {statusLabel}
                     </span>
@@ -941,6 +1144,71 @@ export function OrbitView({
             </motion.div>
           </div>
         </motion.div>
+      </div>
+
+      <div className="pointer-events-none absolute bottom-3 end-3 z-30 sm:bottom-4 sm:end-4">
+        <div className="pointer-events-auto relative" dir="auto">
+          <AnimatePresence>
+            {isLegendOpen && (
+              <motion.div
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                className="absolute bottom-[calc(100%+0.5rem)] end-0 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-base-content/10 bg-base-100/80 p-3 shadow-xl backdrop-blur-md"
+              >
+                <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
+                  Project status
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {statusLegendItems.map((item) => (
+                    <span
+                      key={item.status}
+                      className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${statusClasses[item.status] ?? statusClasses.draft}`}
+                    >
+                      {item.label}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-3 border-t border-base-content/10 pt-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-base-content/45">
+                    Orbit layers
+                  </p>
+                  <p className="mt-1 text-[10px] leading-relaxed text-base-content/65">
+                    Each ring represents a {ringMode === "teams" ? "team" : "milestone"}.
+                    {overflowLabels.length > 0 &&
+                      " The dashed outer ring groups all remaining labels."}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {rings.map((ring) => (
+                      <span
+                        key={`legend-${ring.id}`}
+                        className={`max-w-full truncate rounded-full px-2 py-0.5 text-[9px] font-semibold ${
+                          ring.isOverflow
+                            ? "border border-dashed border-warning/50 text-warning"
+                            : "bg-base-200/80 text-base-content/60"
+                        }`}
+                      >
+                        {ring.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsLegendOpen((open) => !open);
+            }}
+            className="grid size-10 place-items-center rounded-2xl border border-base-content/10 bg-base-100/80 text-base-content/65 shadow-xl backdrop-blur-md transition hover:bg-base-100 hover:text-base-content active:scale-95"
+            aria-label="Toggle legend"
+            aria-expanded={isLegendOpen}
+          >
+            <Calendar1 size={18} variant={isLegendOpen ? "Bold" : "Linear"} />
+          </button>
+        </div>
       </div>
 
       {visibleMembers.length === 0 && (
@@ -985,7 +1253,7 @@ export function OrbitView({
       </AnimatePresence>
 
       <AnimatePresence>
-        {(selectedMember || selectedCluster) && (
+        {(selectedMember || selectedCluster || isOverflowOpen) && (
           <>
             <motion.button
               type="button"
@@ -1003,7 +1271,13 @@ export function OrbitView({
               className="fixed inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-3xl border border-base-content/10 bg-base-100 shadow-2xl md:absolute md:bottom-auto md:end-4 md:start-auto md:top-20 md:w-72 md:rounded-2xl"
             >
               <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-base-content/15 md:hidden" />
-              {selectedMember ? (
+              {isOverflowOpen ? (
+                <OverflowDetails
+                  labels={overflowLabels}
+                  mode={ringMode}
+                  onClose={closePanels}
+                />
+              ) : selectedMember ? (
                 <MemberDetails member={selectedMember} onClose={closePanels} />
               ) : selectedCluster ? (
                 <ClusterDetails
