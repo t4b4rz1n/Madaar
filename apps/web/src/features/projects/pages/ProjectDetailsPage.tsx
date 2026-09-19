@@ -545,7 +545,7 @@ export default function ProjectDetailsPage() {
   const setSelectedTaskId = useTaskStore(state => state.setSelectedTaskId);
   const queryClient = useQueryClient();
 
-  const { hasAnyPermission } = usePermissions();
+  const { hasAnyPermission, hasPermission } = usePermissions();
   const canManageProject = hasAnyPermission(["project.manage"]);
 
   const taskQuery = useQuery({
@@ -671,8 +671,6 @@ export default function ProjectDetailsPage() {
   };
 
   const ownerName = getProjectOwnerName();
-
-  const { hasPermission } = usePermissions();
 
   const isOwner = project.owner?.id === user?.id;
   const isSuperUser = user?.is_staff;
