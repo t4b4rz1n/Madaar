@@ -1292,7 +1292,7 @@ export function OrbitView({
         </motion.div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 end-3 z-30 sm:bottom-4 sm:end-4">
+      <div className="pointer-events-none absolute bottom-3 end-3 z-40 sm:bottom-4 sm:end-4">
         <div className="pointer-events-auto relative" dir="auto">
           <AnimatePresence>
             {isLegendOpen && (
@@ -1300,7 +1300,7 @@ export function OrbitView({
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                 animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
-                className="absolute bottom-[calc(100%+0.5rem)] end-0 max-h-[calc(100vh-6rem)] w-64 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100/80 p-3 shadow-xl backdrop-blur-md"
+                className="pointer-events-auto absolute bottom-[calc(100%+0.5rem)] end-0 z-40 max-h-[calc(100vh-6rem)] w-64 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100/95 p-3 shadow-xl backdrop-blur-md supports-[backdrop-filter]:bg-base-100/90"
                 role="region"
                 aria-label="Orbit filters and guide"
               >
@@ -1464,7 +1464,7 @@ export function OrbitView({
               event.stopPropagation();
               setIsLegendOpen((open) => !open);
             }}
-            className="grid size-10 place-items-center rounded-2xl border border-base-content/10 bg-base-100/80 text-base-content/65 shadow-xl backdrop-blur-md transition hover:bg-base-100 hover:text-base-content active:scale-95"
+            className="pointer-events-auto relative z-40 grid size-10 place-items-center rounded-2xl border border-base-content/10 bg-base-100/90 text-base-content/65 shadow-xl backdrop-blur-md transition hover:bg-base-100 hover:text-base-content active:scale-95"
             aria-label="Toggle legend"
             aria-expanded={isLegendOpen}
           >
