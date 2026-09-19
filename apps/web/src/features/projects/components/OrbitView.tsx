@@ -19,6 +19,8 @@ import {
   type PointerEvent,
   type SetStateAction,
 } from "react";
+import { TeamMembersModal } from "../../teams/components/TeamMembersModal";
+import type { Team } from "../../teams/types";
 import type { Milestone, Project, ProjectMember } from "../types";
 
 interface OrbitViewProps {
@@ -639,6 +641,7 @@ export function OrbitView({
   const [selectedMember, setSelectedMember] = useState<ProjectMember | null>(
     null,
   );
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<MemberCluster | null>(
     null,
   );
@@ -827,8 +830,27 @@ export function OrbitView({
   const toggleFilter = (nextFilter: string) => {
     setFilter(filter === nextFilter ? "all" : nextFilter);
   };
+  const handleMemberSelect = (member: ProjectMember) => {
+    setSelectedCluster(null);
+    setIsOverflowOpen(false);
+
+    if (member.team) {
+      setSelectedMember(null);
+      setSelectedTeam({
+        id: member.team.id,
+        name: member.team.name,
+        lead_id: null,
+        is_active: true,
+      });
+      return;
+    }
+
+    setSelectedTeam(null);
+    setSelectedMember(member);
+  };
   const closePanels = () => {
     setSelectedMember(null);
+    setSelectedTeam(null);
     setSelectedCluster(null);
     setIsOverflowOpen(false);
   };
@@ -935,6 +957,7 @@ export function OrbitView({
                     onClick={(event) => {
                       event.stopPropagation();
                       setSelectedMember(null);
+                      setSelectedTeam(null);
                       setSelectedCluster(null);
                       setIsOverflowOpen(true);
                     }}
@@ -1021,8 +1044,7 @@ export function OrbitView({
                                 type="button"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  setSelectedCluster(null);
-                                  setSelectedMember(member);
+                                  handleMemberSelect(member);
                                 }}
                                 className={`relative grid size-9 min-h-8 min-w-8 place-items-center rounded-2xl border border-base-content/20 bg-base-100/40 text-[10px] font-black text-base-content shadow-lg backdrop-blur-md transition duration-200 hover:scale-110 hover:border-primary/50 hover:bg-base-100/60 md:size-10 ${
                                   isFilterActive && isMatchingFilter
@@ -1117,6 +1139,8 @@ export function OrbitView({
                                   onClick={(event) => {
                                     event.stopPropagation();
                                     setSelectedMember(null);
+                                    setSelectedTeam(null);
+                                    setIsOverflowOpen(false);
                                     setSelectedCluster({
                                       label: ring.label,
                                       members: isFilterActive
@@ -1434,16 +1458,19 @@ export function OrbitView({
                 <ClusterDetails
                   cluster={selectedCluster}
                   onClose={closePanels}
-                  onSelectMember={(member) => {
-                    setSelectedCluster(null);
-                    setSelectedMember(member);
-                  }}
+                  onSelectMember={handleMemberSelect}
                 />
               ) : null}
             </motion.aside>
           </>
         )}
       </AnimatePresence>
+
+      <TeamMembersModal
+        team={selectedTeam}
+        isOpen={selectedTeam !== null}
+        onClose={() => setSelectedTeam(null)}
+      />
     </section>
   );
 }
