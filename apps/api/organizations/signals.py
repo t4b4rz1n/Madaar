@@ -2,7 +2,13 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from automations.events import EventDispatcher
-from organizations.models import Organization, OrganizationMembership, Permission, Role
+from organizations.models import (
+    Organization,
+    OrganizationMembership,
+    Permission,
+    Role,
+    TeamMembership,
+)
 
 _DEFAULT_ROLE_PERMISSIONS = {
     "Owner": [
@@ -180,3 +186,57 @@ def notify_superusers_member_added_to_org(sender, instance, created, **kwargs):
             event_type="you_added_to_org",
             payload=payload,
         )
+
+
+@receiver(pre_save, sender=TeamMembership)
+def cache_previous_team_membership_state(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            old = TeamMembership.all_objects.get(pk=instance.pk)
+            instance.__original_is_deleted = old.is_deleted
+        except TeamMembership.DoesNotExist:
+            instance.__original_is_deleted = None
+    else:
+        instance.__original_is_deleted = False
+
+
+@receiver(post_save, sender=TeamMembership, dispatch_uid="sync_team_member_to_projects_uid")
+def sync_team_member_to_projects(sender, instance, created, **kwargs):
+    """
+    When a new member is added to a team, automatically add them to all projects
+    where the team is currently assigned.
+    """
+    if getattr(instance, "is_deleted", False):
+        return
+
+    old_is_deleted = getattr(instance, "__original_is_deleted", False)
+    is_restored = not created and old_is_deleted and not instance.is_deleted
+
+    if (created or is_restored) and instance.user:
+        from projects.models import ProjectMember
+        from projects.services import ProjectMemberService
+
+        # Find active projects where this team is a member
+        team_projects = ProjectMember.objects.filter(
+            team=instance.team,
+            user__isnull=True,
+            is_deleted=False
+        ).select_related("project")
+
+        for pm in team_projects:
+            # Check if user is already an active member of this project
+            is_active_member = ProjectMember.objects.filter(
+                project=pm.project,
+                user=instance.user,
+                is_deleted=False
+            ).exists()
+
+            if not is_active_member:
+                ProjectMemberService.add(
+                    project=pm.project,
+                    actor=None,
+                    validated_data={
+                        "user": instance.user,
+                        "allocation_percentage": 100,
+                    },
+                )

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import {
   Add,
-  CloseCircle,
   People,
   Profile2User,
   UserMinus,
@@ -107,33 +107,34 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex-shrink-0 border-b border-base-content/10 bg-base-200/20 p-5 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
+            <div className="flex-shrink-0 border-b border-base-content/10 bg-base-200/30 px-4 py-4 sm:px-6 sm:py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="shrink-0 rounded-xl bg-primary/10 p-2.5 text-primary">
                     <People size={28} />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-2xl text-base-content">
+                  <div className="min-w-0">
+                    <h3 className="text-xl font-bold text-base-content sm:text-2xl">
                       Manage Members
                     </h3>
-                    <p className="text-base-content/70 text-sm">
-                      Members of <span className="font-semibold">{team.name}</span>
+                    <p className="truncate text-sm text-base-content/60">
+                      Members of <span className="font-semibold text-base-content/80">{team.name}</span>
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="btn btn-ghost btn-square btn-sm rounded-xl text-base-content/50 hover:text-base-content"
+                  className="btn btn-ghost btn-square btn-sm shrink-0 rounded-xl text-base-content/50 transition-colors hover:bg-base-content/10 hover:text-base-content"
+                  aria-label="Close members modal"
                 >
-                  <CloseCircle size={24} />
+                  <X size={20} strokeWidth={2.25} />
                 </button>
               </div>
             </div>
 
             {/* Body */}
-            <div className="min-h-[200px] max-h-[500px] flex-1 overflow-y-auto p-5 sm:p-6">
+            <div className="min-h-[200px] max-h-[500px] flex-1 overflow-y-auto p-4 sm:p-6">
               {isLoading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, i) => (
@@ -158,9 +159,11 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                   </p>
                 </div>
               ) : members && members.length === 0 ? (
-                <div className="flex flex-col items-center justify-center min-h-[200px] text-center border border-dashed border-base-content/20 rounded-2xl p-6">
-                  <People className="text-base-content/40 mb-3" size={48} />
-                  <p className="text-base-content font-medium text-lg">No members yet</p>
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-base-content/15 bg-base-200/20 p-6 text-center">
+                  <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-base-content/5 text-base-content/35">
+                    <People size={26} />
+                  </div>
+                  <p className="text-base font-semibold text-base-content/70">No members found</p>
                   <p className="text-sm text-base-content/60 mt-1">
                     Add team members using the form below.
                   </p>
@@ -170,7 +173,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                   {members?.map((member) => (
                     <div
                       key={member.id}
-                      className="group flex items-center gap-3 rounded-2xl border border-base-content/5 bg-base-200/25 p-3 transition-colors hover:bg-base-200/50"
+                      className="group flex items-center gap-3 rounded-2xl border border-base-content/10 bg-base-200/20 p-3.5 transition-colors duration-200 hover:border-base-content/15 hover:bg-base-200/60 sm:gap-4 sm:p-4"
                     >
                       <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
                         {member.user_details?.avatar ? (
@@ -181,17 +184,24 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                           />
                         ) : (
                           <>
-                            {member.user_details?.first_name?.[0]?.toUpperCase() || "?"}
-                            {member.user_details?.last_name?.[0]?.toUpperCase() || ""}
+                            {member.user_details?.username?.[0]?.toUpperCase() || member.user_details?.first_name?.[0]?.toUpperCase() || member.user_details?.email?.[0]?.toUpperCase() || "?"}
+                            {(!member.user_details?.username && member.user_details?.first_name) ? member.user_details?.last_name?.[0]?.toUpperCase() || "" : ""}
                           </>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-base-content truncate">
-                          {member.user_details
-                            ? `${member.user_details.first_name} ${member.user_details.last_name}`
-                            : "Unknown User"}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm text-base-content truncate">
+                            {member.user_details
+                              ? member.user_details.username || `${member.user_details.first_name || ""} ${member.user_details.last_name || ""}`.trim() || member.user_details.email || "Unknown User"
+                              : "Unknown User"}
+                          </p>
+                          {String(member.user) === String(team?.lead_id) && (
+                            <span className="badge badge-primary badge-sm badge-outline text-[10px] h-5 px-1.5 font-semibold">
+                              Leader
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-base-content/50 truncate">
                           {member.user_details?.email || ""}
                         </p>
@@ -200,10 +210,11 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                       <button
                         type="button"
                         onClick={() => setRemovingMember(member)}
-                        className="btn btn-ghost btn-xs btn-square rounded-xl text-base-content/30 hover:text-error hover:bg-error/10 opacity-0 group-hover:opacity-100 transition-all motion-interactive"
+                        className="btn btn-ghost btn-sm min-h-9 shrink-0 gap-1.5 rounded-xl px-2.5 text-base-content/50 transition-colors hover:border-error/15 hover:bg-error/10 hover:text-error sm:px-3"
                         title="Remove member"
                       >
                         <UserMinus size={16} />
+                        <span className="hidden sm:inline">Remove</span>
                       </button>
                     </div>
                   ))}
@@ -212,7 +223,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
 
               {/* Add Member Section */}
               {!isLoading && !isError && (
-                <div className="mt-6 border-t border-base-content/10 pt-6">
+                <div className="mt-6 border-t border-base-content/10 pt-5 sm:pt-6">
                   <h4 className="font-semibold text-sm text-base-content mb-4 flex items-center gap-2">
                     <Add size={16} className="text-primary" />
                     Add New Member
@@ -222,7 +233,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                       <select
                         value={selectedUserId}
                         onChange={(e) => setSelectedUserId(e.target.value)}
-                        className="select select-bordered w-full rounded-xl pl-10"
+                        className="select select-bordered w-full rounded-xl border-base-content/10 bg-base-200/30 pl-10 transition-colors hover:border-base-content/20"
                       >
                         <option value="">Select a user...</option>
                         {availableUsers.map((user) => (
@@ -245,14 +256,14 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                       type="button"
                       onClick={handleAddMember}
                       disabled={!selectedUserId || addMember.isPending}
-                      className="btn btn-primary rounded-xl gap-1.5 shrink-0 motion-interactive"
+                      className="btn btn-primary shrink-0 gap-1.5 rounded-xl px-5 font-semibold shadow-md shadow-primary/15 transition-all hover:shadow-lg hover:shadow-primary/20 motion-interactive"
                     >
                       {addMember.isPending ? (
                         <span className="loading loading-spinner loading-sm" />
                       ) : (
                         <>
                           <Add size={16} />
-                          Add
+                          Add Member
                         </>
                       )}
                     </button>

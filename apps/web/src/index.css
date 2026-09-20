@@ -165,7 +165,7 @@
   --madaar-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --madaar-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
   --madaar-focus-ring: 0 0 0 3px rgb(10 132 255 / 0.28);
-  --madaar-sidebar-width: 16.5rem;
+  --madaar-sidebar-width: 14.5rem;
   --madaar-sidebar-collapsed-width: 4.25rem;
 }
 

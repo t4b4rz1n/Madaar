@@ -119,8 +119,8 @@ export const TeamsGrid = ({
                 <div className="flex items-center gap-2 min-w-0">
                   {team.leader_details ? (
                     <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                      {team.leader_details.first_name?.[0]?.toUpperCase() || "?"}
-                      {team.leader_details.last_name?.[0]?.toUpperCase() || ""}
+                      {team.leader_details.username?.[0]?.toUpperCase() || team.leader_details.first_name?.[0]?.toUpperCase() || team.leader_details.email?.[0]?.toUpperCase() || "?"}
+                      {(!team.leader_details.username && team.leader_details.first_name) ? team.leader_details.last_name?.[0]?.toUpperCase() || "" : ""}
                     </div>
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-base-200 text-base-content/40 flex items-center justify-center shrink-0">
@@ -130,7 +130,7 @@ export const TeamsGrid = ({
                   <span className="font-medium text-base-content/60">Leader:</span>
                   <span className="truncate">
                     {team.leader_details
-                      ? `${team.leader_details.first_name} ${team.leader_details.last_name}`
+                      ? team.leader_details.username || `${team.leader_details.first_name || ""} ${team.leader_details.last_name || ""}`.trim() || team.leader_details.email || "Unknown User"
                       : "Not assigned"}
                   </span>
               </div>

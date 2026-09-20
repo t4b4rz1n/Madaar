@@ -1,6 +1,6 @@
 import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 import { useAuthStore } from "../../auth/store/authStore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,7 +27,7 @@ import {
   useUpdateProject,
   useDeleteMilestone,
 } from "../hooks/useProjects";
-import type { Project, ProjectMember, Milestone, ProjectActivity } from "../types";
+import type { Project, ProjectMember, Milestone, ProjectActivity, ViewMode } from "../types";
 import { useTaskStore } from "../../tasks/store/useTaskStore";
 import { AddMemberModal } from "../components/AddMemberModal";
 import CumulativeFlowChart from "../components/CumulativeFlowChart";
@@ -42,6 +42,8 @@ import { ProjectBillingTab } from "../components/ProjectBillingTab";
 import { toast } from "sonner";
 import { getUnlinkedTasks, getTask, updateTask, getMilestoneTasks } from "../../tasks/api/tasksApi";
 import { TaskSheet } from "../../tasks/components/TaskSheet";
+import { ViewSwitcher } from "../../../components/ViewSwitcher";
+import { OrbitView } from "../components/OrbitView";
 
 type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports" | "salaries" | "billing";
 
@@ -184,7 +186,7 @@ function MilestoneItem({
                   </div>
                 ) : milestoneTasks.length > 0 ? (
                   <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
-                    {milestoneTasks.map((task: any) => (
+                    {milestoneTasks.map((task) => (
                       <div
                         key={task.id}
                         className="group/task flex items-center justify-between p-3 rounded-xl bg-base-100/40 hover:bg-base-100 border border-base-content/5 hover:border-base-content/10 hover:shadow-sm cursor-pointer transition-all duration-200"
@@ -194,10 +196,10 @@ function MilestoneItem({
                         }}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`size-2 shrink-0 rounded-full ${task.status?.is_done || task.is_finished ? "bg-emerald-500" : "bg-base-content/20"}`} />
+                          <div className={`size-2 shrink-0 rounded-full ${task.is_finished ? "bg-emerald-500" : "bg-base-content/20"}`} />
                           <p
                             dir="auto"
-                            className={`font-semibold truncate ${task.status?.is_done || task.is_finished ? "line-through text-base-content/40" : "text-[12px] text-base-content/90 group-hover/task:text-primary transition-colors"}`}
+                            className={`font-semibold truncate ${task.is_finished ? "line-through text-base-content/40" : "text-[12px] text-base-content/90 group-hover/task:text-primary transition-colors"}`}
                           >
                             {task.title}
                           </p>
@@ -215,9 +217,9 @@ function MilestoneItem({
                               {task.priority}
                             </span>
                           )}
-                          {task.status?.name && (
+                          {task.status_detail?.name && (
                             <span className="text-[10px] font-medium text-base-content/60 bg-base-content/5 px-2 py-0.5 rounded-full border border-base-content/10">
-                              {task.status.name}
+                              {task.status_detail.name}
                             </span>
                           )}
                         </div>
@@ -256,15 +258,15 @@ const STATUS_OPTIONS = [
   { value: "on_hold", label: "On Hold" },
   { value: "completed", label: "Completed" },
   { value: "archived", label: "Archived" },
-];
+] as const;
 
 function StatusDropdown({
   currentStatus,
   onChange,
   disabled
 }: {
-  currentStatus: string;
-  onChange: (s: string) => void;
+  currentStatus: Project["status"];
+  onChange: (s: Project["status"]) => void;
   disabled: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -474,10 +476,10 @@ function MilestonesTab({
             <p className="py-4 text-center text-xs text-base-content/40">Loading…</p>
           ) : (
             <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-              {unlinkedTasks.map((task: any) => (
+              {unlinkedTasks.map((task) => (
                 <div
                   key={task.id}
-                  onClick={() => setSelectedTaskId(task.id)}
+                  onClick={() => setSelectedTaskId(String(task.id))}
                   className="flex items-center justify-between rounded-xl border border-base-content/6 bg-base-200/40 px-3 py-2.5 text-xs cursor-pointer hover:bg-base-200/70 transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -499,9 +501,9 @@ function MilestonesTab({
                         {task.priority}
                       </span>
                     )}
-                    {task.assignee && (
+                    {task.assignee_detail && (
                       <span className="text-[10px] text-base-content/40 truncate max-w-[80px]">
-                        {task.assignee.full_name || task.assignee.username || "Assigned"}
+                        {`${task.assignee_detail.first_name} ${task.assignee_detail.last_name}`.trim() || task.assignee_detail.username || "Assigned"}
                       </span>
                     )}
                   </div>
@@ -545,7 +547,7 @@ export default function ProjectDetailsPage() {
   const setSelectedTaskId = useTaskStore(state => state.setSelectedTaskId);
   const queryClient = useQueryClient();
 
-  const { hasAnyPermission } = usePermissions();
+  const { hasAnyPermission, hasPermission } = usePermissions();
   const canManageProject = hasAnyPermission(["project.manage"]);
 
   const taskQuery = useQuery({
@@ -554,8 +556,41 @@ export default function ProjectDetailsPage() {
     enabled: !!selectedTaskId,
   });
 
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as TabType) || "overview";
+  const [activeTab, setActiveTabState] = useState<TabType>(initialTab);
 
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [orbitPlaying, setOrbitPlaying] = useState<boolean>(true);
+  const [orbitZoom, setOrbitZoom] = useState<number>(1);
+  const [orbitRotation, setOrbitRotation] = useState<number>(0);
+  const [orbitFilter, setOrbitFilter] = useState<string>("all");
+
+
+  // Sync state to URL without full navigation
+  const setActiveTab = (tab: TabType) => {
+    setActiveTabState(tab);
+    setSearchParams(prev => {
+      prev.set("tab", tab);
+      return prev;
+    }, { replace: true });
+  };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab") as TabType;
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTabState(tabFromUrl);
+    }
+
+    const taskFromUrl = searchParams.get("task");
+    if (taskFromUrl) {
+      setSelectedTaskId(taskFromUrl);
+      setSearchParams(prev => {
+        prev.delete("task");
+        return prev;
+      }, { replace: true });
+    }
+  }, [searchParams, activeTab, setSelectedTaskId, setSearchParams]);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isCreateMilestoneOpen, setIsCreateMilestoneOpen] = useState(false);
   const [deleteModalState, setDeleteModalState] = useState<{
@@ -648,7 +683,7 @@ export default function ProjectDetailsPage() {
 
   const isOwner = project.owner?.id === user?.id;
   const isSuperUser = user?.is_staff;
-  const canViewSalaries = isSuperUser || isOwner;
+  const canViewSalaries = isSuperUser || isOwner || hasPermission("org.manage_settings");
 
   return (
     <div key={id} className="space-y-5 pb-10">
@@ -679,7 +714,7 @@ export default function ProjectDetailsPage() {
                 currentStatus={project.status}
                 onChange={(s) => {
                   if (!project) return;
-                  updateProjectMutation.mutate({ id: project.id, data: { status: s as any } }, {
+                  updateProjectMutation.mutate({ id: project.id, data: { status: s } }, {
                     onSuccess: () => toast.success("Project status updated."),
                     onError: () => toast.error("Failed to update status.")
                   });
@@ -738,6 +773,51 @@ export default function ProjectDetailsPage() {
           {/* ── OVERVIEW TAB ── */}
           {activeTab === "overview" && (
             <div className="space-y-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-base-content">Project overview</h2>
+                  <p className="mt-1 text-xs text-base-content/50">Track delivery health, milestones, and team activity.</p>
+                </div>
+                <ViewSwitcher
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  modes={["grid", "table", "orbit"]}
+                  className="self-start sm:self-auto"
+                />
+              </div>
+
+              <AnimatePresence mode="wait" initial={false}>
+                {viewMode === "orbit" ? (
+                  <motion.div
+                    key="orbit-view"
+                    initial={{ opacity: 0, y: 8, scale: 0.99 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.99 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <OrbitView
+                      project={project}
+                      members={members}
+                      milestones={milestones}
+                      isPlaying={orbitPlaying}
+                      onPlayPauseChange={setOrbitPlaying}
+                      zoom={orbitZoom}
+                      onZoomChange={setOrbitZoom}
+                      rotation={orbitRotation}
+                      onRotationChange={setOrbitRotation}
+                      filter={orbitFilter}
+                      onFilterChange={setOrbitFilter}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="overview-layout"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-5"
+                  >
               {/* Quick Metrics Bar */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
@@ -864,79 +944,138 @@ export default function ProjectDetailsPage() {
                   )}
                 </div>
               </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
           {/* ── MEMBERS TAB ── */}
-          {activeTab === "members" && (
-            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
-              <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
-                <h3 className="text-sm font-bold text-base-content">
-                  Project Members &amp; Teams ({members.length})
-                </h3>
-                {canManageProject && (
-                  <button
-                    type="button"
-                    onClick={() => setIsAddMemberOpen(true)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
-                  >
-                    <Add size={14} /> Add Member
-                  </button>
-                )}
-              </div>
+          {activeTab === "members" && (() => {
+            const individualMembers = members.filter((m: ProjectMember) => !m.team);
+            const teamMembers = members.filter((m: ProjectMember) => !!m.team);
 
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Owner Card */}
-                <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="grid size-8 place-items-center rounded-lg bg-primary text-white text-xs font-bold shrink-0">
-                      <Crown size={15} />
+            return (
+              <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
+                <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
+                  <h3 className="text-sm font-bold text-base-content">
+                    Project Members &amp; Teams ({members.length})
+                  </h3>
+                  {canManageProject && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddMemberOpen(true)}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
+                    >
+                      <Add size={14} /> Add Member
+                    </button>
+                  )}
+                </div>
+
+                {/* Members Section */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-base-content uppercase tracking-wider">
+                    Members ({individualMembers.length + 1})
+                  </h4>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {/* Owner Card */}
+                    <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="grid size-8 place-items-center rounded-lg bg-primary text-white text-xs font-bold shrink-0">
+                          <Crown size={15} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-base-content truncate">{ownerName}</p>
+                          <p className="text-[10px] font-semibold text-primary">Owner</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-base-content truncate">{ownerName}</p>
-                      <p className="text-[10px] font-semibold text-primary">Owner</p>
-                    </div>
+
+                    {/* Assigned Users */}
+                    {individualMembers.map((m: ProjectMember) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between rounded-xl border border-base-content/8 bg-base-200/40 p-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
+                            {getUserDisplayName(m)[0]?.toUpperCase() || "U"}
+                          </div>
+                          <div className="min-w-0">
+                            <p dir="auto" className="text-xs font-bold text-base-content truncate">
+                              {getUserDisplayName(m)}
+                            </p>
+                            <p className="text-[10px] font-medium text-base-content/40 truncate">
+                              {m.specialty || "Member"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDeleteModalState({
+                              open: true,
+                              memberId: m.id,
+                              memberName: getUserDisplayName(m),
+                            })
+                          }
+                          className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
+                          aria-label="Remove member"
+                        >
+                          <Trash size={13} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Assigned Users & Teams */}
-                {members.map((m: ProjectMember) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center justify-between rounded-xl border border-base-content/8 bg-base-200/40 p-3"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
-                        {m.team ? <People size={15} /> : getUserDisplayName(m)[0]?.toUpperCase() || "U"}
-                      </div>
-                      <div className="min-w-0">
-                        <p dir="auto" className="text-xs font-bold text-base-content truncate">
-                          {getUserDisplayName(m)}
-                        </p>
-                        <p className="text-[10px] font-medium text-base-content/40 truncate">
-                          {m.specialty || (m.team ? "Team Squad" : "Member")}
-                        </p>
-                      </div>
+                {/* Teams Section */}
+                {teamMembers.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t border-base-content/8">
+                    <h4 className="text-xs font-bold text-base-content uppercase tracking-wider">
+                      Teams ({teamMembers.length})
+                    </h4>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {teamMembers.map((m: ProjectMember) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between rounded-xl border border-base-content/8 bg-base-200/40 p-3"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
+                              <People size={15} />
+                            </div>
+                            <div className="min-w-0">
+                              <p dir="auto" className="text-xs font-bold text-base-content truncate">
+                                {getUserDisplayName(m)}
+                              </p>
+                              <p className="text-[10px] font-medium text-base-content/40 truncate">
+                                {m.specialty || "Team Squad"}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDeleteModalState({
+                                open: true,
+                                memberId: m.id,
+                                memberName: getUserDisplayName(m),
+                              })
+                            }
+                            className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
+                            aria-label="Remove team"
+                          >
+                            <Trash size={13} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDeleteModalState({
-                          open: true,
-                          memberId: m.id,
-                          memberName: getUserDisplayName(m),
-                        })
-                      }
-                      className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
-                      aria-label="Remove member"
-                    >
-                      <Trash size={13} />
-                    </button>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ── MILESTONES TAB ── */}
           {activeTab === "milestones" && (
@@ -971,7 +1110,7 @@ export default function ProjectDetailsPage() {
                         <p className="font-medium text-base-content/80 truncate">
                           <span className="font-bold text-primary">{actorName}</span>
                           {" "}
-                          {(act as any).event_type_display || act.event_type}
+                          {act.event_type_display || act.event_type}
                         </p>
                         <span className="shrink-0 text-[10px] font-semibold text-base-content/40 ms-2">
                           {formatDate(act.created_at)}
@@ -1013,7 +1152,7 @@ export default function ProjectDetailsPage() {
           project?.organization
             ? String(
               typeof project.organization === "object"
-                ? (project.organization as any).id
+                ? project.organization.id
                 : project.organization
             )
             : undefined

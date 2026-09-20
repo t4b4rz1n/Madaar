@@ -8,14 +8,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (!id.includes("node_modules")) return;
-          if (id.includes("recharts")) return "vendor-charts";
-          if (id.includes("framer-motion")) return "vendor-motion";
-          if (id.includes("iconsax-reactjs")) return "vendor-icons";
-          if (id.includes("@tanstack")) return "vendor-query";
-          if (id.includes("@dnd-kit")) return "vendor-dnd";
-          if (id.includes("date-fns")) return "vendor-date";
-          if (id.includes("axios") || id.includes("sonner")) return "vendor-network";
+          if (id.includes("node_modules")) {
+            return "vendor";
+          }
         },
       },
     },

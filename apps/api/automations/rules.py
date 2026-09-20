@@ -26,10 +26,21 @@ def _get_event_link(event_type: str, payload: dict) -> str:
         return "/standups"
 
     if task_id and project_id:
-        # Route to task management page with query params
-        return f"/tasks?project={project_id}&board={board_id or ''}&task={task_id}"
+        if board_id:
+            # Route to task management page with query params
+            return f"/tasks?project={project_id}&board={board_id}&task={task_id}"
+        else:
+            # Unlinked task
+            return f"/projects/{project_id}?task={task_id}"
+
+    if board_id and project_id:
+        return f"/tasks?project={project_id}&board={board_id}"
+
     if project_id:
+        if event_type in ("milestone_created", "milestone_approaching", "milestone_completed"):
+            return f"/projects/{project_id}?tab=milestones"
         return f"/projects/{project_id}"
+
     if event_type in ("leave_requested", "leave_resolved"):
         return "/attendance?tab=timeoff"
     if organization_id:
