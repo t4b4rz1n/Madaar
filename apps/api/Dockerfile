@@ -35,6 +35,10 @@ ENV USE_SQLITE='False'
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
 
+# Create log directory and chown it for appuser
+RUN mkdir -p /var/log/madar && chown -R appuser:appuser /var/log/madar
+ENV LOGS_DIR=/var/log/madar
+
 COPY . .
 
 RUN python manage.py collectstatic --noinput

@@ -354,7 +354,7 @@ CALLBACK_URL = env("CALLBACK_URL", default="https://example.com/payment/verify/"
 CANCEL_URL = env("CANCEL_URL", default="https://example.com/payment/cancel/")
 
 # --- Logging ---
-LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR = Path(env("LOGS_DIR", default=str(BASE_DIR / "logs")))
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 LOGGING = {
     "version": 1,
