@@ -43,7 +43,7 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput
 
-RUN chown -R appuser:appuser /app
+RUN chown -R appuser:appuser /app /var/log/madar
 
 USER appuser
 
