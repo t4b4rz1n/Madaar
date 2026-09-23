@@ -234,3 +234,16 @@ class UpdateOrgMemberSalarySerializer(serializers.Serializer):
         if "salary_type" not in attrs and "salary_amount" not in attrs:
             raise serializers.ValidationError("Provide at least salary_type or salary_amount.")
         return attrs
+
+class InviteOrgMemberSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    username = serializers.CharField(max_length=150, required=True)
+    first_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    password = serializers.CharField(max_length=128, required=True)
+    role_id = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        default=OrganizationMembership.Role.ADMIN,
+    )

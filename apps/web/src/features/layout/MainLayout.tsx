@@ -12,6 +12,9 @@ import type { Breadcrumb } from "./Header";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { useLayoutStore } from "./store/layoutStore";
+import { getOrganizations } from "../organizations/api/organizationsApi";
+import { OnboardingWizard } from "../onboarding/components/OnboardingWizard";
+import PageLoader from "../../components/PageLoader";
 
 export const MainLayout = () => {
   const setSidebarOpen = useLayoutStore((state) => state.setSidebarOpen);
@@ -29,6 +32,18 @@ export const MainLayout = () => {
     enabled: isAuthenticated,
     staleTime: 1000 * 60,
   });
+
+  const { data: organizations, isLoading: isLoadingOrgs } = useQuery({
+    queryKey: ["organizations-list"],
+    queryFn: () => getOrganizations(),
+    enabled: isAuthenticated && isStaff,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Determine if this superuser needs to see the onboarding wizard.
+  // The wizard is shown ONLY the very first time (no orgs + no localStorage flag).
+  const onboardingDoneKey = user?.id ? `onboarding_done_${user.id}` : null;
+  const onboardingAlreadyDone = onboardingDoneKey ? localStorage.getItem(onboardingDoneKey) === 'true' : false;
 
   useEffect(() => {
     if (latestProfile) {
@@ -76,6 +91,20 @@ export const MainLayout = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // Intercept for superuser onboarding (only once, ever)
+  if (isStaff && !onboardingAlreadyDone) {
+    if (isLoadingOrgs) {
+      return <PageLoader />;
+    }
+    if (organizations && organizations.length === 0) {
+      return <OnboardingWizard />;
+    }
+    // Has orgs → mark as done so we never check again
+    if (organizations && organizations.length > 0 && onboardingDoneKey) {
+      localStorage.setItem(onboardingDoneKey, 'true');
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-base-200 font-sans text-base-content">
       <a
@@ -109,3 +138,4 @@ export const MainLayout = () => {
     </div>
   );
 };
+

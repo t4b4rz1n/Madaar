@@ -357,3 +357,116 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
         response_serializer = OrganizationMemberSerializer(membership, context={"request": request})
         return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="invite_member",
+        permission_classes=[IsAuthenticated, CanManageOrganization],
+    )
+    def invite_member(self, request, pk=None):
+        organization = self.get_object()
+        from .serializers import InviteOrgMemberSerializer
+        serializer = InviteOrgMemberSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data["email"]
+        username = serializer.validated_data["username"]
+        first_name = serializer.validated_data.get("first_name", "")
+        last_name = serializer.validated_data.get("last_name", "")
+        password = serializer.validated_data["password"]
+        role_id = serializer.validated_data.get("role_id", OrganizationMembership.Role.ADMIN)
+
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        # Check if user exists
+        user = User.objects.filter(email=email).first()
+        created_user = False
+        if not user:
+            # Check if username exists
+            if User.objects.filter(username=username).exists():
+                return Response(
+                    {"detail": "Username already exists."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                password=password
+            )
+            created_user = True
+        
+        # Add to organization
+        role_obj = None
+        legacy_role = None
+        if role_id:
+            import uuid as _uuid
+            is_uuid = True
+            try:
+                _uuid.UUID(str(role_id))
+            except (ValueError, AttributeError):
+                is_uuid = False
+
+            if is_uuid:
+                role_obj = (
+                    Role.objects.filter(
+                        id=role_id, organization=organization, is_deleted=False
+                    ).first()
+                    or Role.objects.filter(id=role_id, is_deleted=False).first()
+                )
+
+            if not role_obj:
+                role_obj = Role.objects.filter(
+                    name__iexact=str(role_id), organization=organization, is_deleted=False
+                ).first()
+
+            if role_obj:
+                name_lower = role_obj.name.lower().replace(" ", "_")
+                if name_lower in [c[0] for c in OrganizationMembership.Role.choices]:
+                    legacy_role = name_lower
+                elif "admin" in name_lower:
+                    legacy_role = OrganizationMembership.Role.ADMIN
+                else:
+                    legacy_role = None
+            elif role_id in [c[0] for c in OrganizationMembership.Role.choices]:
+                legacy_role = role_id
+
+        try:
+            with transaction.atomic():
+                membership = OrganizationMembership.all_objects.filter(
+                    organization=organization, user_id=user.id
+                ).first()
+
+                if membership:
+                    membership.is_deleted = False
+                    membership.role = legacy_role
+                    membership.invited_by = request.user
+                    membership.save()
+                    if role_obj:
+                        membership.dynamic_roles.set([role_obj])
+                    created_mem = False
+                else:
+                    membership = OrganizationMembership.objects.create(
+                        user_id=user.id,
+                        organization=organization,
+                        role=legacy_role,
+                        invited_by=request.user,
+                    )
+                    if role_obj:
+                        membership.dynamic_roles.set([role_obj])
+                    created_mem = True
+        except IntegrityError:
+            return Response(
+                {"detail": "User already belongs to this organization."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = OrganizationMemberSerializer(
+            membership, context={"request": request}
+        )
+        status_code = status.HTTP_201_CREATED if created_mem else status.HTTP_200_OK
+        return Response(response_serializer.data, status=status_code)

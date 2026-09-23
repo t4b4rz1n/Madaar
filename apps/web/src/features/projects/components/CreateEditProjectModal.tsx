@@ -1,5 +1,7 @@
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { CloseCircle, FolderAdd, TickCircle } from "iconsax-reactjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -102,7 +104,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     }
   }, [isOpen, project, organizations, formData.organization_id]);
 
-  if (!isOpen) return null;
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -189,16 +190,25 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
   const isLoading =
     createProjectMutation.isPending || updateProjectMutation.isPending;
 
-  return (
-    <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-xs"
-
-    >
-      <div
-        className="w-full max-w-lg overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        {/* Header with live gradient preview */}
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 backdrop-blur-xs p-4"
+          onMouseDown={onClose}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.15 }}
+            className="w-full max-w-lg overflow-hidden rounded-3xl border border-base-content/10 bg-base-100 shadow-2xl"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {/* Header with live gradient preview */}
         <div
           className="relative flex items-center justify-between px-6 py-5 text-white"
           style={{ background: formData.color }}
@@ -394,7 +404,10 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 };
