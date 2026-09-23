@@ -6,11 +6,10 @@ import { toast } from 'sonner';
 import { X } from 'lucide-react';
 
 import { useProjectWizardStore } from '../../store/useProjectWizardStore';
-import { useQuery } from '@tanstack/react-query';
-import { getOrganizations } from '../../../organizations/api/organizationsApi';
 
 import { createProject, addProjectMember } from '../../api/projectsApi';
 import { createBoard, createStatus } from '../../../tasks/api/tasksApi';
+
 
 import { WizardStep1Basics } from './WizardStep1Basics';
 import { WizardStep2Users } from './WizardStep2Users';
@@ -27,35 +26,27 @@ export const ProjectWizard: React.FC = () => {
   const navigate = useNavigate();
   const { isOpen, close, reset,
     currentStep,
-    projectName, projectDescription, projectColor,
-    selectedUserIds, selectedTemplate,
+    projectName, projectColor,
+    selectedOrgId, selectedUserIds, selectedTemplate,
   } = useProjectWizardStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
 
-  const { data: orgs } = useQuery({
-    queryKey: ['organizations-list'],
-    queryFn: getOrganizations,
-    staleTime: 1000 * 60 * 5,
-    enabled: isOpen,
-  });
-  const orgId = orgs?.[0]?.id as string | undefined;
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orgId || !selectedTemplate) return;
+    if (!selectedOrgId || !selectedTemplate) return;
+
 
     setIsSubmitting(true);
     try {
       // 1. Create project
       const project = await createProject({
         name: projectName,
-        description: projectDescription,
         color: projectColor,
-        organization_id: orgId,
+        organization_id: selectedOrgId,
       });
+
 
       // 2. Add selected users
       const addMemberPromises = selectedUserIds.map((uid) =>

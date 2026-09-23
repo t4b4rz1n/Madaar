@@ -100,8 +100,8 @@ interface ProjectWizardState {
   currentStep: number;
   // Step 1
   projectName: string;
-  projectDescription: string;
   projectColor: string;
+  selectedOrgId: string | number | null;
   // Step 2
   selectedUserIds: (string | number)[];
   // Step 3
@@ -113,8 +113,8 @@ interface ProjectWizardState {
   nextStep: () => void;
   prevStep: () => void;
   setProjectName: (v: string) => void;
-  setProjectDescription: (v: string) => void;
   setProjectColor: (v: string) => void;
+  setSelectedOrgId: (id: string | number) => void;
   toggleUser: (id: string | number) => void;
   setSelectedTemplate: (t: BoardTemplate) => void;
   reset: () => void;
@@ -124,8 +124,8 @@ export const useProjectWizardStore = create<ProjectWizardState>((set) => ({
   isOpen: false,
   currentStep: 1,
   projectName: '',
-  projectDescription: '',
   projectColor: '#6366f1',
+  selectedOrgId: null,
   selectedUserIds: [],
   selectedTemplate: BOARD_TEMPLATES[0],
 
@@ -134,8 +134,8 @@ export const useProjectWizardStore = create<ProjectWizardState>((set) => ({
   nextStep: () => set((s) => ({ currentStep: Math.min(s.currentStep + 1, 3) })),
   prevStep: () => set((s) => ({ currentStep: Math.max(s.currentStep - 1, 1) })),
   setProjectName: (v) => set({ projectName: v }),
-  setProjectDescription: (v) => set({ projectDescription: v }),
   setProjectColor: (v) => set({ projectColor: v }),
+  setSelectedOrgId: (id) => set({ selectedOrgId: id }),
   toggleUser: (id) =>
     set((s) => ({
       selectedUserIds: s.selectedUserIds.includes(id)
@@ -147,8 +147,8 @@ export const useProjectWizardStore = create<ProjectWizardState>((set) => ({
     set({
       currentStep: 1,
       projectName: '',
-      projectDescription: '',
       projectColor: '#6366f1',
+      selectedOrgId: null,
       selectedUserIds: [],
       selectedTemplate: BOARD_TEMPLATES[0],
     }),

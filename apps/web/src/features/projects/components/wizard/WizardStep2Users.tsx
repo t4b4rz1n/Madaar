@@ -3,22 +3,17 @@ import { useQuery } from '@tanstack/react-query';
 import { useProjectWizardStore } from '../../store/useProjectWizardStore';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { getMembers } from '../../../organizations/api/organizationsApi';
-import { getOrganizations } from '../../../organizations/api/organizationsApi';
 import type { OrganizationMember } from '../../../organizations/types';
 import { Lock, Search, Check } from 'lucide-react';
 
+
 export const WizardStep2Users: React.FC = () => {
-  const { selectedUserIds, toggleUser, nextStep, prevStep } = useProjectWizardStore();
+  const { selectedUserIds, toggleUser, nextStep, prevStep, selectedOrgId } = useProjectWizardStore();
   const user = useAuthStore((s) => s.user);
   const [search, setSearch] = useState('');
 
-  // Fetch user's first org
-  const { data: orgs } = useQuery({
-    queryKey: ['organizations-list'],
-    queryFn: getOrganizations,
-    staleTime: 1000 * 60 * 5,
-  });
-  const orgId = orgs?.[0]?.id as string | undefined;
+  const orgId = selectedOrgId as string | undefined;
+
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ['org-members-wizard', orgId],

@@ -1,5 +1,8 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useProjectWizardStore } from '../../store/useProjectWizardStore';
+import { getOrganizations } from '../../../organizations/api/organizationsApi';
+import { Building2, ChevronDown } from 'lucide-react';
 
 const COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
@@ -11,17 +14,67 @@ export const WizardStep1Basics: React.FC = () => {
   const {
     projectName, setProjectName,
     projectColor, setProjectColor,
+    selectedOrgId, setSelectedOrgId,
     nextStep, close,
   } = useProjectWizardStore();
 
+  const { data: orgs = [], isLoading: orgsLoading } = useQuery({
+    queryKey: ['organizations-list'],
+    queryFn: getOrganizations,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Auto-select first org if none selected
+  React.useEffect(() => {
+    if (!selectedOrgId && orgs.length > 0) {
+      setSelectedOrgId(orgs[0].id);
+    }
+  }, [orgs, selectedOrgId, setSelectedOrgId]);
+
+  const canProceed = projectName.trim() && selectedOrgId;
+
   const handleNext = () => {
-    if (!projectName.trim()) return;
+    if (!canProceed) return;
     nextStep();
   };
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 space-y-5">
+
+        {/* Organization Selector */}
+        <div>
+          <label className="block text-sm font-medium text-base-content/70 mb-1.5">
+            Organization <span className="text-error">*</span>
+          </label>
+          {orgsLoading ? (
+            <div className="input input-bordered flex items-center gap-2 bg-base-200/50">
+              <span className="loading loading-spinner loading-xs" />
+              <span className="text-sm text-base-content/50">Loading...</span>
+            </div>
+          ) : orgs.length === 0 ? (
+            <div className="input input-bordered flex items-center gap-2 bg-base-200/50 text-error text-sm">
+              No organizations found
+            </div>
+          ) : (
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" />
+              <select
+                value={selectedOrgId ?? ''}
+                onChange={(e) => setSelectedOrgId(e.target.value)}
+                className="select select-bordered w-full pl-9 bg-base-200/50 focus:select-primary appearance-none"
+              >
+                {orgs.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" />
+            </div>
+          )}
+        </div>
+
         {/* Project Name */}
         <div>
           <label className="block text-sm font-medium text-base-content/70 mb-1.5">
@@ -73,7 +126,7 @@ export const WizardStep1Basics: React.FC = () => {
         <button
           type="button"
           onClick={handleNext}
-          disabled={!projectName.trim()}
+          disabled={!canProceed}
           className="btn btn-primary btn-sm gap-2 px-6"
         >
           Next: Add Users
