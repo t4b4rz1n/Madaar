@@ -24,8 +24,11 @@ import {
 import type { Project, ProjectStatus } from "../types";
 import { CreateEditProjectModal } from "../components/CreateEditProjectModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { ProjectWizard } from "../components/wizard/ProjectWizard";
+import { useProjectWizardStore } from "../store/useProjectWizardStore";
 import { useDeleteProject } from "../hooks/useProjects";
 import { usePermissions } from "../../auth/hooks/usePermissions";
+
 
 
 const statusConfig: Record<
@@ -425,9 +428,22 @@ export default function ProjectsPage() {
     navigate(`/projects/${projectId}`);
   };
 
+  const openWizard = useProjectWizardStore((s) => s.open);
+
+  // Auto-open wizard when redirected from org onboarding
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('wizard') === '1') {
+      openWizard();
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('wizard');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [openWizard]);
+
   const handleCreateProject = () => {
-    setSelectedProject(null);
-    setIsProjectModalOpen(true);
+    openWizard();
   };
 
   const handleEditProject = (project: Project) => {
@@ -596,6 +612,8 @@ export default function ProjectsPage() {
         onClose={() => setIsProjectModalOpen(false)}
         project={selectedProject}
       />
+
+      <ProjectWizard />
 
       <DeleteConfirmModal
         isOpen={deleteModalState.open}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useQueryClient } from '@tanstack/react-query';
@@ -8,13 +9,16 @@ import {
   Building2, Users, CheckCircle2, ArrowLeft, Loader2, ChevronRight,
 } from 'lucide-react';
 
+
 export const StepConfirm: React.FC = () => {
+  const navigate = useNavigate();
   const { orgData, pendingUsers, prevStep, setOrganizationId, reset } = useOnboardingStore();
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [progress, setProgress] = useState('');
+
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -68,9 +72,15 @@ export const StepConfirm: React.FC = () => {
 
   const handleFinish = () => {
     reset();
-    // Force a reload so MainLayout picks up the new org
-    window.location.reload();
+    // Mark onboarding as done for this user
+    if (user?.id) {
+      localStorage.setItem(`onboarding_done_${user.id}`, 'true');
+    }
+    queryClient.invalidateQueries({ queryKey: ['organizations-list'] });
+    // Navigate to Projects page and auto-open Project Wizard
+    navigate('/projects?wizard=1');
   };
+
 
   if (done) {
     return (

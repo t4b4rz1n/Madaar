@@ -1,0 +1,150 @@
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useProjectWizardStore } from '../../store/useProjectWizardStore';
+import { useAuthStore } from '../../../auth/store/authStore';
+import { getMembers } from '../../../organizations/api/organizationsApi';
+import { getOrganizations } from '../../../organizations/api/organizationsApi';
+import type { OrganizationMember } from '../../../organizations/types';
+import { Lock, Search, Check } from 'lucide-react';
+
+export const WizardStep2Users: React.FC = () => {
+  const { selectedUserIds, toggleUser, nextStep, prevStep } = useProjectWizardStore();
+  const user = useAuthStore((s) => s.user);
+  const [search, setSearch] = useState('');
+
+  // Fetch user's first org
+  const { data: orgs } = useQuery({
+    queryKey: ['organizations-list'],
+    queryFn: getOrganizations,
+    staleTime: 1000 * 60 * 5,
+  });
+  const orgId = orgs?.[0]?.id as string | undefined;
+
+  const { data: members = [], isLoading } = useQuery({
+    queryKey: ['org-members-wizard', orgId],
+    queryFn: () => getMembers(orgId!),
+    enabled: !!orgId,
+  });
+
+  const filtered = members.filter((m: OrganizationMember) => {
+    const q = search.toLowerCase();
+    return (
+      m.full_name?.toLowerCase().includes(q) ||
+      m.email?.toLowerCase().includes(q)
+    );
+  });
+
+  const isOwner = (m: OrganizationMember) =>
+    String(m.user_id) === String(user?.id) || m.email === user?.email;
+
+  const initials = (name: string) =>
+    name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input input-bordered input-sm w-full pl-9 bg-base-200/50"
+            placeholder="Search members..."
+          />
+        </div>
+
+        {/* Members list */}
+        <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-0 max-h-72">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10 text-base-content/40">
+              <span className="loading loading-spinner loading-sm mr-2" />
+              Loading members...
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-sm text-base-content/40 py-8">No members found</p>
+          ) : (
+            filtered.map((m: OrganizationMember) => {
+              const locked = isOwner(m);
+              const checked = locked || selectedUserIds.includes(m.user_id);
+
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    if (!locked) toggleUser(m.user_id);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                    checked
+                      ? 'bg-primary/10 border border-primary/30'
+                      : 'bg-base-200/40 border border-transparent hover:bg-base-200'
+                  } ${locked ? 'cursor-default' : 'cursor-pointer'}`}
+                >
+                  {/* Avatar */}
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                    style={{ backgroundColor: locked ? '#6366f1' : '#475569' }}
+                  >
+                    {initials(m.full_name || m.email || '?')}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-sm font-medium text-base-content truncate">
+                      {m.full_name || m.email}
+                    </p>
+                    <p className="text-xs text-base-content/50 truncate">
+                      {m.role_display || m.email}
+                    </p>
+                  </div>
+
+                  {/* Status indicator */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {locked && (
+                      <span className="badge badge-primary badge-xs">Owner</span>
+                    )}
+                    <div
+                      className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                        checked
+                          ? 'bg-primary'
+                          : 'border-2 border-base-content/20'
+                      }`}
+                    >
+                      {locked ? (
+                        <Lock className="w-3 h-3 text-primary-content" />
+                      ) : checked ? (
+                        <Check className="w-3 h-3 text-primary-content" />
+                      ) : null}
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <p className="text-xs text-base-content/40 mt-3">
+          {selectedUserIds.length + 1} member(s) will be added to this project
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-between items-center pt-6 mt-4 border-t border-base-300">
+        <button onClick={prevStep} className="btn btn-ghost btn-sm gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+        <button onClick={nextStep} className="btn btn-primary btn-sm gap-2 px-6">
+          Next: Choose Board
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
