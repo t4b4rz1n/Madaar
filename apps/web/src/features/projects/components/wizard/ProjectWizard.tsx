@@ -220,7 +220,7 @@ export const ProjectWizard: React.FC = () => {
               </div>
 
               {/* Body */}
-              <form id="project-wizard-form" onSubmit={handleSubmit} className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden">
                 <div className="p-6 h-full flex flex-col">
                   <AnimatePresence mode="wait">
                     <motion.div
@@ -235,19 +235,13 @@ export const ProjectWizard: React.FC = () => {
                       {currentStep === 2 && <WizardStep2Users />}
                       {currentStep === 3 && (
                         <div className="flex-1 flex flex-col">
-                          <WizardStep3Board />
-                          {isSubmitting && (
-                            <div className="mt-3 flex items-center gap-2 text-sm text-primary">
-                              <span className="loading loading-spinner loading-xs" />
-                              Creating your project...
-                            </div>
-                          )}
+                          <WizardStep3Board onSubmit={handleSubmit} isSubmitting={isSubmitting} />
                         </div>
                       )}
                     </motion.div>
                   </AnimatePresence>
                 </div>
-              </form>
+              </div>
             </div>
           </motion.div>
         </motion.div>

@@ -1,9 +1,14 @@
 import React from 'react';
 import { useProjectWizardStore, BOARD_TEMPLATES } from '../../store/useProjectWizardStore';
 
-export const WizardStep3Board: React.FC = () => {
+interface Props {
+  onSubmit: (e: React.FormEvent) => void;
+  isSubmitting: boolean;
+}
+
+export const WizardStep3Board: React.FC<Props> = ({ onSubmit, isSubmitting }) => {
   const { selectedTemplate, setSelectedTemplate, prevStep } = useProjectWizardStore();
-  // Submit is handled by parent ProjectWizard
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1">
@@ -73,20 +78,26 @@ export const WizardStep3Board: React.FC = () => {
 
       {/* Footer */}
       <div className="flex justify-between items-center pt-6 mt-4 border-t border-base-300">
-        <button onClick={prevStep} className="btn btn-ghost btn-sm gap-2">
+        <button type="button" onClick={prevStep} className="btn btn-ghost btn-sm gap-2" disabled={isSubmitting}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        {/* Submit button rendered by parent to have access to loading state */}
         <button
-          type="submit"
-          form="project-wizard-form"
-          disabled={!selectedTemplate}
+          type="button"
+          onClick={onSubmit as any}
+          disabled={!selectedTemplate || isSubmitting}
           className="btn btn-primary btn-sm gap-2 px-6"
         >
-          Create Project 🚀
+          {isSubmitting ? (
+            <>
+              <span className="loading loading-spinner loading-xs" />
+              Creating...
+            </>
+          ) : (
+            <>Create Project 🚀</>
+          )}
         </button>
       </div>
     </div>

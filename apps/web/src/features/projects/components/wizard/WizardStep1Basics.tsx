@@ -10,19 +10,17 @@ const COLORS = [
 export const WizardStep1Basics: React.FC = () => {
   const {
     projectName, setProjectName,
-    projectDescription, setProjectDescription,
     projectColor, setProjectColor,
     nextStep, close,
   } = useProjectWizardStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNext = () => {
     if (!projectName.trim()) return;
     nextStep();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full">
+    <div className="flex flex-col h-full">
       <div className="flex-1 space-y-5">
         {/* Project Name */}
         <div>
@@ -35,24 +33,9 @@ export const WizardStep1Basics: React.FC = () => {
             required
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleNext(); }}
             className="input input-bordered w-full bg-base-200/50 focus:input-primary"
             placeholder="e.g. Q4 Product Launch"
-            dir="auto"
-          />
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-base-content/70 mb-1.5">
-            Description
-            <span className="text-base-content/40 font-normal ml-2 text-xs">Optional</span>
-          </label>
-          <textarea
-            value={projectDescription}
-            onChange={(e) => setProjectDescription(e.target.value)}
-            rows={3}
-            className="textarea textarea-bordered w-full bg-base-200/50 focus:textarea-primary resize-none"
-            placeholder="What is this project about?"
             dir="auto"
           />
         </div>
@@ -68,10 +51,12 @@ export const WizardStep1Basics: React.FC = () => {
                 key={c}
                 type="button"
                 onClick={() => setProjectColor(c)}
-                className="w-7 h-7 rounded-full transition-all duration-150 ring-offset-base-100"
+                className="w-7 h-7 rounded-full transition-all duration-150"
                 style={{
                   backgroundColor: c,
-                  boxShadow: projectColor === c ? `0 0 0 2px ${c}, 0 0 0 4px var(--fallback-b1,oklch(var(--b1)))` : 'none',
+                  boxShadow: projectColor === c
+                    ? `0 0 0 2px ${c}, 0 0 0 4px var(--fallback-b1,oklch(var(--b1)))`
+                    : 'none',
                   transform: projectColor === c ? 'scale(1.2)' : 'scale(1)',
                 }}
               />
@@ -86,7 +71,8 @@ export const WizardStep1Basics: React.FC = () => {
           Cancel
         </button>
         <button
-          type="submit"
+          type="button"
+          onClick={handleNext}
           disabled={!projectName.trim()}
           className="btn btn-primary btn-sm gap-2 px-6"
         >
@@ -96,6 +82,6 @@ export const WizardStep1Basics: React.FC = () => {
           </svg>
         </button>
       </div>
-    </form>
+    </div>
   );
 };
