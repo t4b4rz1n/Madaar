@@ -92,7 +92,13 @@ export const MainLayout = () => {
   }
 
   // Intercept for superuser onboarding (only once, ever)
-  if (isStaff && !onboardingAlreadyDone) {
+  // NOTE: We check raw localStorage here too in case user.id hasn't hydrated yet
+  // when navigating back with window.location.href after org creation.
+  const rawOnboardingDone = Object.keys(localStorage).some(
+    (k) => k.startsWith('onboarding_done_') && localStorage.getItem(k) === 'true'
+  );
+
+  if (isStaff && !onboardingAlreadyDone && !rawOnboardingDone) {
     if (isLoadingOrgs) {
       return <PageLoader />;
     }

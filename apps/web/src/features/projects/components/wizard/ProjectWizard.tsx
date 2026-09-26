@@ -17,6 +17,7 @@ import { WizardStep3Board } from './WizardStep3Board';
 
 
 import { useQueryClient } from '@tanstack/react-query';
+import { useTaskStore } from '../../../tasks/store/useTaskStore';
 
 const STEPS = [
   { number: 1, label: 'Basics', sublabel: 'Project info' },
@@ -34,6 +35,7 @@ export const ProjectWizard: React.FC = () => {
   } = useProjectWizardStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { setActiveProject, setActiveBoard, setViewMode } = useTaskStore();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,13 +78,21 @@ export const ProjectWizard: React.FC = () => {
       reset();
       close();
 
-      // Invalidate queries so the new project/board appear without refresh
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
-      queryClient.invalidateQueries({ queryKey: ['statuses'] });
+      // Immediately inject the new project into the React Query cache so that
+      // GlobalProjectSelector's useEffect sees it and doesn't fall back to projects[0].
+      queryClient.setQueryData<any[]>(['projects'], (old = []) => [project, ...old]);
 
-      // Navigate to project board
-      navigate(`/tasks?project=${project.id}&board=${board.id}`);
+      // Set active project & board directly in the store BEFORE navigating
+      setActiveProject(String(project.id));
+      setActiveBoard(String(board.id));
+      setViewMode('kanban');
+
+      // Invalidate in the background so fresh data loads from server
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['boards', String(project.id)] });
+
+      // Navigate cleanly (no query params needed)
+      navigate('/tasks');
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || 'Failed to create project');
     } finally {
