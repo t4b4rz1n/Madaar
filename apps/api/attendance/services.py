@@ -237,13 +237,14 @@ class TimeLogService:
             is_active=True,
         )
 
-        # Auto-move task to Doing ONLY if it's currently in Todo
-        if task.status and task.status.code.lower() == "todo":
-            from tasks.models import TaskStatus
-
-            doing_status = TaskStatus.objects.filter(
-                board=task.status.board, code__iexact="doing"
-            ).first()
+        # Auto-move task to the IN_PROGRESS status ONLY if it's currently in a TODO status
+        from tasks.models import TaskStatus as TS
+        if task.status and task.status.category == TS.Category.TODO:
+            doing_status = TS.objects.filter(
+                board=task.status.board,
+                category=TS.Category.IN_PROGRESS,
+                is_deleted=False,
+            ).order_by("order").first()
             if doing_status:
                 _start_timer_local.in_start_timer = True
                 try:
@@ -423,14 +424,15 @@ class TimeLogService:
                 metadata={"action": f"Stopped timer after {timer.duration_seconds} seconds"},
             )
 
-        # auto_move=True means this is a system-triggered stop (e.g., drag to Review/Done).
-        # auto_move=False means the user manually pressed Stop → task stays in current status.
-        if auto_move and timer.task.status and timer.task.status.code.lower() == "doing":
-            from tasks.models import TaskStatus
-
-            review_status = TaskStatus.objects.filter(
-                board=timer.task.status.board, code__iexact="review"
-            ).first()
+        # auto_move=True means this is a system-triggered stop (e.g., user manually stops timer).
+        # auto_move=False means the task was dragged to Review/Done → no need to move again.
+        from tasks.models import TaskStatus as TS
+        if auto_move and timer.task.status and timer.task.status.category == TS.Category.IN_PROGRESS:
+            review_status = TS.objects.filter(
+                board=timer.task.status.board,
+                category=TS.Category.REVIEW,
+                is_deleted=False,
+            ).order_by("order").first()
             if review_status:
                 from tasks.services import TaskService
 

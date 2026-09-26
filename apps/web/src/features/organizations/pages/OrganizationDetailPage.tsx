@@ -25,7 +25,8 @@ import type { OrganizationMember } from "../types";
 import { teamsApi } from "../../teams/api/teamsApi";
 import * as projectsApi from "../../projects/api/projectsApi";
 import { CreateEditTeamModal } from "../../teams/components/CreateEditTeamModal";
-import { CreateEditProjectModal } from "../../projects/components/CreateEditProjectModal";
+import { ProjectWizard } from "../../projects/components/wizard/ProjectWizard";
+import { useProjectWizardStore } from "../../projects/store/useProjectWizardStore";
 import { CreateEditUserModal } from "../../users/components/CreateEditUserModal";
 import type { User } from "../../users/types";
 import type { TeamWithDetails } from "../../teams/types";
@@ -65,7 +66,9 @@ export default function OrganizationDetailPage() {
   const { hasPermission } = usePermissions();
   const [isCreateMemberOpen, setIsCreateMemberOpen] = useState(false);
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
-  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+  const openWizard = useProjectWizardStore((s) => s.open);
+  const setSelectedOrgId = useProjectWizardStore((s) => s.setSelectedOrgId);
+  const resetWizard = useProjectWizardStore((s) => s.reset);
   const [memberToRemove, setMemberToRemove] = useState<OrganizationMember | null>(null);
   const [selectedUserToEdit, setSelectedUserToEdit] = useState<User | null>(null);
 
@@ -208,7 +211,11 @@ export default function OrganizationDetailPage() {
             {hasPermission("project.create") && (
               <button
                 type="button"
-                onClick={() => setIsCreateProjectOpen(true)}
+                onClick={() => {
+                  resetWizard();
+                  if (orgId) setSelectedOrgId(orgId);
+                  openWizard();
+                }}
                 className="btn btn-outline btn-sm rounded-xl gap-2"
               >
                 <FolderFavorite size={16} />
@@ -462,11 +469,7 @@ export default function OrganizationDetailPage() {
         onClose={() => setIsCreateTeamOpen(false)}
         organizationId={orgId!}
       />
-      <CreateEditProjectModal
-        isOpen={isCreateProjectOpen}
-        onClose={() => setIsCreateProjectOpen(false)}
-        project={null}
-      />
+      <ProjectWizard />
       {selectedUserToEdit && (
         <CreateEditUserModal
           isOpen={!!selectedUserToEdit}

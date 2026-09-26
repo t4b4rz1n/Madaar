@@ -952,14 +952,14 @@ export default function ProjectDetailsPage() {
 
           {/* ── MEMBERS TAB ── */}
           {activeTab === "members" && (() => {
-            const individualMembers = members.filter((m: ProjectMember) => !m.team);
+            const individualMembers = members.filter((m: ProjectMember) => !m.team && m.user?.id !== project?.owner?.id);
             const teamMembers = members.filter((m: ProjectMember) => !!m.team);
 
             return (
               <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
                 <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
                   <h3 className="text-sm font-bold text-base-content">
-                    Project Members &amp; Teams ({members.length})
+                    Project Members &amp; Teams ({individualMembers.length + teamMembers.length + 1})
                   </h3>
                   {canManageProject && (
                     <button

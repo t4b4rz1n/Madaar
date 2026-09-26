@@ -120,7 +120,7 @@ class TaskStatusService:
 
     @staticmethod
     @transaction.atomic
-    def create_status(board, code, name, order=None, actor=None):
+    def create_status(board, code, name, order=None, actor=None, category=None):
         from .models import Board
 
         # Lock the board to serialize concurrent status creations and prevent race conditions
@@ -142,12 +142,16 @@ class TaskStatusService:
         if order is None:
             order = len(existing_codes) + 1
 
-        status_obj = TaskStatus.objects.create(
+        create_kwargs = dict(
             board=board,
             code=code,
             name=name,
             order=order,
         )
+        if category:
+            create_kwargs["category"] = category
+
+        status_obj = TaskStatus.objects.create(**create_kwargs)
 
         if actor:
             ProjectActivity.objects.create(

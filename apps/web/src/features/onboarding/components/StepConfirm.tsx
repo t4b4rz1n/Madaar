@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import { useAuthStore } from '../../auth/store/authStore';
-import { useQueryClient } from '@tanstack/react-query';
 import ApiService from '../../../core/api/apiService';
 import { toast } from 'sonner';
 import {
-  Building2, Users, CheckCircle2, ArrowLeft, Loader2, ChevronRight,
+  Building2, Users, CheckCircle2, ArrowLeft, Loader2,
 } from 'lucide-react';
 
 
 export const StepConfirm: React.FC = () => {
-  const navigate = useNavigate();
   const { orgData, pendingUsers, prevStep, setOrganizationId, reset } = useOnboardingStore();
   const user = useAuthStore((state) => state.user);
-  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [progress, setProgress] = useState('');
@@ -62,23 +58,18 @@ export const StepConfirm: React.FC = () => {
       setDone(true);
       toast.success('Workspace created successfully!');
 
-      // Invalidate so MainLayout re-checks and exits wizard
-      queryClient.invalidateQueries({ queryKey: ['organizations-list'] });
+      // Reset onboarding store
+      reset();
+
+      // Use hard navigation so the app fully re-initializes with the new org in context.
+      // This avoids race conditions between the onboarding-done flag and React Router's re-render cycle.
+      setTimeout(() => {
+        window.location.href = '/projects?wizard=1';
+      }, 1200);
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to create organization');
       setLoading(false);
     }
-  };
-
-  const handleFinish = () => {
-    reset();
-    // Mark onboarding as done for this user
-    if (user?.id) {
-      localStorage.setItem(`onboarding_done_${user.id}`, 'true');
-    }
-    queryClient.invalidateQueries({ queryKey: ['organizations-list'] });
-    // Navigate to Projects page and auto-open Project Wizard
-    navigate('/projects?wizard=1');
   };
 
 
@@ -93,18 +84,10 @@ export const StepConfirm: React.FC = () => {
           <p className="text-base-content/60 mb-2">
             <strong>{orgData.name}</strong> has been created.
           </p>
-          {pendingUsers.length > 0 && (
-            <p className="text-base-content/50 text-sm mb-6">
-              {pendingUsers.length} user(s) were processed.
-            </p>
-          )}
-          <button
-            onClick={handleFinish}
-            className="btn btn-primary btn-wide gap-2"
-          >
-            Go to Dashboard
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          <p className="text-base-content/40 text-sm flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Redirecting to Projects...
+          </p>
         </div>
       </div>
     );

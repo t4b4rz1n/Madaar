@@ -176,8 +176,10 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
         code = serializer.validated_data.get("code")
         name = serializer.validated_data.get("name")
         order = serializer.validated_data.get("order")
+        category = serializer.validated_data.get("category")
         status_obj = TaskStatusService.create_status(
-            board=board, code=code, name=name, order=order, actor=self.request.user
+            board=board, code=code, name=name, order=order,
+            category=category, actor=self.request.user
         )
         serializer.instance = status_obj
 

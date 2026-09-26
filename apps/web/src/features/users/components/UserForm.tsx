@@ -147,11 +147,22 @@ export const UserForm = ({
                   disabled={isLoadingRoles}
                 >
                   <option value="">Select a role</option>
-                  {roles.map((role: any) => (
-                    <option key={role.id} value={String(role.id)}>
-                      {role.name}
-                    </option>
-                  ))}
+                  <optgroup label="Built-in Roles">
+                    <option value="owner">Owner</option>
+                    <option value="admin">Admin</option>
+                    <option value="employee">Employee</option>
+                    <option value="hr">Human Resources</option>
+                    <option value="accountant">Accountant</option>
+                  </optgroup>
+                  {roles.length > 0 && (
+                    <optgroup label="Custom Roles">
+                      {roles.map((role: any) => (
+                        <option key={role.id} value={String(role.id)}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
 
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
