@@ -114,6 +114,7 @@ export interface TaskStatus {
   code: string;
   name: string;
   order: number;
+  category?: string;
 }
 
 export interface TaskChecklistItem {
