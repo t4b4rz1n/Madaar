@@ -23,11 +23,12 @@ export const getBoards = async (projectId: string): Promise<Board[]> => {
   return extractData<Board>(res);
 };
 
-export const createBoard = async (projectId: string, title: string, backgroundColor: string): Promise<Board> => {
+export const createBoard = async (projectId: string, title: string, backgroundColor: string, createDefaultStatuses: boolean = true): Promise<Board> => {
   const data = await ApiService.post<Board>('/tasks/boards/', {
     project: projectId,
     title,
     background_color: backgroundColor,
+    create_default_statuses: createDefaultStatuses,
   });
   return (data as any).data ?? data;
 };
@@ -293,13 +294,14 @@ export const getStandupGrid = async (
   return (data as any).data ?? data;
 };
 
-export const createStatus = async (boardId: string | number, name: string, code?: string): Promise<any> => {
+export const createStatus = async (boardId: string | number, name: string, code?: string, category?: string, order?: number): Promise<any> => {
   const statusCode = code || name.toLowerCase().replace(/\s+/g, '-');
   const data = await ApiService.post<any>('/tasks/statuses/', {
     board: boardId,
     name,
     code: statusCode,
-    order: 99,
+    category: category || 'todo',
+    order: order ?? 99,
   });
   return (data as any).data ?? data;
 };

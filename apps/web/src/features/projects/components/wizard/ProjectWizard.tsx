@@ -16,6 +16,8 @@ import { WizardStep2Users } from './WizardStep2Users';
 import { WizardStep3Board } from './WizardStep3Board';
 
 
+import { useQueryClient } from '@tanstack/react-query';
+
 const STEPS = [
   { number: 1, label: 'Basics', sublabel: 'Project info' },
   { number: 2, label: 'Users', sublabel: 'Add members' },
@@ -23,6 +25,7 @@ const STEPS = [
 ];
 
 export const ProjectWizard: React.FC = () => {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { isOpen, close, reset,
     currentStep,
@@ -54,16 +57,17 @@ export const ProjectWizard: React.FC = () => {
       );
       await Promise.all(addMemberPromises);
 
-      // 3. Create board
+      // 3. Create board (without default statuses)
       const board = await createBoard(
         String(project.id),
         selectedTemplate.name,
-        projectColor
+        projectColor,
+        false
       );
 
       // 4. Create statuses (columns) for the board
-      const statusPromises = selectedTemplate.statuses.map((s) =>
-        createStatus(board.id, s.name, s.code).catch(() => null)
+      const statusPromises = selectedTemplate.statuses.map((s, index) =>
+        createStatus(board.id, s.name, s.code, s.category, index + 1).catch(() => null)
       );
 
       await Promise.all(statusPromises);
@@ -72,8 +76,13 @@ export const ProjectWizard: React.FC = () => {
       reset();
       close();
 
+      // Invalidate queries so the new project/board appear without refresh
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['statuses'] });
+
       // Navigate to project board
-      navigate(`/projects/${project.id}`);
+      navigate(`/tasks?project=${project.id}&board=${board.id}`);
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || 'Failed to create project');
     } finally {

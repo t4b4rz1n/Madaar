@@ -6,10 +6,23 @@ export interface BoardTemplate {
   description: string;
   icon: string;
   color: string;
-  statuses: { name: string; code: string }[];
+  statuses: { name: string; code: string; category: string }[];
 }
 
 export const BOARD_TEMPLATES: BoardTemplate[] = [
+  {
+    id: 'general',
+    name: 'General Tasks',
+    description: 'Simple & flexible for any team',
+    icon: '✅',
+    color: '#8b5cf6',
+    statuses: [
+      { name: 'To Do', code: 'todo', category: 'todo' },
+      { name: 'Doing', code: 'doing', category: 'in_progress' },
+      { name: 'Review', code: 'review', category: 'review' },
+      { name: 'Done', code: 'done', category: 'done' },
+    ],
+  },
   {
     id: 'agile',
     name: 'Agile Software Development',
@@ -17,25 +30,10 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
     icon: '🚀',
     color: '#6366f1',
     statuses: [
-      { name: 'Backlog', code: 'backlog' },
-      { name: 'In Progress', code: 'in_progress' },
-      { name: 'Review', code: 'review' },
-      { name: 'Blocked', code: 'blocked' },
-      { name: 'Done', code: 'done' },
-    ],
-  },
-  {
-    id: 'marketing',
-    name: 'Marketing Campaign',
-    description: 'Best for marketing & growth teams',
-    icon: '📢',
-    color: '#f59e0b',
-    statuses: [
-      { name: 'Ideas', code: 'ideas' },
-      { name: 'Drafting', code: 'drafting' },
-      { name: 'Design', code: 'design' },
-      { name: 'Review', code: 'review' },
-      { name: 'Published', code: 'published' },
+      { name: 'Backlog', code: 'backlog', category: 'todo' },
+      { name: 'In Progress', code: 'in_progress', category: 'in_progress' },
+      { name: 'Review', code: 'review', category: 'review' },
+      { name: 'Done', code: 'done', category: 'done' },
     ],
   },
   {
@@ -45,52 +43,23 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
     icon: '✍️',
     color: '#10b981',
     statuses: [
-      { name: 'Ideas', code: 'ideas' },
-      { name: 'Writing', code: 'writing' },
-      { name: 'Editing', code: 'editing' },
-      { name: 'Publishing', code: 'publishing' },
-      { name: 'Published', code: 'published' },
+      { name: 'Ideas', code: 'ideas', category: 'todo' },
+      { name: 'Drafting', code: 'drafting', category: 'in_progress' },
+      { name: 'Review', code: 'review', category: 'review' },
+      { name: 'Published', code: 'published', category: 'done' },
     ],
   },
   {
-    id: 'product',
-    name: 'Product Roadmap',
-    description: 'Best for product & design teams',
-    icon: '🗺️',
-    color: '#3b82f6',
+    id: 'marketing',
+    name: 'Marketing Campaign',
+    description: 'Best for marketing & growth teams',
+    icon: '📢',
+    color: '#f59e0b',
     statuses: [
-      { name: 'Exploration', code: 'exploration' },
-      { name: 'Design', code: 'design' },
-      { name: 'Development', code: 'development' },
-      { name: 'Testing', code: 'testing' },
-      { name: 'Released', code: 'released' },
-    ],
-  },
-  {
-    id: 'hr',
-    name: 'HR & Recruitment',
-    description: 'Best for HR & operations teams',
-    icon: '👥',
-    color: '#ec4899',
-    statuses: [
-      { name: 'Applications', code: 'applications' },
-      { name: 'Screening', code: 'screening' },
-      { name: 'Interview', code: 'interview' },
-      { name: 'Offer', code: 'offer' },
-      { name: 'Hired', code: 'hired' },
-    ],
-  },
-  {
-    id: 'general',
-    name: 'General Tasks',
-    description: 'Simple & flexible for any team',
-    icon: '✅',
-    color: '#8b5cf6',
-    statuses: [
-      { name: 'To Do', code: 'todo' },
-      { name: 'In Progress', code: 'in_progress' },
-      { name: 'In Review', code: 'in_review' },
-      { name: 'Done', code: 'done' },
+      { name: 'Planning', code: 'planning', category: 'todo' },
+      { name: 'In Progress', code: 'in_progress', category: 'in_progress' },
+      { name: 'Review', code: 'review', category: 'review' },
+      { name: 'Live', code: 'live', category: 'done' },
     ],
   },
 ];

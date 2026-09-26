@@ -108,9 +108,9 @@ export const KanbanBoard: React.FC = () => {
     onMutate: async ({ taskId, statusId }) => {
       const activeBoard = boards?.find(b => b.id.toString() === activeBoardId);
       const targetStatus = activeBoard?.statuses.find(s => sameId(s.id, statusId));
-      const isDoing = targetStatus && (targetStatus.code === 'doing' || targetStatus.name.toLowerCase() === 'doing' || targetStatus.name.toLowerCase() === 'in progress');
-      const isReviewOrDone = targetStatus && (targetStatus.code === 'review' || targetStatus.code === 'done' || targetStatus.name.toLowerCase() === 'review' || targetStatus.name.toLowerCase() === 'done');
-      const isDone = targetStatus && (targetStatus.code === 'done' || targetStatus.name.toLowerCase() === 'done');
+      const isDoing = targetStatus && (targetStatus.category === 'in_progress' || targetStatus.code === 'doing' || targetStatus.name.toLowerCase() === 'doing' || targetStatus.name.toLowerCase() === 'in progress');
+      const isReviewOrDone = targetStatus && (targetStatus.category === 'review' || targetStatus.category === 'done' || targetStatus.code === 'review' || targetStatus.code === 'done' || targetStatus.name.toLowerCase() === 'review' || targetStatus.name.toLowerCase() === 'done');
+      const isDone = targetStatus && (targetStatus.category === 'done' || targetStatus.code === 'done' || targetStatus.name.toLowerCase() === 'done');
 
       setLocalTasks(tasks => tasks.map(t => {
         if (sameId(t.id, taskId)) {

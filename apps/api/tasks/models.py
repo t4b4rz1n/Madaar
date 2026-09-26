@@ -64,6 +64,12 @@ class TaskStatus(BaseModel):
     users can add, remove, and reorder statuses freely per board.
     """
 
+    class Category(models.TextChoices):
+        TODO = "todo", _("To Do")
+        IN_PROGRESS = "in_progress", _("In Progress")
+        REVIEW = "review", _("Review")
+        DONE = "done", _("Done")
+
     board = models.ForeignKey(
         Board,
         on_delete=models.CASCADE,
@@ -81,6 +87,13 @@ class TaskStatus(BaseModel):
         _("Name"),
         max_length=100,
         help_text=_("Display name for the status (e.g., 'To Do', 'Doing', 'Review')"),
+    )
+    category = models.CharField(
+        _("Category"),
+        max_length=20,
+        choices=Category.choices,
+        default=Category.TODO,
+        help_text=_("Defines the logical behavior of this status (e.g., auto-start timer)"),
     )
     order = models.PositiveIntegerField(
         _("Order"),

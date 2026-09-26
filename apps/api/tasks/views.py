@@ -88,12 +88,18 @@ class BoardViewSet(viewsets.ModelViewSet):
         description = serializer.validated_data.get("description")
         background_color = serializer.validated_data.get("background_color")
         project = serializer.validated_data.get("project")
+        
+        create_default_statuses = self.request.data.get("create_default_statuses", True)
+        if isinstance(create_default_statuses, str) and create_default_statuses.lower() == "false":
+            create_default_statuses = False
+            
         board = BoardService.create_board(
             title=title,
             description=description,
             background_color=background_color,
             project=project,
             created_by=self.request.user,
+            create_default_statuses=create_default_statuses,
         )
         serializer.instance = board
 

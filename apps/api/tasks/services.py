@@ -20,7 +20,7 @@ class BoardService:
 
     @staticmethod
     @transaction.atomic
-    def create_board(title, project, created_by, description=None, background_color=None):
+    def create_board(title, project, created_by, description=None, background_color=None, create_default_statuses=True):
         # Lock existing boards to prevent race condition
         existing_boards = list(Board.objects.filter(project=project).select_for_update())
         max_order = len(existing_boards)
@@ -33,23 +33,25 @@ class BoardService:
             order=max_order + 1,
         )
 
-        # Create default Kanban statuses (columns) for the board
-        default_statuses = [
-            ("todo", _("To Do")),
-            ("doing", _("Doing")),
-            ("review", _("Review")),
-            ("done", _("Done")),
-        ]
-        statuses_to_create = [
-            TaskStatus(
-                board=board,
-                code=code,
-                name=str(name),
-                order=index + 1,
-            )
-            for index, (code, name) in enumerate(default_statuses)
-        ]
-        TaskStatus.objects.bulk_create(statuses_to_create)
+        if create_default_statuses:
+            # Create default Kanban statuses (columns) for the board
+            default_statuses = [
+                ("todo", _("To Do"), TaskStatus.Category.TODO),
+                ("doing", _("Doing"), TaskStatus.Category.IN_PROGRESS),
+                ("review", _("Review"), TaskStatus.Category.REVIEW),
+                ("done", _("Done"), TaskStatus.Category.DONE),
+            ]
+            statuses_to_create = [
+                TaskStatus(
+                    board=board,
+                    code=code,
+                    name=str(name),
+                    category=category,
+                    order=index + 1,
+                )
+                for index, (code, name, category) in enumerate(default_statuses)
+            ]
+            TaskStatus.objects.bulk_create(statuses_to_create)
 
         # Dispatch board_created automation event
         from automations.events import EventDispatcher
@@ -512,9 +514,16 @@ class TaskService:
 
             # Handle timer auto-start/stop
             from attendance.services import TimeLogService
+            from tasks.models import TaskStatus
 
+            category = new_status.category if new_status.category else ""
             code = new_status.code.lower() if new_status.code else ""
-            if code == "doing":
+            
+            is_doing = category == TaskStatus.Category.IN_PROGRESS or (category == TaskStatus.Category.TODO and code == "doing")
+            is_review = category == TaskStatus.Category.REVIEW or (category == TaskStatus.Category.TODO and code == "review")
+            is_done = category == TaskStatus.Category.DONE or (category == TaskStatus.Category.TODO and code == "done")
+
+            if is_doing:
                 try:
                     TimeLogService.start_timer(actor, task)
                 except Exception as timer_err:
@@ -524,7 +533,7 @@ class TaskService:
                         "Auto start timer failed on task move: %s", timer_err
                     )
 
-            elif code in ["review", "done"]:
+            elif is_review or is_done:
                 # Stop timers for anyone working on this task
                 from attendance.models import TimeLog
 
@@ -532,7 +541,7 @@ class TaskService:
                 for timer in active_timers:
                     TimeLogService.stop_timer(timer.user, timer.id, auto_move=False)
 
-                if code == "done":
+                if is_done:
                     task.is_finished = True
                 else:
                     task.is_finished = False

@@ -51,7 +51,7 @@ class TaskStatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskStatus
-        fields = ("id", "board", "board_detail", "code", "name", "order", "created_at")
+        fields = ("id", "board", "board_detail", "code", "name", "category", "order", "created_at")
         read_only_fields = ("id", "created_at")
         extra_kwargs = {
             "code": {"required": False},

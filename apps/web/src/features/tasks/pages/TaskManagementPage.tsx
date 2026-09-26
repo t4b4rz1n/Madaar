@@ -21,22 +21,27 @@ export const TaskManagementPage: React.FC = () => {
     const board = searchParams.get('board');
     const task = searchParams.get('task');
 
-    if (project && project !== activeProjectId) {
+    let shouldClear = false;
+
+    if (project) {
       setActiveProject(project);
+      shouldClear = true;
     }
-    if (board && board !== activeBoardId) {
+    if (board) {
       setActiveBoard(board);
       setViewMode('kanban');
+      shouldClear = true;
     }
     if (task) {
       setSelectedTaskId(task);
+      shouldClear = true;
     }
 
-    // Clear URL to avoid re-triggering if user navigates manually later
-    if (project || board || task) {
+    if (shouldClear) {
       setSearchParams({});
     }
-  }, [searchParams, activeProjectId, activeBoardId, setActiveProject, setActiveBoard, setSelectedTaskId, setSearchParams, setViewMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setActiveProject, setActiveBoard, setViewMode, setSelectedTaskId, setSearchParams]);
   const queryClient = useQueryClient();
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
 
