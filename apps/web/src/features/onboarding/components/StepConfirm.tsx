@@ -9,7 +9,7 @@ import {
 
 
 export const StepConfirm: React.FC = () => {
-  const { orgData, pendingUsers, prevStep, setOrganizationId, reset } = useOnboardingStore();
+  const { orgData, pendingUsers, prevStep, setOrganizationId } = useOnboardingStore();
   const user = useAuthStore((state) => state.user);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);

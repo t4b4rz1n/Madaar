@@ -40,7 +40,6 @@ export const TaskManagementPage: React.FC = () => {
     if (shouldClear) {
       setSearchParams({});
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, setActiveProject, setActiveBoard, setViewMode, setSelectedTaskId, setSearchParams]);
   const queryClient = useQueryClient();
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
