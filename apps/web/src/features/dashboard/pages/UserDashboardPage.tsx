@@ -725,11 +725,7 @@ function DashboardTaskCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const isOverdue = task.is_overdue;
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> origin/feature/project-management-ui
   return (
     <motion.div
       layout
@@ -756,11 +752,7 @@ function DashboardTaskCard({
                  {task.title}
                </p>
              </div>
-<<<<<<< HEAD
 
-=======
-             
->>>>>>> origin/feature/project-management-ui
              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-base-content/45">
                {task.project_name && (
                  <span className="font-semibold text-primary">
@@ -776,11 +768,7 @@ function DashboardTaskCard({
                  <div className="flex items-center gap-1 font-semibold ml-1">
                    <Clock size={10} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
                    <span className={isOverdue ? "text-red-500" : "text-base-content/50"}>
-<<<<<<< HEAD
                      {formatDisplayDate(task.due_date, "yyyy-MM-dd")}
-=======
-                     {new Date(task.due_date).toLocaleDateString()}
->>>>>>> origin/feature/project-management-ui
                    </span>
                  </div>
                )}
@@ -804,7 +792,6 @@ function DashboardTaskCard({
                 <button
                   type="button"
                   onClick={() => onStartTimer(String(task.id))}
-<<<<<<< HEAD
                   aria-label="Start focus timer"
                   title="Start focus timer"
                   className="inline-flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20"
@@ -814,16 +801,6 @@ function DashboardTaskCard({
               )}
             </div>
 
-=======
-                  className="inline-flex h-7 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-[11px] font-bold text-primary hover:bg-primary/20"
-                >
-                  <Play size={12} variant="Bold" />
-                  <span>Focus</span>
-                </button>
-              )}
-            </div>
-            
->>>>>>> origin/feature/project-management-ui
             <div className={`p-1 rounded-lg transition-colors ${expanded ? "bg-base-content/10" : "hover:bg-base-content/5"}`}>
               <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
                  <ArrowRight size={14} className="text-base-content/50" />
@@ -847,21 +824,13 @@ function DashboardTaskCard({
                ) : (
                  <p className="italic text-base-content/40">No additional details provided.</p>
                )}
-<<<<<<< HEAD
 
-=======
-               
->>>>>>> origin/feature/project-management-ui
                <div className="flex items-center gap-4 mt-1 pt-2 border-t border-base-content/5">
                  {task.due_date && (
                    <div className="flex items-center gap-1 text-[10px]">
                      <Clock size={12} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
                      <span className={isOverdue ? "text-red-500 font-bold" : "text-base-content/50 font-medium"}>
-<<<<<<< HEAD
                        Due: {formatDisplayDate(task.due_date, "yyyy-MM-dd")}
-=======
-                       Due: {new Date(task.due_date).toLocaleDateString()}
->>>>>>> origin/feature/project-management-ui
                      </span>
                    </div>
                  )}

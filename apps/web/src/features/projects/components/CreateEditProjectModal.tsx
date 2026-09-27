@@ -297,11 +297,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-<<<<<<< HEAD
                 Budget (IRR)
-=======
-                Budget
->>>>>>> origin/feature/project-management-ui
               </label>
               <div className="flex">
                 <input
@@ -311,10 +307,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   placeholder="0.00"
                   value={formData.budget}
                   onChange={handleChange}
-<<<<<<< HEAD
-                  className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
-                />
-=======
                   className="w-full h-9.5 rounded-l-xl border border-r-0 border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
                 />
                 <select
@@ -327,7 +319,6 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
                 </select>
->>>>>>> origin/feature/project-management-ui
               </div>
             </div>
             {project && (
@@ -356,36 +347,18 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
               <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
                 Start Date
               </label>
-<<<<<<< HEAD
               <CustomDatePicker
                 value={formData.start_date}
                 onChange={(v) => setFormData((prev) => ({ ...prev, start_date: v }))}
-=======
-              <input
-                type="date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleChange}
-                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
->>>>>>> origin/feature/project-management-ui
               />
             </div>
             <div>
               <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
                 Deadline
               </label>
-<<<<<<< HEAD
               <CustomDatePicker
                 value={formData.deadline}
                 onChange={(v) => setFormData((prev) => ({ ...prev, deadline: v }))}
-=======
-              <input
-                type="date"
-                name="deadline"
-                value={formData.deadline}
-                onChange={handleChange}
-                className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
->>>>>>> origin/feature/project-management-ui
               />
             </div>
           </div>

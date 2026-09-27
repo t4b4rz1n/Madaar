@@ -282,22 +282,15 @@ function ProjectCard({
   canManage: boolean;
 }) {
   const cfg = statusConfig[project.status];
-<<<<<<< HEAD
+  const taskCount = project.task_count || 0;
   const memberCount = project.member_count ?? project.members_count ?? 0;
   const progress = project.progress_percentage || 0;
+  const completedTasks = project.completed_task_count || 0;
   const projectColor = project.color || "#6366f1";
 
   // Always milestone-based — no task fallback
   const completedMilestones = project.completed_milestone_count || 0;
   const totalMilestones = project.milestone_count || 0;
-=======
-  const taskCount = project.task_count || 0;
-  const memberCount = project.member_count ?? project.members_count ?? 0;
-
-  const progress = project.progress_percentage || 0;
-  const completedTasks = project.completed_task_count || 0;
-  const projectColor = project.color || "#6366f1";
->>>>>>> origin/feature/project-management-ui
 
   return (
     <motion.article
@@ -309,7 +302,6 @@ function ProjectCard({
       className="group relative cursor-pointer overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl"
     >
       {/* Subtle Halo effect on the right side */}
-<<<<<<< HEAD
       <div
         className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-10 blur-[40px] pointer-events-none transition-opacity duration-300 group-hover:opacity-20"
         style={{ backgroundColor: projectColor }}
@@ -319,17 +311,6 @@ function ProjectCard({
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-3">
           <h2 dir="auto" className="flex-1 min-w-0 truncate text-xl font-bold tracking-tight text-base-content">
-=======
-      <div 
-        className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-10 blur-[40px] pointer-events-none transition-opacity duration-300 group-hover:opacity-20"
-        style={{ backgroundColor: projectColor }}
-      />
-      
-      {/* Content wrapper to stay above the halo */}
-      <div className="relative z-10">
-        <div className="flex items-start justify-between gap-3">
-          <h2 dir="auto" className="flex-1 text-xl font-bold tracking-tight text-base-content">
->>>>>>> origin/feature/project-management-ui
             {project.name}
           </h2>
           <div className="flex items-center gap-2">
@@ -351,7 +332,6 @@ function ProjectCard({
         <div className="mt-6 flex items-end justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-base-content/45">
-<<<<<<< HEAD
               Milestone Progress
             </p>
             <div className="mt-2 flex items-baseline gap-2">
@@ -360,16 +340,6 @@ function ProjectCard({
               </span>
               <span className="text-sm font-medium text-base-content/50">
                 / {totalMilestones} Done
-=======
-              Tasks Progress
-            </p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-base-content">
-                {completedTasks}
-              </span>
-              <span className="text-sm font-medium text-base-content/50">
-                / {taskCount} Done
->>>>>>> origin/feature/project-management-ui
               </span>
             </div>
           </div>
@@ -379,7 +349,6 @@ function ProjectCard({
           </div>
         </div>
 
-<<<<<<< HEAD
         {/* Unlinked tasks warning badge */}
         {(project.unlinked_task_count || 0) > 0 && (
           <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-amber-500">
@@ -390,8 +359,6 @@ function ProjectCard({
           </div>
         )}
 
-=======
->>>>>>> origin/feature/project-management-ui
         <div className="mt-4 flex items-center gap-2 text-xs text-base-content/50">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -554,10 +521,7 @@ export default function ProjectsPage() {
             )}
           </label>
           <StatusFilterDropdown value={statusFilter} onChange={setStatusFilter} />
-<<<<<<< HEAD
-=======
           {/* دکمه New Project - فقط برای کاربران با پرمیشن */}
->>>>>>> origin/feature/project-management-ui
           {canCreateProject && (
             <button
               type="button"
