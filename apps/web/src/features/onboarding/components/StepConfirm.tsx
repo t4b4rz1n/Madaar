@@ -58,9 +58,6 @@ export const StepConfirm: React.FC = () => {
       setDone(true);
       toast.success('Workspace created successfully!');
 
-      // Reset onboarding store
-      reset();
-
       // Use hard navigation so the app fully re-initializes with the new org in context.
       // This avoids race conditions between the onboarding-done flag and React Router's re-render cycle.
       setTimeout(() => {
