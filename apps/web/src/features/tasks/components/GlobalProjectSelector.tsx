@@ -19,7 +19,7 @@ export const GlobalProjectSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: projects, isLoading } = useQuery({
+  const { data: projects, isLoading, isFetching } = useQuery({
     queryKey: ['projects'],
     queryFn: () => getProjects(),
   });
@@ -29,7 +29,9 @@ export const GlobalProjectSelector: React.FC = () => {
   const activeColor = getProjectColor(activeProject, activeIndex);
 
   React.useEffect(() => {
-    if (isLoading) return;
+    // Wait until we have fully loaded and are not fetching in the background
+    // This prevents falling back to an old project list right after creating a new project.
+    if (isLoading || isFetching) return;
 
     if (!projects || projects.length === 0) {
       if (activeProjectId) setActiveProject(null);
@@ -38,7 +40,7 @@ export const GlobalProjectSelector: React.FC = () => {
 
     const hasActiveProject = projects.some((project: Project) => String(project.id) === String(activeProjectId));
     if (!hasActiveProject) setActiveProject(String(projects[0].id));
-  }, [projects, isLoading, activeProjectId, setActiveProject]);
+  }, [projects, isLoading, isFetching, activeProjectId, setActiveProject]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

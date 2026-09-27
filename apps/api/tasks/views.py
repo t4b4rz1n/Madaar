@@ -141,6 +141,11 @@ class BoardViewSet(viewsets.ModelViewSet):
         logs = ProjectActivity.objects.filter(
             entity_type=ProjectActivity.EntityType.BOARD, entity_id=str(board.id)
         ).select_related("actor")
+        page = self.paginate_queryset(logs)
+        if page is not None:
+            serializer = ProjectActivitySerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
 
         return Response(
             ProjectActivitySerializer(logs, many=True, context={"request": request}).data
@@ -441,6 +446,12 @@ class TaskViewSet(viewsets.ModelViewSet):
         logs = ProjectActivity.objects.filter(
             entity_type=ProjectActivity.EntityType.TASK, entity_id=str(task.id)
         ).select_related("actor")
+        page = self.paginate_queryset(logs)
+        if page is not None:
+            serializer = ProjectActivitySerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
+
 
         return Response(
             ProjectActivitySerializer(logs, many=True, context={"request": request}).data

@@ -701,7 +701,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                           <div className="pt-1 text-[13px]">
                             <span className="font-bold text-white/90 mr-1.5">{name}</span>
                             <span className="text-white/70">{item.metadata?.action || item.event_type}</span>
+<<<<<<< HEAD
                             <span className="text-white/40 ml-2 text-[11px]">{formatDisplayDate(new Date(item.created_at || Date.now()), 'MMM d, HH:mm')}</span>
+=======
+                            <span className="text-white/40 ml-2 text-[11px]">{format(new Date(item.created_at || Date.now()), 'MMM d, p')}</span>
+>>>>>>> origin/feature/project-management-ui
                           </div>
                         )}
                       </div>

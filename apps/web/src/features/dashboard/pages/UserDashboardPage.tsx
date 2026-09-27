@@ -1,7 +1,7 @@
 import { formatDisplayDate } from "../../../utils/date";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -65,6 +65,61 @@ const formatSeconds = (
   const m = Math.floor((value % 3600) / 60);
   return `${h}h ${m}m`;
 };
+
+const ProgressRing = ({
+  radius,
+  stroke,
+  progress,
+  color,
+}: {
+  radius: number;
+  stroke: number;
+  progress: number;
+  color: string;
+}) => {
+  const normalizedRadius = radius - stroke * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = Math.max(0, circumference - (progress / 100) * circumference);
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg
+        height={radius * 2}
+        width={radius * 2}
+        className="transform -rotate-90"
+      >
+        <circle
+          stroke="currentColor"
+          fill="transparent"
+          strokeWidth={stroke}
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+          className="opacity-10"
+        />
+        <circle
+          stroke={color}
+          fill="transparent"
+          strokeWidth={stroke}
+          strokeDasharray={circumference + " " + circumference}
+          style={{ strokeDashoffset }}
+          strokeLinecap="round"
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+          className="transition-all duration-1000 ease-in-out"
+          filter={`drop-shadow(0 0 4px ${color}80)`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[11px] font-black text-base-content">
+          {Math.round(progress)}%
+        </span>
+      </div>
+    </div>
+  );
+};
+
 
 export const UserDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
@@ -332,6 +387,144 @@ export const UserDashboardPage = () => {
           </p>
         </div>
 
+      {/* ─── 3. Main Dashboard Layout (2 Columns) ─── */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column (2 Cols wide on LG): Tasks & Projects */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* Tasks Section */}
+          <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
+              <div className="flex items-center gap-2">
+                <TaskSquare size={16} className="text-primary" />
+                <h2 className="text-xs font-bold text-base-content uppercase tracking-wider">
+                  My Priority Tasks ({allTasks.length})
+                </h2>
+              </div>
+              <Link
+                to="/tasks"
+                className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+              >
+                <span>View Board</span>
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            {allTasks.length === 0 ? (
+              <div className="py-8 text-center text-xs text-base-content/40">
+                No active tasks assigned to you right now.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-base-content/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-base-content/20">
+                {allTasks.map((t: EmployeeTaskSummary) => {
+                  const isRunningTimer = dashboard?.active_timers?.some(
+                    (at) => String(at.task_id) === String(t.id),
+                  );
+
+                  return (
+                    <DashboardTaskCard
+                       key={t.id}
+                       task={t}
+                       isRunningTimer={isRunningTimer || false}
+                       onMarkDone={(id) => markDoneMutation.mutate(id)}
+                       onStartTimer={(id) => startTimerMutation.mutate(id)}
+                       onStopTimer={() => stopTimerMutation.mutate(undefined)}
+                       onClickTitle={(id) => setSelectedTaskId(id)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Active Projects Grid */}
+          <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
+              <div className="flex items-center gap-2">
+                <Briefcase size={16} className="text-primary" />
+                <h2 className="text-xs font-bold text-base-content uppercase tracking-wider">
+                  Active Projects ({projectsData.filter((p: any) => p.status === "active").length})
+                </h2>
+              </div>
+              <Link
+                to="/projects"
+                className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+              >
+                <span>All Projects</span>
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            {projectsData.filter((p: any) => p.status === "active").length === 0 ? (
+              <div className="py-8 text-center text-xs text-base-content/40">
+                No active projects assigned yet.
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {projectsData.filter((p: any) => p.status === "active").slice(0, 4).map((p: any) => {
+                  const color = p.color || "#6366f1";
+
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => navigate(`/projects/${p.id}`)}
+                      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-base-content/10 bg-base-100/50 backdrop-blur-md p-5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-base-content/5"
+                    >
+                      {/* Decorative colored glow based on project color */}
+                      <div
+                        className="absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40 pointer-events-none"
+                        style={{ backgroundColor: color }}
+                      />
+
+                      <div className="relative z-10 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          {p.prefix && (
+                            <span className="mb-2 inline-block rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm" style={{ backgroundColor: color }}>
+                              {p.prefix}
+                            </span>
+                          )}
+                          <h3
+                            dir="auto"
+                            className="text-base font-black text-base-content truncate"
+                            title={p.name}
+                          >
+                            {p.name}
+                          </h3>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-base-200 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-base-content/70">
+                          {p.status}
+                        </span>
+                      </div>
+
+                      <div className="relative z-10 mt-6 flex items-end justify-between">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">
+                            Tasks Progress
+                          </span>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-black text-base-content">
+                              {Math.round(((p.task_count || 0) * (p.progress_percentage || 0)) / 100)}
+                            </span>
+                            <span className="text-[11px] font-bold text-base-content/40">
+                              / {p.task_count || 0} Done
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          <ProgressRing radius={28} stroke={4} progress={p.progress_percentage || 0} color={color} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Standup + Weekly Hours + Active Projects summary */}
+        <div className="space-y-4">
+
         {/* ── Row 2 · Daily Standup ── */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4 lg:col-start-2 lg:row-start-2">
           <div className="flex items-center justify-between text-base-content/40">
@@ -532,7 +725,11 @@ function DashboardTaskCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const isOverdue = task.is_overdue;
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> origin/feature/project-management-ui
   return (
     <motion.div
       layout
@@ -559,7 +756,11 @@ function DashboardTaskCard({
                  {task.title}
                </p>
              </div>
+<<<<<<< HEAD
 
+=======
+             
+>>>>>>> origin/feature/project-management-ui
              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-base-content/45">
                {task.project_name && (
                  <span className="font-semibold text-primary">
@@ -575,7 +776,11 @@ function DashboardTaskCard({
                  <div className="flex items-center gap-1 font-semibold ml-1">
                    <Clock size={10} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
                    <span className={isOverdue ? "text-red-500" : "text-base-content/50"}>
+<<<<<<< HEAD
                      {formatDisplayDate(task.due_date, "yyyy-MM-dd")}
+=======
+                     {new Date(task.due_date).toLocaleDateString()}
+>>>>>>> origin/feature/project-management-ui
                    </span>
                  </div>
                )}
@@ -599,6 +804,7 @@ function DashboardTaskCard({
                 <button
                   type="button"
                   onClick={() => onStartTimer(String(task.id))}
+<<<<<<< HEAD
                   aria-label="Start focus timer"
                   title="Start focus timer"
                   className="inline-flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20"
@@ -608,6 +814,16 @@ function DashboardTaskCard({
               )}
             </div>
 
+=======
+                  className="inline-flex h-7 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-[11px] font-bold text-primary hover:bg-primary/20"
+                >
+                  <Play size={12} variant="Bold" />
+                  <span>Focus</span>
+                </button>
+              )}
+            </div>
+            
+>>>>>>> origin/feature/project-management-ui
             <div className={`p-1 rounded-lg transition-colors ${expanded ? "bg-base-content/10" : "hover:bg-base-content/5"}`}>
               <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
                  <ArrowRight size={14} className="text-base-content/50" />
@@ -631,13 +847,21 @@ function DashboardTaskCard({
                ) : (
                  <p className="italic text-base-content/40">No additional details provided.</p>
                )}
+<<<<<<< HEAD
 
+=======
+               
+>>>>>>> origin/feature/project-management-ui
                <div className="flex items-center gap-4 mt-1 pt-2 border-t border-base-content/5">
                  {task.due_date && (
                    <div className="flex items-center gap-1 text-[10px]">
                      <Clock size={12} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
                      <span className={isOverdue ? "text-red-500 font-bold" : "text-base-content/50 font-medium"}>
+<<<<<<< HEAD
                        Due: {formatDisplayDate(task.due_date, "yyyy-MM-dd")}
+=======
+                       Due: {new Date(task.due_date).toLocaleDateString()}
+>>>>>>> origin/feature/project-management-ui
                      </span>
                    </div>
                  )}

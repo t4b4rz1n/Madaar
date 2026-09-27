@@ -260,6 +260,7 @@ const STATUS_OPTIONS = [
   { value: "archived", label: "Archived" },
 ] as const;
 
+
 function StatusDropdown({
   currentStatus,
   onChange,
@@ -311,8 +312,9 @@ function StatusDropdown({
                   onChange(opt.value);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-base-content/5 ${currentStatus === opt.value ? "bg-primary/10 font-bold text-primary" : "font-medium text-base-content"
-                  }`}
+                className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-base-content/5 ${
+                  currentStatus === opt.value ? "bg-primary/10 font-bold text-primary" : "font-medium text-base-content"
+                }`}
               >
                 {opt.label}
               </button>
