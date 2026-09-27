@@ -91,21 +91,27 @@ export const MainLayout = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // Intercept for superuser onboarding (only once, ever)
-  // NOTE: We check raw localStorage here too in case user.id hasn't hydrated yet
-  // when navigating back with window.location.href after org creation.
+  // Intercept for superuser onboarding
   const rawOnboardingDone = Object.keys(localStorage).some(
     (k) => k.startsWith('onboarding_done_') && localStorage.getItem(k) === 'true'
   );
 
-  if (isStaff && !onboardingAlreadyDone && !rawOnboardingDone) {
-    if (isLoadingOrgs) {
-      return <PageLoader />;
-    }
+  if (isStaff) {
+    // 1. If backend definitively says 0 orgs, ALWAYS show wizard (handles DB resets)
     if (organizations && organizations.length === 0) {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('onboarding_done_')) localStorage.removeItem(k);
+      });
       return <OnboardingWizard />;
     }
-    // Has orgs → mark as done so we never check again
+
+    // 2. If loading and NO local storage flag exists, show loader
+    // (If a flag DOES exist, we skip the loader to prevent flashing on hard reload)
+    if (isLoadingOrgs && !onboardingAlreadyDone && !rawOnboardingDone) {
+      return <PageLoader />;
+    }
+
+    // 3. Has orgs → mark as done so we never check again
     if (organizations && organizations.length > 0 && onboardingDoneKey) {
       localStorage.setItem(onboardingDoneKey, 'true');
     }
