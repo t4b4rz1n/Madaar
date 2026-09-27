@@ -99,12 +99,8 @@ class ProjectService:
                 filter=Q(tasks__is_deleted=False, tasks__milestone__isnull=True),
                 distinct=True,
             ),
-            task_count=Count("tasks", filter=Q(tasks__is_deleted=False)),
-            completed_task_count=Count(
-                "tasks", filter=Q(tasks__is_deleted=False, tasks__is_finished=True)
-            ),
-            milestone_count=Count("milestones", filter=Q(milestones__is_deleted=False)),
         )
+
 
     @classmethod
     def get_accessible_queryset(cls, user) -> QuerySet[Project]:

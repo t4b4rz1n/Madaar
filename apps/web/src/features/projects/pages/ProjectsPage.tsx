@@ -282,10 +282,8 @@ function ProjectCard({
   canManage: boolean;
 }) {
   const cfg = statusConfig[project.status];
-  const taskCount = project.task_count || 0;
   const memberCount = project.member_count ?? project.members_count ?? 0;
   const progress = project.progress_percentage || 0;
-  const completedTasks = project.completed_task_count || 0;
   const projectColor = project.color || "#6366f1";
 
   // Always milestone-based — no task fallback
