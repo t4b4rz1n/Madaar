@@ -176,6 +176,7 @@ class TimeLogService:
         can_start = False
         if (
             task.assignee == user
+            or getattr(task, "reporter", None) == user
             or getattr(user, "is_superuser", False)
             or getattr(user, "is_staff", False)
         ):
@@ -202,7 +203,7 @@ class TimeLogService:
         if not can_start:
             raise PermissionDenied(
                 _(
-                    "You can only start a timer for tasks assigned to you, or if you are a project lead/admin."
+                    "You can only start a timer for tasks assigned to or created by you, or if you are a project lead/admin."
                 )
             )
 
