@@ -142,12 +142,12 @@ class TaskStatusService:
         if order is None:
             order = len(existing_codes) + 1
 
-        create_kwargs = dict(
-            board=board,
-            code=code,
-            name=name,
-            order=order,
-        )
+        create_kwargs = {
+            "board": board,
+            "code": code,
+            "name": name,
+            "order": order,
+        }
         if category:
             create_kwargs["category"] = category
 
@@ -522,7 +522,7 @@ class TaskService:
 
             category = new_status.category if new_status.category else ""
             code = new_status.code.lower() if new_status.code else ""
-            
+
             is_doing = category == TaskStatus.Category.IN_PROGRESS or (category == TaskStatus.Category.TODO and code == "doing")
             is_review = category == TaskStatus.Category.REVIEW or (category == TaskStatus.Category.TODO and code == "review")
             is_done = category == TaskStatus.Category.DONE or (category == TaskStatus.Category.TODO and code == "done")

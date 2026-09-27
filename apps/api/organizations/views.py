@@ -369,7 +369,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         from .serializers import InviteOrgMemberSerializer
         serializer = InviteOrgMemberSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         email = serializer.validated_data["email"]
         username = serializer.validated_data["username"]
         first_name = serializer.validated_data.get("first_name", "")
@@ -382,7 +382,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
         # Check if user exists
         user = User.objects.filter(email=email).first()
-        created_user = False
+        # created_user variable is no longer needed
         if not user:
             # Check if username exists
             if User.objects.filter(username=username).exists():
@@ -390,7 +390,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                     {"detail": "Username already exists."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             user = User.objects.create_user(
                 username=username,
                 email=email,
@@ -398,8 +398,8 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 last_name=last_name,
                 password=password
             )
-            created_user = True
-        
+            # User was created successfully
+
         # Add to organization
         role_obj = None
         legacy_role = None
