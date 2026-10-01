@@ -11,7 +11,7 @@ const AppRoutes: React.FC = () => {
   const element = useRoutes(getRoutes());
 
   if (isLoading) {
-    return <PageLoader />;
+    return <PageLoader fullScreen />;
   }
 
   return element;

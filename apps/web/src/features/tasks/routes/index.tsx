@@ -1,38 +1,43 @@
-import { Suspense } from "react";
+import { lazy } from "react";
 import type { RouteObject } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { PermissionGuard } from '../../auth/components/PermissionGuard';
 import { UserRoute } from '../../../core/router/UserRoute';
-import PageLoader from '../../../components/PageLoader';
-import { TaskManagementPage } from '../pages/TaskManagementPage';
-import { StandupsPage } from '../pages/StandupsPage';
+
+const TaskManagementPage = lazy(() =>
+  import('../pages/TaskManagementPage').then((m) => ({
+    default: m.TaskManagementPage,
+  }))
+);
+
+const StandupsPage = lazy(() =>
+  import('../pages/StandupsPage').then((m) => ({
+    default: m.StandupsPage,
+  }))
+);
 
 export const tasksRoutes: RouteObject[] = [
   {
     path: 'tasks',
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <PermissionGuard
-          permissions={['task.view', 'board.view', 'task.create', 'task.manage_all']}
-          fallback={<Navigate to="/dashboard" replace />}
-        >
-          <TaskManagementPage />
-        </PermissionGuard>
-      </Suspense>
+      <PermissionGuard
+        permissions={['task.view', 'board.view', 'task.create', 'task.manage_all']}
+        fallback={<Navigate to="/dashboard" replace />}
+      >
+        <TaskManagementPage />
+      </PermissionGuard>
     ),
   },
   {
     path: 'standups',
     element: (
       <UserRoute>
-        <Suspense fallback={<PageLoader />}>
-          <PermissionGuard
-            permissions={['org.manage_settings', 'report.view']}
-            fallback={<Navigate to="/dashboard" replace />}
-          >
-            <StandupsPage />
-          </PermissionGuard>
-        </Suspense>
+        <PermissionGuard
+          permissions={['org.manage_settings', 'report.view']}
+          fallback={<Navigate to="/dashboard" replace />}
+        >
+          <StandupsPage />
+        </PermissionGuard>
       </UserRoute>
     ),
   },

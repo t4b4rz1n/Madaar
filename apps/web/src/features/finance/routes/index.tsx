@@ -1,6 +1,5 @@
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import { type RouteObject, Navigate } from "react-router-dom";
-import PageLoader from "../../../components/PageLoader";
 import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const UserFinanceDashboard = lazy(() => import("../pages/UserFinanceDashboard"));
@@ -12,11 +11,7 @@ export const financeRoutes: RouteObject[] = [
     children: [
       {
         path: "my-reports",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <UserFinanceDashboard />
-          </Suspense>
-        ),
+        element: <UserFinanceDashboard />,
       },
       {
         path: "admin",
@@ -25,9 +20,7 @@ export const financeRoutes: RouteObject[] = [
             permissions={["finance.view_reports", "finance.manage"]}
             fallback={<Navigate to="/dashboard" replace />}
           >
-            <Suspense fallback={<PageLoader />}>
-              <AdminFinanceDashboard />
-            </Suspense>
+            <AdminFinanceDashboard />
           </PermissionGuard>
         ),
       },

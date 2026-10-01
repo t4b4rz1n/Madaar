@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
@@ -15,6 +15,8 @@ import { useLayoutStore } from "./store/layoutStore";
 import { getOrganizations } from "../organizations/api/organizationsApi";
 import { OnboardingWizard } from "../onboarding/components/OnboardingWizard";
 import PageLoader from "../../components/PageLoader";
+import ContentLoader from "../../components/ContentLoader";
+import TopProgressBar from "../../components/TopProgressBar";
 
 export const MainLayout = () => {
   const setSidebarOpen = useLayoutStore((state) => state.setSidebarOpen);
@@ -108,7 +110,7 @@ export const MainLayout = () => {
     // 2. If loading and NO local storage flag exists, show loader
     // (If a flag DOES exist, we skip the loader to prevent flashing on hard reload)
     if (isLoadingOrgs && !onboardingAlreadyDone && !rawOnboardingDone) {
-      return <PageLoader />;
+      return <PageLoader fullScreen />;
     }
 
     // 3. Has orgs → mark as done so we never check again
@@ -119,6 +121,7 @@ export const MainLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-base-200 font-sans text-base-content">
+      <TopProgressBar />
       <a
         href="#main-content"
         className="fixed start-4 top-3 z-[200] -translate-y-24 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-content shadow-lg transition-transform focus:translate-y-0"
@@ -136,7 +139,9 @@ export const MainLayout = () => {
 
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 outline-none sm:px-8 sm:py-7">
           <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <Outlet />
+            <Suspense fallback={<ContentLoader />}>
+              <Outlet />
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>

@@ -16,6 +16,54 @@ import { motionTokens } from "../../core/config/designTokens";
 
 const PROJECT_COLORS = ['#ef4444', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#3b82f6', '#8b5cf6', '#14b8a6'];
 
+const routePrefetchers: Record<string, () => void> = {
+  dashboard: () => {
+    import("../dashboard/pages/UserDashboardPage");
+  },
+  tasks: () => {
+    import("../tasks/pages/TaskManagementPage");
+  },
+  projects: () => {
+    import("../projects/pages/ProjectsPage");
+  },
+  standups: () => {
+    import("../tasks/pages/StandupsPage");
+  },
+  attendance: () => {
+    import("../attendance/pages/AttendancePage");
+  },
+  finance: () => {
+    import("../finance/pages/UserFinanceDashboard");
+  },
+  users: () => {
+    import("../users/pages/UsersListPage");
+  },
+  roles: () => {
+    import("../roles/pages/RolesListPage");
+  },
+  teams: () => {
+    import("../teams/pages/TeamsListPage");
+  },
+  discounts: () => {
+    import("../discounts/pages/DiscountsListPage");
+  },
+  automations: () => {
+    import("../automations/components/AutomationsPage");
+  },
+  tickets: () => {
+    import("../tickets/pages/TicketsListPage");
+  },
+  notifications: () => {
+    import("../notifications/pages/NotificationsPage");
+  },
+  profile: () => {
+    import("../profile/pages/ProfilePage");
+  },
+  settings: () => {
+    import("../../pages/SettingsPage");
+  },
+};
+
 const sidebarVariants = {
   expanded: {
     width: "var(--madaar-sidebar-width)",
@@ -151,6 +199,7 @@ export const Sidebar = () => {
                   <Link
                     to={itemPath}
                     onClick={() => setSidebarOpen(false)}
+                    onMouseEnter={() => routePrefetchers[item.link]?.()}
                     className={`motion-interactive flex h-11 items-center gap-3 overflow-hidden rounded-xl px-3 ${
                       isActive
                         ? "bg-primary/10 text-primary font-bold"
@@ -265,6 +314,7 @@ export const Sidebar = () => {
           <Link
             to="/settings"
             onClick={() => setSidebarOpen(false)}
+            onMouseEnter={() => routePrefetchers.settings?.()}
             className={`motion-interactive flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold ${
               location.pathname === "/settings" || location.pathname.startsWith("/settings")
                 ? "bg-primary/10 text-primary font-bold"

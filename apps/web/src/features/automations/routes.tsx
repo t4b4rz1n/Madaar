@@ -1,22 +1,24 @@
-import { Suspense } from "react";
+import { lazy } from "react";
 import { type RouteObject } from "react-router-dom";
 import { Navigate } from "react-router-dom";
 import { PermissionGuard } from "../auth/components/PermissionGuard";
-import PageLoader from "../../components/PageLoader";
-import { AutomationsPage } from "./components/AutomationsPage";
+
+const AutomationsPage = lazy(() =>
+  import("./components/AutomationsPage").then((m) => ({
+    default: m.AutomationsPage,
+  }))
+);
 
 export const automationsRoutes: RouteObject[] = [
   {
     path: "automations",
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <PermissionGuard
-          permissions={["automation.manage", "org.manage_settings"]}
-          fallback={<Navigate to="/dashboard" replace />}
-        >
-          <AutomationsPage />
-        </PermissionGuard>
-      </Suspense>
+      <PermissionGuard
+        permissions={["automation.manage", "org.manage_settings"]}
+        fallback={<Navigate to="/dashboard" replace />}
+      >
+        <AutomationsPage />
+      </PermissionGuard>
     ),
   },
 ];

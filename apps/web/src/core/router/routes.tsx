@@ -1,6 +1,5 @@
-import { Suspense, lazy } from "react";
+import { lazy } from "react";
 import { type RouteObject } from "react-router-dom";
-import PageLoader from "../../components/PageLoader";
 import RoleBasedRedirect from "../../components/RoleBasedRedirect";
 import authRoutes from "../../features/auth/routes";
 import discountsRoutes from "../../features/discounts/routes";
@@ -26,11 +25,7 @@ export const routes: RouteObject[] = [
   ...authRoutes,
   {
     path: "/",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <MainLayout />
-      </Suspense>
-    ),
+    element: <MainLayout />,
     children: [
       {
         index: true,
