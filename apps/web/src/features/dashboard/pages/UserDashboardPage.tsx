@@ -33,7 +33,9 @@ import { useProjects } from "../../projects/hooks/useProjects";
 import { useTickets } from "../../tickets/hooks/useTickets";
 import { updateTask, getTask } from "../../tasks/api/tasksApi";
 import { StandupModal } from "../../tasks/components/StandupModal";
+import { StandupMatrix } from "../../tasks/components/StandupMatrix";
 import { TaskSheet } from "../../tasks/components/TaskSheet";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 import type { EmployeeTaskSummary } from "../types";
 
 const getTimezone = () => {
@@ -44,13 +46,7 @@ const getTimezone = () => {
   }
 };
 
-const formatDay = () =>
-  new Intl.DateTimeFormat("en", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date());
+const formatDay = () => formatDisplayDate(new Date(), "EEEE, MMMM d, yyyy");
 
 const formatDecimalHours = (
   decimalValue: number | string | null | undefined,
@@ -130,6 +126,9 @@ export const UserDashboardPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const timezone = useMemo(getTimezone, []);
+  
+  const { hasAnyPermission } = usePermissions();
+  const isManager = hasAnyPermission(["org.manage_settings", "report.view"]);
 
   const [isStandupOpen, setStandupOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -481,7 +480,8 @@ export const UserDashboardPage = () => {
           </div>
 
           {/* Active Projects Grid */}
-          <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
+          {isManager && (
+            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
               <div className="flex items-center gap-2">
                 <Briefcase size={16} className="text-primary" />
@@ -564,6 +564,7 @@ export const UserDashboardPage = () => {
               </div>
             )}
           </div>
+          )}
         </div>
 
         {/* Right Column: Standup, Blockers & Tickets */}
@@ -653,7 +654,8 @@ export const UserDashboardPage = () => {
           )}
 
           {/* Support Tickets Widget */}
-          <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
+          {isManager && (
+            <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
                 Support Tickets
@@ -698,8 +700,15 @@ export const UserDashboardPage = () => {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
+
+      {!isManager && (
+        <div className="mt-6">
+          <StandupMatrix forceSelfView={true} />
+        </div>
+      )}
 
       {/* Standup & Task Modals */}
       <StandupModal
