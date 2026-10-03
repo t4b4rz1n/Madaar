@@ -1,3 +1,5 @@
+import { useTranslation } from "../../../../i18n/locale";
+import { getWorkflowAppearance } from "../../../../core/config/designTokens";
 import React from 'react';
 import { useProjectWizardStore, BOARD_TEMPLATES } from '../../store/useProjectWizardStore';
 
@@ -7,6 +9,7 @@ interface Props {
 }
 
 export const WizardStep3Board: React.FC<Props> = ({ onSubmit, isSubmitting }) => {
+  const t = useTranslation();
   const { selectedTemplate, setSelectedTemplate, prevStep } = useProjectWizardStore();
 
   return (
@@ -20,7 +23,7 @@ export const WizardStep3Board: React.FC<Props> = ({ onSubmit, isSubmitting }) =>
                 key={tmpl.id}
                 type="button"
                 onClick={() => setSelectedTemplate(tmpl)}
-                className={`relative text-left p-4 rounded-xl border-2 transition-all duration-150 ${
+                className={`relative text-start p-4 rounded-xl border-2 transition-all duration-150 ${
                   isSelected
                     ? 'border-primary bg-primary/8 shadow-lg shadow-primary/10'
                     : 'border-base-300 bg-base-200/40 hover:border-base-content/20 hover:bg-base-200/70'
@@ -28,7 +31,7 @@ export const WizardStep3Board: React.FC<Props> = ({ onSubmit, isSubmitting }) =>
               >
                 {/* Selected indicator */}
                 {isSelected && (
-                  <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <div className="absolute top-2.5 end-2.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                     <svg className="w-3 h-3 text-primary-content" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
@@ -47,25 +50,25 @@ export const WizardStep3Board: React.FC<Props> = ({ onSubmit, isSubmitting }) =>
                 <p className="text-sm font-semibold text-base-content leading-tight mb-1">
                   {tmpl.name}
                 </p>
-                <p className="text-xs text-base-content/50 mb-2">{tmpl.description}</p>
+                <p className="text-xs text-heledone-ink-muted mb-2">{tmpl.description}</p>
 
                 {/* Columns preview */}
                 <div className="flex flex-wrap gap-1">
                   {tmpl.statuses.slice(0, 4).map((s) => (
                     <span
                       key={s.code}
-                      className="px-1.5 py-0.5 text-[10px] rounded font-medium"
+                      className="px-1.5 py-0.5 text-[13px] rounded font-medium"
                       style={{
-                        backgroundColor: tmpl.color + '22',
-                        color: tmpl.color,
-                        border: `1px solid ${tmpl.color}33`,
+                        backgroundColor: `color-mix(in srgb, ${getWorkflowAppearance(s).color} 10%, transparent)`,
+                        color: getWorkflowAppearance(s).ink,
+                        border: `1px solid color-mix(in srgb, ${getWorkflowAppearance(s).color} 25%, transparent)`,
                       }}
                     >
-                      {s.name}
+                      {getWorkflowAppearance(s).label}
                     </span>
                   ))}
                   {tmpl.statuses.length > 4 && (
-                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-base-300 text-base-content/50">
+                    <span className="px-1.5 py-0.5 text-[13px] rounded bg-base-300 text-heledone-ink-muted">
                       +{tmpl.statuses.length - 4}
                     </span>
                   )}
@@ -82,8 +85,7 @@ export const WizardStep3Board: React.FC<Props> = ({ onSubmit, isSubmitting }) =>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back
-        </button>
+          {t("بازگشت")}</button>
         <button
           type="button"
           onClick={onSubmit as any}
@@ -93,10 +95,9 @@ export const WizardStep3Board: React.FC<Props> = ({ onSubmit, isSubmitting }) =>
           {isSubmitting ? (
             <>
               <span className="loading loading-spinner loading-xs" />
-              Creating...
-            </>
+              {t("Creating...")}</>
           ) : (
-            <>Create Project 🚀</>
+            <>{t("Create Project 🚀")}</>
           )}
         </button>
       </div>

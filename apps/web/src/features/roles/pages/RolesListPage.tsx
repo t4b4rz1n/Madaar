@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/locale";
 import { useMemo, useState } from "react";
 import { CreateRoleModal } from "../components/CreateRoleModal";
 import { EditRoleModal } from "../components/EditRoleModal";
@@ -5,6 +6,7 @@ import { useRoles, useDeleteRole } from "../hooks/useRoles";
 import type { Role } from "../types";
 
 const RolesListPage = () => {
+  const t = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
@@ -20,9 +22,9 @@ const RolesListPage = () => {
   const roles: Role[] = data?.results ?? [];
 
   const deleteTitle = useMemo(() => {
-    if (!roleToDelete) return "Delete Role";
-    return `Delete role «${roleToDelete.name}»`;
-  }, [roleToDelete]);
+    if (!roleToDelete) return t("Delete Role");
+    return t("Delete role «{value0}»", { value0: roleToDelete.name });
+  }, [roleToDelete, t]);
 
   const handleDeleteClick = (roleId: string) => {
     const found = roles.find((r) => r.id === roleId) ?? null;
@@ -82,7 +84,7 @@ const RolesListPage = () => {
     return (
       <div className="p-4 sm:p-6">
         <div className="alert alert-error shadow-md border border-error/20">
-          <span>Failed to load roles. Please try again.</span>
+          <span>{t("Failed to load roles. Please try again.")}</span>
         </div>
       </div>
     );
@@ -93,11 +95,9 @@ const RolesListPage = () => {
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-base-content sm:text-3xl tracking-tight">
-            Roles Management
-          </h1>
-          <p className="mt-1 text-sm text-base-content/60 sm:text-base">
-            Manage access levels and permissions for your team.
-          </p>
+            {t("Roles Management")}</h1>
+          <p className="mt-1 text-sm text-heledone-ink-muted sm:text-base">
+            {t("Manage access levels and permissions for your team.")}</p>
         </div>
 
         <button
@@ -119,8 +119,7 @@ const RolesListPage = () => {
               d="M12 4.5v15m7.5-7.5h-15"
             />
           </svg>
-          Create Role
-        </button>
+          {t("Create Role")}</button>
       </div>
 
       <CreateRoleModal
@@ -140,19 +139,15 @@ const RolesListPage = () => {
             <table className="table table-zebra w-full">
               <thead>
                 <tr className="border-b border-base-300 bg-base-200/50 text-base-content/80">
-                  <th className="py-4 pl-6 text-sm font-semibold">Role Name</th>
+                  <th className="py-4 ps-6 text-sm font-semibold">{t("Role Name")}</th>
                   <th className="hidden md:table-cell py-4 text-sm font-semibold">
-                    Description
-                  </th>
+                    {t("توضیح")}</th>
                   <th className="py-4 text-sm font-semibold text-center">
-                    Permissions
-                  </th>
+                    {t("Permissions")}</th>
                   <th className="py-4 text-sm font-semibold text-center">
-                    Status
-                  </th>
-                  <th className="py-4 pr-6 text-sm font-semibold text-end">
-                    Actions
-                  </th>
+                    {t("وضعیت")}</th>
+                  <th className="py-4 pe-6 text-sm font-semibold text-end">
+                    {t("Actions")}</th>
                 </tr>
               </thead>
 
@@ -167,7 +162,7 @@ const RolesListPage = () => {
                         key={role.id}
                         className="hover:bg-base-200/30 transition-colors duration-150"
                       >
-                        <td className="py-4 pl-6">
+                        <td className="py-4 ps-6">
                           <div className="font-semibold text-base-content text-[15px]">
                             {role.name}
                           </div>
@@ -193,45 +188,39 @@ const RolesListPage = () => {
                         <td className="py-4 text-center">
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                            {role.permissions?.length ?? 0} Keys
-                          </div>
+                            {role.permissions?.length ?? 0}  {t("Keys")}</div>
                         </td>
 
                         <td className="py-4 text-center">
                           <div className="flex flex-wrap items-center justify-center gap-2">
                             {role.is_protected ? (
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/20 bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning">
-                                Protected
-                              </span>
+                                {t("Protected")}</span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
-                                Active
-                              </span>
+                                {t("فعال")}</span>
                             )}
                             {role.member_count !== undefined && (
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-base-300 bg-base-200 px-2.5 py-1 text-xs font-semibold text-base-content/60">
-                                {role.member_count} members
-                              </span>
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-base-300 bg-base-200 px-2.5 py-1 text-xs font-semibold text-heledone-ink-muted">
+                                {role.member_count}  {t("members")}</span>
                             )}
                           </div>
                         </td>
 
-                        <td className="py-4 pr-6 text-end">
+                        <td className="py-4 pe-6 text-end">
                           <div className="inline-flex gap-1">
                             <button
                               type="button"
                               className="btn btn-sm btn-ghost text-base-content/70 hover:bg-base-200 hover:text-base-content transition-all"
                               onClick={() => handleEditClick(role.id)}
                             >
-                              Edit
-                            </button>
+                              {t("ویرایش")}</button>
                             <button
                               type="button"
                               className="btn btn-sm btn-ghost text-error/80 hover:bg-error/10 hover:text-error transition-all"
                               onClick={() => handleDeleteClick(role.id)}
                             >
-                              Delete
-                            </button>
+                              {t("حذف")}</button>
                           </div>
                         </td>
                       </tr>
@@ -247,7 +236,7 @@ const RolesListPage = () => {
                           viewBox="0 0 24 24"
                           strokeWidth={1.5}
                           stroke="currentColor"
-                          className="w-10 h-10 text-base-content/30"
+                          className="w-10 h-10 text-heledone-ink-muted"
                         >
                           <path
                             strokeLinecap="round"
@@ -255,9 +244,8 @@ const RolesListPage = () => {
                             d="M9 12h3.75M9 15h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-.621-.504-1.125-1.125-1.125H9.75M8.25 21h8.25c1.243 0 2.25-1.007 2.25-2.25V5.25C18.75 4.007 17.743 3 16.5 3H8.25C7.007 3 6 4.007 6 5.25v13.5C6 19.993 7.007 21 8.25 21z"
                           />
                         </svg>
-                        <p className="text-base-content/50 font-medium">
-                          No roles found.
-                        </p>
+                        <p className="text-heledone-ink-muted font-medium">
+                          {t("No roles found.")}</p>
                       </div>
                     </td>
                   </tr>
@@ -276,16 +264,14 @@ const RolesListPage = () => {
             </h3>
 
             <p className="py-4 text-base-content/70">
-              Are you sure? This action cannot be undone.
-            </p>
+              {t("Are you sure? This action cannot be undone.")}</p>
 
             {roleToDelete && (
               <div className="alert alert-warning shadow-md border border-warning/20 rounded-2xl mt-2">
                 <span>
-                  Role{" "}
+                  {t("Role")}{" "}
                   <span className="font-semibold">{roleToDelete.name}</span>{" "}
-                  will be deleted.
-                </span>
+                  {t("will be deleted.")}</span>
               </div>
             )}
 
@@ -302,8 +288,7 @@ const RolesListPage = () => {
                 onClick={closeDeleteModal}
                 disabled={isDeleting}
               >
-                Cancel
-              </button>
+                {t("انصراف")}</button>
 
               <button
                 type="button"
@@ -314,10 +299,9 @@ const RolesListPage = () => {
                 {isDeleting ? (
                   <>
                     <span className="loading loading-spinner loading-xs" />
-                    Deleting...
-                  </>
+                    {t("Deleting...")}</>
                 ) : (
-                  "Delete"
+                  t("حذف")
                 )}
               </button>
             </div>

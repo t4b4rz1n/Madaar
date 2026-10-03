@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/locale";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -83,7 +84,7 @@ export const useSaveAutomationRule = (organizationId?: string) => {
       return response.data;
     },
     onSuccess: () => {
-      toast.success("Automation rule saved.");
+      toast.success(t("Automation rule saved."));
       queryClient.invalidateQueries({ queryKey: key(organizationId) });
     },
     onError: (error: unknown) => {
@@ -93,7 +94,7 @@ export const useSaveAutomationRule = (organizationId?: string) => {
         axiosError?.response?.data?.detail ||
         (typeof error === "object" && error && "message" in error
           ? String(error.message)
-          : "Failed to save the automation rule.");
+          : t("Failed to save the automation rule."));
       toast.error(message);
     },
   });
@@ -106,9 +107,9 @@ export const useResetAutomationRule = (organizationId?: string) => {
       await ApiService.delete(`/automations/rules/${id}/`);
     },
     onSuccess: () => {
-      toast.success("Default event settings restored.");
+      toast.success(t("Default event settings restored."));
       queryClient.invalidateQueries({ queryKey: key(organizationId) });
     },
-    onError: () => toast.error("Failed to restore the default event settings."),
+    onError: () => toast.error(t("Failed to restore the default event settings.")),
   });
 };

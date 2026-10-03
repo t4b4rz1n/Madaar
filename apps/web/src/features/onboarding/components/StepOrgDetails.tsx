@@ -1,8 +1,10 @@
+import { useTranslation } from "../../../i18n/locale";
 import React, { useState } from 'react';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import { ArrowRight } from 'lucide-react';
 
 export const StepOrgDetails: React.FC = () => {
+  const t = useTranslation();
   const { nextStep, setOrgData, orgData } = useOnboardingStore();
   const [name, setName] = useState(orgData.name);
 
@@ -18,8 +20,8 @@ export const StepOrgDetails: React.FC = () => {
       <div className="bg-base-100 rounded-2xl border border-base-300 shadow-lg overflow-hidden">
         {/* Header */}
         <div className="bg-primary/5 border-b border-base-300 px-8 py-6">
-          <h2 className="text-xl font-bold text-base-content">Organization Name</h2>
-          <p className="text-sm text-base-content/60 mt-0.5">What's the name of your workspace?</p>
+          <h2 className="text-xl font-bold text-base-content">{t("نام سازمان")}</h2>
+          <p className="text-sm text-heledone-ink-muted mt-0.5">{t("What's the name of your workspace?")}</p>
         </div>
 
         {/* Body */}
@@ -27,7 +29,7 @@ export const StepOrgDetails: React.FC = () => {
           <div className="form-control">
             <label className="label pb-2">
               <span className="label-text font-medium text-base-content">
-                Organization Name <span className="text-error">*</span>
+                {t("نام سازمان")} <span className="text-error">*</span>
               </span>
             </label>
             <input
@@ -37,7 +39,7 @@ export const StepOrgDetails: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="input input-bordered w-full focus:input-primary"
-              placeholder="e.g. Acme Corporation"
+              placeholder={t("e.g. Acme Corporation")}
               dir="auto"
             />
           </div>
@@ -48,8 +50,7 @@ export const StepOrgDetails: React.FC = () => {
               disabled={!name.trim()}
               className="btn btn-primary gap-2"
             >
-              Next: Add Users
-              <ArrowRight className="w-4 h-4" />
+              {t("Next: Add Users")}<ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </form>

@@ -2,12 +2,12 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { ErrorBoundary } from "react-error-boundary";
-import { Toaster } from "sonner";
 import { MotionConfig } from "motion/react";
 import { ErrorFallback } from "./components/ErrorFallback";
 import { queryClient } from "./core/config/queryClient";
-import AppRouter from "./core/router/AppRouter";
 import "./index.css";
+import { applyDocumentLanguage, useLocaleStore } from "./i18n/locale";
+import { LocaleApplication } from "./core/LocaleApplication";
 
 async function enableMocking() {
   if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === "true") {
@@ -28,12 +28,11 @@ enableMocking().finally(() => {
       return storedTheme;
     }
 
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    return "light";
   };
 
   document.documentElement.setAttribute("data-theme", getPreferredTheme());
+  applyDocumentLanguage(useLocaleStore.getState().locale);
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
@@ -43,8 +42,7 @@ enableMocking().finally(() => {
       >
         <QueryClientProvider client={queryClient}>
           <MotionConfig reducedMotion="user">
-            <AppRouter />
-            <Toaster richColors position="bottom-right" closeButton />
+            <LocaleApplication />
           </MotionConfig>
         </QueryClientProvider>
       </ErrorBoundary>

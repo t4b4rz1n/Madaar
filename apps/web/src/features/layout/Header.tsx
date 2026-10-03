@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useTranslation } from "../../i18n/locale";
+import { motion } from "motion/react";
 import { ArrowRight2, HamburgerMenu, SearchNormal1, User, Logout } from "iconsax-reactjs";
 import { Link } from "react-router-dom";
 import ThemeToggle from "../../components/ThemeToggle";
@@ -33,6 +34,7 @@ export const Header = ({
   onCommandMenuClick,
   breadcrumbs,
 }: HeaderProps) => {
+  const t = useTranslation();
   const { hasAnyPermission } = usePermissions();
   const closeDropdown = () => {
     if (document.activeElement instanceof HTMLElement) {
@@ -48,57 +50,57 @@ export const Header = ({
       variants={headerVariants}
       initial="hidden"
       animate="visible"
-      className="madaar-glass sticky top-0 z-30 flex min-h-14 items-center justify-between px-4 sm:px-8"
+      className="heledone-glass sticky top-0 z-30 flex min-h-14 items-center justify-between px-4 sm:px-8"
     >
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <motion.button
           type="button"
           onClick={onMenuClick}
           className="motion-interactive btn btn-ghost btn-circle text-base-content lg:hidden"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          aria-label="Open navigation"
+          aria-label={t("باز کردن منو")}
         >
           <HamburgerMenu />
         </motion.button>
 
         <nav
           className="flex min-w-0 items-center overflow-hidden text-sm sm:text-base"
-          aria-label="Breadcrumb"
+          aria-label={t("مسیر صفحه")}
         >
           {breadcrumbs.map((crumb, index) => (
-            <div key={index} className="flex shrink-0 items-center">
+            <div key={index} className={index === breadcrumbs.length - 1 ? "flex min-w-0 items-center" : "hidden shrink-0 items-center sm:flex"}>
               {index < breadcrumbs.length - 1 ? (
                 <Link
                   to={crumb.path}
-                  className="motion-interactive font-semibold text-base-content/55 hover:text-primary"
+                  className="motion-interactive font-semibold text-heledone-ink-muted hover:text-primary"
                 >
                   {crumb.title}
                 </Link>
               ) : (
-                <span className="font-bold text-base-content">
+                <span className="truncate font-bold text-base-content">
                   {crumb.title}
                 </span>
               )}
 
               {index < breadcrumbs.length - 1 && (
-                <ArrowRight2 size="16" className="mx-1 text-base-content/35 sm:mx-2" />
+                <ArrowRight2 size="16" className="rtl:rotate-180 mx-1 text-heledone-ink-muted sm:mx-2" />
               )}
             </div>
           ))}
         </nav>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
           onClick={onCommandMenuClick}
-          className="motion-interactive inline-flex h-10 w-10 items-center justify-center gap-2 rounded-xl border border-base-content/10 bg-base-100/70 text-sm text-base-content/50 shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-auto sm:px-3"
-          aria-label="Open command menu"
+          className="motion-interactive inline-flex h-10 w-10 items-center justify-center gap-2 rounded-xl border border-base-content/10 bg-base-100/70 text-sm text-heledone-ink-muted shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-auto sm:px-3"
+          aria-label={t("جست‌وجو در فضای کار")}
         >
           <SearchNormal1 size={18} />
-          <span className="hidden sm:inline">Search</span>
-          <kbd className="hidden rounded-md border border-base-content/10 bg-base-200 px-1.5 py-0.5 text-[0.65rem] sm:inline">⌘K</kbd>
+          <span className="hidden sm:inline">{t("جست‌وجو")}</span>
+          <kbd className="hidden rounded-md border border-base-content/10 bg-base-200 px-1.5 py-0.5 text-[0.65rem] sm:inline">{t("⌘K")}</kbd>
         </button>
         {canViewNotifications && <NotificationCenter />}
         <ThemeToggle />
@@ -112,7 +114,7 @@ export const Header = ({
             <div className="avatar">
               <div className="w-9 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
                 {user?.profile_image_url ? (
-                  <img src={user?.profile_image_url} alt="Profile" />
+                  <img src={user?.profile_image_url} alt={t("Profile")} />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-primary/10">
                     <User size="18" className="text-primary" />
@@ -126,20 +128,17 @@ export const Header = ({
             tabIndex={0}
             className="dropdown-content menu z-[100] mt-3 w-52 rounded-box border border-base-200 bg-base-100 p-2 shadow-xl"
           >
-            <li className="menu-title px-4 py-2 text-xs font-semibold uppercase text-base-content/50">
-              Account
-            </li>
+            <li className="menu-title px-4 py-2 text-xs font-semibold uppercase text-heledone-ink-muted">
+              {t("Account")}</li>
             <li>
               <Link to="/profile" className="text-base-content/80" onClick={closeDropdown}>
-                <User className="h-4 w-4" /> My Profile
-              </Link>
+                <User className="h-4 w-4" />  {t("حساب من")}</Link>
             </li>
             <div className="divider my-1"></div>
             <li>
               <button onClick={() => { closeDropdown(); logout(); }} className="text-error hover:bg-error/10">
                 <Logout className="h-4 w-4" />
-                Logout
-              </button>
+                {t("خروج")}</button>
             </li>
           </ul>
         </div>

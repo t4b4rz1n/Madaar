@@ -1,3 +1,4 @@
+import { t as translate, useTranslation } from "../../../i18n/locale";
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useForm } from "react-hook-form";
@@ -17,7 +18,7 @@ const modalVariants = {
 };
 
 const teamSchema = z.object({
-  name: z.string().min(3, "Team name must be at least 3 characters"),
+  name: z.string().min(3, translate("Team name must be at least 3 characters")),
   description: z.string().optional(),
   lead_id: z.string().nullable().optional(),
   is_active: z.boolean().default(true),
@@ -36,6 +37,7 @@ export const CreateEditTeamModal = ({
   team,
   organizationId,
 }: CreateEditTeamModalProps) => {
+  const t = useTranslation();
   const isEditMode = !!team;
 
   const createTeam = useCreateTeam();
@@ -98,7 +100,7 @@ export const CreateEditTeamModal = ({
         >
           <motion.div
             variants={modalVariants}
-            className="madaar-surface relative m-0 flex max-h-[min(90vh,44rem)] w-full max-w-lg flex-col overflow-hidden rounded-[24px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl sm:m-4"
+            className="heledone-surface relative m-0 flex max-h-[min(90vh,44rem)] w-full max-w-lg flex-col overflow-hidden rounded-[24px] border border-base-content/10 bg-base-100/95 shadow-heledone-floating backdrop-blur-xl sm:m-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex-shrink-0 border-b border-base-content/10 bg-base-200/20 p-5 sm:p-6">
@@ -109,20 +111,20 @@ export const CreateEditTeamModal = ({
                   </div>
                   <div>
                     <h3 className="font-bold text-2xl text-base-content">
-                      {isEditMode ? "Edit Team" : "Create New Team"}
+                      {isEditMode ? t("Edit Team") : t("Create New Team")}
                     </h3>
                     <p className="text-base-content/70 text-sm">
                       {isEditMode
-                        ? "Update team details"
-                        : "Add a new team to Madaar"}
+                        ? t("Update team details")
+                        : t("Add a new team to Heledone")}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="btn btn-ghost btn-square btn-sm rounded-xl text-base-content/50 hover:bg-base-200 hover:text-base-content"
+                  className="btn btn-ghost btn-square btn-sm rounded-xl text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
                 >
-                  <CloseCircle className="w-6 h-6 text-base-content/60" />
+                  <CloseCircle className="w-6 h-6 text-heledone-ink-muted" />
                 </button>
               </div>
             </div>
@@ -133,15 +135,14 @@ export const CreateEditTeamModal = ({
               </form>
             </div>
 
-            <div className="flex-shrink-0 border-t border-base-content/10 bg-base-200/30 p-5 text-right sm:p-6">
+            <div className="flex-shrink-0 border-t border-base-content/10 bg-base-200/30 p-5 text-end sm:p-6">
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={onClose}
                   className="btn btn-ghost rounded-xl"
                 >
-                  Cancel
-                </button>
+                  {t("انصراف")}</button>
                 <button
                   type="submit"
                   form="team-form"
@@ -151,9 +152,9 @@ export const CreateEditTeamModal = ({
                   {isLoading ? (
                     <span className="loading loading-spinner loading-sm"></span>
                   ) : isEditMode ? (
-                    "Update Team"
+                    t("Update Team")
                   ) : (
-                    "Create Team"
+                    t("Create Team")
                   )}
                 </button>
               </div>

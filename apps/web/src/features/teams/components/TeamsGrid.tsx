@@ -1,5 +1,6 @@
+import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Edit2, People, Profile2User, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
 
@@ -35,13 +36,14 @@ export const TeamsGrid = ({
   onDelete,
   canManage,
 }: TeamsGridProps) => {
+  const t = useTranslation();
   if (isLoading) {
     return (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="madaar-surface space-y-4 rounded-2xl border border-base-content/10 bg-base-100/80 p-5 shadow-madaar-card animate-pulse"
+            className="heledone-surface space-y-4 rounded-2xl border border-base-content/10 bg-base-100/80 p-5 shadow-heledone-card animate-pulse"
           >
             <div className="h-6 bg-base-content/10 rounded-sm w-2/3"></div>
             <div className="h-4 bg-base-content/10 rounded-sm w-full"></div>
@@ -59,10 +61,9 @@ export const TeamsGrid = ({
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-center border border-dashed border-error/30 rounded-2xl p-6 bg-error/5">
-        <p className="text-error font-medium">Failed to load teams data.</p>
-        <p className="text-xs text-base-content/60 mt-1">
-          Please check your network connection or try again later.
-        </p>
+        <p className="text-error font-medium">{t("Failed to load teams data.")}</p>
+        <p className="text-xs text-heledone-ink-muted mt-1">
+          {t("Please check your network connection or try again later.")}</p>
       </div>
     );
   }
@@ -70,11 +71,10 @@ export const TeamsGrid = ({
   if (teams.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-center border border-dashed border-base-content/20 rounded-2xl p-6">
-        <People className="text-base-content/40 mb-3" size={48} />
-        <p className="text-base-content font-medium text-lg">No teams found</p>
-        <p className="text-sm text-base-content/60 mt-1">
-          Try adjusting your search query or filters.
-        </p>
+        <People className="text-heledone-ink-muted mb-3" size={48} />
+        <p className="text-base-content font-medium text-lg">{t("No teams found")}</p>
+        <p className="text-sm text-heledone-ink-muted mt-1">
+          {t("Try adjusting your search query or filters.")}</p>
       </div>
     );
   }
@@ -90,7 +90,7 @@ export const TeamsGrid = ({
         <motion.div
           key={team.id}
           variants={cardVariants}
-          className="madaar-surface group flex flex-col justify-between rounded-2xl border border-base-content/10 bg-base-100/90 shadow-madaar-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-madaar-raised"
+          className="heledone-surface group flex flex-col justify-between rounded-2xl border border-base-content/10 bg-base-100/90 shadow-heledone-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-heledone-raised"
         >
           <div className="p-5 sm:p-6">
             <div className="flex justify-between items-start gap-4">
@@ -101,15 +101,15 @@ export const TeamsGrid = ({
                 className={`badge badge-sm rounded-lg py-2.5 px-2 ${
                   team.is_active
                     ? "badge-success bg-success/10 text-success border-none"
-                    : "badge-ghost bg-base-200 text-base-content/60 border-none"
+                    : "badge-ghost bg-base-200 text-heledone-ink-muted border-none"
                 }`}
               >
-                {team.is_active ? "Active" : "Inactive"}
+                {team.is_active ? t("فعال") : t("Inactive")}
               </div>
             </div>
 
             <p className="text-sm text-base-content/75 mt-2 line-clamp-2 min-h-[40px]">
-              {team.description || "No description provided."}
+              {team.description || t("No description provided.")}
             </p>
 
             <div className="divider my-4 opacity-50"></div>
@@ -123,15 +123,15 @@ export const TeamsGrid = ({
                       {(!team.leader_details.username && team.leader_details.first_name) ? team.leader_details.last_name?.[0]?.toUpperCase() || "" : ""}
                     </div>
                   ) : (
-                    <div className="w-7 h-7 rounded-full bg-base-200 text-base-content/40 flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-base-200 text-heledone-ink-muted flex items-center justify-center shrink-0">
                       <Profile2User size={14} />
                     </div>
                   )}
-                  <span className="font-medium text-base-content/60">Leader:</span>
+                  <span className="font-medium text-heledone-ink-muted">{t("Leader:")}</span>
                   <span className="truncate">
                     {team.leader_details
-                      ? team.leader_details.username || `${team.leader_details.first_name || ""} ${team.leader_details.last_name || ""}`.trim() || team.leader_details.email || "Unknown User"
-                      : "Not assigned"}
+                      ? team.leader_details.username || `${team.leader_details.first_name || ""} ${team.leader_details.last_name || ""}`.trim() || team.leader_details.email || t("Unknown User")
+                      : t("Not assigned")}
                   </span>
               </div>
             </div>
@@ -140,7 +140,7 @@ export const TeamsGrid = ({
          </div>
 
          <div className="flex items-end justify-between gap-3 rounded-b-2xl border-t border-base-content/5 bg-base-200/20 px-5 pb-5 pt-3 sm:px-6 sm:pb-6">
-            <div className="text-xs text-base-content/50">
+            <div className="text-xs text-heledone-ink-muted">
               {formatDisplayDate(team.created_at ?? "", "yyyy-MM-dd")}
             </div>
             {canManage && (
@@ -148,27 +148,27 @@ export const TeamsGrid = ({
                 <button
                   type="button"
                   onClick={() => onManageMembers?.(team)}
-                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-base-content/60 hover:text-primary hover:bg-primary/10 motion-interactive"
-                  title="Manage Members"
+                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-heledone-ink-muted hover:text-primary hover:bg-primary/10 motion-interactive"
+                  title={t("Manage Members")}
                 >
                   <User size={14} />
-                  <span className="hidden sm:inline">Members</span>
+                  <span className="hidden sm:inline">{t("اعضا")}</span>
                 </button>
                 <button
                   onClick={() => onEdit(team)}
-                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-base-content/60 hover:text-primary hover:bg-primary/10 motion-interactive"
-                  title="Edit Team"
+                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-heledone-ink-muted hover:text-primary hover:bg-primary/10 motion-interactive"
+                  title={t("Edit Team")}
                 >
                   <Edit2 size={14} />
-                  <span className="hidden sm:inline">Edit</span>
+                  <span className="hidden sm:inline">{t("ویرایش")}</span>
                 </button>
                 <button
                   onClick={() => onDelete(team)}
-                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-base-content/60 hover:text-error hover:bg-error/10 motion-interactive"
-                  title="Delete Team"
+                  className="btn btn-ghost btn-xs gap-1.5 rounded-xl text-heledone-ink-muted hover:text-error hover:bg-error/10 motion-interactive"
+                  title={t("Delete Team")}
                 >
                   <Trash size={14} />
-                  <span className="hidden sm:inline">Delete</span>
+                  <span className="hidden sm:inline">{t("حذف")}</span>
                 </button>
               </div>
             )}

@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Eye, EyeSlash } from "iconsax-reactjs";
 
@@ -48,6 +49,7 @@ export const InputField = <T extends Record<string, any>>({
   index = 0,
   showPasswordToggle = false,
 }: InputFieldProps<T>) => {
+  const t = useTranslation();
   const [focused, setFocused] = useState(false);
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
@@ -62,14 +64,17 @@ export const InputField = <T extends Record<string, any>>({
     >
       <div className={`relative`}>
         <label
+          htmlFor={name}
           className={`pointer-events-none transform transition-all duration-200 block mb-1.5 ${
-            focused ? "text-primary font-medium" : "text-base-content/60"
+            focused ? "text-primary font-medium" : "text-heledone-ink-muted"
           }`}
         >
           {label}
         </label>
         <div className="relative">
           <input
+            id={name}
+            dir={type === "email" || isPassword || name === "username" ? "ltr" : "auto"}
             {...register(name as any)}
             type={isPassword ? (show ? "text" : "password") : type}
             placeholder={placeholder}
@@ -91,6 +96,7 @@ export const InputField = <T extends Record<string, any>>({
           {showPasswordToggle && isPassword && (
             <button
               type="button"
+              aria-label={show ? t("پنهان کردن رمز عبور") : t("نمایش رمز عبور")}
               onClick={() => setShow((s) => !s)}
               // LTR Adjustment: Moved icon to absolute right-3
               className="absolute right-3 top-1/2 -translate-y-1/2 text-sm opacity-70 hover:opacity-100 w-8 h-8 flex items-center justify-center text-base-content"

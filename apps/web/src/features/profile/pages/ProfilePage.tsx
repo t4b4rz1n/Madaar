@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { motion } from "motion/react";
 import { ProfileEditForm } from "../components/ProfileEditForm";
 
 const containerVariants = {
@@ -12,6 +13,7 @@ const itemVariants = {
 };
 
 const ProfilePage = () => {
+  const t = useTranslation();
   return (
     <motion.div
       variants={containerVariants}
@@ -21,11 +23,9 @@ const ProfilePage = () => {
     >
       <motion.div variants={itemVariants} className="flex flex-col gap-1 border-b border-base-content/10 pb-6 mb-8">
         <h1 className="text-3xl font-black tracking-tight text-base-content">
-          Account Settings
-        </h1>
-        <p className="text-sm font-semibold text-base-content/50 mt-1">
-          Manage your personal information, account security, and notification preferences.
-        </p>
+          {t("Account Settings")}</h1>
+        <p className="text-sm font-semibold text-heledone-ink-muted mt-1">
+          {t("Manage your personal information, account security, and notification preferences.")}</p>
       </motion.div>
       <motion.div variants={itemVariants}>
         <ProfileEditForm />

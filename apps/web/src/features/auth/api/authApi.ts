@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/locale";
 import ApiService from "../../../core/api/apiService";
 import { getErrorMessage } from "../../../core/utils/errorHandler";
 import type {
@@ -23,7 +24,7 @@ export const registerRequest = async (
     return response.data;
   } catch (error) {
     throw new Error(
-      getErrorMessage(error, "Registration failed. Please try again.")
+      getErrorMessage(error, t("Registration failed. Please try again."))
     );
   }
 };
@@ -39,7 +40,7 @@ export const loginRequest = async (
     return response.data;
   } catch (error) {
     throw new Error(
-      getErrorMessage(error, "Login failed. Please check your credentials.")
+      getErrorMessage(error, t("Login failed. Please check your credentials."))
     );
   }
 };
@@ -50,7 +51,7 @@ export const getProfileRequest = async (): Promise<User> => {
     return response.data;
   } catch (error) {
     throw new Error(
-      getErrorMessage(error, "Failed to load user profile.")
+      getErrorMessage(error, t("Failed to load user profile."))
     );
   }
 };

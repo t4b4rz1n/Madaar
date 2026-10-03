@@ -1,5 +1,6 @@
+import { useTranslation } from "../../../i18n/locale";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Task, TickCircle, Profile2User, TrendUp } from "iconsax-reactjs";
 import { getTasks } from "../../tasks/api/tasksApi";
 import { useProjectMembers } from "../hooks/useProjects";
@@ -19,6 +20,7 @@ interface MemberStats {
 }
 
 export function ProjectReportView({ projectId }: ProjectReportViewProps) {
+  const t = useTranslation();
   const { data: members = [] } = useProjectMembers(projectId);
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["project-tasks", projectId],
@@ -115,13 +117,13 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
       >
         <div className="flex items-center gap-2 border-b border-base-content/8 pb-4 mb-5">
           <TrendUp size={18} className="text-primary" variant="Bold" />
-          <h2 className="text-lg font-bold text-base-content">Project Overview</h2>
+          <h2 className="text-lg font-bold text-base-content">{t("Project Overview")}</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="rounded-2xl bg-gradient-to-br from-base-200/50 to-base-200/20 p-5 space-y-3 border border-base-content/5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-base-content/50">Total Tasks</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-heledone-ink-muted">{t("Total Tasks")}</span>
               <div className="p-2 rounded-lg bg-base-content/5 text-base-content/70">
                 <Task size={18} />
               </div>
@@ -129,25 +131,25 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
             <p className="text-4xl font-black text-base-content">{totalTasks}</p>
           </div>
 
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-5 space-y-3 border border-emerald-500/10 shadow-sm">
+          <div className="rounded-2xl bg-gradient-to-br from-success/10 to-success/5 p-5 space-y-3 border border-success/10 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600/80">Completed</span>
-              <div className="p-2 rounded-lg bg-emerald-500/15 text-emerald-600">
+              <span className="text-xs font-bold uppercase tracking-wider text-success/80">{t("Completed")}</span>
+              <div className="p-2 rounded-lg bg-success/15 text-success">
                 <TickCircle size={18} variant="Bold" />
               </div>
             </div>
-            <p className="text-4xl font-black text-emerald-600">{completedTasks}</p>
+            <p className="text-4xl font-black text-success">{completedTasks}</p>
           </div>
 
           <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 p-5 space-y-3 border border-primary/10 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-primary/80">Time Spent</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-primary/80">{t("Time Spent")}</span>
               <div className="p-2 rounded-lg bg-primary/15 text-primary">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               </div>
             </div>
             <p className="text-4xl font-black text-primary">
-              {totalSpentHours.toFixed(1)} <span className="text-lg font-bold opacity-60">hrs</span>
+              {totalSpentHours.toFixed(1)} <span className="text-lg font-bold opacity-60">{t("hrs")}</span>
             </p>
           </div>
         </div>
@@ -162,16 +164,14 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
       >
         <div className="flex items-center gap-2 border-b border-base-content/8 pb-4 mb-5">
           <Profile2User size={18} className="text-primary" variant="Bold" />
-          <h2 className="text-lg font-bold text-base-content">Member Statistics</h2>
-          <span className="ml-auto text-xs font-bold text-base-content/40">
-            {memberStatsList.length} Members
-          </span>
+          <h2 className="text-lg font-bold text-base-content">{t("Member Statistics")}</h2>
+          <span className="ms-auto text-xs font-bold text-heledone-ink-muted">
+            {memberStatsList.length}  {t("Members")}</span>
         </div>
 
         {memberStatsList.length === 0 ? (
-          <p className="text-center text-sm text-base-content/40 py-8">
-            No member data available.
-          </p>
+          <p className="text-center text-sm text-heledone-ink-muted py-8">
+            {t("No member data available.")}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {memberStatsList.map((member, idx) => (
@@ -198,22 +198,20 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                     <div className="min-w-0">
                       <p className="font-bold text-base-content truncate">{member.name}</p>
                       {member.email && (
-                        <p className="text-xs text-base-content/50 truncate">{member.email}</p>
+                        <p className="text-xs text-heledone-ink-muted truncate">{member.email}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="rounded-lg bg-base-100/60 px-3 py-2 text-center">
                       <p className="text-xl font-black text-base-content">{member.totalTasks}</p>
-                      <p className="text-[9px] font-medium text-base-content/40 uppercase tracking-wider">
-                        Total
-                      </p>
+                      <p className="text-[13px] font-medium text-heledone-ink-muted uppercase tracking-wider">
+                        {t("Total")}</p>
                     </div>
-                    <div className="rounded-lg bg-emerald-500/15 px-3 py-2 text-center">
-                      <p className="text-xl font-black text-emerald-600">{member.completedTasks}</p>
-                      <p className="text-[9px] font-medium text-emerald-600/70 uppercase tracking-wider">
-                        Done
-                      </p>
+                    <div className="rounded-lg bg-success/15 px-3 py-2 text-center">
+                      <p className="text-xl font-black text-success">{member.completedTasks}</p>
+                      <p className="text-[13px] font-medium text-success uppercase tracking-wider">
+                        {t("انجام‌شده")}</p>
                     </div>
                   </div>
                 </div>
@@ -221,7 +219,7 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                 {/* Visual Progress & Time Spent */}
                 <div className="mt-4 pt-4 border-t border-base-content/5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-base-content/50 uppercase tracking-wider">Task Progress</span>
+                    <span className="text-xs font-bold text-heledone-ink-muted uppercase tracking-wider">{t("Task Progress")}</span>
                     <span className="text-xs font-bold text-base-content">
                       {member.totalTasks > 0 ? Math.round((member.completedTasks / member.totalTasks) * 100) : 0}%
                     </span>
@@ -231,17 +229,17 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                       initial={{ width: 0 }}
                       animate={{ width: `${member.totalTasks > 0 ? (member.completedTasks / member.totalTasks) * 100 : 0}%` }}
                       transition={{ duration: 0.8, ease: "easeOut" }}
-                      className="h-full bg-emerald-500 rounded-full"
+                      className="h-full bg-success rounded-full"
                     />
                   </div>
 
                   <div className="flex items-center justify-between bg-primary/5 rounded-xl px-4 py-3 border border-primary/10">
                     <div className="flex items-center gap-2 text-primary">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                      <span className="text-xs font-bold uppercase tracking-wider">Time Spent</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{t("Time Spent")}</span>
                     </div>
                     <span className="text-sm font-black text-primary">
-                      {member.spentHours.toFixed(1)} <span className="text-xs font-bold opacity-60">hrs</span>
+                      {member.spentHours.toFixed(1)} <span className="text-xs font-bold opacity-60">{t("hrs")}</span>
                     </span>
                   </div>
                 </div>

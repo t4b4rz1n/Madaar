@@ -1,3 +1,4 @@
+import { getIntlLocale, t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 /**
  * TeamLeadDashboardPage.tsx
@@ -8,7 +9,7 @@ import { formatDisplayDate } from "../../../utils/date";
  *   → team_id is not passed; backend finds the user's lead teams.
  *   → error 403: appropriate error state is shown.
  *
- * Design: Same design language (madaar-surface, DaisyUI tokens,
+ * Design: Same design language (heledone-surface, DaisyUI tokens,
  *   iconsax-reactjs, Framer Motion) — no new components.
  *
  * ⚠️ Technical debt (recorded):
@@ -17,7 +18,7 @@ import { formatDisplayDate } from "../../../utils/date";
  *
  */
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import {
   Activity,
   Add,
@@ -61,12 +62,12 @@ const formatHours = (seconds: number | null | undefined) => {
   const value = Math.max(0, Number(seconds || 0));
   const hours = Math.floor(value / 3600);
   const minutes = Math.floor((value % 3600) / 60);
-  return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
+  return translate("{value0}h {value1}m", { value0: hours, value1: minutes.toString().padStart(2, "0") });
 };
 
 const formatTime = (isoString: string | null | undefined) => {
   if (!isoString) return "—";
-  return new Intl.DateTimeFormat("fa-IR", {
+  return new Intl.DateTimeFormat(getIntlLocale(), {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: getTimezone(),
@@ -91,15 +92,15 @@ const getProjectStatusStyle = (
 ): { label: string; tone: "success" | "warning" | "error" | "neutral" } => {
   switch (status) {
     case "active":
-      return { label: "Active", tone: "success" };
+      return { label: translate("فعال"), tone: "success" };
     case "completed":
-      return { label: "Completed", tone: "success" };
+      return { label: translate("Completed"), tone: "success" };
     case "on_hold":
-      return { label: "On Hold", tone: "warning" };
+      return { label: translate("On Hold"), tone: "warning" };
     case "draft":
-      return { label: "Draft", tone: "neutral" };
+      return { label: translate("Draft"), tone: "neutral" };
     case "archived":
-      return { label: "Archived", tone: "neutral" };
+      return { label: translate("Archived"), tone: "neutral" };
     default:
       return { label: status, tone: "neutral" };
   }
@@ -112,7 +113,7 @@ const getProjectProgress = (project: ManagerProjectSummary) =>
 
 // ─── Design constants ─────────────────────────────────────────────────────────
 
-const panelClass = "madaar-surface overflow-hidden";
+const panelClass = "heledone-surface overflow-hidden";
 const spring = { type: "spring" as const, stiffness: 360, damping: 32, bounce: 0 };
 
 // ─── Sub-components (inline — Technical debt: should be moved to /components/ui) ──
@@ -130,6 +131,7 @@ const MetricCard = ({
   icon: ComponentType<{ size?: number }>;
   tone?: "primary" | "warning" | "success" | "secondary" | "error";
 }) => {
+  useLocale();
   const iconClass =
     tone === "warning"
       ? "bg-warning/10 text-warning"
@@ -149,13 +151,13 @@ const MetricCard = ({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-base-content/45">
+          <p className="text-[13px] font-bold uppercase  text-heledone-ink-muted">
             {label}
           </p>
           <p className="mt-3 text-3xl font-black tracking-tight text-base-content">
             {value}
           </p>
-          <p className="mt-1 text-xs font-semibold text-base-content/45">
+          <p className="mt-1 text-xs font-semibold text-heledone-ink-muted">
             {description}
           </p>
         </div>
@@ -177,33 +179,34 @@ const SectionHeading = ({
   title: string;
   description: string;
   action?: React.ReactNode;
-}) => (
+}) => { useLocale(); return (
   <div className="flex flex-col gap-3 px-5 pb-4 pt-5 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h2 className="text-base font-black tracking-tight text-base-content">
         {title}
       </h2>
-      <p className="mt-1 text-xs font-semibold text-base-content/45">
+      <p className="mt-1 text-xs font-semibold text-heledone-ink-muted">
         {description}
       </p>
     </div>
     {action}
   </div>
-);
+); };
 
 const MemberRow = ({ member, maxTasks, workSeconds }: { member: ManagerMemberDetail; maxTasks: number; workSeconds: number }) => {
+  const t = useTranslation();
   const completion = member.total_tasks ? Math.round((member.done_tasks / member.total_tasks) * 100) : 0;
   const workload = maxTasks ? Math.round((member.total_tasks / maxTasks) * 100) : 0;
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid gap-3 border-t border-base-content/8 px-5 py-4 sm:grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem] sm:items-center">
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-black text-primary">{getInitials(member.first_name, member.last_name, member.username?.[0]?.toUpperCase())}</div>
-        <div className="min-w-0"><p className="truncate text-sm font-bold text-base-content">{member.first_name || member.username} {member.last_name}</p><p className="truncate text-xs text-base-content/40">@{member.username}</p></div>
+        <div className="min-w-0"><p className="truncate text-sm font-bold text-base-content">{member.first_name || member.username} {member.last_name}</p><p className="truncate text-xs text-heledone-ink-muted">@{member.username}</p></div>
       </div>
-      <div><div className="mb-1 flex items-center justify-between text-[11px] font-bold text-base-content/45"><span>Workload</span><span>{member.total_tasks} tasks</span></div><div className="h-2 overflow-hidden rounded-full bg-base-200"><motion.div initial={{ width: 0 }} animate={{ width: `${workload}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-primary" /></div></div>
-      <div className="text-start sm:text-end"><p className="text-sm font-black text-base-content">{completion}%</p><p className="text-[10px] font-bold text-base-content/40">done</p></div>
-      <div className="text-start sm:text-end"><p className={`text-sm font-black ${member.overdue_tasks > 0 ? "text-error" : "text-base-content"}`}>{member.overdue_tasks}</p><p className="text-[10px] font-bold text-base-content/40">overdue</p></div>
-      <div className="col-span-full flex items-center gap-1 text-[11px] font-semibold text-base-content/40 sm:col-auto sm:justify-end"><Timer1 size={13} /> {formatHours(workSeconds)}</div>
+      <div><div className="mb-1 flex items-center justify-between text-[13px] font-bold text-heledone-ink-muted"><span>{t("Workload")}</span><span>{member.total_tasks}  {t("tasks")}</span></div><div className="h-2 overflow-hidden rounded-full bg-base-200"><motion.div initial={{ width: 0 }} animate={{ width: `${workload}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-primary" /></div></div>
+      <div className="text-start sm:text-end"><p className="text-sm font-black text-base-content">{completion}%</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("done")}</p></div>
+      <div className="text-start sm:text-end"><p className={`text-sm font-black ${member.overdue_tasks > 0 ? "text-error" : "text-base-content"}`}>{member.overdue_tasks}</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("overdue")}</p></div>
+      <div className="col-span-full flex items-center gap-1 text-[13px] font-semibold text-heledone-ink-muted sm:col-auto sm:justify-end"><Timer1 size={13} /> {formatHours(workSeconds)}</div>
     </motion.div>
   );
 };
@@ -214,23 +217,21 @@ const AttendancePanel = ({
   members,
 }: {
   members: ManagerAttendance[];
-}) => (
+}) => { const t = useTranslation(); return (
   <section className={panelClass}>
     <SectionHeading
-      title="Member Attendance"
-      description="Today's Check-in/Check-out status"
+      title={t("Member Attendance")}
+      description={t("Today's Check-in/Check-out status")}
       action={
-        <span className="text-[11px] font-bold text-base-content/35">
-          Today
-        </span>
+        <span className="text-[13px] font-bold text-heledone-ink-muted">
+          {t("امروز")}</span>
       }
     />
     {members.length === 0 ? (
       <div className="px-5 pb-6">
         <div className="rounded-2xl bg-base-200/60 p-4 text-center">
-          <p className="text-sm font-semibold text-base-content/45">
-            No attendance information recorded.
-          </p>
+          <p className="text-sm font-semibold text-heledone-ink-muted">
+            {t("No attendance information recorded.")}</p>
         </div>
       </div>
     ) : (
@@ -254,31 +255,29 @@ const AttendancePanel = ({
                   <p className="truncate text-sm font-bold text-base-content">
                     {member.first_name || member.username}
                   </p>
-                  <p className="truncate text-xs text-base-content/40">
+                  <p className="truncate text-xs text-heledone-ink-muted">
                     @{member.username}
                   </p>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-3 text-xs">
                 {member.is_remote && (
-                  <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-black text-secondary">
-                    Remote
-                  </span>
+                  <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[13px] font-black text-secondary">
+                    {t("Remote")}</span>
                 )}
                 {!isPresent ? (
-                  <span className="flex items-center gap-1 text-base-content/40">
+                  <span className="flex items-center gap-1 text-heledone-ink-muted">
                     <CloseCircle size={14} />
-                    Absent
-                  </span>
+                    {t("Absent")}</span>
                 ) : isOut ? (
-                  <span className="flex items-center gap-1 text-base-content/50">
+                  <span className="flex items-center gap-1 text-heledone-ink-muted">
                     <TickCircle size={14} className="text-success" />
                     {formatTime(member.check_in)} — {formatTime(member.check_out)}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-success">
                     <Activity size={14} />
-                    Since {formatTime(member.check_in)}
+                    {t("Since")} {formatTime(member.check_in)}
                   </span>
                 )}
               </div>
@@ -288,7 +287,7 @@ const AttendancePanel = ({
       </div>
     )}
   </section>
-);
+); };
 
 // ─── Work Hours Panel ─────────────────────────────────────────────────────────
 
@@ -299,6 +298,7 @@ const WorkHoursPanel = ({
   workHours: ManagerDashboard["work_hours"];
   overdueByMember: ManagerDashboard["overdue_summary"]["by_member"];
 }) => {
+  const t = useTranslation();
   const maxSeconds = Math.max(...workHours.map((w) => w.total_seconds), 1);
   // Mapping username → count from overdue_summary.by_member (in main response)
   const overdueMap = new Map(
@@ -308,22 +308,20 @@ const WorkHoursPanel = ({
   return (
     <section className={panelClass}>
       <SectionHeading
-        title="Weekly Work Hours"
-        description="Logged time per member this week"
+        title={t("Weekly Work Hours")}
+        description={t("Logged time per member this week")}
         action={
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-base-content/35">
+          <span className="inline-flex items-center gap-1 text-[13px] font-bold text-heledone-ink-muted">
             <Clock size={13} />
             {formatHours(
               workHours.reduce((s, w) => s + Number(w.total_seconds || 0), 0)
             )}{" "}
-            Total
-          </span>
+            {t("Total")}</span>
         }
       />
       {workHours.length === 0 ? (
-        <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">
-          No work hours recorded this week.
-        </div>
+        <div className="px-5 pb-6 text-sm font-semibold text-heledone-ink-muted">
+          {t("No work hours recorded this week.")}</div>
       ) : (
         <div className="divide-y divide-base-content/8">
           {workHours.map((item) => {
@@ -333,7 +331,7 @@ const WorkHoursPanel = ({
               <div key={item.user_id} className="px-5 py-3.5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-[11px] font-black text-secondary">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-[13px] font-black text-secondary">
                       {getInitials(item.first_name, item.last_name, item.username?.[0]?.toUpperCase())}
                     </div>
                     <div className="min-w-0">
@@ -341,9 +339,8 @@ const WorkHoursPanel = ({
                         {item.first_name} {item.last_name}
                       </p>
                       {overdueTasks > 0 && (
-                        <p className="text-[10px] font-bold text-error">
-                          {overdueTasks} Overdue Tasks
-                        </p>
+                        <p className="text-[13px] font-bold text-error">
+                          {overdueTasks}  {t("Overdue Tasks")}</p>
                       )}
                     </div>
                   </div>
@@ -374,24 +371,23 @@ const ProjectSummaryPanel = ({
   projects,
 }: {
   projects: ManagerProjectSummary[];
-}) => (
+}) => { const t = useTranslation(); return (
   <section className={panelClass}>
     <SectionHeading
-      title="Project Status"
-      description="Summary of team projects"
+      title={t("Project Status")}
+      description={t("Summary of team projects")}
       action={
         <Link
           to="/tasks"
           className="motion-interactive inline-flex items-center gap-1 text-xs font-black text-primary"
         >
-          Workspace <ArrowRight size={14} />
+          {t("فضای کار")} <ArrowRight size={14} />
         </Link>
       }
     />
     {projects.length === 0 ? (
-      <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">
-        No projects recorded in this team.
-      </div>
+      <div className="px-5 pb-6 text-sm font-semibold text-heledone-ink-muted">
+        {t("No projects recorded in this team.")}</div>
     ) : (
       <div className="grid gap-3 px-5 pb-5">
         {projects.map((project) => {
@@ -404,7 +400,7 @@ const ProjectSummaryPanel = ({
                 ? "bg-warning/10 text-warning"
                 : tone === "error"
                   ? "bg-error/10 text-error"
-                  : "bg-base-200 text-base-content/50";
+                  : "bg-base-200 text-heledone-ink-muted";
           const barClass =
             tone === "success"
               ? "bg-success"
@@ -425,14 +421,13 @@ const ProjectSummaryPanel = ({
                   <p className="truncate text-sm font-black text-base-content">
                     {project.name}
                   </p>
-                  <p className="mt-1 text-[11px] font-semibold text-base-content/40">
-                    Deadline {formatDate(project.deadline)} ·{" "}
-                    {project.active_member_count} members ·{" "}
-                    {project.done_tasks}/{project.total_tasks} tasks
-                  </p>
+                  <p className="mt-1 text-[13px] font-semibold text-heledone-ink-muted">
+                    {t("Deadline")} {formatDate(project.deadline)} ·{" "}
+                    {project.active_member_count}  {t("members ·")}{" "}
+                    {project.done_tasks}/{project.total_tasks}  {t("tasks")}</p>
                 </div>
                 <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${toneClass}`}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[13px] font-black ${toneClass}`}
                 >
                   {label}
                 </span>
@@ -444,15 +439,14 @@ const ProjectSummaryPanel = ({
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-xs font-black text-base-content/55">
+                <span className="text-xs font-black text-heledone-ink-muted">
                   {progress}%
                 </span>
               </div>
               {project.total_time_seconds != null && (
-                <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-base-content/40">
+                <p className="mt-2 flex items-center gap-1 text-[13px] font-semibold text-heledone-ink-muted">
                   <Timer1 size={12} />
-                  {formatHours(project.total_time_seconds)} logged
-                </p>
+                  {formatHours(project.total_time_seconds)}  {t("logged")}</p>
               )}
             </motion.div>
           );
@@ -460,7 +454,7 @@ const ProjectSummaryPanel = ({
       </div>
     )}
   </section>
-);
+); };
 
 // ─── Overdue Summary Panel ────────────────────────────────────────────────────
 
@@ -468,20 +462,18 @@ const OverdueSummaryPanel = ({
   overdue,
 }: {
   overdue: ManagerDashboard["overdue_summary"];
-}) => (
+}) => { const t = useTranslation(); return (
   <section className={panelClass}>
     <SectionHeading
-      title="Overdue Tasks"
-      description="Members with overdue tasks"
+      title={t("Overdue Tasks")}
+      description={t("Members with overdue tasks")}
       action={
         overdue.total_overdue > 0 ? (
-          <span className="rounded-full bg-error/10 px-2.5 py-1 text-[11px] font-black text-error">
-            {overdue.total_overdue} tasks
-          </span>
+          <span className="rounded-full bg-error/10 px-2.5 py-1 text-[13px] font-black text-error">
+            {overdue.total_overdue}  {t("tasks")}</span>
         ) : (
-          <span className="rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-black text-success">
-            All Up to Date
-          </span>
+          <span className="rounded-full bg-success/10 px-2.5 py-1 text-[13px] font-black text-success">
+            {t("All Up to Date")}</span>
         )
       }
     />
@@ -490,11 +482,9 @@ const OverdueSummaryPanel = ({
         <div className="rounded-2xl bg-success/10 p-4">
           <div className="flex items-center gap-2 text-sm font-black text-success">
             <TickCircle size={18} />
-            No overdue tasks
-          </div>
-          <p className="mt-1 text-xs font-semibold text-base-content/45">
-            The team is moving on schedule.
-          </p>
+            {t("No overdue tasks")}</div>
+          <p className="mt-1 text-xs font-semibold text-heledone-ink-muted">
+            {t("The team is moving on schedule.")}</p>
         </div>
       </div>
     ) : (
@@ -505,7 +495,7 @@ const OverdueSummaryPanel = ({
             className="flex items-center justify-between gap-3 px-5 py-3"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-error/10 text-[11px] font-black text-error">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-error/10 text-[13px] font-black text-error">
                 {member.first_name?.[0]?.toUpperCase() ||
                   member.username?.[0]?.toUpperCase() ||
                   "?"}
@@ -514,20 +504,19 @@ const OverdueSummaryPanel = ({
                 <p className="truncate text-sm font-bold text-base-content">
                   {member.first_name || member.username}
                 </p>
-                <p className="text-xs text-base-content/40">
+                <p className="text-xs text-heledone-ink-muted">
                   @{member.username}
                 </p>
               </div>
             </div>
             <span className="shrink-0 rounded-full bg-error/10 px-2.5 py-1 text-xs font-black text-error">
-              {member.count} tasks
-            </span>
+              {member.count}  {t("tasks")}</span>
           </div>
         ))}
       </div>
     )}
   </section>
-);
+); };
 
 // ─── Task Stats / Workload Panel ──────────────────────────────────────────────
 
@@ -536,6 +525,7 @@ const TaskStatsPanel = ({
 }: {
   taskStats: ManagerDashboard["task_stats"];
 }) => {
+  const t = useTranslation();
   const total = Math.max(
     taskStats.reduce((s, stat) => s + stat.count, 0),
     1
@@ -551,14 +541,13 @@ const TaskStatsPanel = ({
   return (
     <section className={panelClass}>
       <SectionHeading
-        title="Task Distribution"
-        description="Task breakdown by status"
+        title={t("Task Distribution")}
+        description={t("Task breakdown by status")}
       />
       <div className="px-5 pb-6">
         {taskStats.length === 0 ? (
-          <p className="text-sm font-semibold text-base-content/45">
-            No tasks in this team.
-          </p>
+          <p className="text-sm font-semibold text-heledone-ink-muted">
+            {t("No tasks in this team.")}</p>
         ) : (
           <>
             <div className="flex h-3 overflow-hidden rounded-full bg-base-200">
@@ -582,8 +571,8 @@ const TaskStatsPanel = ({
                     <span
                       className={`h-2.5 w-2.5 shrink-0 rounded-full ${palette[idx % palette.length]}`}
                     />
-                    <span className="truncate text-xs font-bold text-base-content/60">
-                      {stat.status_name || stat.status_code || "Uncategorized"}
+                    <span className="truncate text-xs font-bold text-heledone-ink-muted">
+                      {stat.status_name || stat.status_code || t("Uncategorized")}
                     </span>
                   </div>
                   <span className="text-sm font-black text-base-content">
@@ -601,7 +590,7 @@ const TaskStatsPanel = ({
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-const TeamLeadDashboardSkeleton = () => (
+const TeamLeadDashboardSkeleton = () => { useLocale(); return (
   <div className="mx-auto max-w-[1480px] animate-pulse space-y-6">
     <div className="h-28 rounded-3xl bg-base-100" />
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -618,11 +607,12 @@ const TeamLeadDashboardSkeleton = () => (
       <div className="h-64 rounded-2xl bg-base-100" />
     </div>
   </div>
-);
+); };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const TeamLeadDashboardPage = () => {
+  const t = useTranslation();
   const timezone = useMemo(getTimezone, []);
 
   const dashboardQuery = useQuery<ManagerDashboard>({
@@ -663,12 +653,12 @@ const TeamLeadDashboardPage = () => {
             <Danger size={24} />
           </div>
           <h1 className="mt-4 text-xl font-black text-base-content">
-            {isAccessDenied ? "Access Denied" : "Error Loading Dashboard"}
+            {isAccessDenied ? t("Access Denied") : t("Error Loading Dashboard")}
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-base-content/55">
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-heledone-ink-muted">
             {isAccessDenied
-              ? "This section is only accessible to authorized team members. If you believe this is a mistake, contact your manager."
-              : "An error occurred fetching data. Please try again."}
+              ? t("This section is only accessible to authorized team members. If you believe this is a mistake, contact your manager.")
+              : t("An error occurred fetching data. Please try again.")}
           </p>
           <div className="mt-5 flex items-center justify-center gap-3">
             <button
@@ -677,14 +667,12 @@ const TeamLeadDashboardPage = () => {
               className="motion-interactive inline-flex items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-4 py-2.5 text-xs font-black text-base-content/70 hover:border-primary/30 hover:text-primary"
             >
               <Refresh2 size={14} />
-              Try Again
-            </button>
+              {t("Try Again")}</button>
             <Link
               to="/dashboard"
               className="motion-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-primary-content"
             >
-              Personal Dashboard
-              <ArrowRight size={15} />
+              {t("Personal Dashboard")}<ArrowRight size={15} />
             </Link>
           </div>
         </div>
@@ -719,32 +707,27 @@ const TeamLeadDashboardPage = () => {
       {/* ─── Header ─── */}
       <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-primary">
+          <div className="flex items-center gap-2 text-xs font-black uppercase  text-primary">
             <Chart21 size={15} />
-            Team Overview
-          </div>
+            {t("Team Overview")}</div>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-base-content sm:text-4xl">
-            Your Team Status
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/55 sm:text-base">
-            Overview of attendance, tasks, and project progress of your team.
-          </p>
+            {t("Your Team Status")}</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-heledone-ink-muted sm:text-base">
+            {t("Overview of attendance, tasks, and project progress of your team.")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/55">
+          <span className="inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-heledone-ink-muted">
             <Activity size={15} className="text-success" />
-            Live Data
-          </span>
+            {t("Live Data")}</span>
           <button
             type="button"
             onClick={() => {
               void dashboardQuery.refetch();
             }}
-            className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-base-content/60 hover:border-primary/30 hover:text-primary"
+            className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-bold text-heledone-ink-muted hover:border-primary/30 hover:text-primary"
           >
             <Refresh2 size={15} />
-            Refresh
-          </button>
+            {t("Refresh")}</button>
         </div>
       </section>
 
@@ -755,8 +738,8 @@ const TeamLeadDashboardPage = () => {
             {/* Decorative gradient header */}
             <div className="relative h-28 bg-gradient-to-br from-primary/20 via-primary/8 to-transparent">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
-              <div className="absolute left-6 top-1/2 -translate-y-1/2">
+              <div className="absolute bottom-0 start-0 end-0 h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
+              <div className="absolute start-6 top-1/2 -translate-y-1/2">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 ring-1 ring-primary/20 backdrop-blur-sm">
                   <Profile2User size={26} className="text-primary" />
                 </div>
@@ -765,31 +748,29 @@ const TeamLeadDashboardPage = () => {
 
             <div className="px-6 pb-7 pt-5">
               <h2 className="text-xl font-black tracking-tight text-base-content">
-                No Team Connected Yet
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-base-content/55">
-                To get started, create a team and assign members to it, or connect an existing team to the project.
-              </p>
+                {t("No Team Connected Yet")}</h2>
+              <p className="mt-2 text-sm leading-6 text-heledone-ink-muted">
+                {t("To get started, create a team and assign members to it, or connect an existing team to the project.")}</p>
 
               {/* Steps guide */}
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 {[
                   {
                     step: "1",
-                    label: "Create a Team",
-                    desc: "Set up a team in your organization",
+                    label: t("Create a Team"),
+                    desc: t("Set up a team in your organization"),
                     tone: "primary",
                   },
                   {
                     step: "2",
-                    label: "Add Members",
-                    desc: "Assign users to your team",
+                    label: t("Add Members"),
+                    desc: t("Assign users to your team"),
                     tone: "secondary",
                   },
                   {
                     step: "3",
-                    label: "Link to Project",
-                    desc: "Connect the team to your projects",
+                    label: t("Link to Project"),
+                    desc: t("Connect the team to your projects"),
                     tone: "success",
                   },
                 ].map(({ step, label, desc, tone }) => (
@@ -804,7 +785,7 @@ const TeamLeadDashboardPage = () => {
                     }`}
                   >
                     <span
-                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black ${
+                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[13px] font-black ${
                         tone === "primary"
                           ? "bg-primary/15 text-primary"
                           : tone === "secondary"
@@ -815,7 +796,7 @@ const TeamLeadDashboardPage = () => {
                       {step}
                     </span>
                     <p className="mt-2 text-xs font-bold text-base-content">{label}</p>
-                    <p className="mt-0.5 text-[11px] text-base-content/50">{desc}</p>
+                    <p className="mt-0.5 text-[13px] text-heledone-ink-muted">{desc}</p>
                   </div>
                 ))}
               </div>
@@ -827,15 +808,13 @@ const TeamLeadDashboardPage = () => {
                   className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-black text-primary-content shadow-md shadow-primary/20"
                 >
                   <Add size={16} />
-                  Create or Manage Teams
-                </Link>
+                  {t("Create or Manage Teams")}</Link>
                 <Link
                   to="/projects"
                   className="motion-interactive inline-flex h-10 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-4 text-xs font-black text-base-content/70 hover:border-primary/30 hover:text-primary"
                 >
                   <ArrowRight size={15} />
-                  View Projects
-                </Link>
+                  {t("View Projects")}</Link>
               </div>
             </div>
           </div>
@@ -855,49 +834,45 @@ const TeamLeadDashboardPage = () => {
                   <Danger size={19} />
                 </div>
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-error">
-                    Needs Attention
-                  </p>
+                  <p className="text-xs font-black uppercase  text-error">
+                    {t("Needs Attention")}</p>
                   <h2 className="mt-1 text-lg font-black text-base-content">
-                    {dashboard.overdue_summary.total_overdue} tasks behind schedule
-                  </h2>
-                  <p className="mt-1 text-xs font-semibold text-base-content/50">
-                    See details in the overdue tasks section.
-                  </p>
+                    {dashboard.overdue_summary.total_overdue}  {t("tasks behind schedule")}</h2>
+                  <p className="mt-1 text-xs font-semibold text-heledone-ink-muted">
+                    {t("See details in the overdue tasks section.")}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
+              <div className="flex items-center gap-2 text-xs font-bold text-heledone-ink-muted">
                 <Calendar size={15} />
-                Updated just now
-              </div>
+                {t("Updated just now")}</div>
             </section>
           )}
 
           {/* ─── KPI Cards ─── */}
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <MetricCard
-              label="Team Members"
+              label={t("Team Members")}
               value={dashboard.team_member_count}
-              description="members in this team"
+              description={t("members in this team")}
               icon={People}
               tone="primary"
             />
             <MetricCard
-              label="Today's Attendance"
+              label={t("Today's Attendance")}
               value={`${membersPresent} / ${dashboard.team_member_count}`}
-              description="present out of total"
+              description={t("present out of total")}
               icon={Building}
               tone="success"
             />
             <MetricCard
-              label="Overdue Tasks"
+              label={t("Overdue Tasks")}
               value={dashboard.overdue_summary.total_overdue}
               description={
                 totalTasks > 0
                   ? doneTasks > 0
-                    ? `${doneTasks} completed out of ${totalTasks} total tasks`
-                    : `Out of ${totalTasks} total tasks`
-                  : "No tasks assigned"
+                    ? t("{value0} completed out of {value1} total tasks", { value0: doneTasks, value1: totalTasks })
+                    : t("Out of {value0} total tasks", { value0: totalTasks })
+                  : t("No tasks assigned")
               }
               icon={Danger}
               tone={dashboard.overdue_summary.total_overdue > 0 ? "warning" : "success"}
@@ -907,25 +882,23 @@ const TeamLeadDashboardPage = () => {
           {/* ─── Team Overview ─── */}
           <section className={panelClass}>
             <SectionHeading
-              title="Team overview"
-              description="A quick read on delivery and capacity"
+              title={t("Team overview")}
+              description={t("A quick read on delivery and capacity")}
               action={
-                <span className="text-[11px] font-bold text-base-content/35">
-                  This week
-                </span>
+                <span className="text-[13px] font-bold text-heledone-ink-muted">
+                  {t("این هفته")}</span>
               }
             />
-            <div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[10px] font-black uppercase tracking-wider text-base-content/35 sm:grid">
-              <span>Member</span>
-              <span>Workload</span>
-              <span className="text-end">Done</span>
-              <span className="text-end">Risk</span>
-              <span className="text-end">Focus</span>
+            <div className="hidden grid-cols-[minmax(13rem,1.2fr)_minmax(12rem,1fr)_5rem_5rem_6rem] gap-3 px-5 pb-2 text-[13px] font-black uppercase tracking-wider text-heledone-ink-muted sm:grid">
+              <span>{t("Member")}</span>
+              <span>{t("Workload")}</span>
+              <span className="text-end">{t("انجام‌شده")}</span>
+              <span className="text-end">{t("Risk")}</span>
+              <span className="text-end">{t("تمرکز")}</span>
             </div>
             {members.length === 0 ? (
-              <div className="px-5 pb-6 text-sm font-semibold text-base-content/45">
-                No team members are visible in this scope.
-              </div>
+              <div className="px-5 pb-6 text-sm font-semibold text-heledone-ink-muted">
+                {t("No team members are visible in this scope.")}</div>
             ) : (
               <div>
                 {members.slice(0, 8).map((member) => (
@@ -968,17 +941,15 @@ const TeamLeadDashboardPage = () => {
 
           {/* ─── Weekly focus footer ─── */}
           <section className="flex items-center justify-between rounded-2xl border border-base-content/8 bg-base-200/40 px-5 py-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
+            <div className="flex items-center gap-2 text-xs font-bold text-heledone-ink-muted">
               <Timer1 size={14} />
-              Total weekly work hours of the team:
-              <span className="font-black text-base-content">
+              {t("Total weekly work hours of the team:")}<span className="font-black text-base-content">
                 {formatHours(totalWorkSeconds)}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-base-content/50">
+            <div className="flex items-center gap-2 text-xs font-bold text-heledone-ink-muted">
               <TaskSquare size={14} />
-              {totalTasks} tasks · {doneTasks} Completed
-            </div>
+              {totalTasks}  {t("tasks ·")} {doneTasks}  {t("Completed")}</div>
           </section>
         </>
       )}

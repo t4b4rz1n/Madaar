@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ContentLoader } from "./ContentLoader";
 
 interface PageLoaderProps {
@@ -27,14 +27,14 @@ export const PageLoader: React.FC<PageLoaderProps> = ({
       <div className="relative flex items-center justify-center">
         {/* Outer glowing spinning ring */}
         <motion.div
-          className="h-16 w-16 rounded-full border-4 border-b-primary/10 border-l-primary/40 border-r-primary/20 border-t-primary"
+          className="h-16 w-16 rounded-full border-4 border-b-primary/10 border-s-primary/40 border-e-primary/20 border-t-primary"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
 
         {/* Inner reverse-spinning ring */}
         <motion.div
-          className="absolute h-10 w-10 rounded-full border-4 border-b-secondary/10 border-l-secondary/40 border-r-secondary/20 border-t-secondary"
+          className="absolute h-10 w-10 rounded-full border-4 border-b-secondary/10 border-s-secondary/40 border-e-secondary/20 border-t-secondary"
           animate={{ rotate: -360 }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
         />
@@ -49,7 +49,7 @@ export const PageLoader: React.FC<PageLoaderProps> = ({
 
       {/* Loading Text */}
       <motion.p
-        className="mt-6 text-xs font-bold uppercase tracking-widest text-primary/70"
+        className="mt-6 text-xs font-bold uppercase tracking-widest text-primary"
         animate={{ opacity: [0.4, 0.8, 0.4] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
       >

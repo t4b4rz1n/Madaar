@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { t as translate, useTranslation } from "../i18n/locale";
+import { motion } from "motion/react";
 import { Discover, Element3, RowVertical } from "iconsax-reactjs";
 import type { ViewMode } from "../features/projects/types";
 
@@ -14,9 +15,9 @@ const viewOptions: Array<{
   label: string;
   icon: typeof Element3;
 }> = [
-  { id: "grid", label: "Grid", icon: Element3 },
-  { id: "table", label: "Table", icon: RowVertical },
-  { id: "orbit", label: "Orbit", icon: Discover },
+  { id: "grid", get label() { return translate("Grid"); }, icon: Element3 },
+  { id: "table", get label() { return translate("Table"); }, icon: RowVertical },
+  { id: "orbit", get label() { return translate("Orbit"); }, icon: Discover },
 ];
 
 export const ViewSwitcher = <T extends ViewMode>({
@@ -25,11 +26,12 @@ export const ViewSwitcher = <T extends ViewMode>({
   modes = ["grid", "table"],
   className = "",
 }: ViewSwitcherProps<T>) => {
+  const t = useTranslation();
   return (
     <div
       className={`flex items-center p-0.5 bg-base-200/40 backdrop-blur-md border border-base-content/8 rounded-lg ${className}`}
       role="group"
-      aria-label="Choose view"
+      aria-label={t("Choose view")}
     >
       {viewOptions
         .filter((option) => modes.includes(option.id))
@@ -44,7 +46,7 @@ export const ViewSwitcher = <T extends ViewMode>({
               onClick={() => setViewMode(option.id as T)}
               className="relative z-10 btn btn-sm btn-ghost rounded-md px-2.5 sm:px-3 flex-1 h-7 min-h-0 active:scale-95 transition-transform duration-100 ease-out"
               aria-pressed={isActive}
-              aria-label={`${option.label} view`}
+              aria-label={t("{value0} view", { value0: option.label })}
             >
               {isActive && (
                 <motion.div
@@ -55,7 +57,7 @@ export const ViewSwitcher = <T extends ViewMode>({
               )}
               <div
                 className={`relative flex items-center justify-center w-full gap-2 transition-colors duration-300 ${
-                  isActive ? "text-base-content" : "text-base-content/60"
+                  isActive ? "text-base-content" : "text-heledone-ink-muted"
                 }`}
               >
                 <Icon size={18} />

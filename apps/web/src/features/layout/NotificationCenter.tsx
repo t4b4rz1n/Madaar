@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation, useLocale } from "../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight2, Notification as NotificationIcon } from "iconsax-reactjs";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -21,6 +22,7 @@ const formatNotificationDate = (date: string) => {
 };
 
 export const NotificationCenter = () => {
+  const t = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -69,13 +71,13 @@ export const NotificationCenter = () => {
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        aria-label={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
+        aria-label={unreadCount ? t("{value0} unread notifications", { value0: unreadCount }) : t("Notifications")}
         aria-expanded={isOpen}
-        className="motion-interactive relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-base-content/10 bg-base-100/70 text-base-content/65 shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-11"
+        className="motion-interactive relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-base-content/10 bg-base-100/70 text-heledone-ink-muted shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-11"
       >
         <NotificationIcon size={20} />
         {unreadCount > 0 && (
-          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[0.58rem] font-bold leading-none text-error-content">
+          <span className="absolute end-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[0.58rem] font-bold leading-none text-error-content">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -84,8 +86,8 @@ export const NotificationCenter = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.section
-            aria-label="Notification center"
-            className="madaar-glass absolute right-0 top-[calc(100%+0.75rem)] z-[60] w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl shadow-madaar-floating"
+            aria-label={t("Notification center")}
+            className="heledone-glass absolute end-0 top-[calc(100%+0.75rem)] z-[60] w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl shadow-heledone-floating"
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -97,9 +99,9 @@ export const NotificationCenter = () => {
           >
             <div className="flex items-center justify-between border-b border-base-content/10 px-4 py-4">
               <div>
-                <h2 className="text-sm font-bold text-base-content">Notifications</h2>
-                <p className="mt-0.5 text-xs text-base-content/45">
-                  {unreadCount ? `${unreadCount} new update${unreadCount === 1 ? "" : "s"}` : "You're all caught up"}
+                <h2 className="text-sm font-bold text-base-content">{t("Notifications")}</h2>
+                <p className="mt-0.5 text-xs text-heledone-ink-muted">
+                  {unreadCount ? t("New updates: {count}", { count: unreadCount }) : t("You're all caught up")}
                 </p>
               </div>
               <NotificationIcon size={20} className="text-primary" />
@@ -107,15 +109,15 @@ export const NotificationCenter = () => {
 
             <div className="max-h-[min(24rem,55vh)] overflow-y-auto p-2">
               {isLoading ? (
-                <div className="space-y-2 p-2" aria-label="Loading notifications">
+                <div className="space-y-2 p-2" aria-label={t("Loading notifications")}>
                   {[1, 2, 3].map((item) => (
                     <div key={item} className="h-16 animate-pulse rounded-xl bg-base-200" />
                   ))}
                 </div>
               ) : isError ? (
-                <EmptyState text="Notifications could not be loaded." />
+                <EmptyState text={t("Notifications could not be loaded.")} />
               ) : notifications.length === 0 ? (
-                <EmptyState text="No notifications yet." />
+                <EmptyState text={t("No notifications yet.")} />
               ) : (
                 notifications.map((notification) => (
                   <NotificationRow key={notification.id} notification={notification} onClick={() => setIsOpen(false)} />
@@ -129,8 +131,7 @@ export const NotificationCenter = () => {
                 onClick={() => setIsOpen(false)}
                 className="motion-interactive flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-primary hover:bg-primary/10"
               >
-                View all notifications
-                <ArrowRight2 size={15} />
+                {t("View all notifications")}<ArrowRight2 size={15} />
               </Link>
             </div>
           </motion.section>
@@ -141,6 +142,7 @@ export const NotificationCenter = () => {
 };
 
 const NotificationRow = ({ notification, onClick }: { notification: Notification, onClick: () => void }) => {
+  useLocale();
   const content = (
     <>
       <span
@@ -149,7 +151,7 @@ const NotificationRow = ({ notification, onClick }: { notification: Notification
       />
       <span className="min-w-0 flex-1">
         <span className="block text-sm leading-6 text-base-content/80">{notification.text}</span>
-        <span className="mt-1 block text-[0.68rem] text-base-content/45">
+        <span className="mt-1 block text-[0.68rem] text-heledone-ink-muted">
           {formatNotificationDate(notification.created_at)}
         </span>
       </span>
@@ -172,6 +174,6 @@ const NotificationRow = ({ notification, onClick }: { notification: Notification
   );
 };
 
-const EmptyState = ({ text }: { text: string }) => (
-  <div className="px-4 py-10 text-center text-xs leading-5 text-base-content/50">{text}</div>
-);
+const EmptyState = ({ text }: { text: string }) => { useLocale(); return (
+  <div className="px-4 py-10 text-center text-xs leading-5 text-heledone-ink-muted">{text}</div>
+); };

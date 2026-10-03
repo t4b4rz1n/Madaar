@@ -1,3 +1,4 @@
+import { getIntlLocale, useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -44,7 +45,7 @@ const formatSalary = (amount?: string | null, type?: string | null) => {
   if (isNaN(num)) return null;
 
   // Format number with commas (e.g. 100,000)
-  const formatted = num.toLocaleString('en-US');
+  const formatted = num.toLocaleString(getIntlLocale());
   const typeText = type.toLowerCase() === 'hourly' ? '/hr' : '/mo';
   return `${formatted} ${typeText}`;
 };
@@ -60,6 +61,7 @@ const getInitials = (name: string): string => {
 import { usePermissions } from "../../auth/hooks/usePermissions";
 
 export default function OrganizationDetailPage() {
+  const t = useTranslation();
   const { orgId } = useParams<{ orgId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -105,7 +107,7 @@ export default function OrganizationDetailPage() {
   const removeMutation = useMutation({
     mutationFn: (userId: string) => removeMember(orgId!, userId),
     onSuccess: () => {
-      toast.success("Member removed successfully");
+      toast.success(t("Member removed successfully"));
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to remove member");
@@ -139,17 +141,15 @@ export default function OrganizationDetailPage() {
 
   if (!organization) {
     return (
-      <div className="madaar-surface mx-6 mt-6 rounded-2xl border border-error/20 bg-error/5 p-8 text-center">
+      <div className="heledone-surface mx-6 mt-6 rounded-2xl border border-error/20 bg-error/5 p-8 text-center">
         <p className="font-semibold text-error">
-          Organization could not be loaded.
-        </p>
+          {t("Organization could not be loaded.")}</p>
         <button
           type="button"
           onClick={() => navigate("/organizations")}
           className="btn btn-ghost btn-sm mt-3 rounded-lg"
         >
-          Back to organizations
-        </button>
+          {t("Back to organizations")}</button>
       </div>
     );
   }
@@ -160,14 +160,13 @@ export default function OrganizationDetailPage() {
       <button
         type="button"
         onClick={() => navigate("/organizations")}
-        className="btn btn-ghost btn-sm rounded-lg gap-2 ps-0 text-base-content/60 hover:bg-base-200 hover:text-base-content"
+        className="btn btn-ghost btn-sm rounded-lg gap-2 ps-0 text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
       >
         <ArrowLeft size={16} />
-        Back to organizations
-      </button>
+        {t("Back to organizations")}</button>
 
       {/* Organization header */}
-      <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 p-5 shadow-madaar-card backdrop-blur-xl sm:p-6">
+      <div className="heledone-surface rounded-[24px] border border-base-content/10 bg-base-100/90 p-5 shadow-heledone-card backdrop-blur-xl sm:p-6">
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
           <div className="flex min-w-0 items-center gap-4">
             <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
@@ -177,11 +176,11 @@ export default function OrganizationDetailPage() {
               <h1 className="truncate text-2xl font-bold tracking-tight">
                 {organization.name}
               </h1>
-              <p className="mt-1 truncate text-sm text-base-content/45">
+              <p className="mt-1 truncate text-sm text-heledone-ink-muted">
                 /{organization.slug}
               </p>
               {organization.description && (
-                <p className="mt-2 text-sm text-base-content/60">
+                <p className="mt-2 text-sm text-heledone-ink-muted">
                   {organization.description}
                 </p>
               )}
@@ -195,8 +194,7 @@ export default function OrganizationDetailPage() {
                 className="btn btn-primary btn-sm rounded-xl gap-2 shadow-sm shadow-primary/15"
               >
                 <Add size={16} />
-                Create member
-              </button>
+                {t("Create member")}</button>
             )}
             {hasPermission("org.manage_settings") && (
               <button
@@ -205,8 +203,7 @@ export default function OrganizationDetailPage() {
                 className="btn btn-outline btn-sm rounded-xl gap-2"
               >
                 <Profile2User size={16} />
-                Create team
-              </button>
+                {t("Create team")}</button>
             )}
             {hasPermission("project.create") && (
               <button
@@ -219,8 +216,7 @@ export default function OrganizationDetailPage() {
                 className="btn btn-outline btn-sm rounded-xl gap-2"
               >
                 <FolderFavorite size={16} />
-                Create project
-              </button>
+                {t("ساخت پروژه")}</button>
             )}
             {hasPermission("org.manage_roles") && (
               <button
@@ -229,20 +225,19 @@ export default function OrganizationDetailPage() {
                 className="btn btn-outline btn-sm rounded-xl gap-2"
               >
                 <Shield size={16} />
-                Roles Management
-              </button>
+                {t("Roles Management")}</button>
             )}
           </div>
         </div>
       </div>
 
       {/* Members section */}
-      <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-madaar-card">
+      <div className="heledone-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-heledone-card">
         <div className="flex items-center justify-between border-b border-base-content/10 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-2">
-            <UserIcon size={18} className="text-base-content/45" />
-            <h2 className="text-lg font-semibold">Members</h2>
-            <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-base-content/55">
+            <UserIcon size={18} className="text-heledone-ink-muted" />
+            <h2 className="text-lg font-semibold">{t("اعضا")}</h2>
+            <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-heledone-ink-muted">
               {members.length}
             </span>
           </div>
@@ -259,12 +254,11 @@ export default function OrganizationDetailPage() {
           </div>
         ) : members.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-base-content/45">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-heledone-ink-muted">
               <UserIcon size={24} />
             </div>
-            <p className="text-sm text-base-content/55">
-              No members yet. Create the first member for this organization.
-            </p>
+            <p className="text-sm text-heledone-ink-muted">
+              {t("No members yet. Create the first member for this organization.")}</p>
           </div>
         ) : (
           <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
@@ -293,7 +287,7 @@ export default function OrganizationDetailPage() {
                       salary_amount: member.salary_amount || null
                     });
                   }}
-                  className={`madaar-surface group relative flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-madaar-raised ${hasPermission("org.manage_members") ? "cursor-pointer" : ""}`}
+                  className={`heledone-surface group relative flex items-center gap-4 rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-heledone-raised ${hasPermission("org.manage_members") ? "cursor-pointer" : ""}`}
                 >
                   <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                     {getInitials(getUserDisplayName(member))}
@@ -302,17 +296,17 @@ export default function OrganizationDetailPage() {
                     <p className="truncate text-sm font-semibold">
                       {getUserDisplayName(member)}
                     </p>
-                    <p className="truncate text-xs text-base-content/45">
+                    <p className="truncate text-xs text-heledone-ink-muted">
                       {member.email}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       {member.role_display && (
-                        <span className="inline-block rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-medium text-base-content/55">
+                        <span className="inline-block rounded-full bg-base-200 px-2 py-0.5 text-[13px] font-medium text-heledone-ink-muted">
                           {member.role_display}
                         </span>
                       )}
                       {formatSalary(member.salary_amount, member.salary_type) && (
-                        <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                        <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[13px] font-bold text-primary">
                           {formatSalary(member.salary_amount, member.salary_type)}
                         </span>
                       )}
@@ -325,8 +319,8 @@ export default function OrganizationDetailPage() {
                         e.stopPropagation();
                         setMemberToRemove(member);
                       }}
-                      className="btn btn-ghost btn-square btn-sm rounded-xl text-error/60 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-error/10 hover:text-error"
-                      title="Remove from organization"
+                      className="btn btn-ghost btn-square btn-sm rounded-xl text-error opacity-0 transition-opacity group-hover:opacity-100 hover:bg-error/10 hover:text-error"
+                      title={t("Remove from organization")}
                     >
                       <Trash size={16} />
                     </button>
@@ -339,12 +333,12 @@ export default function OrganizationDetailPage() {
       </div>
 
       {/* Teams section */}
-      <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-madaar-card">
+      <div className="heledone-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-heledone-card">
         <div className="flex items-center justify-between border-b border-base-content/10 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-2">
-            <Profile2User size={18} className="text-base-content/45" />
-            <h2 className="text-lg font-semibold">Teams</h2>
-            <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-base-content/55">
+            <Profile2User size={18} className="text-heledone-ink-muted" />
+            <h2 className="text-lg font-semibold">{t("تیم‌ها")}</h2>
+            <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-heledone-ink-muted">
               {teams.length}
             </span>
           </div>
@@ -357,10 +351,10 @@ export default function OrganizationDetailPage() {
           </div>
         ) : teams.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-base-content/45">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-heledone-ink-muted">
               <Profile2User size={24} />
             </div>
-            <p className="text-sm text-base-content/55">No teams found in this organization</p>
+            <p className="text-sm text-heledone-ink-muted">{t("No teams found in this organization")}</p>
           </div>
         ) : (
           <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
@@ -375,26 +369,26 @@ export default function OrganizationDetailPage() {
                     key={team.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="madaar-surface rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-madaar-raised"
+                    className="heledone-surface rounded-2xl border border-base-content/10 bg-base-200/25 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-base-100 hover:shadow-heledone-raised"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">{team.name}</p>
-                        <p className="mt-1 line-clamp-2 text-xs text-base-content/50">
-                          {team.description || "No description provided"}
+                        <p className="mt-1 line-clamp-2 text-xs text-heledone-ink-muted">
+                          {team.description || t("No description provided")}
                         </p>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                        team.is_active ? "bg-success/10 text-success" : "bg-base-200 text-base-content/50"
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[13px] font-medium ${
+                        team.is_active ? "bg-success/10 text-success" : "bg-base-200 text-heledone-ink-muted"
                       }`}>
-                        {team.is_active ? "Active" : "Inactive"}
+                        {team.is_active ? t("فعال") : t("Inactive")}
                       </span>
                     </div>
-                    <div className="mt-4 flex items-center justify-between text-xs text-base-content/50">
+                    <div className="mt-4 flex items-center justify-between text-xs text-heledone-ink-muted">
                       <span>
-                        Leader: {leader ? `${leader.first_name} ${leader.last_name}`.trim() : "Unassigned"}
+                        {t("Leader:")} {leader ? `${leader.first_name} ${leader.last_name}`.trim() : t("بدون مسئول")}
                       </span>
-                      {memberCount !== undefined && <span>{memberCount} members</span>}
+                      {memberCount !== undefined && <span>{memberCount}  {t("members")}</span>}
                     </div>
                   </motion.div>
                 );
@@ -405,12 +399,12 @@ export default function OrganizationDetailPage() {
       </div>
 
       {/* Projects section */}
-      <div className="madaar-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-madaar-card">
+      <div className="heledone-surface rounded-[24px] border border-base-content/10 bg-base-100/90 shadow-heledone-card">
         <div className="flex items-center justify-between border-b border-base-content/10 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-2">
-            <Briefcase size={18} className="text-base-content/45" />
-            <h2 className="text-lg font-semibold">Projects</h2>
-            <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-base-content/55">
+            <Briefcase size={18} className="text-heledone-ink-muted" />
+            <h2 className="text-lg font-semibold">{t("پروژه‌ها")}</h2>
+            <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-heledone-ink-muted">
               {projects.length}
             </span>
           </div>
@@ -423,10 +417,10 @@ export default function OrganizationDetailPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-base-content/45">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-base-200 text-heledone-ink-muted">
               <FolderFavorite size={24} />
             </div>
-            <p className="text-sm text-base-content/55">No projects found in this organization</p>
+            <p className="text-sm text-heledone-ink-muted">{t("No projects found in this organization")}</p>
           </div>
         ) : (
           <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
@@ -437,18 +431,18 @@ export default function OrganizationDetailPage() {
                   key={project.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="madaar-surface rounded-xl border border-base-content/10 bg-base-100 p-4 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
+                  className="heledone-surface rounded-xl border border-base-content/10 bg-base-100 p-4 transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xl hover:shadow-primary/5"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="truncate text-sm font-semibold">{project.name}</p>
                     <span className="badge badge-sm shrink-0 capitalize">{project.status_display || project.status}</span>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-xs text-base-content/55">
-                    {project.description || "No description provided"}
+                  <p className="mt-2 line-clamp-2 text-xs text-heledone-ink-muted">
+                    {project.description || t("No description provided")}
                   </p>
-                  <div className="mt-4 flex items-center justify-between text-xs text-base-content/50">
-                    <span>{project.deadline ? `Due ${formatDisplayDate(project.deadline, "yyyy-MM-dd")}` : "No deadline"}</span>
-                    {project.progress_percentage !== undefined && <span>{project.progress_percentage}% complete</span>}
+                  <div className="mt-4 flex items-center justify-between text-xs text-heledone-ink-muted">
+                    <span>{project.deadline ? t("Due {value0}", { value0: formatDisplayDate(project.deadline, "yyyy-MM-dd") }) : t("No deadline")}</span>
+                    {project.progress_percentage !== undefined && <span>{project.progress_percentage}{t("% complete")}</span>}
                   </div>
                 </motion.div>
               ))}
@@ -505,7 +499,7 @@ export default function OrganizationDetailPage() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="madaar-surface w-full max-w-md rounded-[24px] border border-base-content/10 bg-base-100/95 p-5 shadow-madaar-floating backdrop-blur-xl sm:p-6"
+              className="heledone-surface w-full max-w-md rounded-[24px] border border-base-content/10 bg-base-100/95 p-5 shadow-heledone-floating backdrop-blur-xl sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
@@ -513,15 +507,13 @@ export default function OrganizationDetailPage() {
                   <Trash size={28} />
                 </div>
                 <h3 className="text-lg font-bold text-base-content">
-                  Remove Member
-                </h3>
-                <p className="mt-2 text-sm text-base-content/60">
-                  Are you sure you want to remove{" "}
+                  {t("Remove Member")}</h3>
+                <p className="mt-2 text-sm text-heledone-ink-muted">
+                  {t("Are you sure you want to remove")}{" "}
                   <span className="font-semibold">
                     {getUserDisplayName(memberToRemove)}
                   </span>{" "}
-                  from this organization? This action cannot be undone.
-                </p>
+                  {t("from this organization? This action cannot be undone.")}</p>
               </div>
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
@@ -530,8 +522,7 @@ export default function OrganizationDetailPage() {
                   className="btn btn-ghost rounded-xl"
                   disabled={removeMutation.isPending}
                 >
-                  Cancel
-                </button>
+                  {t("انصراف")}</button>
                 <button
                   type="button"
                   onClick={() =>
@@ -543,10 +534,9 @@ export default function OrganizationDetailPage() {
                   {removeMutation.isPending ? (
                     <span className="flex items-center gap-2">
                       <span className="loading loading-spinner loading-sm"></span>
-                      Removing...
-                    </span>
+                      {t("Removing...")}</span>
                   ) : (
-                    "Remove"
+                    t("Remove")
                   )}
                 </button>
               </div>

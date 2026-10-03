@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/locale";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuthStore } from "../../auth/store/authStore";
@@ -42,7 +43,7 @@ export const useUpdateProfile = () => {
   return useMutation({
     mutationFn: (data: ProfileUpdateData) => updateProfile(data),
     onSuccess: (response) => {
-      toast.success("Profile updated successfully.");
+      toast.success(t("Profile updated successfully."));
 
       if (user && response.data) {
         updateUser({
@@ -56,7 +57,7 @@ export const useUpdateProfile = () => {
       }
     },
     onError: (error: any) => {
-      toast.error(getErrorMessage(error, "Error updating profile."));
+      toast.error(getErrorMessage(error, t("Error updating profile.")));
     },
   });
 };
@@ -69,7 +70,7 @@ export const useTelegramMagicLink = () => {
       if (url) {
         window.open(url, "_blank");
       } else {
-        toast.error("Invalid response from server. No magic link found.");
+        toast.error(t("Invalid response from server. No magic link found."));
       }
     },
     onError: (error: any) => {

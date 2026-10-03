@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../../i18n/locale";
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useProjectWizardStore } from '../../store/useProjectWizardStore';
@@ -5,12 +6,13 @@ import { getOrganizations } from '../../../organizations/api/organizationsApi';
 import { Building2, ChevronDown } from 'lucide-react';
 
 const COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
-  '#f97316', '#eab308', '#22c55e', '#14b8a6',
-  '#3b82f6', '#06b6d4', '#a855f7', '#64748b',
+  '#087F83', '#006D73', '#DF765B', '#F2BA49',
+  '#A7D4CD', '#C6E6E1', '#D8E6D6', '#F7DFAD',
+  '#F5D3C6', '#EBC0AF', '#D7C8B3', '#52666C',
 ];
 
 export const WizardStep1Basics: React.FC = () => {
+  const t = useTranslation();
   const {
     projectName, setProjectName,
     projectColor, setProjectColor,
@@ -45,24 +47,23 @@ export const WizardStep1Basics: React.FC = () => {
         {/* Organization Selector */}
         <div>
           <label className="block text-sm font-medium text-base-content/70 mb-1.5">
-            Organization <span className="text-error">*</span>
+            {t("Organization")} <span className="text-error">*</span>
           </label>
           {orgsLoading ? (
             <div className="input input-bordered flex items-center gap-2 bg-base-200/50">
               <span className="loading loading-spinner loading-xs" />
-              <span className="text-sm text-base-content/50">Loading...</span>
+              <span className="text-sm text-heledone-ink-muted">{t("Loading...")}</span>
             </div>
           ) : orgs.length === 0 ? (
             <div className="input input-bordered flex items-center gap-2 bg-base-200/50 text-error text-sm">
-              No organizations found
-            </div>
+              {t("No organizations found")}</div>
           ) : (
             <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" />
+              <Building2 className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-heledone-ink-muted pointer-events-none" />
               <select
                 value={selectedOrgId ?? ''}
                 onChange={(e) => setSelectedOrgId(e.target.value)}
-                className="select select-bordered w-full pl-9 bg-base-200/50 focus:select-primary appearance-none"
+                className="select select-bordered w-full ps-9 bg-base-200/50 focus:select-primary appearance-none"
               >
                 {orgs.map((org) => (
                   <option key={org.id} value={org.id}>
@@ -70,7 +71,7 @@ export const WizardStep1Basics: React.FC = () => {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" />
+              <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-heledone-ink-muted pointer-events-none" />
             </div>
           )}
         </div>
@@ -78,7 +79,7 @@ export const WizardStep1Basics: React.FC = () => {
         {/* Project Name */}
         <div>
           <label className="block text-sm font-medium text-base-content/70 mb-1.5">
-            Project Name <span className="text-error">*</span>
+            {t("نام پروژه")} <span className="text-error">*</span>
           </label>
           <input
             type="text"
@@ -88,7 +89,7 @@ export const WizardStep1Basics: React.FC = () => {
             onChange={(e) => setProjectName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleNext(); }}
             className="input input-bordered w-full bg-base-200/50 focus:input-primary"
-            placeholder="e.g. Q4 Product Launch"
+            placeholder={t("e.g. Q4 Product Launch")}
             dir="auto"
           />
         </div>
@@ -96,8 +97,7 @@ export const WizardStep1Basics: React.FC = () => {
         {/* Color */}
         <div>
           <label className="block text-sm font-medium text-base-content/70 mb-2">
-            Project Color
-          </label>
+            {t("رنگ پروژه")}</label>
           <div className="flex flex-wrap gap-2">
             {COLORS.map((c) => (
               <button
@@ -121,16 +121,14 @@ export const WizardStep1Basics: React.FC = () => {
       {/* Footer */}
       <div className="flex justify-between items-center pt-6 mt-6 border-t border-base-300">
         <button type="button" onClick={close} className="btn btn-ghost btn-sm">
-          Cancel
-        </button>
+          {t("انصراف")}</button>
         <button
           type="button"
           onClick={handleNext}
           disabled={!canProceed}
           className="btn btn-primary btn-sm gap-2 px-6"
         >
-          Next: Add Users
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {t("Next: Add Users")}<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>

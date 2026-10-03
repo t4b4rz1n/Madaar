@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/locale";
 import {
   keepPreviousData,
   useMutation,
@@ -34,7 +35,7 @@ export const useCreateTeam = () => {
         queryKey: ["teams"],
       });
 
-      toast.success("Team created successfully");
+      toast.success(t("Team created successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -58,7 +59,7 @@ export const useUpdateTeam = () => {
         queryKey: ["teams"],
       });
 
-      toast.success("Team updated successfully");
+      toast.success(t("Team updated successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -81,7 +82,7 @@ export const useDeleteTeam = () => {
         queryKey: ["teams"],
       });
 
-      toast.success("Team deleted successfully");
+      toast.success(t("Team deleted successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -118,7 +119,7 @@ export const useAddTeamMember = () => {
         queryClient.invalidateQueries({ queryKey: ["teams"] }),
         queryClient.invalidateQueries({ queryKey: ["organizations"] }),
       ]);
-      toast.success("Member added successfully");
+      toast.success(t("Member added successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -143,7 +144,7 @@ export const useRemoveTeamMember = () => {
         queryClient.invalidateQueries({ queryKey: ["teams"] }),
         queryClient.invalidateQueries({ queryKey: ["organizations"] }),
       ]);
-      toast.success("Member removed successfully");
+      toast.success(t("Member removed successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -167,7 +168,7 @@ export const useUpdateTeamMemberRole = () => {
         queryClient.invalidateQueries({ queryKey: ["teams"] }),
         queryClient.invalidateQueries({ queryKey: ["organizations"] }),
       ]);
-      toast.success("Member role updated successfully");
+      toast.success(t("Member role updated successfully"));
     },
     onError: (error: any) => {
       const errorMessage =

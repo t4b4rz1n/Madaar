@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { motion } from "motion/react";
 import {
   Calendar,
   Copy,
@@ -30,6 +31,7 @@ export const DiscountsTable = ({
   onEdit,
   canManage = false,
 }: DiscountsTableProps) => {
+  const t = useTranslation();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
@@ -42,10 +44,10 @@ export const DiscountsTable = ({
     try {
       await navigator.clipboard.writeText(code);
       setCopiedCode(code);
-      toast.success("Code copied");
+      toast.success(t("Code copied"));
       setTimeout(() => setCopiedCode(null), 2000);
     } catch {
-      toast.error("Failed to copy");
+      toast.error(t("Failed to copy"));
     }
   };
 
@@ -76,11 +78,11 @@ export const DiscountsTable = ({
   if (isError) {
     return (
       <div className="bg-linear-to-br from-error/5 to-error/10 rounded-2xl border border-error/20 p-12 text-center">
-        <div className="text-error/40 mb-4">
+        <div className="text-error mb-4">
           <DiscountShape className="w-16 h-16 mx-auto" />
         </div>
-        <h3 className="text-lg font-bold text-error mb-2">Loading Error</h3>
-        <p className="text-error/70">There was a problem loading discounts</p>
+        <h3 className="text-lg font-bold text-error mb-2">{t("Loading Error")}</h3>
+        <p className="text-error">{t("There was a problem loading discounts")}</p>
       </div>
     );
   }
@@ -88,15 +90,13 @@ export const DiscountsTable = ({
   if (discounts.length === 0) {
     return (
       <div className="bg-linear-to-br from-base-200 to-base-300 rounded-2xl border border-base-content/10 p-12 text-center">
-        <div className="text-base-content/40 mb-4">
+        <div className="text-heledone-ink-muted mb-4">
           <DiscountShape className="w-16 h-16 mx-auto" />
         </div>
         <h3 className="text-lg font-bold text-base-content mb-2">
-          No Discounts Found
-        </h3>
+          {t("No Discounts Found")}</h3>
         <p className="text-base-content/70">
-          Create a discount code to get started
-        </p>
+          {t("Create a discount code to get started")}</p>
       </div>
     );
   }
@@ -108,25 +108,19 @@ export const DiscountsTable = ({
           <table className="w-full">
             <thead className="bg-linear-to-r from-primary/10 to-primary/5 border-b border-base-content/10">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                  Code
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                  Value
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                  Usage Limit
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                  Expires
-                </th>
+                <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                  {t("Code")}</th>
+                <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                  {t("Value")}</th>
+                <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                  {t("Usage Limit")}</th>
+                <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                  {t("وضعیت")}</th>
+                <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                  {t("Expires")}</th>
                 {canManage && (
-                  <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                    Actions
-                  </th>
+                  <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                    {t("Actions")}</th>
                 )}
               </tr>
             </thead>
@@ -160,8 +154,8 @@ export const DiscountsTable = ({
                             </span>
                             <button
                               onClick={() => copyToClipboard(discount.code)}
-                              className="text-base-content/40 hover:text-primary transition-colors"
-                              title="Copy Code"
+                              className="text-heledone-ink-muted hover:text-primary transition-colors"
+                              title={t("Copy Code")}
                             >
                               {copiedCode === discount.code ? (
                                 <TickCircle
@@ -174,8 +168,8 @@ export const DiscountsTable = ({
                               )}
                             </button>
                           </div>
-                          <div className="text-xs text-base-content/50 max-w-[150px] truncate">
-                            {discount.description || "No description"}
+                          <div className="text-xs text-heledone-ink-muted max-w-[150px] truncate">
+                            {discount.description || t("No description")}
                           </div>
                         </div>
                       </div>
@@ -187,9 +181,8 @@ export const DiscountsTable = ({
                         <span className="text-lg font-bold text-primary">
                           {discount.percent}%
                         </span>
-                        <span className="text-xs text-base-content/50 font-medium">
-                          OFF
-                        </span>
+                        <span className="text-xs text-heledone-ink-muted font-medium">
+                          {t("OFF")}</span>
                       </div>
                     </td>
 
@@ -200,7 +193,7 @@ export const DiscountsTable = ({
                           <span className="text-base-content/70 font-medium flex items-center gap-1">
                             <User size={12} /> {discount.current_usage}
                           </span>
-                          <span className="text-base-content/40">
+                          <span className="text-heledone-ink-muted">
                             / {discount.max_usage}
                           </span>
                         </div>
@@ -223,26 +216,26 @@ export const DiscountsTable = ({
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
                           discount.is_active && !isExpired
                             ? "bg-success/10 text-success border-success/20"
-                            : "bg-base-200 text-base-content/50 border-base-content/10"
+                            : "bg-base-200 text-heledone-ink-muted border-base-content/10"
                         }`}
                       >
                         {discount.is_active && !isExpired ? (
-                          <TickCircle size={14} className="mr-1" />
+                          <TickCircle size={14} className="me-1" />
                         ) : (
-                          <div className="w-2 h-2 rounded-full bg-base-content/40 mr-1.5" />
+                          <div className="w-2 h-2 rounded-full bg-base-content/40 me-1.5" />
                         )}
                         {discount.is_active && !isExpired
-                          ? "Active"
+                          ? t("فعال")
                           : isExpired
-                          ? "Expired"
-                          : "Inactive"}
+                          ? t("Expired")
+                          : t("Inactive")}
                       </span>
                     </td>
 
                     {/* Date Column */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-base-content/60" />
+                        <Calendar className="w-4 h-4 text-heledone-ink-muted" />
                         <span className="text-sm text-base-content/70">
                           {formatDate(discount.expiration_date)}
                         </span>
@@ -255,8 +248,8 @@ export const DiscountsTable = ({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => onEdit(discount)}
-                            className="p-2 hover:bg-primary/10 text-base-content/60 hover:text-primary rounded-lg transition-colors"
-                            title="Edit"
+                            className="p-2 hover:bg-primary/10 text-heledone-ink-muted hover:text-primary rounded-lg transition-colors"
+                            title={t("ویرایش")}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -264,8 +257,8 @@ export const DiscountsTable = ({
                             onClick={() =>
                               setDeleteModalState({ open: true, discount })
                             }
-                            className="p-2 hover:bg-error/10 text-base-content/60 hover:text-error rounded-lg transition-colors"
-                            title="Delete"
+                            className="p-2 hover:bg-error/10 text-heledone-ink-muted hover:text-error rounded-lg transition-colors"
+                            title={t("حذف")}
                           >
                             <Trash className="w-4 h-4" />
                           </button>
@@ -284,8 +277,8 @@ export const DiscountsTable = ({
         isOpen={deleteModalState.open}
         onClose={() => setDeleteModalState({ open: false, discount: null })}
         onConfirm={handleDelete}
-        title="Delete Discount"
-        message={`Are you sure you want to delete the discount code "${deleteModalState.discount?.code}"?`}
+        title={t("Delete Discount")}
+        message={t("Are you sure you want to delete the discount code \"{value0}\"?", { value0: deleteModalState.discount?.code })}
         isLoading={deleteMutation.isPending}
       />
     </>

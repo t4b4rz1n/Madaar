@@ -1,8 +1,8 @@
-# Madaar - Enterprise Work OS
+# هله‌دان | Heledone
 
-Madaar is not just a task manager; it is a unified, intelligent operating system for your team. From daily tasks and code commits to financial rewards, gamification, and high-level company OKRs, Madaar brings every process into precise harmony around the core of the organization.
+Heledone is not just a task manager; it is a unified, intelligent operating system for your team. From daily tasks and code commits to financial rewards, gamification, and high-level company OKRs, Heledone brings every process into precise harmony around the core of the organization.
 
-By combining agile project management, a comprehensive gamification engine, and a deep focus on mental well-being, Madaar eliminates communication friction and allows every team member to achieve their goals with maximum productivity and peace of mind.
+By combining agile project management, a comprehensive gamification engine, and a deep focus on mental well-being, Heledone eliminates communication friction and allows every team member to achieve their goals with maximum productivity and peace of mind.
 
 ## 🌟 Core Modules
 
@@ -21,7 +21,7 @@ By combining agile project management, a comprehensive gamification engine, and 
 This is a monorepo containing the following core services:
 
 ```text
-Madaar/
+Heledone/
 |-- apps/
 |   |-- api/       # Backend (Django, DRF, Celery, PostgreSQL)
 |   |-- web/       # Frontend (React, Vite, Tailwind CSS, Zustand, React Query)

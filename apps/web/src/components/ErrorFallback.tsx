@@ -1,3 +1,4 @@
+import { useTranslation } from "../i18n/locale";
 import { Refresh, Warning2 } from "iconsax-reactjs";
 
 interface ErrorFallbackProps {
@@ -9,6 +10,7 @@ export const ErrorFallback = ({
   error,
   resetErrorBoundary,
 }: ErrorFallbackProps) => {
+  const t = useTranslation();
   const errorMessage = error instanceof Error ? error.message : String(error);
 
   return (
@@ -18,9 +20,8 @@ export const ErrorFallback = ({
           <Warning2 size={32} variant="Bold" />
         </div>
         <h2 className="text-xl font-bold text-base-content mb-2">
-          Something went wrong
-        </h2>
-        <p className="text-sm text-base-content/60 mb-6 bg-base-200 p-3 rounded-xl font-mono text-left overflow-auto max-h-32">
+          {t("Something went wrong")}</h2>
+        <p className="text-sm text-heledone-ink-muted mb-6 bg-base-200 p-3 rounded-xl font-mono text-start overflow-auto max-h-32">
           {errorMessage}
         </p>
         <button
@@ -28,8 +29,7 @@ export const ErrorFallback = ({
           className="btn btn-primary w-full rounded-xl gap-2"
         >
           <Refresh size={20} />
-          Try Again
-        </button>
+          {t("Try Again")}</button>
       </div>
     </div>
   );

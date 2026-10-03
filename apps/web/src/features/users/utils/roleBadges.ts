@@ -12,22 +12,22 @@ import type { Role } from "../../roles/types";
 
 const roleBadgeClassMap: Record<string, string> = {
   "Super Admin":
-    "bg-gradient-to-r from-fuchsia-500/20 via-pink-500/20 to-rose-500/20 text-fuchsia-300 border border-fuchsia-400/30 shadow-[0_0_12px_rgba(217,70,239,0.18)]",
+    "bg-primary/10 text-primary border border-primary/20 ",
 
   Support:
-    "bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-blue-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_12px_rgba(34,211,238,0.18)]",
+    "bg-gradient-to-r from-primary/20 via-primary/20 to-primary/20 text-primary border border-primary/30 ",
 
   "Regular User":
-    "bg-gradient-to-r from-slate-400/10 to-zinc-300/10 text-base-content/75 border border-base-content/10 shadow-sm",
+    "bg-base-200 text-base-content/75 border border-base-content/10 shadow-sm",
 
   Frontend:
-    "bg-gradient-to-r from-pink-500/20 via-violet-500/20 to-purple-500/20 text-pink-300 border border-pink-400/30 shadow-[0_0_12px_rgba(236,72,153,0.18)]",
+    "bg-gradient-to-r from-secondary/20 via-secondary/20 to-secondary/20 text-primary border border-primary/20 ",
 
   Backend:
-    "bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-lime-500/20 text-emerald-300 border border-emerald-400/30 shadow-[0_0_12px_rgba(16,185,129,0.18)]",
+    "bg-gradient-to-r from-success/20 via-primary/20 to-success/20 text-success border border-success/30 ",
 
   Accountant:
-    "bg-gradient-to-r from-violet-500/20 via-indigo-500/20 to-purple-500/20 text-violet-300 border border-violet-400/30 shadow-[0_0_12px_rgba(139,92,246,0.18)]",
+    "bg-gradient-to-r from-secondary/20 via-secondary/20 to-secondary/20 text-primary border border-primary/20 ",
 };
 
 const roleIconMap = {
@@ -40,11 +40,11 @@ const roleIconMap = {
 } as const;
 
 const dynamicColorPalettes = [
-  "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-300 border border-emerald-500/20",
-  "bg-gradient-to-r from-purple-500/10 to-indigo-500/10 text-purple-300 border border-purple-500/20",
-  "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 border border-amber-500/20",
-  "bg-gradient-to-r from-pink-500/10 to-rose-500/10 text-pink-300 border border-pink-500/20",
-  "bg-gradient-to-r from-sky-500/10 to-cyan-500/10 text-sky-300 border border-sky-500/20",
+  "bg-gradient-to-r from-success/10 to-primary/10 text-success border border-success/20",
+  "bg-gradient-to-r from-secondary/10 to-secondary/10 text-secondary border border-secondary/20",
+  "bg-gradient-to-r from-warning/10 to-warning/10 text-warning border border-warning/20",
+  "bg-gradient-to-r from-secondary/10 to-error/10 text-secondary border border-secondary/20",
+  "bg-gradient-to-r from-primary/10 to-primary/10 text-primary border border-primary/20",
 ];
 
 const getHashCode = (str: string): number => {

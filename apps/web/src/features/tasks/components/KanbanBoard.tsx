@@ -1,3 +1,5 @@
+import { useTranslation } from "../../../i18n/locale";
+import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,6 +36,7 @@ import { toast } from 'sonner';
 import { usePermissions } from '../../auth/hooks/usePermissions';
 
 export const KanbanBoard: React.FC = () => {
+  const t = useTranslation();
   const { activeProjectId, activeBoardId, selectedTaskId, setSelectedTaskId } = useTaskStore();
   const currentUser = useAuthStore((state) => state.user);
   const { hasPermission, isStaff } = usePermissions();
@@ -264,7 +267,7 @@ export const KanbanBoard: React.FC = () => {
       // Find the specific timer for this task
       const queryClientTasks = queryClient.getQueryData<TimeLog[]>(['activeTimers']) || [];
       const timer = queryClientTasks.find(t => sameId(t.task, taskId));
-      if (!timer) throw new Error("Active timer not found for this task");
+      if (!timer) throw new Error(t("Active timer not found for this task"));
       return stopTimer(timer.id);
     },
     onMutate: async (taskId) => {
@@ -347,12 +350,15 @@ export const KanbanBoard: React.FC = () => {
 
       return { previousTasks };
     },
+    onSuccess: (_data, { isFinished }) => {
+      toast.success(isFinished ? t("تسک انجام شد؛ خسته نباشید!") : t("تسک دوباره برای انجام آماده است."));
+    },
     onError: (err: any, _vars, context: any) => {
       if (context?.previousTasks) {
         setLocalTasks(context.previousTasks);
         queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
       }
-      toast.error(err?.response?.data?.detail || 'Failed to update task completion');
+      toast.error(err?.response?.data?.detail || t("ثبت وضعیت انجام‌شدن تسک ممکن نشد"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
@@ -389,7 +395,7 @@ export const KanbanBoard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['boards'] });
       setIsAddingStatus(false);
       setNewStatusName('');
-      toast.success('Status added successfully');
+      toast.success(t("Status added successfully"));
     },
     onError: (err: any) => {
       const errorData = err.response?.data;
@@ -646,7 +652,7 @@ export const KanbanBoard: React.FC = () => {
   };
 
   if (!activeProjectId || !activeBoardId) return null;
-  if (!boards || boards.length === 0) return <div className="p-8 text-center text-base-content/45">No boards found for this project.</div>;
+  if (!boards || boards.length === 0) return <div className="p-8 text-center text-heledone-ink-muted">{t("No boards found for this project.")}</div>;
 
   const board = boards.find(b => b.id.toString() === activeBoardId) || boards[0];
   const normalizedSearch = searchQuery.trim().toLowerCase();
@@ -663,50 +669,39 @@ export const KanbanBoard: React.FC = () => {
   const completedCount = localTasks.filter(task => task.is_finished || task.status_detail?.code?.toLowerCase() === 'done').length;
   const boardProgress = localTasks.length > 0 ? Math.round((completedCount / localTasks.length) * 100) : 0;
 
-  const getStatusColor = (statusName: string, boardBg?: string) => {
-    if (boardBg && boardBg.startsWith('#')) return boardBg;
-    const lc = statusName.toLowerCase();
-    if (lc.includes('todo') || lc.includes('backlog')) return '#94a3b8';
-    if (lc.includes('doing') || lc.includes('progress')) return '#3b82f6';
-    if (lc.includes('review')) return '#a855f7';
-    if (lc.includes('done') || lc.includes('complete')) return '#10b981';
-    if (lc.includes('block')) return '#ef4444';
-    return '#6366f1';
-  };
-
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-base-200">
       {/* ─── Streamlined Linear-Style Toolbar ─── */}
       <div className="shrink-0 border-b border-base-content/10 bg-base-100/90 px-4 py-3 backdrop-blur-xl sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Left: Quick Filters & Board Progress */}
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <div className="flex max-w-full items-center gap-2 flex-wrap min-w-0">
             {/* Quick Filter Pills */}
-            <div className="flex items-center gap-1 rounded-xl bg-base-200/80 p-1">
+            <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-base-200/80 p-1 custom-scrollbar">
               {(['all', 'active', 'my-tasks', 'blocked', 'priority'] as const).map((item) => {
                 const labels: Record<string, string> = {
-                  all: 'All',
-                  active: 'Active',
-                  'my-tasks': 'My Tasks',
-                  blocked: 'Blocked',
-                  priority: 'High Priority',
+                  all: t("همه"),
+                  active: t("فعال"),
+                  'my-tasks': t("تسک‌های من"),
+                  blocked: t("مسدود"),
+                  priority: t("اولویت بالا"),
                 };
                 const icons: Record<string, React.ReactNode> = {
                   all: <Category size={13} />,
                   active: <Activity size={13} />,
                   'my-tasks': <User size={13} />,
-                  blocked: <Danger size={13} className="text-red-500" />,
-                  priority: <Flash size={13} className="text-amber-500" />,
+                  blocked: <Danger size={13} className="text-error" />,
+                  priority: <Flash size={13} className="text-warning" />,
                 };
                 return (
                   <button
                     key={item}
                     type="button"
                     onClick={() => setFilter(item)}
-                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                    className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
                       filter === item
                         ? 'bg-base-100 text-primary shadow-xs'
-                        : 'text-base-content/50 hover:text-base-content'
+                        : 'text-heledone-ink-muted hover:text-base-content'
                     }`}
                   >
                     {icons[item]}
@@ -721,14 +716,13 @@ export const KanbanBoard: React.FC = () => {
               <div className="hidden items-center gap-2 rounded-xl bg-base-200/50 px-3 py-1 md:flex">
                 <div className="h-1.5 w-24 overflow-hidden rounded-full bg-base-200">
                   <div
-                    className="h-full rounded-full bg-emerald-500 transition-all duration-700"
+                    className="h-full rounded-full bg-success transition-all duration-700"
                     style={{ width: `${boardProgress}%` }}
                   />
                 </div>
-                <span className="text-[11px] font-bold text-emerald-600">{boardProgress}%</span>
-                <span className="text-[11px] font-semibold text-base-content/40">
-                  ({completedCount}/{localTasks.length} done)
-                </span>
+                <span className="text-[13px] font-bold text-success">{boardProgress}%</span>
+                <span className="text-[13px] font-semibold text-heledone-ink-muted">
+                  ({completedCount}/{localTasks.length}  {t("انجام‌شده)")}</span>
               </div>
             )}
           </div>
@@ -736,14 +730,14 @@ export const KanbanBoard: React.FC = () => {
           {/* Right: Search + Focus + Quick Add */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Compact Search Box */}
-            <label className="flex h-8.5 items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-2.5 text-base-content/45 focus-within:border-primary/40 focus-within:bg-base-100 w-36 sm:w-52 transition-all">
+            <label className="flex h-8.5 items-center gap-2 rounded-xl border border-base-content/10 bg-base-200/70 px-2.5 text-heledone-ink-muted focus-within:border-primary/40 focus-within:bg-base-100 w-36 sm:w-52 transition-all">
               <SearchNormal1 size={14} />
               <input
-                aria-label="Search tasks"
+                aria-label={t("جست‌وجوی تسک‌ها")}
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search tasks..."
-                className="w-full bg-transparent text-xs font-medium text-base-content outline-none placeholder:text-base-content/35"
+                placeholder={t("جست‌وجوی تسک‌ها…")}
+                className="w-full bg-transparent text-xs font-medium text-base-content outline-none placeholder:text-heledone-ink-muted"
               />
             </label>
 
@@ -758,12 +752,12 @@ export const KanbanBoard: React.FC = () => {
               className={`inline-flex h-8.5 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition-all ${
                 focusMode
                   ? 'border-primary/30 bg-primary/10 text-primary'
-                  : 'border-base-content/10 text-base-content/55 hover:border-primary/30 hover:text-primary'
+                  : 'border-base-content/10 text-heledone-ink-muted hover:border-primary/30 hover:text-primary'
               }`}
-              title="Focus Mode"
+              title={t("حالت تمرکز")}
             >
               <span className="text-sm">◉</span>
-              <span className="hidden sm:inline">{focusMode ? 'Exit Focus' : 'Focus'}</span>
+              <span className="hidden sm:inline">{focusMode ? t("Exit Focus") : t("تمرکز")}</span>
             </button>
 
             {/* Quick Add Button */}
@@ -774,7 +768,7 @@ export const KanbanBoard: React.FC = () => {
                 className="inline-flex h-8.5 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all"
               >
                 <Add size={15} />
-                <span>New Task</span>
+                <span>{t("تسک تازه")}</span>
               </button>
             )}
           </div>
@@ -808,7 +802,8 @@ export const KanbanBoard: React.FC = () => {
             {[...board.statuses].sort((a, b) => a.order - b.order).map((status) => {
               const columnTasks = filteredTasks.filter(t => t.status_detail?.id?.toString() === status.id.toString()) || [];
               const isDoneColumn = status.code === 'done' || status.name.toLowerCase() === 'done' || status.name.toLowerCase() === 'completed';
-              const statusColor = getStatusColor(status.code, status.name);
+              const appearance = getWorkflowAppearance(status);
+              const statusColor = appearance.color;
 
               const sortType = columnSorts[status.id.toString()];
               const displayColumnTasks = [...columnTasks];
@@ -830,7 +825,7 @@ export const KanbanBoard: React.FC = () => {
                   key={status.id}
                   id={`col-${status.id}`}
                   className={`min-w-[282px] w-[282px] flex flex-col bg-transparent transition-opacity ${
-                    isDoneColumn ? 'opacity-70 hover:opacity-100' : ''
+                    isDoneColumn ? 'border-t-2 border-success/30 rounded-t-xl pt-2' : ''
                   }`}
                   header={
                     <div className="mb-3 flex shrink-0 items-center justify-between px-1">
@@ -839,10 +834,10 @@ export const KanbanBoard: React.FC = () => {
                           className="size-2.5 rounded-full"
                           style={{ background: statusColor }}
                         />
-                        <h3 className="text-sm font-semibold text-base-content">{status.name}</h3>
+                        <h3 className="text-sm font-semibold text-base-content">{appearance.label}</h3>
                         <span
-                          className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                          style={{ background: `${statusColor}25`, color: statusColor }}
+                          className="rounded-full px-2 py-0.5 text-[13px] font-bold text-white"
+                          style={{ background: `color-mix(in srgb, ${statusColor} 12%, transparent)`, color: appearance.ink }}
                         >
                           {columnTasks.length}
                         </span>
@@ -863,8 +858,8 @@ export const KanbanBoard: React.FC = () => {
                               });
                             }
                           }}
-                          className="rounded-lg p-1 text-base-content/40 hover:bg-base-200 hover:text-base-content transition"
-                          title="Column options"
+                          className="rounded-lg p-1 text-heledone-ink-muted hover:bg-base-200 hover:text-base-content transition"
+                          title={t("تنظیمات ستون")}
                         >
                           <More size={16} />
                         </button>
@@ -887,17 +882,15 @@ export const KanbanBoard: React.FC = () => {
                                     setColumnMenuAnchor(null);
                                     setAddingTaskToStatusId(status.id);
                                   }}
-                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-primary hover:bg-primary/10"
+                                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-start text-primary hover:bg-primary/10"
                                 >
-                                  <Add size={14} /> Add task to column
-                                </button>
+                                  <Add size={14} />  {t("افزودن تسک به ستون")}</button>
                               )}
 
                               {canCreateTask && <div className="my-1 h-px bg-base-content/8" />}
 
-                              <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                                Sort Column
-                              </div>
+                              <div className="px-2.5 py-1 text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+                                {t("Sort Column")}</div>
 
                               <button
                                 type="button"
@@ -905,12 +898,11 @@ export const KanbanBoard: React.FC = () => {
                                   setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: null }));
                                   setColumnMenuAnchor(null);
                                 }}
-                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-start ${
                                   !sortType ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
                                 }`}
                               >
-                                Default Order
-                              </button>
+                                {t("Default Order")}</button>
 
                               <button
                                 type="button"
@@ -918,12 +910,11 @@ export const KanbanBoard: React.FC = () => {
                                   setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'priority' }));
                                   setColumnMenuAnchor(null);
                                 }}
-                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-start ${
                                   sortType === 'priority' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
                                 }`}
                               >
-                                By Priority (High → Low)
-                              </button>
+                                {t("By Priority (High → Low)")}</button>
 
                               <button
                                 type="button"
@@ -931,12 +922,11 @@ export const KanbanBoard: React.FC = () => {
                                   setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'due_date' }));
                                   setColumnMenuAnchor(null);
                                 }}
-                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-start ${
                                   sortType === 'due_date' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
                                 }`}
                               >
-                                By Due Date
-                              </button>
+                                {t("By Due Date")}</button>
 
                               <button
                                 type="button"
@@ -944,20 +934,18 @@ export const KanbanBoard: React.FC = () => {
                                   setColumnSorts((prev) => ({ ...prev, [status.id.toString()]: 'title' }));
                                   setColumnMenuAnchor(null);
                                 }}
-                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left ${
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-start ${
                                   sortType === 'title' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content/70'
                                 }`}
                               >
-                                By Title (A - Z)
-                              </button>
+                                {t("By Title (A - Z)")}</button>
 
                               {canManageBoard && (
                                 <>
                                   <div className="my-1 h-px bg-base-content/8" />
 
-                                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                                    Move Column
-                                  </div>
+                                  <div className="px-2.5 py-1 text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+                                    {t("Move Column")}</div>
 
                                   <button
                                     type="button"
@@ -965,10 +953,9 @@ export const KanbanBoard: React.FC = () => {
                                       setColumnMenuAnchor(null);
                                       handleMoveStatus(status.id, 'left');
                                     }}
-                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-base-content/70 hover:bg-base-200"
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-start text-base-content/70 hover:bg-base-200"
                                   >
-                                    Move Left
-                                  </button>
+                                    {t("Move Left")}</button>
 
                                   <button
                                     type="button"
@@ -976,10 +963,9 @@ export const KanbanBoard: React.FC = () => {
                                       setColumnMenuAnchor(null);
                                       handleMoveStatus(status.id, 'right');
                                     }}
-                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-base-content/70 hover:bg-base-200"
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-start text-base-content/70 hover:bg-base-200"
                                   >
-                                    Move Right
-                                  </button>
+                                    {t("Move Right")}</button>
                                 </>
                               )}
 
@@ -994,10 +980,9 @@ export const KanbanBoard: React.FC = () => {
                                         if (!t.is_finished) handleToggleDone(t.id);
                                       });
                                     }}
-                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-emerald-600 hover:bg-emerald-500/10"
+                                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-start text-success hover:bg-success/10"
                                   >
-                                    <TickCircle size={14} /> Mark all as done
-                                  </button>
+                                    <TickCircle size={14} />  {t("Mark all as done")}</button>
                                 </>
                               )}
 
@@ -1009,7 +994,7 @@ export const KanbanBoard: React.FC = () => {
                     </div>
                   }
                 >
-                  <div className="custom-scrollbar flex flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1 pr-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                  <div className="custom-scrollbar flex flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-xl px-0.5 pb-1 pe-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                     <SortableContext items={displayColumnTasks.map(t => t.id.toString())} strategy={verticalListSortingStrategy}>
                       {displayColumnTasks.map(task => (
                         <SortableTask
@@ -1055,8 +1040,8 @@ export const KanbanBoard: React.FC = () => {
                             }
                           }}
                           dir="auto"
-                          placeholder="What needs to be done?"
-                          className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-base-content/30 resize-none leading-snug"
+                          placeholder={t("What needs to be done?")}
+                          className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-heledone-ink-muted resize-none leading-snug"
                         />
 
                         <div className="mt-3 flex items-center justify-between gap-2 border-t border-base-content/6 pt-2">
@@ -1065,9 +1050,9 @@ export const KanbanBoard: React.FC = () => {
                             {(['low', 'medium', 'high', 'critical'] as const).map((p) => {
                               const pColors: Record<string, string> = {
                                 low: 'bg-base-content/20 hover:bg-base-content/40 active:ring-base-content/10',
-                                medium: 'bg-blue-500 hover:bg-blue-600 active:ring-blue-500/20',
-                                high: 'bg-amber-500 hover:bg-amber-600 active:ring-amber-500/20',
-                                critical: 'bg-red-500 hover:bg-red-600 active:ring-red-500/20',
+                                medium: 'bg-primary hover:bg-primary active:ring-primary/20',
+                                high: 'bg-warning hover:bg-warning active:ring-warning/20',
+                                critical: 'bg-error hover:bg-error active:ring-error/20',
                               };
                               const isSelected = newTaskPriority === p;
                               return (
@@ -1078,11 +1063,11 @@ export const KanbanBoard: React.FC = () => {
                                   className={`size-3.5 rounded-full transition-all active:ring-4 ${pColors[p]} ${
                                     isSelected ? 'ring-2 ring-primary scale-125' : 'opacity-60 hover:opacity-100'
                                   }`}
-                                  title={`${p.toUpperCase()} priority`}
+                                  title={t("{value0} priority", { value0: p.toUpperCase() })}
                                 />
                               );
                             })}
-                            <span className="text-[10px] font-bold text-base-content/40 capitalize ml-1">
+                            <span className="text-[13px] font-bold text-heledone-ink-muted capitalize ms-1">
                               {newTaskPriority}
                             </span>
                           </div>
@@ -1092,17 +1077,16 @@ export const KanbanBoard: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => { setAddingTaskToStatusId(null); setNewTaskTitle(''); setNewTaskPriority('low'); }}
-                              className="rounded-lg px-2 py-1 text-[11px] font-semibold text-base-content/50 hover:bg-base-200 transition"
+                              className="rounded-lg px-2 py-1 text-[13px] font-semibold text-heledone-ink-muted hover:bg-base-200 transition"
                             >
-                              Cancel
-                            </button>
+                              {t("انصراف")}</button>
                             <button
                               type="button"
                               onClick={() => handleCreateTask(status.id)}
                               disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
-                              className="rounded-lg bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="rounded-lg bg-primary px-2.5 py-1 text-[13px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
-                              {createTaskMutation.isPending ? '...' : 'Add'}
+                              {createTaskMutation.isPending ? '...' : t("افزودن")}
                             </button>
                           </div>
                         </div>
@@ -1118,10 +1102,10 @@ export const KanbanBoard: React.FC = () => {
                         setNewTaskTitle('');
                         setNewTaskPriority('low');
                       }}
-                      className="mt-1.5 flex shrink-0 w-full items-center justify-center gap-1 rounded-xl border border-dashed border-base-content/10 py-2 text-xs font-bold text-base-content/35 transition hover:border-base-content/25 hover:text-base-content/65 hover:bg-base-100/50"
+                      className="mt-1.5 flex shrink-0 w-full items-center justify-center gap-1 rounded-xl border border-dashed border-base-content/10 py-2 text-xs font-bold text-heledone-ink-muted transition hover:border-base-content/25 hover:text-heledone-ink-muted hover:bg-base-100/50"
                     >
                       <span className="text-sm leading-none mb-0.5">+</span>
-                      <span>Add card</span>
+                      <span>{t("افزودن تسک")}</span>
                     </button>
                   )}
                 </DroppableColumn>
@@ -1144,35 +1128,33 @@ export const KanbanBoard: React.FC = () => {
                     }
                   }}
                   dir="auto"
-                  placeholder="New column name..."
-                  className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-base-content/30 px-2 py-1 mb-3.5 border-b border-base-content/10"
+                  placeholder={t("New column name...")}
+                  className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-heledone-ink-muted px-2 py-1 mb-3.5 border-b border-base-content/10"
                 />
                 <div className="flex gap-1.5 justify-end">
                   <button
                     type="button"
                     onClick={() => { setIsAddingStatus(false); setNewStatusName(''); }}
-                    className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-base-content/50 hover:bg-base-200 transition"
+                    className="rounded-lg px-2.5 py-1 text-[13px] font-semibold text-heledone-ink-muted hover:bg-base-200 transition"
                   >
-                    Cancel
-                  </button>
+                    {t("انصراف")}</button>
                   <button
                     type="button"
                     onClick={handleCreateStatus}
                     disabled={!newStatusName.trim() || createStatusMutation.isPending}
-                    className="rounded-lg bg-primary px-3 py-1 text-[11px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="rounded-lg bg-primary px-3 py-1 text-[13px] font-bold text-primary-content shadow-xs transition hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {createStatusMutation.isPending ? '...' : 'Add Column'}
+                    {createStatusMutation.isPending ? '...' : t("افزودن ستون")}
                   </button>
                 </div>
               </div>
             ) : (
               <button
                 onClick={() => setIsAddingStatus(true)}
-                className="min-w-[282px] w-[282px] rounded-2xl p-4 flex items-center justify-center gap-1.5 border border-dashed border-base-content/15 text-base-content/40 hover:border-base-content/25 hover:bg-base-100/50 hover:text-base-content/65 transition h-[56px] font-bold text-xs"
+                className="min-w-[282px] w-[282px] rounded-2xl p-4 flex items-center justify-center gap-1.5 border border-dashed border-base-content/15 text-heledone-ink-muted hover:border-base-content/25 hover:bg-base-100/50 hover:text-heledone-ink-muted transition h-[56px] font-bold text-xs"
               >
                 <span className="text-sm leading-none mb-0.5">+</span>
-                Add Column
-              </button>
+                {t("افزودن ستون")}</button>
             )
           )}
 

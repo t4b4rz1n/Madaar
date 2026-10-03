@@ -1,5 +1,6 @@
+import { useTranslation } from "../../../i18n/locale";
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft2,
   ArrowRight2,
@@ -34,6 +35,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
   onToggleDone,
   activeTimer,
 }) => {
+  const t = useTranslation();
   const currentIndex = Math.max(
     0,
     tasks.findIndex((t) => String(t.id) === String(focusedTaskId))
@@ -93,14 +95,13 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
   if (!task) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-        <p className="text-xs font-semibold text-base-content/50">No tasks in focus mode.</p>
+        <p className="text-xs font-semibold text-heledone-ink-muted">{t("No tasks in focus mode.")}</p>
         <button
           type="button"
           onClick={onExit}
           className="mt-4 rounded-xl border border-base-content/10 px-4 py-2 text-xs font-bold text-base-content hover:bg-base-200"
         >
-          Exit Focus
-        </button>
+          {t("Exit Focus")}</button>
       </div>
     );
   }
@@ -119,11 +120,11 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
           {/* Top Bar: Key, Task Counter, Prev/Next & Exit */}
           <div className="flex items-center justify-between border-b border-base-content/6 pb-4">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold tracking-wider text-base-content/40">
+              <span className="font-mono text-xs font-bold tracking-wider text-heledone-ink-muted">
                 {task.key}
               </span>
               {task.status_detail && (
-                <span className="rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-bold text-base-content/60">
+                <span className="rounded-full bg-base-200 px-2 py-0.5 text-[13px] font-bold text-heledone-ink-muted">
                   {task.status_detail.name}
                 </span>
               )}
@@ -135,19 +136,19 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                   <button
                     type="button"
                     onClick={handlePrev}
-                    className="grid size-6.5 place-items-center rounded-lg text-base-content/40 hover:bg-base-200 hover:text-base-content"
-                    title="Previous"
+                    className="grid size-6.5 place-items-center rounded-lg text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
+                    title={t("Previous")}
                   >
                     <ArrowLeft2 size={14} />
                   </button>
-                  <span className="text-[11px] font-semibold text-base-content/40">
+                  <span className="text-[13px] font-semibold text-heledone-ink-muted">
                     {currentIndex + 1}/{tasks.length}
                   </span>
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="grid size-6.5 place-items-center rounded-lg text-base-content/40 hover:bg-base-200 hover:text-base-content"
-                    title="Next"
+                    className="grid size-6.5 place-items-center rounded-lg text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
+                    title={t("ادامه")}
                   >
                     <ArrowRight2 size={14} />
                   </button>
@@ -157,8 +158,8 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
               <button
                 type="button"
                 onClick={onExit}
-                className="grid size-7 place-items-center rounded-lg text-base-content/40 hover:bg-base-200 hover:text-base-content"
-                title="Exit Focus"
+                className="grid size-7 place-items-center rounded-lg text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
+                title={t("Exit Focus")}
               >
                 <CloseCircle size={17} />
               </button>
@@ -170,7 +171,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
             <h1
               dir="auto"
               className={`text-xl font-bold leading-snug sm:text-2xl ${
-                isActuallyDone ? 'text-base-content/40 line-through' : 'text-base-content'
+                isActuallyDone ? 'text-heledone-ink-muted line-through' : 'text-base-content'
               }`}
             >
               {task.title}
@@ -179,7 +180,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
             {task.description && (
               <p
                 dir="auto"
-                className="mt-2 line-clamp-3 text-xs leading-relaxed text-base-content/55"
+                className="mt-2 line-clamp-3 text-xs leading-relaxed text-heledone-ink-muted"
               >
                 {task.description}
               </p>
@@ -197,21 +198,21 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 }}
                 className={`grid size-9 place-items-center rounded-xl transition ${
                   timerIsRunning
-                    ? 'bg-red-500 text-white shadow-sm'
+                    ? 'bg-error text-white shadow-sm'
                     : 'bg-primary text-primary-content shadow-sm'
                 }`}
-                title={timerIsRunning ? 'Stop timer' : 'Start timer'}
+                title={timerIsRunning ? t("توقف زمان‌سنج") : t("شروع زمان‌سنج")}
               >
                 {timerIsRunning ? <Stop size={16} /> : <Play size={16} />}
               </button>
 
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                  {timerIsRunning ? 'Timer running' : 'Timer'}
+                <span className="block text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+                  {timerIsRunning ? t("Timer running") : t("زمان‌سنج")}
                 </span>
                 <span
                   className={`font-mono text-lg font-bold tabular-nums ${
-                    timerIsRunning ? 'text-emerald-600' : 'text-base-content/70'
+                    timerIsRunning ? 'text-success' : 'text-base-content/70'
                   }`}
                 >
                   {formattedElapsed}
@@ -226,21 +227,20 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 onClick={() => onToggleDone(task.id)}
                 className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
                   isActuallyDone
-                    ? 'bg-base-200 text-base-content/50'
-                    : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                    ? 'bg-base-200 text-heledone-ink-muted'
+                    : 'bg-success/10 text-success hover:bg-success/20'
                 }`}
               >
                 <TickCircle size={15} />
-                <span>{isActuallyDone ? 'Done' : 'Complete'}</span>
+                <span>{isActuallyDone ? t("انجام‌شده") : t("Complete")}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onOpenSheet(task)}
-                className="rounded-xl border border-base-content/10 bg-base-100 px-3 py-1.5 text-xs font-semibold text-base-content/60 hover:bg-base-200 hover:text-base-content"
+                className="rounded-xl border border-base-content/10 bg-base-100 px-3 py-1.5 text-xs font-semibold text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
               >
-                Details
-              </button>
+                {t("Details")}</button>
             </div>
           </div>
         </motion.div>

@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { motion } from "motion/react";
 import { Lock, Message, TickSquare, User, Hierarchy, CardCoin, Coin1 } from "iconsax-reactjs";
 import { Controller, useWatch } from "react-hook-form";
 import InputField from "../../../components/InputField";
@@ -20,6 +21,7 @@ export const UserForm = ({
   editMode,
   organizationId,
 }: UserFormProps) => {
+  const t = useTranslation();
   const { data: rolesData, isLoading: isLoadingRoles } =
     useRoles(organizationId ? { organization_id: organizationId } : undefined);
   const roles = rolesData?.results || [];
@@ -48,11 +50,11 @@ export const UserForm = ({
           render={({ field }) => (
             <label className="form-control w-full">
               <div className="label mb-2">
-                <span className="label-text font-semibold">Username</span>
+                <span className="label-text font-semibold">{t("Username")}</span>
               </div>
               <InputField
                 {...field}
-                placeholder="Enter username"
+                placeholder={t("Enter username")}
                 classNameInput={errors.username ? "input-error" : ""}
                 icon={<User size={18} />}
               />
@@ -71,11 +73,11 @@ export const UserForm = ({
           render={({ field }) => (
             <label className="form-control w-full">
               <div className="label mb-2">
-                <span className="label-text font-semibold">Email</span>
+                <span className="label-text font-semibold">{t("Email")}</span>
               </div>
               <InputField
                 {...field}
-                placeholder="Enter email address"
+                placeholder={t("Enter email address")}
                 classNameInput={errors.email ? "input-error" : ""}
                 icon={<Message size={18} />}
               />
@@ -97,12 +99,12 @@ export const UserForm = ({
             render={({ field }) => (
               <label className="form-control w-full">
                 <div className="label mb-2">
-                  <span className="label-text font-semibold">Password</span>
+                  <span className="label-text font-semibold">{t("Password")}</span>
                 </div>
                 <InputField
                   type="password"
                   {...field}
-                  placeholder="Enter password"
+                  placeholder={t("Enter password")}
                   classNameInput={errors.password ? "input-error" : ""}
                   icon={<Lock size={18} />}
                 />
@@ -111,9 +113,8 @@ export const UserForm = ({
                     {errors.password.message}
                   </span>
                 ) : (
-                  <span className="text-xs text-base-content/60 mt-1">
-                    At least 8 characters with upper, lower, and numbers
-                  </span>
+                  <span className="text-xs text-heledone-ink-muted mt-1">
+                    {t("At least 8 characters with upper, lower, and numbers")}</span>
                 )}
               </label>
             )}
@@ -126,7 +127,7 @@ export const UserForm = ({
           render={({ field }) => (
             <div className="form-control w-full">
               <label className="label mb-2" htmlFor="user-form-role">
-                <span className="label-text font-semibold">User Role</span>
+                <span className="label-text font-semibold">{t("User Role")}</span>
               </label>
 
               <div className="relative">
@@ -141,21 +142,21 @@ export const UserForm = ({
                       e.target.value === "" ? null : e.target.value,
                     )
                   }
-                  className={`select select-bordered w-full pl-10 ${
+                  className={`select select-bordered w-full ps-10 ${
                     errors.role_id ? "select-error" : ""
                   }`}
                   disabled={isLoadingRoles}
                 >
-                  <option value="">Select a role</option>
-                  <optgroup label="Built-in Roles">
-                    <option value="owner">Owner</option>
-                    <option value="admin">Admin</option>
-                    <option value="employee">Employee</option>
-                    <option value="hr">Human Resources</option>
-                    <option value="accountant">Accountant</option>
+                  <option value="">{t("Select a role")}</option>
+                  <optgroup label={t("Built-in Roles")}>
+                    <option value="owner">{t("Owner")}</option>
+                    <option value="admin">{t("Admin")}</option>
+                    <option value="employee">{t("Employee")}</option>
+                    <option value="hr">{t("Human Resources")}</option>
+                    <option value="accountant">{t("Accountant")}</option>
                   </optgroup>
                   {roles.length > 0 && (
-                    <optgroup label="Custom Roles">
+                    <optgroup label={t("Custom Roles")}>
                       {roles.map((role: any) => (
                         <option key={role.id} value={String(role.id)}>
                           {role.name}
@@ -165,7 +166,7 @@ export const UserForm = ({
                   )}
                 </select>
 
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
+                <div className="absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted pointer-events-none">
                   <Hierarchy size={18} />
                 </div>
               </div>
@@ -187,12 +188,12 @@ export const UserForm = ({
           render={({ field }) => (
             <label className="form-control w-full">
               <div className="label mb-2">
-                <span className="label-text font-semibold">First Name</span>
-                <span className="text-xs text-base-content/40">(Optional)</span>
+                <span className="label-text font-semibold">{t("First Name")}</span>
+                <span className="text-xs text-heledone-ink-muted">{t("(Optional)")}</span>
               </div>
               <InputField
                 {...field}
-                placeholder="Enter first name"
+                placeholder={t("Enter first name")}
                 classNameInput={errors.first_name ? "input-error" : ""}
               />
               {errors.first_name && (
@@ -210,12 +211,12 @@ export const UserForm = ({
           render={({ field }) => (
             <label className="form-control w-full">
               <div className="label mb-2">
-                <span className="label-text font-semibold">Last Name</span>
-                <span className="text-xs text-base-content/40">(Optional)</span>
+                <span className="label-text font-semibold">{t("Last Name")}</span>
+                <span className="text-xs text-heledone-ink-muted">{t("(Optional)")}</span>
               </div>
               <InputField
                 {...field}
-                placeholder="Enter last name"
+                placeholder={t("Enter last name")}
                 classNameInput={errors.last_name ? "input-error" : ""}
               />
               {errors.last_name && (
@@ -236,7 +237,7 @@ export const UserForm = ({
             render={({ field }) => (
               <div className="form-control w-full">
                 <label className="label mb-2" htmlFor="user-form-salary-type">
-                  <span className="label-text font-semibold">Salary Type</span>
+                  <span className="label-text font-semibold">{t("Salary Type")}</span>
                 </label>
 
                 <div className="relative">
@@ -251,16 +252,16 @@ export const UserForm = ({
                         e.target.value === "" ? null : e.target.value,
                       )
                     }
-                    className={`select select-bordered w-full pl-10 ${
+                    className={`select select-bordered w-full ps-10 ${
                       errors.salary_type ? "select-error" : ""
                     }`}
                   >
-                    <option value="">No Salary</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="hourly">Hourly</option>
+                    <option value="">{t("No Salary")}</option>
+                    <option value="monthly">{t("ماهانه")}</option>
+                    <option value="hourly">{t("ساعتی")}</option>
                   </select>
 
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
+                  <div className="absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted pointer-events-none">
                     <CardCoin size={18} />
                   </div>
                 </div>
@@ -280,8 +281,8 @@ export const UserForm = ({
             render={({ field }) => (
               <label className="form-control w-full">
                 <div className="label mb-2">
-                  <span className="label-text font-semibold">Salary Amount</span>
-                  <span className="text-xs text-base-content/40">(Optional)</span>
+                  <span className="label-text font-semibold">{t("Salary Amount")}</span>
+                  <span className="text-xs text-heledone-ink-muted">{t("(Optional)")}</span>
                 </div>
                 <InputField
                   {...field}
@@ -297,7 +298,7 @@ export const UserForm = ({
                       field.onChange(rawValue);
                     }
                   }}
-                  placeholder="e.g. 12,000,000"
+                  placeholder={t("e.g. 12,000,000")}
                   type="text"
                   classNameInput={errors.salary_amount ? "input-error" : ""}
                   icon={<Coin1 size={18} />}
@@ -327,7 +328,7 @@ export const UserForm = ({
               />
               <div className="flex items-center gap-2">
                 <TickSquare className="w-5 h-5 text-success" />
-                <span className="label-text font-medium">Active User</span>
+                <span className="label-text font-medium">{t("Active User")}</span>
               </div>
             </label>
           )}
@@ -353,7 +354,7 @@ export const UserForm = ({
               />
               <div className="flex items-center gap-2">
                 <User className="w-5 h-5 text-primary" />
-                <span className="label-text font-medium">Staff Member</span>
+                <span className="label-text font-medium">{t("Staff Member")}</span>
               </div>
             </label>
           )}

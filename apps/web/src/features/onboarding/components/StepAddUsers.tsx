@@ -1,15 +1,17 @@
+import { t as translate, useTranslation } from "../../../i18n/locale";
 import React, { useState } from 'react';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import { Eye, EyeOff, UserPlus, Trash2, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const ROLES = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'employee', label: 'Employee' },
-  { value: 'hr', label: 'HR' },
-  { value: 'accountant', label: 'Accountant' },
+  { value: 'admin', get label() { return translate("Admin"); } },
+  { value: 'employee', get label() { return translate("Employee"); } },
+  { value: 'hr', get label() { return translate("HR"); } },
+  { value: 'accountant', get label() { return translate("Accountant"); } },
 ];
 
 export const StepAddUsers: React.FC = () => {
+  const t = useTranslation();
   const { prevStep, nextStep, addPendingUser, removePendingUser, pendingUsers, orgData } = useOnboardingStore();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -23,7 +25,7 @@ export const StepAddUsers: React.FC = () => {
     setError('');
 
     if (pendingUsers.some((u) => u.email === email || u.username === username)) {
-      setError('A user with this email or username is already in the list.');
+      setError(t("A user with this email or username is already in the list."));
       return;
     }
 
@@ -39,10 +41,9 @@ export const StepAddUsers: React.FC = () => {
       <div className="bg-base-100 rounded-2xl border border-base-300 shadow-lg overflow-hidden">
         {/* Header */}
         <div className="bg-primary/5 border-b border-base-300 px-8 py-6">
-          <h2 className="text-xl font-bold text-base-content">Add Team Members</h2>
-          <p className="text-sm text-base-content/60 mt-0.5">
-            For <span className="font-semibold text-primary">{orgData.name}</span> — you can skip this and add members later.
-          </p>
+          <h2 className="text-xl font-bold text-base-content">{t("Add Team Members")}</h2>
+          <p className="text-sm text-heledone-ink-muted mt-0.5">
+            {t("For")} <span className="font-semibold text-primary">{orgData.name}</span>  {t("— you can skip this and add members later.")}</p>
         </div>
 
         <div className="p-8 flex flex-col lg:flex-row gap-8">
@@ -52,7 +53,7 @@ export const StepAddUsers: React.FC = () => {
               {/* Email */}
               <div className="form-control">
                 <label className="label pb-1">
-                  <span className="label-text font-medium">Email</span>
+                  <span className="label-text font-medium">{t("Email")}</span>
                 </label>
                 <input
                   type="email"
@@ -60,7 +61,7 @@ export const StepAddUsers: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="input input-bordered w-full focus:input-primary"
-                  placeholder="user@company.com"
+                  placeholder={t("user@company.com")}
                   dir="ltr"
                 />
               </div>
@@ -68,7 +69,7 @@ export const StepAddUsers: React.FC = () => {
               {/* Username */}
               <div className="form-control">
                 <label className="label pb-1">
-                  <span className="label-text font-medium">Username</span>
+                  <span className="label-text font-medium">{t("Username")}</span>
                 </label>
                 <input
                   type="text"
@@ -76,7 +77,7 @@ export const StepAddUsers: React.FC = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="input input-bordered w-full focus:input-primary"
-                  placeholder="e.g. johndoe"
+                  placeholder={t("e.g. johndoe")}
                   dir="ltr"
                 />
               </div>
@@ -84,7 +85,7 @@ export const StepAddUsers: React.FC = () => {
               {/* Password */}
               <div className="form-control">
                 <label className="label pb-1">
-                  <span className="label-text font-medium">Password</span>
+                  <span className="label-text font-medium">{t("Password")}</span>
                 </label>
                 <div className="relative">
                   <input
@@ -93,13 +94,13 @@ export const StepAddUsers: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="input input-bordered w-full pr-11 focus:input-primary"
-                    placeholder="Min. 8 characters"
+                    placeholder={t("Min. 8 characters")}
                     dir="ltr"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content transition-colors z-10"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted hover:text-base-content transition-colors z-10"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -110,7 +111,7 @@ export const StepAddUsers: React.FC = () => {
               {/* Role */}
               <div className="form-control">
                 <label className="label pb-1">
-                  <span className="label-text font-medium">Role</span>
+                  <span className="label-text font-medium">{t("Role")}</span>
                 </label>
                 <select
                   value={role}
@@ -137,8 +138,7 @@ export const StepAddUsers: React.FC = () => {
                 className="btn btn-outline btn-primary w-full gap-2"
               >
                 <UserPlus className="w-4 h-4" />
-                Add to List
-              </button>
+                {t("Add to List")}</button>
             </form>
           </div>
 
@@ -148,15 +148,15 @@ export const StepAddUsers: React.FC = () => {
           {/* Right: Pending users list */}
           <div className="w-full lg:w-72 flex flex-col">
             <h4 className="font-semibold text-base-content mb-3">
-              Users to be added{' '}
+              {t("Users to be added")}{' '}
               <span className="badge badge-primary badge-sm ml-1">{pendingUsers.length}</span>
             </h4>
 
             {pendingUsers.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-8 text-base-content/40">
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-8 text-heledone-ink-muted">
                 <UserPlus className="w-8 h-8 mb-2 opacity-40" />
-                <p className="text-sm">No users added yet</p>
-                <p className="text-xs mt-1">They'll be created when you confirm</p>
+                <p className="text-sm">{t("No users added yet")}</p>
+                <p className="text-xs mt-1">{t("They'll be created when you confirm")}</p>
               </div>
             ) : (
               <div className="space-y-2 flex-1 overflow-y-auto max-h-72">
@@ -171,7 +171,7 @@ export const StepAddUsers: React.FC = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-base-content truncate">@{u.username}</p>
-                        <p className="text-xs text-base-content/50 truncate">{u.email}</p>
+                        <p className="text-xs text-heledone-ink-muted truncate">{u.email}</p>
                         <span className="badge badge-ghost badge-xs mt-0.5">{u.role}</span>
                       </div>
                     </div>
@@ -193,11 +193,9 @@ export const StepAddUsers: React.FC = () => {
         <div className="border-t border-base-300 px-8 py-5 flex justify-between items-center">
           <button onClick={prevStep} className="btn btn-ghost gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
+            {t("بازگشت")}</button>
           <button onClick={nextStep} className="btn btn-primary gap-2">
-            Review & Confirm
-            <ArrowRight className="w-4 h-4" />
+            {t("Review & Confirm")}<ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>

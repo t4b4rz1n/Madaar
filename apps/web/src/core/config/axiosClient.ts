@@ -4,6 +4,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { useAuthStore } from "../../features/auth/store/authStore";
+import { useLocaleStore } from "../../i18n/locale";
 
 const axiosClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
@@ -38,6 +39,7 @@ const getApiUrl = (): string =>
 // Request interceptor: reads access token directly from Zustand memory state
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    config.headers.set("Accept-Language", useLocaleStore.getState().locale);
     const token = useAuthStore.getState().access;
     if (token) {
       config.headers.set("Authorization", `Bearer ${token}`);

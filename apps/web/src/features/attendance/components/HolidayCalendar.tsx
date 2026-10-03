@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -6,16 +7,17 @@ import { CalendarTick } from 'iconsax-reactjs';
 
 
 export const HolidayCalendar: React.FC<{ year?: number }> = ({ year = new Date().getFullYear() }) => {
+  const t = useTranslation();
   const { data: holidays = [], isLoading } = useQuery({
     queryKey: ['holidays', year],
     queryFn: () => getHolidays({ year }),
   });
 
   return (
-    <div className="madaar-surface overflow-hidden rounded-[26px] border border-base-content/10 bg-base-100 shadow-sm">
+    <div className="heledone-surface overflow-hidden rounded-[26px] border border-base-content/10 bg-base-100 shadow-sm">
       <div className="flex items-center gap-3 border-b border-base-content/10 p-5 sm:p-6">
         <div className="grid size-10 place-items-center rounded-xl bg-warning/10 text-warning"><CalendarTick size={20} /></div>
-        <div><h2 className="text-base font-semibold text-base-content">Holiday calendar</h2><p className="mt-1 text-xs text-base-content/45">Company and official holidays in {year}.</p></div>
+        <div><h2 className="text-base font-semibold text-base-content">{t("Holiday calendar")}</h2><p className="mt-1 text-xs text-heledone-ink-muted">{t("Company and official holidays in")} {year}.</p></div>
       </div>
 
       <div className="p-5 sm:p-6">
@@ -24,9 +26,9 @@ export const HolidayCalendar: React.FC<{ year?: number }> = ({ year = new Date()
             {[...Array(4)].map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-base-200/70" />)}
           </div>
         ) : holidays.length === 0 ? (
-          <div className="py-10 text-center text-base-content/40">
-            <CalendarTick size={40} className="mx-auto mb-3 text-base-content/20" />
-            <p>No holidays found for this year.</p>
+          <div className="py-10 text-center text-heledone-ink-muted">
+            <CalendarTick size={40} className="mx-auto mb-3 text-heledone-ink-muted" />
+            <p>{t("No holidays found for this year.")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -38,7 +40,7 @@ export const HolidayCalendar: React.FC<{ year?: number }> = ({ year = new Date()
                 </div>
                 <div>
                   <h3 className="font-semibold text-base-content">{holiday.name}</h3>
-                  <p className="line-clamp-1 text-sm text-base-content/50">{holiday.description || (holiday.is_official ? 'Official holiday' : 'Company holiday')}</p>
+                  <p className="line-clamp-1 text-sm text-heledone-ink-muted">{holiday.description || (holiday.is_official ? t("Official holiday") : t("Company holiday"))}</p>
                 </div>
               </div>
             ))}

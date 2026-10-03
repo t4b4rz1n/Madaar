@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { t as translate, useTranslation } from "../../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDown2,
   ArrowUp2,
@@ -21,8 +22,8 @@ type SortKey = "created_at" | "seen";
 type SortDirection = "asc" | "desc";
 
 const sortOptions: { key: SortKey; label: string }[] = [
-  { key: "created_at", label: "Date" },
-  { key: "seen", label: "Status" },
+  { key: "created_at", get label() { return translate("تاریخ"); } },
+  { key: "seen", get label() { return translate("وضعیت"); } },
 ];
 
 export const NotificationsToolbar = ({
@@ -30,6 +31,7 @@ export const NotificationsToolbar = ({
   onSortChange,
   onFilterChange,
 }: ToolbarProps) => {
+  const t = useTranslation();
   const [searchParams] = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("search") || "");
@@ -121,7 +123,7 @@ export const NotificationsToolbar = ({
       <div className="grow w-full">
         <InputField
           name="search"
-          placeholder="Search notifications..."
+          placeholder={t("Search notifications...")}
           icon={<SearchNormal1 size={18} />}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -141,7 +143,7 @@ export const NotificationsToolbar = ({
             }`}
           >
             <Filter size={18} />
-            <span className="hidden sm:inline">Filter</span>
+            <span className="hidden sm:inline">{t("Filter")}</span>
           </button>
           <AnimatePresence>
             {isFilterOpen && (
@@ -149,23 +151,22 @@ export const NotificationsToolbar = ({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="absolute top-full right-0 md:left-0 z-10 p-4 shadow-lg bg-base-100 rounded-box w-72 mt-2 border border-base-content/10"
+                className="absolute top-full end-0 md:start-0 z-10 p-4 shadow-lg bg-base-100 rounded-box w-72 mt-2 border border-base-content/10"
               >
                 <div className="flex flex-col space-y-4">
                   <label className="form-control w-full">
                     <div className="label pb-1">
                       <span className="label-text text-xs font-semibold">
-                        Read Status
-                      </span>
+                        {t("Read Status")}</span>
                     </div>
                     <select
                       className="select select-sm w-full !shadow-none border-base-300"
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                     >
-                      <option value="">All</option>
-                      <option value="true">Read</option>
-                      <option value="false">Unread</option>
+                      <option value="">{t("همه")}</option>
+                      <option value="true">{t("Read")}</option>
+                      <option value="false">{t("Unread")}</option>
                     </select>
                   </label>
                 </div>

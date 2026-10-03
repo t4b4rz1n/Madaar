@@ -1,6 +1,8 @@
+import { t as translate, useTranslation, getDirection, formatRelativeTime } from "../../../i18n/locale";
+import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import {
   Add,
   Calendar,
@@ -58,14 +60,7 @@ const formatTime = (seconds?: number) => {
 
 
 
-const formatRelativeDate = (value: string) => {
-  const date = new Date(value);
-  const diff = Date.now() - date.getTime();
-  if (diff < 60_000) return "Just now";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(date);
-};
+const formatRelativeDate = formatRelativeTime;
 
 const initials = (firstName?: string, lastName?: string, username?: string) => {
   const value = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
@@ -73,10 +68,10 @@ const initials = (firstName?: string, lastName?: string, username?: string) => {
 };
 
 const priorityConfig: Record<Task["priority"], { label: string; color: string; bg: string }> = {
-  low:      { label: "Low Priority",      color: "#94a3b8", bg: "bg-slate-500/10 text-slate-600" },
-  medium:   { label: "Medium Priority",   color: "#3b82f6", bg: "bg-blue-500/10 text-blue-600" },
-  high:     { label: "High Priority",     color: "#f59e0b", bg: "bg-amber-500/10 text-amber-600" },
-  critical: { label: "Critical Priority", color: "#ef4444", bg: "bg-red-500/10 text-red-500" },
+  low:      { get label() { return translate("اولویت کم"); },      color: "var(--color-heledone-todo)", bg: "bg-neutral/10 text-heledone-ink-muted" },
+  medium:   { get label() { return translate("اولویت متوسط"); },   color: "var(--color-primary)", bg: "bg-primary/10 text-primary" },
+  high:     { get label() { return translate("اولویت بالا"); },     color: "var(--color-warning)", bg: "bg-warning/10 text-warning" },
+  critical: { get label() { return translate("اولویت فوری"); }, color: "var(--color-error)", bg: "bg-error/10 text-error" },
 };
 
 export const TaskSheet: React.FC<TaskSheetProps> = ({
@@ -90,8 +85,9 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   focusDueDate = false,
   onFocusDueDateHandled,
 }) => {
+  const t = useTranslation();
   const queryClient = useQueryClient();
-  const titleRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   const sheetRef = useRef<HTMLElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -177,7 +173,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
       });
     },
     onSuccess: () => {
-      toast.success("Manual time logged");
+      toast.success(t("Manual time ثبت‌شده"));
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["standup-grid"] });
@@ -255,7 +251,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     };
   }, [task, onClose]);
 
-  // Focus due date input when opened from the card menu's "Due date" action
+  // Focus due date input when opened from the card menu's "سررسید" action
   useEffect(() => {
     if (!focusDueDate || !task) return;
     const timer = window.setTimeout(() => {
@@ -300,7 +296,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
       setCommentText("");
       setSelectedFile(null);
       invalidateTaskDetails();
-      toast.success("Comment added");
+      toast.success(t("Comment added"));
     },
     onError: (error: any) =>
       toast.error(error.response?.data?.detail || error.message || "Could not add comment."),
@@ -372,37 +368,38 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           ref={sheetRef}
           role="dialog"
           aria-modal="true"
-          aria-label={`Task details: ${task.title}`}
+          aria-label={t("Task details: {value0}", { value0: task.title })}
           className="absolute inset-y-0 end-0 flex w-full max-w-xl flex-col rounded-s-3xl border-s border-base-content/10 bg-base-100 shadow-2xl"
-          initial={{ x: "100%" }}
+          initial={{ x: getDirection() === "rtl" ? "-100%" : "100%" }}
           animate={{ x: 0 }}
-          exit={{ x: "100%" }}
+          exit={{ x: getDirection() === "rtl" ? "-100%" : "100%" }}
           transition={spring}
         >
           {/* ─── Top Bar: Context Breadcrumb + Close ─── */}
           <header className="flex shrink-0 items-center justify-between border-b border-base-content/6 px-6 py-3.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-base-content/50">
+            <div className="flex items-center gap-2 text-xs font-semibold text-heledone-ink-muted">
               <span
                 onClick={() => {
                   navigator.clipboard.writeText(task.key);
-                  toast.success(`Copied ${task.key}`);
+                  toast.success(t("Copied {key}", { key: task.key }));
                 }}
                 className="cursor-pointer rounded-md bg-primary/10 px-2 py-0.5 font-mono font-bold text-primary hover:bg-primary/20 transition"
-                title="Click to copy key"
+                title={t("Click to copy key")}
               >
                 {task.key}
               </span>
               <span>·</span>
-              <span className="rounded-full bg-base-200 px-2.5 py-0.5 text-[11px] font-semibold text-base-content/60">
-                {task.status_detail?.name || "No status"}
+              <span className="rounded-full px-2.5 py-0.5 text-[13px] font-semibold"
+                style={{ color: getWorkflowAppearance(task.status_detail).ink, background: `color-mix(in srgb, ${getWorkflowAppearance(task.status_detail).color} 10%, transparent)` }}>
+                {task.status_detail ? getWorkflowAppearance(task.status_detail).label : t("بدون وضعیت")}
               </span>
             </div>
 
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl p-1.5 text-base-content/40 transition hover:bg-base-200 hover:text-base-content"
-              aria-label="Close task sheet"
+              className="rounded-xl p-1.5 text-heledone-ink-muted transition hover:bg-base-200 hover:text-base-content"
+              aria-label={t("بستن جزئیات تسک")}
             >
               <CloseSquare size={20} />
             </button>
@@ -410,7 +407,9 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
 
           {/* ─── Main Title (Prominent at top) ─── */}
           <div className="px-6 pt-5 pb-2">
-            <input
+            <textarea
+              rows={3}
+              aria-label={t("عنوان تسک")}
               ref={titleRef}
               dir="auto"
               value={title}
@@ -419,10 +418,10 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                 title.trim() && title.trim() !== task.title && save({ title: title.trim() })
               }
               onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); }
               }}
-              className="w-full bg-transparent text-2xl font-extrabold tracking-tight text-base-content outline-none placeholder:text-base-content/25"
-              placeholder="Task title..."
+              className="w-full resize-y bg-transparent leading-relaxed text-2xl font-extrabold tracking-tight text-base-content outline-none placeholder:text-heledone-ink-muted"
+              placeholder={t("عنوان تسک…")}
             />
           </div>
 
@@ -441,18 +440,18 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   setPriority(val);
                   save({ priority: val });
                 }}
-                className="bg-transparent font-bold capitalize text-base-content outline-none cursor-pointer pe-1 text-[11px]"
+                className="bg-transparent font-bold capitalize text-base-content outline-none cursor-pointer pe-1 text-[13px]"
               >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
+                <option value="low">{t("کم")}</option>
+                <option value="medium">{t("متوسط")}</option>
+                <option value="high">{t("بالا")}</option>
+                <option value="critical">{t("فوری")}</option>
               </select>
             </div>
 
             {/* Assignee Pill */}
-            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[11px] font-semibold text-base-content/70 hover:bg-base-200 transition">
-              <Profile2User size={13} className="me-1.5 text-base-content/45 shrink-0" />
+            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[13px] font-semibold text-base-content/70 hover:bg-base-200 transition">
+              <Profile2User size={13} className="me-1.5 text-heledone-ink-muted shrink-0" />
               <select
                 value={assignee?.id || ""}
                 onChange={(e) => {
@@ -467,7 +466,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                 }}
                 className="bg-transparent font-semibold text-base-content outline-none cursor-pointer truncate max-w-[110px]"
               >
-                <option value="">Unassigned</option>
+                <option value="">{t("بدون مسئول")}</option>
                 {projectMembers.map(
                   (m) =>
                     m.user && (
@@ -480,8 +479,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
             </div>
 
             {/* Milestone Pill */}
-            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[11px] font-semibold text-base-content/70 hover:bg-base-200 transition">
-              <Flag size={13} className="me-1.5 text-base-content/45 shrink-0" />
+            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[13px] font-semibold text-base-content/70 hover:bg-base-200 transition">
+              <Flag size={13} className="me-1.5 text-heledone-ink-muted shrink-0" />
               <select
                 value={task.milestone?.toString() || ""}
                 onChange={(e) => {
@@ -496,7 +495,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                 }}
                 className="bg-transparent font-semibold text-base-content outline-none cursor-pointer truncate max-w-[110px]"
               >
-                <option value="">No Milestone</option>
+                <option value="">{t("No Milestone")}</option>
                 {projectMilestones.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.title}
@@ -506,8 +505,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
             </div>
 
             {/* Due Date Picker Pill */}
-            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[11px] font-semibold text-base-content/70 hover:bg-base-200 transition">
-              <Calendar size={13} className="me-1.5 text-base-content/45 shrink-0" />
+            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[13px] font-semibold text-base-content/70 hover:bg-base-200 transition">
+              <Calendar size={13} className="me-1.5 text-heledone-ink-muted shrink-0" />
               <div className="flex items-center gap-1">
                 <CustomDatePicker
                   value={dueDate ? dueDate.split('T')[0] : ''}
@@ -539,14 +538,14 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
               onClick={() =>
                 timerIsRunning ? onStopTimer?.(task.id) : onPlayTimer?.(task.id)
               }
-              className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[11px] font-bold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[13px] font-bold transition ${
                 timerIsRunning
-                  ? "bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                  ? "bg-error/10 text-error hover:bg-error/20"
                   : "bg-primary/10 text-primary hover:bg-primary/20"
               }`}
             >
               {timerIsRunning ? <Stop size={13} /> : <Play size={13} />}
-              {timerIsRunning ? formatTime(elapsedSeconds) : "Timer"}
+              {timerIsRunning ? formatTime(elapsedSeconds) : t("زمان‌سنج")}
             </button>
 
             {/* Manual Log Time Trigger Pill */}
@@ -554,10 +553,10 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
               <button
                 type="button"
                 onClick={() => setIsManualTimeOpen(!isManualTimeOpen)}
-                className="inline-flex items-center gap-1 rounded-xl bg-base-200/60 px-2 py-1 text-[11px] font-semibold text-base-content/60 hover:bg-base-200 transition"
+                className="inline-flex items-center gap-1 rounded-xl bg-base-200/60 px-2 py-1 text-[13px] font-semibold text-heledone-ink-muted hover:bg-base-200 transition"
               >
                 <span>⏱ {formatTime(elapsedSeconds)}</span>
-                <span className="text-[10px] text-primary font-bold">+Log</span>
+                <span className="text-[13px] text-primary font-bold">{t("ثبت دستی")}</span>
               </button>
 
               {isManualTimeOpen && (
@@ -566,11 +565,11 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                     className="fixed inset-0 z-40"
                     onClick={() => setIsManualTimeOpen(false)}
                   />
-                  <div className="absolute top-full left-0 mt-2 z-50 w-44 rounded-2xl border border-base-content/10 bg-base-100 p-3 shadow-xl space-y-2.5">
-                    <p className="text-xs font-bold text-base-content">Log Time</p>
+                  <div className="absolute top-full start-0 mt-2 z-50 w-44 rounded-2xl border border-base-content/10 bg-base-100 p-3 shadow-xl space-y-2.5">
+                    <p className="text-xs font-bold text-base-content">{t("Log Time")}</p>
                     <div className="flex gap-2">
                       <label className="flex-1">
-                        <span className="text-[10px] text-base-content/50">Hours</span>
+                        <span className="text-[13px] text-heledone-ink-muted">{t("ساعت")}</span>
                         <input
                           type="number"
                           min="0"
@@ -580,7 +579,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                         />
                       </label>
                       <label className="flex-1">
-                        <span className="text-[10px] text-base-content/50">Mins</span>
+                        <span className="text-[13px] text-heledone-ink-muted">{t("Mins")}</span>
                         <input
                           type="number"
                           min="0"
@@ -612,7 +611,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                             { spent_hours: Number(newTotal.toFixed(2)) },
                             {
                               onSuccess: () => {
-                                toast.success("Total time updated");
+                                toast.success(t("Total time updated"));
                                 setIsManualTimeOpen(false);
                               },
                             }
@@ -622,8 +621,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       disabled={manualTimeMutation.isPending || updateMutation.isPending}
                       className="w-full rounded-xl bg-primary py-1 text-xs font-bold text-primary-content disabled:opacity-50"
                     >
-                      Save
-                    </button>
+                      {t("ذخیره")}</button>
                   </div>
                 </>
               )}
@@ -633,24 +631,26 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
             <button
               type="button"
               onClick={() => blockerMutation.mutate(!task.is_blocked)}
-              className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11px] font-bold transition ${
+              className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-[13px] font-bold transition ${
                 task.is_blocked
-                  ? "bg-amber-500/12 text-amber-600 border border-amber-500/30"
-                  : "bg-base-200/60 text-base-content/45 hover:text-amber-600 hover:bg-amber-500/10"
+                  ? "bg-error/10 text-error border border-error/30"
+                  : "bg-base-200/60 text-heledone-ink-muted hover:text-error hover:bg-error/10"
               }`}
             >
               <Danger size={13} />
-              {task.is_blocked ? "Blocked" : "Block"}
+              {task.is_blocked ? t("مسدود · رفع مانع") : t("ثبت مانع")}
             </button>
           </div>
+
+          {task.is_blocked && <p className="mx-6 mb-3 rounded-xl bg-error/10 px-3 py-2 text-sm text-error">{t("این تسک مانع دارد. علت و قدم بعدی را در توضیح یا دیدگاه ثبت کنید؛ پس از رفع مانع، «رفع مانع» را بزنید.")}</p>}
 
           {/* ─── Nav Tabs ─── */}
           <div className="flex shrink-0 gap-1 border-b border-base-content/6 px-6">
             {(
               [
-                ["overview", "Overview"],
-                ["comments", `Comments ${comments.length ? `(${comments.length})` : ""}`],
-                ["activity", "Activity"],
+                ["overview", t("نمای کلی")],
+                ["comments", t("دیدگاه‌ها {value0}", { value0: comments.length ? `(${comments.length})` : "" })],
+                ["activity", t("رویدادها")],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -660,14 +660,14 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                 className={`relative px-3 py-2.5 text-xs font-bold transition-colors ${
                   activeTab === value
                     ? "text-primary"
-                    : "text-base-content/45 hover:text-base-content"
+                    : "text-heledone-ink-muted hover:text-base-content"
                 }`}
               >
                 {label}
                 {activeTab === value && (
                   <motion.div
                     layoutId="sheet-tab-underline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary"
+                    className="absolute bottom-0 start-0 end-0 h-0.5 rounded-full bg-primary"
                   />
                 )}
               </button>
@@ -678,8 +678,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
             {focusMode && (
               <div className="rounded-2xl border border-primary/15 bg-primary/8 p-3 text-primary">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em]">Focus mode</p>
-                <p className="mt-0.5 text-xs font-semibold">Keep one clear next step in view.</p>
+                <p className="text-[13px] font-bold uppercase ">{t("Focus mode")}</p>
+                <p className="mt-0.5 text-xs font-semibold">{t("Keep one clear next step in view.")}</p>
               </div>
             )}
 
@@ -689,15 +689,14 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                 {/* ─── Description Section (Compact when empty) ─── */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-base-content">Description</span>
+                    <span className="text-xs font-bold text-base-content">{t("توضیح")}</span>
                     {!isEditingDescription && !description && (
                       <button
                         type="button"
                         onClick={() => setIsEditingDescription(true)}
-                        className="text-[11px] font-semibold text-primary hover:underline"
+                        className="text-[13px] font-semibold text-primary hover:underline"
                       >
-                        + Add description
-                      </button>
+                        {t("+ Add description")}</button>
                     )}
                   </div>
 
@@ -708,8 +707,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                         autoFocus={!description}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Add context, acceptance criteria or links..."
-                        className="min-h-20 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-base-content/30"
+                        placeholder={t("Add context, acceptance criteria or links...")}
+                        className="min-h-20 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-heledone-ink-muted"
                       />
                       <div className="flex items-center justify-between border-t border-base-content/6 pt-2">
                         <button
@@ -718,10 +717,9 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                             if (!task.description) setIsEditingDescription(false);
                             else setDescription(task.description);
                           }}
-                          className="text-[11px] text-base-content/40 hover:text-base-content"
+                          className="text-[13px] text-heledone-ink-muted hover:text-base-content"
                         >
-                          Cancel
-                        </button>
+                          {t("انصراف")}</button>
                         <button
                           type="button"
                           onClick={() => save({ description })}
@@ -732,17 +730,16 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                           className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1 text-xs font-bold text-primary-content disabled:opacity-40 hover:bg-primary/90 transition"
                         >
                           <Send2 size={12} />
-                          {updateMutation.isPending ? "Saving..." : "Save"}
+                          {updateMutation.isPending ? t("در حال ذخیره…") : t("ذخیره")}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div
                       onClick={() => setIsEditingDescription(true)}
-                      className="cursor-pointer rounded-xl border border-dashed border-base-content/10 px-3 py-2.5 text-xs text-base-content/35 hover:border-base-content/25 hover:text-base-content/60 transition"
+                      className="cursor-pointer rounded-xl border border-dashed border-base-content/10 px-3 py-2.5 text-xs text-heledone-ink-muted hover:border-base-content/25 hover:text-heledone-ink-muted transition"
                     >
-                      No description added. Click to add details...
-                    </div>
+                      {t("No description added. Click to add details...")}</div>
                   )}
                 </div>
 
@@ -751,9 +748,9 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <TaskSquare size={15} className="text-primary" />
-                      <span className="text-xs font-bold text-base-content">Checklist</span>
+                      <span className="text-xs font-bold text-base-content">{t("چک‌لیست")}</span>
                       {checklists.length > 0 && (
-                        <span className="text-[11px] text-base-content/45">
+                        <span className="text-[13px] text-heledone-ink-muted">
                           ({checklistDone}/{checklists.length})
                         </span>
                       )}
@@ -778,7 +775,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   {/* Checklist items list */}
                   <div className="space-y-1">
                     {isChecklistLoading && (
-                      <p className="py-2 text-xs text-base-content/40">Loading items...</p>
+                      <p className="py-2 text-xs text-heledone-ink-muted">{t("Loading items...")}</p>
                     )}
                     {checklists.map((item) => (
                       <div
@@ -796,7 +793,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                             }
                             className={`grid size-4 shrink-0 place-items-center rounded-md border transition ${
                               item.is_completed
-                                ? "border-emerald-500 bg-emerald-500 text-white"
+                                ? "border-success bg-success text-white"
                                 : "border-base-content/20 text-transparent hover:border-primary"
                             }`}
                           >
@@ -806,7 +803,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                             dir="auto"
                             className={`truncate text-xs ${
                               item.is_completed
-                                ? "text-base-content/40 line-through"
+                                ? "text-heledone-ink-muted line-through"
                                 : "text-base-content"
                             }`}
                           >
@@ -816,7 +813,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                         <button
                           type="button"
                           onClick={() => checklistDeleteMutation.mutate(item.id)}
-                          className="rounded-lg p-1 text-base-content/25 opacity-0 transition hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                          className="rounded-lg p-1 text-heledone-ink-muted opacity-0 transition hover:bg-error hover:text-error group-hover:opacity-100"
                         >
                           <Trash size={13} />
                         </button>
@@ -837,8 +834,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                         dir="auto"
                         value={checklistText}
                         onChange={(e) => setChecklistText(e.target.value)}
-                        placeholder="Add step item..."
-                        className="flex-1 rounded-xl border border-base-content/10 bg-base-100 px-3 py-1.5 text-xs text-base-content outline-none placeholder:text-base-content/35 focus:border-primary/40"
+                        placeholder={t("Add step item...")}
+                        className="flex-1 rounded-xl border border-base-content/10 bg-base-100 px-3 py-1.5 text-xs text-base-content outline-none placeholder:text-heledone-ink-muted focus:border-primary/40"
                       />
                       <button
                         type="submit"
@@ -854,8 +851,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       onClick={() => setShowAddChecklist(true)}
                       className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
                     >
-                      <Add size={13} /> Add checklist item
-                    </button>
+                      <Add size={13} />  {t("Add checklist item")}</button>
                   )}
                 </div>
               </>
@@ -875,8 +871,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                     dir="auto"
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="min-h-20 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-base-content/35"
+                    placeholder={t("Write a comment...")}
+                    className="min-h-20 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-heledone-ink-muted"
                   />
                   {selectedFile && (
                     <div className="flex items-center justify-between rounded-xl bg-primary/10 px-3 py-1.5 text-xs text-primary">
@@ -895,14 +891,14 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file && file.size <= 5 * 1024 * 1024) setSelectedFile(file);
-                        else if (file) toast.error("File size must be less than 5MB.");
+                        else if (file) toast.error(t("File size must be less than 5MB."));
                         e.target.value = "";
                       }}
                     />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="rounded-lg p-1.5 text-base-content/40 hover:bg-base-200 hover:text-primary transition"
+                      className="rounded-lg p-1.5 text-heledone-ink-muted hover:bg-base-200 hover:text-primary transition"
                     >
                       <Paperclip2 size={16} />
                     </button>
@@ -912,19 +908,18 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-content disabled:opacity-40"
                     >
                       <Send2 size={13} />
-                      {commentMutation.isPending ? "Sending..." : "Comment"}
+                      {commentMutation.isPending ? t("Sending...") : t("Comment")}
                     </button>
                   </div>
                 </form>
 
                 <div className="space-y-3">
                   {isCommentsLoading && (
-                    <p className="py-4 text-center text-xs text-base-content/40">Loading comments...</p>
+                    <p className="py-4 text-center text-xs text-heledone-ink-muted">{t("Loading comments...")}</p>
                   )}
                   {!isCommentsLoading && comments.length === 0 && (
-                    <p className="rounded-2xl border border-dashed border-base-content/10 py-8 text-center text-xs text-base-content/40">
-                      No comments yet.
-                    </p>
+                    <p className="rounded-2xl border border-dashed border-base-content/10 py-8 text-center text-xs text-heledone-ink-muted">
+                      {t("No comments yet.")}</p>
                   )}
                   {comments.map((comment) => (
                     <article
@@ -933,7 +928,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary">
+                          <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[13px] font-bold text-primary">
                             {initials(
                               comment.author_detail?.first_name,
                               comment.author_detail?.last_name,
@@ -943,10 +938,10 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                           <span className="text-xs font-bold text-base-content">
                             {comment.author_detail?.first_name ||
                               comment.author_detail?.username ||
-                              "User"}
+                              t("User")}
                           </span>
                         </div>
-                        <span className="text-[10px] text-base-content/40">
+                        <span className="text-[13px] text-heledone-ink-muted">
                           {formatRelativeDate(comment.created_at)}
                         </span>
                       </div>
@@ -957,13 +952,12 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                         <div className="mt-2 pt-2 border-t border-base-content/10">
                           {comment.attached_file_url.match(/\.(jpeg|jpg|gif|png)$/i) ? (
                             <a href={comment.attached_file_url} target="_blank" rel="noreferrer" className="block w-48 h-32 rounded-lg overflow-hidden border border-base-content/10 hover:border-primary/50 transition-colors">
-                              <img src={comment.attached_file_url} alt="Attachment" className="w-full h-full object-cover" />
+                              <img src={comment.attached_file_url} alt={t("Attachment")} className="w-full h-full object-cover" />
                             </a>
                           ) : (
                             <a href={comment.attached_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 bg-base-200/50 hover:bg-base-200 border border-base-content/10 rounded-lg text-xs text-base-content/80 transition-colors">
                               <Paperclip2 size={14} />
-                              Download Attachment
-                            </a>
+                              {t("Download Attachment")}</a>
                           )}
                         </div>
                       )}
@@ -977,20 +971,19 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
             {activeTab === "activity" && (
               <section className="space-y-4">
                 {isActivitiesLoading && (
-                  <p className="py-4 text-center text-xs text-base-content/40">Loading activity...</p>
+                  <p className="py-4 text-center text-xs text-heledone-ink-muted">{t("Loading activity...")}</p>
                 )}
                 {!isActivitiesLoading && activities.length === 0 && (
-                  <p className="rounded-2xl border border-dashed border-base-content/10 py-8 text-center text-xs text-base-content/40">
-                    No activities recorded yet.
-                  </p>
+                  <p className="rounded-2xl border border-dashed border-base-content/10 py-8 text-center text-xs text-heledone-ink-muted">
+                    {t("No activities recorded yet.")}</p>
                 )}
                 <div className="relative border-s border-base-content/10 ms-3 ps-5 space-y-4">
                   {activities.map((act) => (
                     <div key={act.id} className="relative">
-                      <span className="absolute -left-[25px] top-1 size-2 rounded-full bg-primary" />
+                      <span className="absolute -start-[25px] top-1 size-2 rounded-full bg-primary" />
                       <p className="text-xs font-semibold text-base-content">{act.metadata?.action || act.event_type}</p>
-                      <p className="text-[10px] text-base-content/40">
-                        {act.actor_detail?.first_name || act.actor_detail?.username || "System"} ·{" "}
+                      <p className="text-[13px] text-heledone-ink-muted">
+                        {act.actor_detail?.first_name || act.actor_detail?.username || t("System")} ·{" "}
                         {formatRelativeDate(act.created_at)}
                       </p>
                     </div>
@@ -1001,11 +994,10 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           </div>
 
           {/* ─── Footer ─── */}
-          <footer className="flex shrink-0 items-center justify-between border-t border-base-content/8 px-6 py-2.5 text-[11px] text-base-content/40">
-            <span>{isBusy ? "Saving changes..." : "Changes are saved automatically"}</span>
-            <span className="font-mono font-bold text-base-content/50">
-              {formatTime(elapsedSeconds)} logged
-            </span>
+          <footer className="flex shrink-0 items-center justify-between border-t border-base-content/8 px-6 py-2.5 text-[13px] text-heledone-ink-muted">
+            <span>{isBusy ? t("Saving changes...") : t("تغییرات خودکار ذخیره می‌شوند")}</span>
+            <span className="font-mono font-bold text-heledone-ink-muted">
+              {formatTime(elapsedSeconds)}  {t("ثبت‌شده")}</span>
           </footer>
         </motion.aside>
       </motion.div>

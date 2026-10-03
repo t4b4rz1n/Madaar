@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n/locale";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +20,7 @@ import ContentLoader from "../../components/ContentLoader";
 import TopProgressBar from "../../components/TopProgressBar";
 
 export const MainLayout = () => {
+  const t = useTranslation();
   const setSidebarOpen = useLayoutStore((state) => state.setSidebarOpen);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
@@ -60,34 +62,34 @@ export const MainLayout = () => {
 
   const breadcrumbs = useMemo(() => {
     const pathSegments = pathname.split("/").filter((i) => i);
-    const crumbs: Breadcrumb[] = [{ title: "Today", path: "/" }];
+    const crumbs: Breadcrumb[] = [{ title: t("امروز"), path: "/" }];
 
     if (pathSegments.length === 0 || pathSegments[0] === "dashboard") {
       return crumbs;
     }
 
     const firstSegment = pathSegments[0];
-    const matchingItem = drawerItems.find((item) => item.link === firstSegment);
+    const matchingItem = drawerItems.find((item) => item.link.replace(/^\//, "").split("/")[0] === firstSegment);
 
-    // If visiting /settings or any admin sub-page, inject "Workspace Settings" into breadcrumbs
+    // If visiting /settings or any admin sub-page, inject "تنظیمات فضای کار" into breadcrumbs
     if (firstSegment === "settings") {
-      crumbs.push({ title: "Workspace Settings", path: "/settings" });
+      crumbs.push({ title: t("تنظیمات فضای کار"), path: "/settings" });
     } else if (matchingItem && !matchingItem.isPrimary) {
-      crumbs.push({ title: "Workspace Settings", path: "/settings" });
-      crumbs.push({ title: matchingItem.title, path: `/${firstSegment}` });
+      crumbs.push({ title: t("تنظیمات فضای کار"), path: "/settings" });
+      crumbs.push({ title: matchingItem.title, path: matchingItem.link.startsWith("/") ? matchingItem.link : `/${matchingItem.link}` });
     } else if (matchingItem) {
-      crumbs.push({ title: matchingItem.title, path: `/${firstSegment}` });
+      crumbs.push({ title: matchingItem.title, path: matchingItem.link.startsWith("/") ? matchingItem.link : `/${matchingItem.link}` });
     } else {
       crumbs.push({ title: firstSegment, path: `/${firstSegment}` });
     }
 
     // Add remaining nested segments if any (e.g. details pages)
-    if (pathSegments.length > 1) {
-      crumbs.push({ title: "Details", path: pathname });
+    if (pathSegments.length > 1 && pathname !== matchingItem?.link) {
+      crumbs.push({ title: t("جزئیات"), path: pathname });
     }
 
     return crumbs;
-  }, [pathname]);
+  }, [pathname, t]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -126,8 +128,7 @@ export const MainLayout = () => {
         href="#main-content"
         className="fixed start-4 top-3 z-[200] -translate-y-24 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-content shadow-lg transition-transform focus:translate-y-0"
       >
-        Skip to main content
-      </a>
+        {t("رفتن به محتوای اصلی")}</a>
       <Sidebar />
 
       <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">

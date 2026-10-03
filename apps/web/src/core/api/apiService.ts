@@ -1,3 +1,4 @@
+import { t } from "../../i18n/locale";
 import { type AxiosRequestConfig } from "axios";
 import axiosClient from "../config/axiosClient";
 
@@ -112,7 +113,7 @@ export class ApiService {
       data: options?.data,
     });
     if (response.status === 204 || !response.data) {
-      return { message: "Deleted successfully", data: null as unknown as T, status: true };
+      return { message: t("Deleted successfully"), data: null as unknown as T, status: true };
     }
     return response.data;
   }

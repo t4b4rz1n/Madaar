@@ -1,3 +1,4 @@
+import { useTranslation, useLocale } from "../i18n/locale";
 import { useEffect, useState } from "react";
 
 type ThemeMode = "light" | "dark";
@@ -13,11 +14,11 @@ const getInitialTheme = (): ThemeMode => {
     return savedTheme;
   }
 
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  return prefersDark ? "dark" : "light";
+  return "light";
 };
 
 const ThemeToggle = () => {
+  const t = useTranslation();
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -51,8 +52,8 @@ const ThemeToggle = () => {
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={isDark ? t("نمای روشن") : t("نمای تیره")}
+      title={isDark ? t("نمای روشن") : t("نمای تیره")}
       className="motion-interactive inline-flex h-10 w-10 items-center justify-center rounded-xl border border-base-content/10 bg-base-100/70 text-base-content/70 shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-11"
     >
       {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
@@ -64,7 +65,7 @@ type IconProps = {
   className?: string;
 };
 
-const SunIcon = ({ className = "h-5 w-5" }: IconProps) => (
+const SunIcon = ({ className = "h-5 w-5" }: IconProps) => { useLocale(); return (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -85,9 +86,9 @@ const SunIcon = ({ className = "h-5 w-5" }: IconProps) => (
     <path d="M4.93 19.07l1.77-1.77" />
     <path d="M17.3 6.7l1.77-1.77" />
   </svg>
-);
+); };
 
-const MoonIcon = ({ className = "h-5 w-5" }: IconProps) => (
+const MoonIcon = ({ className = "h-5 w-5" }: IconProps) => { useLocale(); return (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -100,6 +101,6 @@ const MoonIcon = ({ className = "h-5 w-5" }: IconProps) => (
   >
     <path d="M21 12.79A9 9 0 1 1 11.21 3c0 0 0 0 0 0A7 7 0 0 0 21 12.79z" />
   </svg>
-);
+); };
 
 export default ThemeToggle;

@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/locale";
 import {
   keepPreviousData,
   useMutation,
@@ -38,7 +39,7 @@ export const useCreateUser = () => {
       await queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       await queryClient.invalidateQueries({ queryKey: ["roles"] });
       await queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success("User created successfully");
+      toast.success(t("User created successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -62,7 +63,7 @@ export const useUpdateUser = () => {
       await queryClient.invalidateQueries({ queryKey: ["roles"] });
       await queryClient.invalidateQueries({ queryKey: ["current-user-profile"] });
       await queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success("User updated successfully");
+      toast.success(t("User updated successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -84,7 +85,7 @@ export const useDeleteUser = () => {
       await queryClient.invalidateQueries({ queryKey: ["organizations"], exact: false });
       await queryClient.refetchQueries({ queryKey: ["users"], exact: false });
       await queryClient.refetchQueries({ queryKey: ["organizations"], exact: false });
-      toast.success("User deleted successfully");
+      toast.success(t("User deleted successfully"));
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to delete user");

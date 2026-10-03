@@ -1,7 +1,9 @@
+import { useTranslation } from "../../../i18n/locale";
+import { projectPalette } from "../../../core/config/designTokens";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { CloseCircle, FolderAdd, TickCircle } from "iconsax-reactjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -15,17 +17,7 @@ interface CreateEditProjectModalProps {
   project: Project | null;
 }
 
-const PROJECT_COLORS = [
-  { label: "Lavender",    value: "#b39ddb" },
-  { label: "Sky Blue",    value: "#81d4fa" },
-  { label: "Sage",        value: "#a5d6a7" },
-  { label: "Peach",       value: "#ffcc80" },
-  { label: "Mauve",       value: "#ce93d8" },
-  { label: "Dusty Blue",  value: "#90caf9" },
-  { label: "Rose Quartz", value: "#ef9a9a" },
-  { label: "Clay",        value: "#bcaaa4" },
-  { label: "Indigo",      value: "#6366f1" },
-];
+const PROJECT_COLORS = projectPalette.map(color => ({ label: color.name, value: color.value }));
 
 const sanitizeColor = (colorStr?: string | null): string => {
   if (!colorStr) return PROJECT_COLORS[0].value;
@@ -40,6 +32,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
   onClose,
   project,
 }) => {
+  const t = useTranslation();
   const queryClient = useQueryClient();
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
@@ -54,7 +47,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
     name: "",
     organization_id: "",
     description: "",
-    color: PROJECT_COLORS[0].value,
+    color: PROJECT_COLORS[0].value as string,
     budget: "",
     budget_currency: "IRR",
     start_date: "",
@@ -85,7 +78,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         name: "",
         organization_id: "",
         description: "",
-        color: PROJECT_COLORS[0].value,
+        color: PROJECT_COLORS[0].value as string,
         budget: "",
         budget_currency: "IRR",
         start_date: new Date().toISOString().split("T")[0],
@@ -122,7 +115,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       (organizations[0]?.id ? String(organizations[0].id) : "");
 
     if (!project && !selectedOrgId) {
-      toast.error("Please select an organization first.");
+      toast.error(t("Please select an organization first."));
       return;
     }
 
@@ -141,12 +134,12 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       console.error("Project action error:", err);
 
       if (err?.response?.status === 403 || err?.status_code === 403 || err?.status === 403) {
-        toast.error("You do not have permission to perform this action.");
+        toast.error(t("You do not have permission to perform this action."));
         return;
       }
 
       const errorData = err?.response?.data || err?.data || err;
-      let msg = "Could not save project.";
+      let msg = t("Could not save project.");
       if (errorData) {
         if (typeof errorData === "string") msg = errorData;
         else if (errorData.message) msg = errorData.message;
@@ -169,7 +162,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["projects"] });
-            toast.success("Project updated successfully");
+            toast.success(t("Project updated successfully"));
             onClose();
           },
           onError: handleApiError,
@@ -179,7 +172,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
       createProjectMutation.mutate(payload, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["projects"] });
-          toast.success("Project created successfully");
+          toast.success(t("Project created successfully"));
           onClose();
         },
         onError: handleApiError,
@@ -210,19 +203,19 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           >
             {/* Header with live gradient preview */}
         <div
-          className="relative flex items-center justify-between px-6 py-5 text-white"
-          style={{ background: formData.color }}
+          className="relative flex items-center justify-between px-6 py-5 text-base-content bg-base-200 border-b border-heledone-border"
+          style={{ borderInlineStart: `4px solid ${formData.color}` }}
         >
           <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-2xl bg-white/20 backdrop-blur-xs">
+            <div className="grid size-10 place-items-center rounded-2xl bg-base-100 text-primary">
               <FolderAdd size={20} />
             </div>
             <div>
               <h3 className="text-lg font-bold tracking-tight">
-                {project ? "Edit Project" : "New Project"}
+                {project ? t("ویرایش پروژه") : t("پروژه تازه")}
               </h3>
-              <p className="text-xs text-white/80 font-medium">
-                {project ? "Update project details and settings" : "Create a new project workspace"}
+              <p className="text-xs text-heledone-ink-muted font-medium">
+                {project ? t("مشخصات و تنظیمات پروژه را ویرایش کنید") : t("برای کارهای تیم یک پروژه بسازید")}
               </p>
             </div>
           </div>
@@ -230,7 +223,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-1.5 text-white/80 hover:bg-white/20 hover:text-white transition duration-150"
+            className="rounded-xl p-1.5 text-heledone-ink-muted hover:bg-base-100 hover:text-base-content transition duration-150"
           >
             <CloseCircle size={22} />
           </button>
@@ -239,8 +232,8 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
           {!project && (
             <div>
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Organization <span className="text-error">*</span>
+              <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                {t("Organization")} <span className="text-error">*</span>
               </label>
               <select
                 name="organization_id"
@@ -251,7 +244,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                 className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
               >
                 {organizations.length === 0 ? (
-                  <option value="">No Organizations Found</option>
+                  <option value="">{t("No Organizations Found")}</option>
                 ) : (
                   organizations.map((org) => (
                     <option key={org.id} value={String(org.id)}>
@@ -264,41 +257,39 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           )}
 
           <div>
-            <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-              Project Name <span className="text-error">*</span>
+            <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+              {t("نام پروژه")} <span className="text-error">*</span>
             </label>
             <input
               type="text"
               name="name"
               dir="auto"
               required
-              placeholder="e.g. Madaar System"
+              placeholder={t("e.g. Heledone System")}
               value={formData.name}
               onChange={handleChange}
-              className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+              className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
             />
           </div>
 
           <div>
-            <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-              Description
-            </label>
+            <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+              {t("توضیح")}</label>
             <textarea
               name="description"
               dir="auto"
               rows={2}
-              placeholder="Brief project summary..."
+              placeholder={t("Brief project summary...")}
               value={formData.description}
               onChange={handleChange}
-              className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35 resize-none"
+              className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Budget (IRR)
-              </label>
+              <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                {t("Budget (IRR)")}</label>
               <div className="flex">
                 <input
                   type="number"
@@ -307,7 +298,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   placeholder="0.00"
                   value={formData.budget}
                   onChange={handleChange}
-                  className="w-full h-9.5 rounded-l-xl border border-r-0 border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                  className="w-full h-9.5 rounded-l-xl border border-e-0 border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
                 />
                 <select
                   name="budget_currency"
@@ -315,28 +306,27 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   onChange={handleChange}
                   className="h-9.5 rounded-r-xl border border-base-content/10 bg-base-200/50 px-2 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
                 >
-                  <option value="IRR">IRR</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
+                  <option value="IRR">{t("IRR")}</option>
+                  <option value="USD">{t("USD")}</option>
+                  <option value="EUR">{t("EUR")}</option>
                 </select>
               </div>
             </div>
             {project && (
               <div>
-                <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                  Status
-                </label>
+                <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                  {t("وضعیت")}</label>
                 <select
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
                   className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="on_hold">On Hold</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
+                  <option value="draft">{t("Draft")}</option>
+                  <option value="active">{t("فعال")}</option>
+                  <option value="on_hold">{t("On Hold")}</option>
+                  <option value="completed">{t("Completed")}</option>
+                  <option value="archived">{t("Archived")}</option>
                 </select>
               </div>
             )}
@@ -344,18 +334,16 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Start Date
-              </label>
+              <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                {t("Start Date")}</label>
               <CustomDatePicker
                 value={formData.start_date}
                 onChange={(v) => setFormData((prev) => ({ ...prev, start_date: v }))}
               />
             </div>
             <div>
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                Deadline
-              </label>
+              <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                {t("Deadline")}</label>
               <CustomDatePicker
                 value={formData.deadline}
                 onChange={(v) => setFormData((prev) => ({ ...prev, deadline: v }))}
@@ -365,9 +353,8 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
 
           {/* Color Theme Selector */}
           <div>
-            <label className="block font-bold text-base-content/60 mb-2 uppercase tracking-wider text-[11px]">
-              Theme Color
-            </label>
+            <label className="block font-bold text-heledone-ink-muted mb-2 uppercase tracking-wider text-[13px]">
+              {t("Theme Color")}</label>
             <div className="flex flex-wrap gap-2">
               {PROJECT_COLORS.map((c) => (
                 <button
@@ -383,7 +370,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
                   style={{ background: c.value }}
                 >
                   {formData.color === c.value && (
-                    <TickCircle size={14} className="text-white" />
+                    <TickCircle size={14} className="rounded-full bg-neutral text-neutral-content" />
                   )}
                 </button>
               ))}
@@ -397,19 +384,18 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
               disabled={isLoading}
               className="h-9 px-4 rounded-xl border border-base-content/10 text-xs font-bold text-base-content/70 hover:bg-base-200 transition-all"
             >
-              Cancel
-            </button>
+              {t("انصراف")}</button>
             <button
               type="submit"
               disabled={isLoading || (!project && organizations.length === 0)}
               className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5"
             >
               {isLoading ? (
-                <span>Saving...</span>
+                <span>{t("در حال ذخیره…")}</span>
               ) : project ? (
-                <span>Save Changes</span>
+                <span>{t("Save Changes")}</span>
               ) : (
-                <span>Create Project</span>
+                <span>{t("ساخت پروژه")}</span>
               )}
             </button>
           </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/locale";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
@@ -22,6 +23,7 @@ import type { Ticket, TicketMessage } from "../types";
 import { useAuthStore } from "../../auth/store/authStore";
 
 export default function TicketDetailsPage() {
+  const t = useTranslation();
   const { id } = useParams<{ id: string }>();
   const ticketId = id || "";
   const isStaff = useAuthStore((state) => state.user?.is_staff === true);
@@ -109,7 +111,7 @@ export default function TicketDetailsPage() {
     open: { color: "text-info", bg: "bg-info/10 border-info/20", dot: "bg-info", pulse: true },
     in_progress: { color: "text-warning", bg: "bg-warning/10 border-warning/20", dot: "bg-warning", pulse: true },
     answered: { color: "text-success", bg: "bg-success/10 border-success/20", dot: "bg-success", pulse: false },
-    closed: { color: "text-base-content/50", bg: "bg-base-200 border-base-content/10", dot: "bg-base-content/30", pulse: false },
+    closed: { color: "text-heledone-ink-muted", bg: "bg-base-200 border-base-content/10", dot: "bg-base-content/30", pulse: false },
   };
 
   const pCfg = ticket
@@ -138,7 +140,7 @@ export default function TicketDetailsPage() {
           </div>
           <div className="flex-1 p-5 space-y-4">
             <div className="h-16 w-1/3 bg-base-content/5 rounded-2xl" />
-            <div className="h-12 w-1/2 bg-base-content/10 rounded-2xl ml-auto" />
+            <div className="h-12 w-1/2 bg-base-content/10 rounded-2xl ms-auto" />
             <div className="h-20 w-1/4 bg-base-content/5 rounded-2xl" />
           </div>
           <div className="p-4 border-t border-base-content/10 h-16 bg-base-200/30" />
@@ -146,17 +148,16 @@ export default function TicketDetailsPage() {
       ) : isErrorTicket || !ticket ? (
         <div className="bg-base-100 rounded-2xl border border-error/20 p-14 text-center h-[76vh] flex flex-col items-center justify-center">
           <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-error/10 border border-error/20 flex items-center justify-center">
-            <CloseCircle className="w-10 h-10 text-error/70" />
+            <CloseCircle className="w-10 h-10 text-error" />
           </div>
-          <h3 className="text-lg font-bold text-error mt-2">Ticket Not Found</h3>
-          <p className="text-error/50 mt-2 text-sm">The ticket you are looking for does not exist or has been deleted.</p>
+          <h3 className="text-lg font-bold text-error mt-2">{t("Ticket Not Found")}</h3>
+          <p className="text-error mt-2 text-sm">{t("The ticket you are looking for does not exist or has been deleted.")}</p>
           <Link
             to="/tickets"
             className="btn btn-primary rounded-xl gap-2 mt-6 px-6"
           >
             <ArrowLeft size={16} className="rtl:rotate-180" />
-            Back to Tickets
-          </Link>
+            {t("Back to Tickets")}</Link>
         </div>
       ) : (
         <div
@@ -169,7 +170,7 @@ export default function TicketDetailsPage() {
             <div className="flex items-center gap-3 min-w-0">
               <Link
                 to="/tickets"
-                className="w-8 h-8 rounded-lg flex items-center justify-center bg-base-200 hover:bg-primary/10 hover:text-primary text-base-content/60 transition-all border border-base-content/10 shrink-0"
+                className="w-8 h-8 rounded-lg flex items-center justify-center bg-base-200 hover:bg-primary/10 hover:text-primary text-heledone-ink-muted transition-all border border-base-content/10 shrink-0"
               >
                 <ArrowLeft size={16} className="rtl:rotate-180" />
               </Link>
@@ -181,18 +182,18 @@ export default function TicketDetailsPage() {
                   <h2 className="font-bold text-sm text-base-content truncate max-w-[150px] sm:max-w-sm" dir="auto">
                     {ticket.title}
                   </h2>
-                  <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded border uppercase font-medium shrink-0 ${pCfg.bg} ${pCfg.color}`}>
+                  <span className={`inline-flex items-center text-[13px] px-1.5 py-0.5 rounded border uppercase font-medium shrink-0 ${pCfg.bg} ${pCfg.color}`}>
                     {capitalize(ticket.priority)}
                   </span>
                   {ticketTypeName && (
-                    <span className="text-[10px] bg-base-200 border border-base-content/10 px-1.5 py-0.5 rounded text-base-content/60 font-mono shrink-0">
+                    <span className="text-[13px] bg-base-200 border border-base-content/10 px-1.5 py-0.5 rounded text-heledone-ink-muted font-mono shrink-0">
                       {ticketTypeName}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-base-content/50 flex items-center flex-wrap gap-1.5 mt-1">
-                  <span className="font-bold text-base-content/85" dir="auto">{ticket.user?.username || "Guest"}</span>
-                  {ticket.user?.email && <span className="opacity-75 text-[11px] truncate max-w-[150px]">({ticket.user.email})</span>}
+                <p className="text-xs text-heledone-ink-muted flex items-center flex-wrap gap-1.5 mt-1">
+                  <span className="font-bold text-base-content/85" dir="auto">{ticket.user?.username || t("Guest")}</span>
+                  {ticket.user?.email && <span className="opacity-75 text-[13px] truncate max-w-[150px]">({ticket.user.email})</span>}
                   <span>•</span>
                   <span>{formatDate(ticket.created_at)}</span>
                 </p>
@@ -206,7 +207,7 @@ export default function TicketDetailsPage() {
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${sCfg.dot} ${sCfg.pulse ? "animate-pulse" : ""}`} />
                 {capitalize(ticket.status)}
-                <span className="text-[8px] opacity-60">▼</span>
+                <span className="text-[13px] opacity-60">▼</span>
               </label>
               <ul
                 tabIndex={0}
@@ -261,9 +262,9 @@ export default function TicketDetailsPage() {
                     >
                       <div className="flex items-center gap-2 mb-1.5 justify-between">
                         <span className={`text-xs font-bold ${isStaff ? "text-primary-content/85" : "text-base-content/80"}`}>
-                          {message.sender?.username || "User"}
+                          {message.sender?.username || t("User")}
                         </span>
-                        <span className={`text-[10px] ${isStaff ? "text-primary-content/60" : "text-base-content/40"}`}>
+                        <span className={`text-[13px] ${isStaff ? "text-primary-content" : "text-heledone-ink-muted"}`}>
                           {new Date(message.created_at).toLocaleTimeString("en-US", {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -278,7 +279,7 @@ export default function TicketDetailsPage() {
                         >
                           {attachment.file_type === "image" ? (
                             <a href={attachment.file} target="_blank" rel="noopener noreferrer" className="block hover:opacity-85 transition-opacity">
-                              <img src={attachment.file} alt="attachment" className="max-h-60 object-cover w-full" />
+                              <img src={attachment.file} alt={t("attachment")} className="max-h-60 object-cover w-full" />
                             </a>
                           ) : (
                             <a
@@ -307,9 +308,9 @@ export default function TicketDetailsPage() {
             ) : (
               <div className="my-auto flex flex-col justify-center items-center text-center p-10" dir="auto">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
-                  <Messages2 size={32} className="text-primary/60" />
+                  <Messages2 size={32} className="text-primary" />
                 </div>
-                <p className="text-base-content/50 text-sm">No messages in this ticket yet.</p>
+                <p className="text-heledone-ink-muted text-sm">{t("No messages in this ticket yet.")}</p>
               </div>
             )}
           </div>
@@ -321,17 +322,17 @@ export default function TicketDetailsPage() {
                 {selectedFile.type.startsWith("image/") ? (
                   <img
                     src={URL.createObjectURL(selectedFile)}
-                    alt="preview"
+                    alt={t("preview")}
                     className="w-10 h-10 object-cover rounded-lg border border-base-content/10"
                   />
                 ) : (
                   <div className="w-10 h-10 bg-base-300 rounded-lg flex items-center justify-center border border-base-content/10">
-                    <Paperclip size={18} className="text-base-content/50" />
+                    <Paperclip size={18} className="text-heledone-ink-muted" />
                   </div>
                 )}
                 <div>
                   <p className="text-xs font-semibold text-base-content truncate max-w-[220px]">{selectedFile.name}</p>
-                  <p className="text-[10px] text-base-content/40">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                  <p className="text-[13px] text-heledone-ink-muted">{(selectedFile.size / 1024).toFixed(1)}  {t("KB")}</p>
                 </div>
               </div>
               <button
@@ -376,7 +377,7 @@ export default function TicketDetailsPage() {
                   <textarea
                     {...field}
                     id="chat-textarea"
-                    placeholder="Type your reply here..."
+                    placeholder={t("Type your reply here...")}
                     onPaste={handlePaste}
                     onChange={(e) => {
                       field.onChange(e);
@@ -419,7 +420,7 @@ export default function TicketDetailsPage() {
         {/* Sidebar Header */}
         <div className="px-5 py-4 border-b border-base-content/10 bg-base-200/20 flex items-center gap-2.5 flex-shrink-0">
           <Messages2 size={18} className="text-primary" />
-          <h3 className="font-bold text-sm text-base-content">Active Chats</h3>
+          <h3 className="font-bold text-sm text-base-content">{t("Active Chats")}</h3>
         </div>
 
         {/* Chats list scrollable container */}
@@ -427,11 +428,11 @@ export default function TicketDetailsPage() {
           {isLoadingSidebarTickets ? (
             <div className="flex flex-col items-center justify-center py-10 gap-2">
               <span className="loading loading-spinner loading-md text-primary" />
-              <span className="text-xs text-base-content/40 font-mono">Loading chats...</span>
+              <span className="text-xs text-heledone-ink-muted font-mono">{t("Loading chats...")}</span>
             </div>
           ) : sidebarTickets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center px-4">
-              <span className="text-xs text-base-content/30 font-mono">No chats found.</span>
+              <span className="text-xs text-heledone-ink-muted font-mono">{t("No chats found.")}</span>
             </div>
           ) : (
             <>
@@ -449,7 +450,7 @@ export default function TicketDetailsPage() {
                       }`}
                   >
                     <div className="relative shrink-0">
-                      <div className="w-8 h-8 rounded-xl bg-base-200 border border-base-content/10 flex items-center justify-center text-base-content/60">
+                      <div className="w-8 h-8 rounded-xl bg-base-200 border border-base-content/10 flex items-center justify-center text-heledone-ink-muted">
                         <Messages2 size={14} className={isCurrent ? "text-primary" : ""} />
                       </div>
                       <span className={`absolute -bottom-0.5 -end-0.5 w-2 h-2 rounded-full border border-base-100 ${itemStatus.dot}`} />
@@ -460,17 +461,17 @@ export default function TicketDetailsPage() {
                         <span className={`font-bold text-xs truncate block ${isCurrent ? "text-primary" : "text-base-content/85"}`} dir="auto">
                           {tItem.title}
                         </span>
-                        <span className="text-[9px] text-base-content/30 shrink-0">
+                        <span className="text-[13px] text-heledone-ink-muted shrink-0">
                           {formatDate(tItem.created_at)}
                         </span>
                       </div>
 
                       <div className="flex justify-between items-center mt-1">
-                        <span className="text-[10px] text-base-content/50 truncate block" dir="auto">
-                          {tItem.user?.username || "Guest"}
+                        <span className="text-[13px] text-heledone-ink-muted truncate block" dir="auto">
+                          {tItem.user?.username || t("Guest")}
                         </span>
 
-                        <span className={`text-[8px] px-1 py-0 rounded border uppercase font-bold shrink-0 ${itemPriority.bg} ${itemPriority.color}`}>
+                        <span className={`text-[13px] px-1 py-0 rounded border uppercase font-bold shrink-0 ${itemPriority.bg} ${itemPriority.color}`}>
                           {capitalize(tItem.priority)}
                         </span>
                       </div>
@@ -490,7 +491,7 @@ export default function TicketDetailsPage() {
                     {isFetchingSidebarTickets ? (
                       <span className="loading loading-spinner loading-xs" />
                     ) : (
-                      "Load More"
+                      t("Load More")
                     )}
                   </button>
                 </div>

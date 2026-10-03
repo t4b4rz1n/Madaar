@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight2, CloseCircle, SearchNormal1 } from "iconsax-reactjs";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +19,7 @@ export const CommandMenu = ({
   items,
   isStaff,
 }: CommandMenuProps) => {
+  const t = useTranslation();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -29,10 +31,10 @@ export const CommandMenu = ({
     () =>
       items.map((item) => ({
         ...item,
-        itemTitle: item.link === "dashboard" && isStaff ? "Admin Panel" : item.title,
+        itemTitle: item.link === "dashboard" && isStaff ? t("Admin Panel") : item.title,
         itemLink: item.link === "dashboard" && isStaff ? "admin" : item.link,
       })),
-    [isStaff, items],
+    [isStaff, items, t],
   );
 
   const filteredCommands = useMemo(() => {
@@ -40,9 +42,9 @@ export const CommandMenu = ({
     if (!normalizedQuery) return commands;
 
     return commands.filter((command) =>
-      `${command.itemTitle} ${command.section}`.toLowerCase().includes(normalizedQuery),
+      `${command.itemTitle} ${t(command.section)}`.toLowerCase().includes(normalizedQuery),
     );
-  }, [commands, query]);
+  }, [commands, query, t]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -135,7 +137,7 @@ export const CommandMenu = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[80] flex items-start justify-center bg-slate-950/25 px-4 pt-[12vh] backdrop-blur-sm"
+          className="fixed inset-0 z-[80] flex items-start justify-center bg-neutral/25 px-4 pt-[12vh] backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -147,8 +149,8 @@ export const CommandMenu = ({
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Command menu"
-            className="madaar-glass w-full max-w-xl overflow-hidden rounded-2xl shadow-madaar-floating"
+            aria-label={t("Command menu")}
+            className="heledone-glass w-full max-w-xl overflow-hidden rounded-2xl shadow-heledone-floating"
             initial={{ opacity: 0, y: -16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
@@ -159,14 +161,14 @@ export const CommandMenu = ({
             }}
           >
             <div className="flex items-center gap-3 border-b border-base-content/10 px-4">
-              <SearchNormal1 size={20} className="shrink-0 text-base-content/45" />
+              <SearchNormal1 size={20} className="shrink-0 text-heledone-ink-muted" />
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={handleInputKeyDown}
-                placeholder="Search pages..."
-                className="h-14 min-w-0 flex-1 bg-transparent text-sm font-medium text-base-content outline-none placeholder:text-base-content/40"
+                placeholder={t("Search pages...")}
+                className="h-14 min-w-0 flex-1 bg-transparent text-sm font-medium text-base-content outline-none placeholder:text-heledone-ink-muted"
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="command-menu-results"
@@ -176,14 +178,13 @@ export const CommandMenu = ({
                     : undefined
                 }
               />
-              <kbd className="hidden rounded-md border border-base-content/10 bg-base-200 px-2 py-1 text-[0.68rem] text-base-content/45 sm:inline-block">
-                ESC
-              </kbd>
+              <kbd className="hidden rounded-md border border-base-content/10 bg-base-200 px-2 py-1 text-[0.68rem] text-heledone-ink-muted sm:inline-block">
+                {t("ESC")}</kbd>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="motion-interactive rounded-lg p-1 text-base-content/45 hover:bg-base-200 hover:text-base-content"
-                aria-label="Close command menu"
+                className="motion-interactive rounded-lg p-1 text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
+                aria-label={t("Close command menu")}
               >
                 <CloseCircle size={20} />
               </button>
@@ -191,9 +192,8 @@ export const CommandMenu = ({
 
             <div id="command-menu-results" role="listbox" className="max-h-[min(26rem,55vh)] overflow-y-auto p-2">
               {filteredCommands.length === 0 ? (
-                <div className="px-4 py-12 text-center text-sm text-base-content/50">
-                  No matching page found.
-                </div>
+                <div className="px-4 py-12 text-center text-sm text-heledone-ink-muted">
+                  {t("No matching page found.")}</div>
               ) : (
                 filteredCommands.map((command, index) => (
                   <button
@@ -217,20 +217,20 @@ export const CommandMenu = ({
                       <span className="block truncate text-sm font-semibold">
                         {command.itemTitle}
                       </span>
-                      <span className="block text-xs text-base-content/45">
-                        {command.section}
+                      <span className="block text-xs text-heledone-ink-muted">
+                        {t(command.section)}
                       </span>
                     </span>
-                    <ArrowRight2 size={16} className="shrink-0 opacity-45" />
+                    <ArrowRight2 size={16} className="shrink-0 opacity-45 rtl:rotate-180" />
                   </button>
                 ))
               )}
             </div>
 
-            <div className="hidden items-center gap-4 border-t border-base-content/10 px-4 py-3 text-[0.68rem] text-base-content/45 sm:flex">
-              <span>↑↓ Navigate</span>
-              <span>↵ Open</span>
-              <span>⌘K / Ctrl K</span>
+            <div className="hidden items-center gap-4 border-t border-base-content/10 px-4 py-3 text-[0.68rem] text-heledone-ink-muted sm:flex">
+              <span>{t("↑↓ Navigate")}</span>
+              <span>{t("↵ Open")}</span>
+              <span>{t("⌘K / Ctrl K")}</span>
             </div>
           </motion.div>
         </motion.div>

@@ -1,37 +1,30 @@
-import { motion } from "framer-motion";
-import React from "react";
+import { useTranslation } from "../../../i18n/locale";
+import type { ReactNode } from "react";
+import { Brand, BrandBeats, BrandWave } from "../../../components/Brand";
+import { LanguagePicker } from "../../../components/LanguagePicker";
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 24, scale: 0.995 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.5 },
-  },
-};
-
-export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  return (
-    // bg-base-200: Standard page background from theme
-    <div className="min-h-screen bg-base-200 flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Decor - Uses Primary/Secondary colors with low opacity */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -left-40 -top-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute -right-40 -bottom-40 w-[500px] h-[500px] rounded-full bg-secondary/5 blur-3xl" />
+export const AuthLayout = ({ children }: { children: ReactNode }) => { const t = useTranslation(); return (
+  <div className="heledone-auth">
+    <aside className="heledone-auth-story">
+      <Brand />
+      <div>
+        <p className="mb-4 text-sm font-semibold">{t("یک تیم، یک ریتم مشترک")}</p>
+        <h2>{t("کارها که هماهنگ شوند،")}<br />{t("تیم جان می‌گیرد.")}</h2>
+        <p className="mt-5 text-base leading-relaxed">{t("از اولین ایده تا آخرین قدم، کنار هم پیش بروید. هله‌دان خانه‌ای برای پروژه‌ها، کارهای تیم و وقت ارزشمند شماست.")}</p>
+        <div className="heledone-auth-frame heledone-lattice" aria-hidden="true">
+          <div className="absolute inset-0 flex items-center justify-center"><div className="rounded-2xl border border-heledone-border bg-base-100 px-10 py-7 shadow-heledone-card"><BrandBeats /><div className="mt-4 flex gap-2"><span className="h-2 w-14 rounded-full bg-primary/25" /><span className="h-2 w-8 rounded-full bg-heledone-coral/50" /><span className="h-2 w-4 rounded-full bg-heledone-sun" /></div></div></div>
+        </div>
+        <div className="mt-5 max-w-lg"><BrandWave /></div>
       </div>
-
-      <motion.div
-        variants={cardVariants}
-        initial="hidden"
-        animate="visible"
-        // bg-base-100: Card background (usually white in light mode)
-        className="relative z-10 w-full max-w-md p-6 sm:p-10 bg-base-100 rounded-2xl shadow-xl border border-base-300"
-      >
+      <p className="text-sm">{t("با گرمای جنوب، با ریتم تیم شما.")}</p>
+    </aside>
+    <main className="heledone-auth-form">
+      <div className="w-full max-w-md">
+        <div className="heledone-auth-mobile-brand"><Brand /></div>
+        <div className="mb-6"><LanguagePicker compact /></div>
         {children}
-      </motion.div>
-    </div>
-  );
-};
+        <p className="mt-8 text-center text-sm text-heledone-ink-muted">{t("هله‌دان · همراه کارهای تیم")}</p>
+      </div>
+    </main>
+  </div>
+); };

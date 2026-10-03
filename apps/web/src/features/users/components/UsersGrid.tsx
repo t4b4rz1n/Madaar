@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { motion } from "motion/react";
 import {
   Building3,
   CloseCircle,
@@ -34,6 +35,7 @@ export const UsersGrid = ({
   onEdit,
   canManage = false,
 }: UsersGridProps) => {
+  const t = useTranslation();
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
     user: User | null;
@@ -91,11 +93,11 @@ export const UsersGrid = ({
   if (isError) {
     return (
       <div className="bg-linear-to-br from-error/5 to-error/10 rounded-2xl border border-error/20 p-12 text-center backdrop-blur-md">
-        <div className="text-error/40 mb-4">
+        <div className="text-error mb-4">
           <CloseCircle className="w-16 h-16 mx-auto" />
         </div>
-        <h3 className="text-lg font-bold text-error mb-2">Loading Error</h3>
-        <p className="text-error/70">There was a problem loading users</p>
+        <h3 className="text-lg font-bold text-error mb-2">{t("Loading Error")}</h3>
+        <p className="text-error">{t("There was a problem loading users")}</p>
       </div>
     );
   }
@@ -103,15 +105,13 @@ export const UsersGrid = ({
   if (users.length === 0) {
     return (
       <div className="bg-base-100/50 backdrop-blur-xl rounded-2xl border border-base-content/8 p-12 text-center shadow-sm">
-        <div className="text-base-content/40 mb-4">
+        <div className="text-heledone-ink-muted mb-4">
           <UserIcon className="w-16 h-16 mx-auto" />
         </div>
         <h3 className="text-lg font-bold text-base-content mb-2">
-          No Users Found
-        </h3>
+          {t("No Users Found")}</h3>
         <p className="text-base-content/70">
-          No users match your search criteria
-        </p>
+          {t("No users match your search criteria")}</p>
       </div>
     );
   }
@@ -143,12 +143,12 @@ export const UsersGrid = ({
                     />
                   ) : (
                     <UserIcon
-                      className="w-7 h-7 text-primary/70"
+                      className="w-7 h-7 text-primary"
                       variant="Bold"
                     />
                   )}
                   </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-base-100 bg-success" />
+                  <span className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-base-100 bg-success" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -157,13 +157,13 @@ export const UsersGrid = ({
                     </h3>
                     {/* Organization badge inline next to name */}
                     {user.organization?.name && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/5 text-primary border border-primary/15 leading-none shadow-sm">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[13px] font-medium bg-primary/5 text-primary border border-primary/15 leading-none shadow-sm">
                         <Building3 size={10} />
                         {user.organization.name}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-base-content/50 truncate mt-0.5 font-medium">
+                  <p className="text-sm text-heledone-ink-muted truncate mt-0.5 font-medium">
                     {user.first_name} {user.last_name}
                   </p>
                 </div>
@@ -183,33 +183,32 @@ export const UsersGrid = ({
               <div className="flex items-center justify-between pt-4 border-t border-base-content/8 mt-auto">
                 <div className="flex items-center gap-2 flex-wrap">
                   {user.organization?.name ? (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                    <span className="inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
                       <Building3 size={10} />
                       {user.organization.name}
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-md text-base-content/30 border border-dashed border-base-content/10">
+                    <span className="inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-0.5 rounded-md text-heledone-ink-muted border border-dashed border-base-content/10">
                       <Building3 size={10} />
-                      No org
-                    </span>
+                      {t("No org")}</span>
                   )}
                   <span
-                    className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-md border ${
+                    className={`inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-0.5 rounded-md border ${
                       user.is_active
                         ? "bg-success/10 text-success border-success/20"
                         : "bg-base-200 text-base-content/70"
                     }`}
                   >
-                    {user.is_active ? "Active" : "Inactive"}
+                    {user.is_active ? t("فعال") : t("Inactive")}
                   </span>
 
                   {user.is_staff && (
                     <span
-                      className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20"
-                      title="Staff Member"
+                      className="inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20"
+                      title={t("Staff Member")}
                     >
                       <Verify size={12} variant="Bold" />
-                      <span className="hidden sm:inline">Staff</span>
+                      <span className="hidden sm:inline">{t("Staff")}</span>
                     </span>
                   )}
 
@@ -219,8 +218,8 @@ export const UsersGrid = ({
 
                         return (
                           <span
-                            className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-md border bg-base-200 text-base-content/70`}
-                            title={`Role: ${roleName}`}
+                            className={`inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-0.5 rounded-md border bg-base-200 text-base-content/70`}
+                            title={t("Role: {value0}", { value0: roleName })}
                           >
                             {RoleIcon ? (
                               <RoleIcon size={12} variant="Bold" />
@@ -236,15 +235,15 @@ export const UsersGrid = ({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => onEdit(user)}
-                      className="p-1.5 rounded-lg text-base-content/40 hover:text-base-content hover:bg-base-content/10 transition-colors"
-                      title="Edit User"
+                      className="p-1.5 rounded-lg text-heledone-ink-muted hover:text-base-content hover:bg-base-content/10 transition-colors"
+                      title={t("Edit User")}
                     >
                       <Edit size={16} />
                     </button>
                     <button
                       onClick={() => setDeleteModalState({ open: true, user })}
-                      className="p-1.5 rounded-lg text-base-content/40 hover:text-base-content hover:bg-base-content/10 transition-colors"
-                      title="Delete User"
+                      className="p-1.5 rounded-lg text-heledone-ink-muted hover:text-base-content hover:bg-base-content/10 transition-colors"
+                      title={t("Delete User")}
                     >
                       <Trash size={16} />
                     </button>
@@ -260,8 +259,8 @@ export const UsersGrid = ({
         isOpen={deleteModalState.open}
         onClose={() => setDeleteModalState({ open: false, user: null })}
         onConfirm={handleDelete}
-        title="Delete User"
-        message={`Are you sure you want to delete the user "${deleteModalState.user?.username}"? This action cannot be undone.`}
+        title={t("Delete User")}
+        message={t("Are you sure you want to delete the user \"{value0}\"? This action cannot be undone.", { value0: deleteModalState.user?.username })}
         isLoading={deleteMutation.isPending}
       />
     </>

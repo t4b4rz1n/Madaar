@@ -436,11 +436,11 @@ export let mockProjects: Project[] = [
   {
     id: "1",
     organization: "1",
-    name: "Modares (Internal Management System)",
+    name: "وب‌اپ هله‌دان",
     description:
       "Development of an integrated team OS with gamification and task management",
     status: "active",
-    prefix: "MAD",
+    prefix: "HLD",
     budget: 500000000,
     budget_currency: "IRR",
     start_date: "2026-01-01T00:00:00Z",

@@ -1,20 +1,28 @@
+import { useTranslation } from "../../../i18n/locale";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthLayout } from "../components/AuthLayout";
 import { AuthForm } from "../components/AuthForm";
 import { loginSchema, type LoginFormData } from "../validation/authSchema";
 import { useLogin } from "../hooks/useAuth";
 
 const LoginPage: React.FC = () => {
+  const t = useTranslation();
   const { mutate: login, isPending: isLoading } = useLogin();
 
   const {
     register,
+    trigger,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  React.useEffect(() => {
+    if (isSubmitted) void trigger();
+  }, [t, isSubmitted, trigger]);
 
   const handleLogin = (data: LoginFormData) => {
     login(data);
@@ -23,36 +31,34 @@ const LoginPage: React.FC = () => {
   const loginFields = [
     {
       name: "username",
-      label: "Username",
+      label: t("نام کاربری"),
       type: "text",
-      placeholder: "Enter your username",
+      placeholder: t("نام کاربری خود را وارد کنید"),
     },
     {
       name: "password",
-      label: "Password",
+      label: t("رمز عبور"),
       type: "password",
-      placeholder: "Enter your password",
+      placeholder: t("رمز عبور خود را وارد کنید"),
     },
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 p-4 font-sans">
-      <div className="w-full max-w-md bg-base-100 rounded-3xl shadow-xl p-8 border border-base-300">
+    <AuthLayout>
         <AuthForm
-          title="Welcome Back"
+          title={t("خوش برگشتید")}
           fields={loginFields}
           onSubmit={handleLogin as any}
-          buttonText="Sign In"
-          footerText="Don't have an account?"
+          buttonText={t("ورود به هله‌دان")}
+          footerText={t("تازه به جمع ما می‌پیوندید؟")}
           footerLink="/register"
-          footerLinkText="Create account"
+          footerLinkText={t("ساخت حساب")}
           isLoading={isLoading}
           register={register as any}
           handleSubmit={(fn) => handleSubmit(fn as any) as any}
           errors={errors}
         />
-      </div>
-    </div>
+    </AuthLayout>
   );
 };
 

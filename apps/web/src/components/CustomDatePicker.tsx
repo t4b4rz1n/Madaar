@@ -1,3 +1,4 @@
+import { t as translate, useTranslation, getDirection, getIntlLocale, formatNumber } from "../i18n/locale";
 import { formatDisplayDate } from "../utils/date";
 import {
   addMonths,
@@ -15,7 +16,7 @@ import {
   subMonths,
 } from "date-fns";
 import { DoranDate } from "@doranjs/core";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeft2,
   ArrowRight2,
@@ -30,12 +31,6 @@ import "@doranjs/react/styles.css";
 // Use ReturnType to avoid the private constructor issue
 type JDoranDate = ReturnType<typeof DoranDate.fromGregorian>;
 
-const JALALI_MONTHS = [
-  "فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور",
-  "مهر","آبان","آذر","دی","بهمن","اسفند",
-];
-// Jalali week starts Saturday: Sat=0, Sun=1, Mon=2, Tue=3, Wed=4, Thu=5, Fri=6
-const JALALI_WEEKDAYS = ["ش","ی","د","س","چ","پ","ج"];
 
 interface JalaliDay {
   jDate: JDoranDate;
@@ -89,11 +84,12 @@ interface CustomDatePickerProps {
 export const CustomDatePicker = ({
   value,
   onChange,
-  placeholder = "Select Date",
+  placeholder = translate("انتخاب تاریخ"),
   className = "",
-  triggerClassName = "w-full p-3 bg-base-100 border rounded-xl flex items-center justify-between text-left hover:border-primary/50 transition-colors",
+  triggerClassName = "w-full p-3 bg-base-100 border rounded-xl flex items-center justify-between text-start hover:border-primary/50 transition-colors",
   error = false,
 }: CustomDatePickerProps) => {
+  const t = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   // ── Gregorian state ───────────────────────────────────────────────────────
@@ -180,7 +176,7 @@ export const CustomDatePicker = ({
   const displayLabel = (() => {
     if (isJalali) {
       if (!jalaliSelected) return placeholder;
-      return `${jalaliSelected.day} ${JALALI_MONTHS[jalaliSelected.month - 1]} ${jalaliSelected.year}`;
+      return formatDisplayDate(jalaliSelected.toDate(), "MMMM d, yyyy", "jalali");
     }
     if (!selectedDate) return placeholder;
     return formatDisplayDate(selectedDate, "MMMM dd, yyyy");
@@ -192,7 +188,9 @@ export const CustomDatePicker = ({
     start: startOfWeek(monthStart),
     end: endOfWeek(endOfMonth(monthStart)),
   });
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const weekDays = Array.from({ length: 7 }, (_, index) =>
+    new Intl.DateTimeFormat(getIntlLocale(), { weekday: "short" }).format(new Date(2024, 0, (isJalali ? 6 : 7) + index)),
+  );
 
   // ── Jalali calendar grid ──────────────────────────────────────────────────
   const jalaliDays = buildJalaliGrid(jalaliMonth);
@@ -209,11 +207,11 @@ export const CustomDatePicker = ({
           <div className="flex items-center gap-2 flex-1 overflow-hidden">
             <Calendar1
               size={20}
-              className="text-base-content/60 flex-shrink-0"
+              className="text-heledone-ink-muted flex-shrink-0"
             />
             <span
               className={`text-sm truncate ${
-                hasValue ? "font-medium text-base-content" : "text-base-content/60"
+                hasValue ? "font-medium text-base-content" : "text-heledone-ink-muted"
               }`}
             >
               {displayLabel}
@@ -223,7 +221,7 @@ export const CustomDatePicker = ({
             <div
               role="button"
               onClick={handleClearDate}
-              className="text-base-content/40 hover:text-error transition-colors ml-2 p-1"
+              className="text-heledone-ink-muted hover:text-error transition-colors ms-2 p-1"
             >
               <CloseCircle size={16} />
             </div>
@@ -247,7 +245,7 @@ export const CustomDatePicker = ({
               transition={{ type: "spring", duration: 0.5 }}
               className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
               onClick={(e) => e.stopPropagation()}
-              dir={isJalali ? "rtl" : "ltr"}
+              dir={getDirection()}
             >
               {/* ── Header: month navigation ── */}
               <div className="flex items-center justify-between p-4 border-b border-base-content/10 bg-base-100/50">
@@ -259,14 +257,14 @@ export const CustomDatePicker = ({
                       : setCurrentMonth((m) => subMonths(m, 1))
                   }
                   className="btn btn-sm btn-ghost btn-circle"
-                  aria-label="Previous month"
+                  aria-label={t("Previous month")}
                 >
-                  {isJalali ? <ArrowRight2 size={18} /> : <ArrowLeft2 size={18} />}
+                  {getDirection() === "rtl" ? <ArrowRight2 size={18} /> : <ArrowLeft2 size={18} />}
                 </button>
                 <h4 className="font-bold text-lg text-base-content">
                   {isJalali
-                    ? `${JALALI_MONTHS[jalaliMonth.month - 1]} ${jalaliMonth.year}`
-                    : format(currentMonth, "MMMM yyyy")}
+                    ? formatDisplayDate(jalaliMonth.toDate(), "MMMM yyyy", "jalali")
+                    : formatDisplayDate(currentMonth, "MMMM yyyy", "gregorian")}
                 </h4>
                 <button
                   type="button"
@@ -276,9 +274,9 @@ export const CustomDatePicker = ({
                       : setCurrentMonth((m) => addMonths(m, 1))
                   }
                   className="btn btn-sm btn-ghost btn-circle"
-                  aria-label="Next month"
+                  aria-label={t("Next month")}
                 >
-                  {isJalali ? <ArrowLeft2 size={18} /> : <ArrowRight2 size={18} />}
+                  {getDirection() === "rtl" ? <ArrowLeft2 size={18} /> : <ArrowRight2 size={18} />}
                 </button>
               </div>
 
@@ -286,10 +284,10 @@ export const CustomDatePicker = ({
               <div className="p-4">
                 {/* Weekday headers */}
                 <div className="grid grid-cols-7 gap-1 mb-2">
-                  {(isJalali ? JALALI_WEEKDAYS : weekDays).map((d) => (
+                  {weekDays.map((d) => (
                     <div
                       key={d}
-                      className="h-8 flex items-center justify-center text-xs font-bold text-base-content/40 uppercase"
+                      className="h-8 flex items-center justify-center text-xs font-bold text-heledone-ink-muted uppercase"
                     >
                       {d}
                     </div>
@@ -314,7 +312,7 @@ export const CustomDatePicker = ({
                             className={`
                               h-10 w-10 mx-auto rounded-xl text-sm font-medium transition-all flex items-center justify-center
                               ${!isCurrentMonth
-                                ? "text-base-content/20"
+                                ? "text-heledone-ink-muted"
                                 : isSel
                                 ? "bg-primary text-primary-content shadow-lg shadow-primary/30"
                                 : isTodayDate
@@ -323,7 +321,7 @@ export const CustomDatePicker = ({
                             `}
                             whileTap={{ scale: 0.9 }}
                           >
-                            {jDate.day}
+                            {formatNumber(jDate.day)}
                           </motion.button>
                         );
                       })
@@ -339,7 +337,7 @@ export const CustomDatePicker = ({
                             className={`
                               h-10 w-10 mx-auto rounded-xl text-sm font-medium transition-all flex items-center justify-center
                               ${!isCurrentMonth
-                                ? "text-base-content/20"
+                                ? "text-heledone-ink-muted"
                                 : isSel
                                 ? "bg-primary text-primary-content shadow-lg shadow-primary/30"
                                 : isTodayDate
@@ -348,7 +346,7 @@ export const CustomDatePicker = ({
                             `}
                             whileTap={{ scale: 0.9 }}
                           >
-                            {format(day, "d")}
+                            {formatNumber(day.getDate())}
                           </motion.button>
                         );
                       })}
@@ -362,23 +360,20 @@ export const CustomDatePicker = ({
                   onClick={handleJumpToToday}
                   className="text-primary text-sm font-medium hover:underline"
                 >
-                  Jump to Today
-                </button>
+                  {t("Jump to Today")}</button>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleCancel}
                     className="btn btn-sm btn-ghost rounded-lg"
                   >
-                    Cancel
-                  </button>
+                    {t("انصراف")}</button>
                   <button
                     type="button"
                     onClick={handleConfirm}
                     className="btn btn-sm btn-primary rounded-lg"
                   >
-                    <TickCircle size={16} /> Confirm
-                  </button>
+                    <TickCircle size={16} />  {t("تأیید")}</button>
                 </div>
               </div>
             </motion.div>

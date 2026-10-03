@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 interface ContentLoaderProps {
   message?: string;
@@ -15,7 +15,7 @@ export const ContentLoader: React.FC<ContentLoaderProps> = ({
       <div className="flex h-72 w-full flex-col items-center justify-center gap-3">
         <span className="loading loading-spinner loading-lg text-primary"></span>
         {message && (
-          <span className="text-xs font-medium text-base-content/60">
+          <span className="text-xs font-medium text-heledone-ink-muted">
             {message}
           </span>
         )}

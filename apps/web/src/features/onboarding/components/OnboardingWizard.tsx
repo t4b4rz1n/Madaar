@@ -1,4 +1,6 @@
+import { t as translate, useTranslation } from "../../../i18n/locale";
 import React from 'react';
+import { Brand, BrandWave } from '../../../components/Brand';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import { StepOrgDetails } from './StepOrgDetails';
 import { StepAddUsers } from './StepAddUsers';
@@ -7,12 +9,13 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Building2, Users, CheckCircle2 } from 'lucide-react';
 
 const steps = [
-  { label: 'Organization', icon: Building2 },
-  { label: 'Add Users', icon: Users },
-  { label: 'Confirm', icon: CheckCircle2 },
+  { get label() { return translate("سازمان"); }, icon: Building2 },
+  { get label() { return translate("هم‌تیمی‌ها"); }, icon: Users },
+  { get label() { return translate("تأیید و شروع"); }, icon: CheckCircle2 },
 ];
 
 export const OnboardingWizard: React.FC = () => {
+  const t = useTranslation();
   const currentStep = useOnboardingStore((state) => state.currentStep);
 
   const renderStep = () => {
@@ -27,9 +30,9 @@ export const OnboardingWizard: React.FC = () => {
   return (
     <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4 font-sans">
       {/* Logo / Brand area */}
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-base-content">Workspace Setup</h1>
-        <p className="text-base-content/50 text-sm mt-1">Let's get your organization ready</p>
+      <div className="mb-8 text-center"><div className="mb-5 flex justify-center"><Brand /></div>
+        <h1 className="text-2xl font-bold text-base-content">{t("وقت هماهنگ شدن است")}</h1>
+        <p className="text-heledone-ink-muted text-sm mt-1">{t("فضای کار تیم‌تان را در هله‌دان بسازید")}</p>
       </div>
 
       {/* Stepper */}
@@ -48,7 +51,7 @@ export const OnboardingWizard: React.FC = () => {
                       ? 'bg-success text-success-content'
                       : isActive
                       ? 'bg-primary text-primary-content shadow-md shadow-primary/30'
-                      : 'bg-base-300 text-base-content/40'
+                      : 'bg-base-300 text-heledone-ink-muted'
                   }`}
                 >
                   {isDone ? (
@@ -59,7 +62,7 @@ export const OnboardingWizard: React.FC = () => {
                 </div>
                 <span
                   className={`text-sm font-medium transition-colors ${
-                    isActive ? 'text-primary' : isDone ? 'text-success' : 'text-base-content/40'
+                    isActive ? 'text-primary' : isDone ? 'text-success' : 'text-heledone-ink-muted'
                   }`}
                 >
                   {step.label}
@@ -77,6 +80,7 @@ export const OnboardingWizard: React.FC = () => {
         })}
       </div>
 
+      <div className="mb-6 w-full max-w-md"><BrandWave /></div>
       {/* Step Content */}
       <div className="w-full max-w-4xl">
         <AnimatePresence mode="wait">

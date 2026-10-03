@@ -1,3 +1,4 @@
+import { t as translate,  useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +26,7 @@ export default function MilestoneBurndownChart({
   milestoneId,
   tz,
 }: MilestoneBurndownChartProps) {
+  const t = useTranslation();
   const [mode, setMode] = useState<"burndown" | "burnup">("burndown");
 
   const resolvedTz = tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -36,14 +38,14 @@ export default function MilestoneBurndownChart({
   });
 
   if (loading) return <Skeleton />;
-  if (error) return <ErrorState message={"Failed to load milestone burndown data"} />;
+  if (error) return <ErrorState message={t("Failed to load milestone burndown data")} />;
   if (!data) return null;
 
   if (data.total_tasks === 0) {
     return (
       <div style={containerStyle}>
         <Header data={data} mode={mode} setMode={setMode} />
-        <EmptyState message={data.note ?? "No tasks linked to this milestone."} />
+        <EmptyState message={data.note ?? t("No tasks linked to this milestone.")} />
       </div>
     );
   }
@@ -91,25 +93,25 @@ export default function MilestoneBurndownChart({
         }}
       >
         <StatBadge
-          label="Total Tasks"
+          label={t("Total Tasks")}
           value={String(data.total_tasks)}
           color="var(--color-primary)"
         />
         <StatBadge
-          label="Done"
+          label={t("انجام‌شده")}
           value={String(data.burnup.at(-1)?.done ?? 0)}
           color="var(--color-success)"
         />
         <StatBadge
-          label="Remaining"
+          label={t("Remaining")}
           value={String(data.actual_burndown.at(-1)?.remaining ?? 0)}
           color={isLate ? "var(--color-error)" : "var(--color-warning)"}
         />
         {isLate && !isDone && (
-          <StatBadge label="Status" value="Delayed" color="var(--color-error)" />
+          <StatBadge label={t("وضعیت")} value="Delayed" color="var(--color-error)" />
         )}
         {isDone && (
-          <StatBadge label="Status" value="Completed" color="var(--color-success)" />
+          <StatBadge label={t("وضعیت")} value="Completed" color="var(--color-success)" />
         )}
       </div>
 
@@ -125,19 +127,19 @@ export default function MilestoneBurndownChart({
             />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+              tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
               tickFormatter={shortDate}
             />
             <YAxis
               allowDecimals={false}
-              tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+              tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
               width={32}
             />
             <Tooltip content={<BurndownTooltip />} />
             <Legend
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+              wrapperStyle={{ fontSize: 13, color: "var(--color-heledone-ink-muted)" }}
             />
             {/* Deadline reference line */}
             <ReferenceLine
@@ -145,10 +147,10 @@ export default function MilestoneBurndownChart({
               stroke="var(--color-error)"
               strokeDasharray="6 3"
               label={{
-                value: "Deadline",
+                value: t("Deadline"),
                 position: "insideTopRight",
                 fill: "var(--color-error)",
-                fontSize: 11,
+                fontSize: 13,
               }}
             />
             {/* Completed reference line */}
@@ -158,10 +160,10 @@ export default function MilestoneBurndownChart({
                 stroke="var(--color-success)"
                 strokeDasharray="4 4"
                 label={{
-                  value: "Completed",
+                  value: t("Completed"),
                   position: "insideBottomLeft",
                   fill: "var(--color-success)",
-                  fontSize: 11,
+                  fontSize: 13,
                 }}
               />
             )}
@@ -172,10 +174,10 @@ export default function MilestoneBurndownChart({
                 stroke="color-mix(in srgb, var(--color-base-content) 20%, transparent)"
                 strokeDasharray="4 4"
                 label={{
-                  value: "Today",
+                  value: t("امروز"),
                   position: "insideTopLeft",
-                  fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)",
-                  fontSize: 11,
+                  fill: "var(--color-heledone-ink-muted)",
+                  fontSize: 13,
                 }}
               />
             )}
@@ -216,29 +218,29 @@ export default function MilestoneBurndownChart({
             />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+              tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
               tickFormatter={shortDate}
             />
             <YAxis
               allowDecimals={false}
-              tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+              tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
               width={32}
             />
             <Tooltip content={<BurnupTooltip />} />
             <Legend
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+              wrapperStyle={{ fontSize: 13, color: "var(--color-heledone-ink-muted)" }}
             />
             <ReferenceLine
               x={data.milestone.target_date}
               stroke="var(--color-error)"
               strokeDasharray="6 3"
               label={{
-                value: "Deadline",
+                value: t("Deadline"),
                 position: "insideTopRight",
                 fill: "var(--color-error)",
-                fontSize: 11,
+                fontSize: 13,
               }}
             />
             {/* Completed reference line */}
@@ -248,10 +250,10 @@ export default function MilestoneBurndownChart({
                 stroke="var(--color-success)"
                 strokeDasharray="4 4"
                 label={{
-                  value: "Completed",
+                  value: t("Completed"),
                   position: "insideBottomLeft",
                   fill: "var(--color-success)",
-                  fontSize: 11,
+                  fontSize: 13,
                 }}
               />
             )}
@@ -298,6 +300,7 @@ function Header({
   mode: "burndown" | "burnup";
   setMode: (m: "burndown" | "burnup") => void;
 }) {
+  useLocale();
   return (
     <div
       style={{
@@ -320,7 +323,7 @@ function Header({
         >
           {data.milestone.title}
         </h3>
-        <p style={{ margin: "4px 0 0", fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--color-heledone-ink-muted)" }}>
           {formatDisplayDate(data.start_date || "", "yyyy-MM-dd")} → {formatDisplayDate(data.target_date || "", "yyyy-MM-dd")}
         </p>
       </div>
@@ -335,13 +338,13 @@ function Header({
               borderRadius: 8,
               border: "1px solid color-mix(in srgb, var(--color-base-content) 15%, transparent)",
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: 13,
               background: mode === m ? "var(--color-primary)" : "color-mix(in srgb, var(--color-base-content) 5%, transparent)",
               color: mode === m ? "var(--color-primary-content)" : "color-mix(in srgb, var(--color-base-content) 60%, transparent)",
               transition: "all 0.2s",
             }}
           >
-            {m === "burndown" ? "Burndown" : "Burnup"}
+            {m === "burndown" ? translate("Burndown") : translate("Burnup")}
           </button>
         ))}
       </div>
@@ -358,6 +361,7 @@ function StatBadge({
   value: string;
   color: string;
 }) {
+  useLocale();
   return (
     <div
       style={{
@@ -369,12 +373,13 @@ function StatBadge({
       }}
     >
       <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>
-      <div className="text-[11px] mt-[2px] opacity-70" style={{ color: "var(--color-base-content)" }}>{formatDisplayDate(label, "MMM d, yyyy")}</div>
+      <div className="text-[13px] mt-[2px] opacity-70" style={{ color: "var(--color-base-content)" }}>{formatDisplayDate(label, "MMM d, yyyy")}</div>
     </div>
   );
 }
 
 const BurndownTooltip = ({ active, payload, label }: any) => {
+  useLocale();
   if (!active || !payload?.length) return null;
   return (
     <div
@@ -383,10 +388,10 @@ const BurndownTooltip = ({ active, payload, label }: any) => {
         border: "1px solid color-mix(in srgb, var(--color-base-content) 15%, transparent)",
         borderRadius: 8,
         padding: "8px 12px",
-        fontSize: 12,
+        fontSize: 13,
       }}
     >
-      <p style={{ margin: "0 0 6px", color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>{formatDisplayDate(label, "MMM d, yyyy")}</p>
+      <p style={{ margin: "0 0 6px", color: "var(--color-heledone-ink-muted)" }}>{formatDisplayDate(label, "MMM d, yyyy")}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ margin: "2px 0", color: p.color }}>
           {p.name}: {p.value}
@@ -406,6 +411,7 @@ const containerStyle: React.CSSProperties = {
 };
 
 function Skeleton() {
+  useLocale();
   return (
     <div style={{ ...containerStyle, height: 360, opacity: 0.5 }}>
       <div
@@ -421,6 +427,7 @@ function Skeleton() {
 }
 
 function ErrorState({ message }: { message: string }) {
+  useLocale();
   return (
     <div
       style={{
@@ -439,6 +446,7 @@ function ErrorState({ message }: { message: string }) {
 }
 
 function EmptyState({ message }: { message: string }) {
+  useLocale();
   return (
     <div
       style={{
@@ -446,7 +454,7 @@ function EmptyState({ message }: { message: string }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)",
+        color: "var(--color-heledone-ink-muted)",
         fontSize: 14,
       }}
     >

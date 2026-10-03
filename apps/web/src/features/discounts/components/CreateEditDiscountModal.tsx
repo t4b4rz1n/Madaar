@@ -1,5 +1,6 @@
+import { useTranslation } from "../../../i18n/locale";
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Add, Edit } from "iconsax-reactjs";
@@ -29,6 +30,7 @@ export const CreateEditDiscountModal = ({
   onClose,
   discount,
 }: ModalProps) => {
+  const t = useTranslation();
   const editMode = !!discount;
 
   const {
@@ -120,13 +122,13 @@ export const CreateEditDiscountModal = ({
                 <div>
                   <h3 className="font-bold text-2xl">
                     {editMode
-                      ? "Edit Discount Code"
-                      : "Create New Discount Code"}
+                      ? t("Edit Discount Code")
+                      : t("Create New Discount Code")}
                   </h3>
                   <p className="text-base-content/70 text-sm">
                     {editMode
-                      ? "Update discount details"
-                      : "Create a new discount code"}
+                      ? t("Update discount details")
+                      : t("Create a new discount code")}
                   </p>
                 </div>
               </div>
@@ -150,8 +152,7 @@ export const CreateEditDiscountModal = ({
                   className="btn btn-ghost rounded-xl"
                   disabled={isLoading}
                 >
-                  Cancel
-                </button>
+                  {t("انصراف")}</button>
                 <button
                   type="submit"
                   onClick={onSubmit}
@@ -161,9 +162,9 @@ export const CreateEditDiscountModal = ({
                   {isLoading ? (
                     <span className="loading loading-spinner loading-sm"></span>
                   ) : editMode ? (
-                    "Update"
+                    t("به‌روزرسانی")
                   ) : (
-                    "Create"
+                    t("ساخت")
                   )}
                 </button>
               </div>

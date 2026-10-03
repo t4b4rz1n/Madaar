@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/locale";
 import {
   type SubmitHandler,
   type FieldValues,
@@ -5,7 +6,7 @@ import {
   type FieldErrors,
   type UseFormHandleSubmit,
 } from "react-hook-form";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { InputField } from "./InputField";
 
@@ -49,6 +50,7 @@ export const AuthForm = ({
   handleSubmit,
   errors,
 }: AuthFormProps) => {
+  const t = useTranslation();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -56,13 +58,9 @@ export const AuthForm = ({
       transition={{ duration: 0.5 }}
       className="w-full max-w-md mx-auto"
     >
-      <header className="mb-8 flex flex-col items-center gap-4 text-center">
-        <img
-          src="/images/base-logo1.png"
-          alt="Base Admin Panel Logo"
-          className="h-20 w-auto object-contain"
-        />
-        <h1 className="text-3xl font-bold text-base-content">{title}</h1>
+      <header className="mb-8 flex flex-col items-start gap-2 text-start">
+        <p className="text-sm font-semibold text-primary">{t("به جمع هله‌دان خوش آمدید")}</p>
+        <h1 className="text-2xl font-bold text-base-content">{title}</h1>
       </header>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -1,10 +1,13 @@
+import { useTranslation } from "../i18n/locale";
 import React from "react";
 import { Link } from "react-router-dom";
 import { getAdminDrawerItems } from "../features/layout/DrawerItems";
 import { useAuthStore } from "../features/auth/store/authStore";
 import { usePermissions } from "../features/auth/hooks/usePermissions";
+import { LanguagePicker } from "../components/LanguagePicker";
 
 const SettingsPage: React.FC = () => {
+  const t = useTranslation();
   const user = useAuthStore((state) => state.user);
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
   const adminItems = getAdminDrawerItems(user, hasAllPermissions, hasAnyPermission);
@@ -14,12 +17,12 @@ const SettingsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col gap-1 border-b border-base-content/8 pb-4">
         <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
-          Settings &amp; Administration
-        </h1>
-        <p className="text-xs font-medium text-base-content/50">
-          Manage organization settings, user roles, team structures, and system configurations.
-        </p>
+          {t("Settings & Administration")}</h1>
+        <p className="text-xs font-medium text-heledone-ink-muted">
+          {t("Manage organization settings, user roles, team structures, and system configurations.")}</p>
       </div>
+
+      <LanguagePicker />
 
       {/* Grid of Settings Modules */}
       {adminItems.length > 0 ? (
@@ -37,8 +40,8 @@ const SettingsPage: React.FC = () => {
                 <h2 className="text-sm font-bold text-base-content group-hover:text-primary transition-colors">
                   {item.title}
                 </h2>
-                <p className="mt-0.5 text-xs text-base-content/50 truncate">
-                  Manage {item.title.toLowerCase()}
+                <p className="mt-0.5 text-xs text-heledone-ink-muted truncate">
+                  {t("Open {section}", { section: item.title })}
                 </p>
               </div>
             </Link>
@@ -46,9 +49,8 @@ const SettingsPage: React.FC = () => {
         </div>
       ) : (
         <div className="rounded-2xl border border-base-content/10 bg-base-100 p-12 text-center">
-          <p className="text-sm font-medium text-base-content/60">
-            You do not have administrative permissions configured for this workspace.
-          </p>
+          <p className="text-sm font-medium text-heledone-ink-muted">
+            {t("You do not have administrative permissions configured for this workspace.")}</p>
         </div>
       )}
 

@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { t as translate, useTranslation } from "../../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDown2,
   ArrowUp2,
@@ -22,9 +23,9 @@ type SortKey = "username" | "email" | "date_joined";
 type SortDirection = "asc" | "desc";
 
 const sortOptions: { key: SortKey; label: string }[] = [
-  { key: "username", label: "Username" },
-  { key: "email", label: "Email" },
-  { key: "date_joined", label: "Date Joined" },
+  { key: "username", get label() { return translate("Username"); } },
+  { key: "email", get label() { return translate("Email"); } },
+  { key: "date_joined", get label() { return translate("Date Joined"); } },
 ];
 
 export const UsersToolbar = ({
@@ -32,6 +33,7 @@ export const UsersToolbar = ({
   onSortChange,
   onFilterChange,
 }: ToolbarProps) => {
+  const t = useTranslation();
   const [searchParams] = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState(
@@ -46,13 +48,13 @@ export const UsersToolbar = ({
 
   const roleOptions = useMemo(
     () => [
-      { value: "", label: "All Roles" },
+      { value: "", label: t("All Roles") },
       ...(rolesData?.results ?? []).map((role: Role) => ({
         value: String(role.id),
         label: role.name,
       })),
     ],
-    [rolesData?.results],
+    [rolesData?.results, t],
   );
 
   const sortConfig = useMemo<{ key: SortKey; dir: SortDirection }>(() => {
@@ -139,15 +141,15 @@ export const UsersToolbar = ({
     <div className="relative z-20 flex w-full flex-col items-center gap-3 rounded-2xl border border-base-content/8 bg-base-100/40 backdrop-blur-xl saturate-150 p-3 shadow-sm md:flex-row">
       {/* Search input matching Taskboard search bar */}
       <div className="grow w-full relative">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none">
+        <div className="absolute start-3.5 top-1/2 -translate-y-1/2 text-heledone-ink-muted pointer-events-none">
           <SearchNormal1 size={18} />
         </div>
         <input
           type="text"
-          placeholder="Search users..."
+          placeholder={t("Search users...")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border border-base-content/10 bg-base-100/40 px-4 py-2 text-sm backdrop-blur-md placeholder:text-base-content/40 focus:border-primary/50 focus:bg-base-100/80 focus:outline-none transition-all pl-10"
+          className="w-full rounded-xl border border-base-content/10 bg-base-100/40 px-4 py-2 text-sm backdrop-blur-md placeholder:text-heledone-ink-muted focus:border-primary/50 focus:bg-base-100/80 focus:outline-none transition-all ps-10"
         />
       </div>
 
@@ -164,7 +166,7 @@ export const UsersToolbar = ({
             }`}
           >
             <Filter size={18} />
-            <span className="hidden sm:inline">Filter</span>
+            <span className="hidden sm:inline">{t("Filter")}</span>
           </button>
 
           <AnimatePresence>
@@ -174,31 +176,29 @@ export const UsersToolbar = ({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="absolute end-0 top-full z-50 mt-2 w-72 rounded-2xl border border-base-content/10 bg-base-100/95 backdrop-blur-2xl p-4 shadow-madaar-raised"
+                className="absolute end-0 top-full z-50 mt-2 w-72 rounded-2xl border border-base-content/10 bg-base-100/95 backdrop-blur-2xl p-4 shadow-heledone-raised"
               >
                 <div className="flex flex-col space-y-4">
                   <label className="form-control w-full">
                     <div className="label pb-1">
                       <span className="label-text text-xs font-semibold tracking-tight text-base-content/70">
-                        Status
-                      </span>
+                        {t("وضعیت")}</span>
                     </div>
                     <select
                       className="select select-sm w-full border-base-content/10 rounded-xl bg-base-100/40 backdrop-blur-sm !shadow-none focus:border-primary/40 transition-all duration-200"
                       value={activeFilter}
                       onChange={(e) => handleActiveFilterChange(e.target.value)}
                     >
-                      <option value="">All Users</option>
-                      <option value="true">Active Only</option>
-                      <option value="false">Inactive Only</option>
+                      <option value="">{t("All Users")}</option>
+                      <option value="true">{t("Active Only")}</option>
+                      <option value="false">{t("Inactive Only")}</option>
                     </select>
                   </label>
 
                   <label className="form-control w-full">
                     <div className="label pb-1">
                       <span className="label-text text-xs font-semibold tracking-tight text-base-content/70">
-                        Role
-                      </span>
+                        {t("Role")}</span>
                     </div>
                     <select
                       className="select select-sm w-full border-base-content/10 rounded-xl bg-base-100/40 backdrop-blur-sm !shadow-none focus:border-primary/40 transition-all duration-200"
@@ -232,7 +232,7 @@ export const UsersToolbar = ({
 
           <ul
             tabIndex={0}
-            className="dropdown-content z-50 mt-2 w-48 rounded-2xl border border-base-content/8 bg-base-100/90 backdrop-blur-xl p-2 shadow-madaar-raised menu"
+            className="dropdown-content z-50 mt-2 w-48 rounded-2xl border border-base-content/8 bg-base-100/90 backdrop-blur-xl p-2 shadow-heledone-raised menu"
           >
             {sortOptions.map((opt) => (
               <li key={opt.key} onClick={() => handleSortKeyChange(opt.key)}>

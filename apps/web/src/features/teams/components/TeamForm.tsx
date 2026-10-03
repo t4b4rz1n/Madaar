@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { motion } from "motion/react";
 import { TickSquare, TextalignLeft, Profile2User, User } from "iconsax-reactjs";
 import { Controller } from "react-hook-form";
 import InputField from "../../../components/InputField";
@@ -12,6 +13,7 @@ interface TeamFormProps {
 }
 
 export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => {
+  const t = useTranslation();
   const params = new URLSearchParams({ page_size: "1000" });
   if (organizationId) {
     params.append("organization_id", String(organizationId));
@@ -32,7 +34,7 @@ export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => 
         render={({ field }) => (
           <label className="form-control w-full">
             <div className="label mb-2">
-              <span className="label-text font-semibold">Team Leader</span>
+              <span className="label-text font-semibold">{t("Team Leader")}</span>
             </div>
             <div className="relative">
               <select
@@ -43,19 +45,19 @@ export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => 
                 onChange={(e) =>
                   field.onChange(e.target.value === "" ? null : e.target.value)
                 }
-                className={`select select-bordered w-full rounded-xl bg-base-200/40 pl-10 focus:border-primary focus:outline-none ${
+                className={`select select-bordered w-full rounded-xl bg-base-200/40 ps-10 focus:border-primary focus:outline-none ${
                   errors.lead_id ? "select-error" : ""
                 }`}
                 disabled={isLoadingUsers}
               >
-                <option value="">Select a team leader...</option>
+                <option value="">{t("Select a team leader...")}</option>
                 {users.map((user) => (
                   <option key={user.id} value={String(user.id)}>
                     {user.first_name} {user.last_name} ({user.username})
                   </option>
                 ))}
               </select>
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
+              <div className="absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted pointer-events-none">
                 <User size={18} />
               </div>
             </div>
@@ -74,11 +76,11 @@ export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => 
         render={({ field }) => (
           <label className="form-control w-full">
             <div className="label mb-2">
-              <span className="label-text font-semibold">Team Name</span>
+              <span className="label-text font-semibold">{t("Team Name")}</span>
             </div>
             <InputField
               {...field}
-              placeholder="Enter team name (e.g. Frontend Team)"
+              placeholder={t("Enter team name (e.g. Frontend Team)")}
               classNameInput={errors.name ? "input-error" : ""}
               icon={<Profile2User size={18} />}
             />
@@ -97,17 +99,17 @@ export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => 
         render={({ field }) => (
           <label className="form-control w-full">
             <div className="label mb-2">
-              <span className="label-text font-semibold">Description</span>
+              <span className="label-text font-semibold">{t("توضیح")}</span>
             </div>
             <div className="relative">
               <textarea
                 {...field}
-                placeholder="What does this team do?"
-                className={`textarea textarea-bordered min-h-[100px] w-full bg-base-200/40 pl-10 focus:border-primary focus:outline-none ${
+                placeholder={t("What does this team do?")}
+                className={`textarea textarea-bordered min-h-[100px] w-full bg-base-200/40 ps-10 focus:border-primary focus:outline-none ${
                   errors.description ? "textarea-error" : ""
                 }`}
               />
-              <div className="absolute left-3 top-3 text-base-content/50 pointer-events-none">
+              <div className="absolute start-3 top-3 text-heledone-ink-muted pointer-events-none">
                 <TextalignLeft size={18} />
               </div>
             </div>
@@ -133,7 +135,7 @@ export const TeamForm = ({ control, errors, organizationId }: TeamFormProps) => 
             />
             <div className="flex items-center gap-2">
               <TickSquare className="w-5 h-5 text-success" />
-              <span className="label-text font-medium">Active Team</span>
+              <span className="label-text font-medium">{t("Active Team")}</span>
             </div>
           </label>
         )}

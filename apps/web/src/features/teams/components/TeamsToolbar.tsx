@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { t as translate, useTranslation } from "../../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDown2,
   ArrowUp2,
@@ -25,8 +26,8 @@ type SortKey = "name" | "created_at";
 type SortDirection = "asc" | "desc";
 
 const sortOptions: { key: SortKey; label: string }[] = [
-  { key: "name", label: "Team Name" },
-  { key: "created_at", label: "Date Created" },
+  { key: "name", get label() { return translate("Team Name"); } },
+  { key: "created_at", get label() { return translate("Date Created"); } },
 ];
 
 export const TeamsToolbar = ({
@@ -36,6 +37,7 @@ export const TeamsToolbar = ({
   organizations,
   currentOrganizationId = "",
 }: ToolbarProps) => {
+  const t = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState(
@@ -207,16 +209,16 @@ export const TeamsToolbar = ({
   )?.label;
 
   const buttonBaseClass =
-    "btn btn-ghost rounded-xl border-none text-base-content/65 transition hover:bg-primary/10 hover:text-primary";
+    "btn btn-ghost rounded-xl border-none text-heledone-ink-muted transition hover:bg-primary/10 hover:text-primary";
 
   const hasActiveFilters = Boolean(activeFilter);
 
   return (
-    <div className="madaar-surface flex w-full flex-col items-stretch gap-2 rounded-2xl border border-base-content/10 bg-base-100/75 p-2 shadow-madaar-card md:flex-row md:items-center">
+    <div className="heledone-surface flex w-full flex-col items-stretch gap-2 rounded-2xl border border-base-content/10 bg-base-100/75 p-2 shadow-heledone-card md:flex-row md:items-center">
       <div className="w-full grow">
         <InputField
           name="search"
-          placeholder="Search teams..."
+          placeholder={t("Search teams...")}
           icon={<SearchNormal1 size={18} />}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -236,7 +238,7 @@ export const TeamsToolbar = ({
             }`}
           >
             <Filter size={18} />
-            <span className="hidden sm:inline">Filter</span>
+            <span className="hidden sm:inline">{t("Filter")}</span>
           </button>
 
           {typeof document !== "undefined" &&
@@ -252,14 +254,13 @@ export const TeamsToolbar = ({
                       top: filterPopoverPosition.top,
                       left: filterPopoverPosition.left,
                     }}
-                    className="fixed z-50 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-base-content/10 bg-base-100/95 p-4 shadow-madaar-floating backdrop-blur-xl"
+                    className="fixed z-50 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-base-content/10 bg-base-100/95 p-4 shadow-heledone-floating backdrop-blur-xl"
                   >
                     <div className="flex flex-col space-y-4">
                       <label className="form-control w-full">
                         <div className="label pb-1">
                           <span className="label-text text-xs font-semibold">
-                            Status
-                          </span>
+                            {t("وضعیت")}</span>
                         </div>
                         <select
                           className="select select-sm w-full border-base-300 !shadow-none"
@@ -268,9 +269,9 @@ export const TeamsToolbar = ({
                             handleActiveFilterChange(e.target.value)
                           }
                         >
-                          <option value="">All Teams</option>
-                          <option value="true">Active Only</option>
-                          <option value="false">Inactive Only</option>
+                          <option value="">{t("All Teams")}</option>
+                          <option value="true">{t("Active Only")}</option>
+                          <option value="false">{t("Inactive Only")}</option>
                         </select>
                       </label>
 
@@ -279,8 +280,7 @@ export const TeamsToolbar = ({
                           <div className="label pb-1">
                             <span className="label-text flex items-center gap-1.5 text-xs font-semibold">
                               <Building3 size={14} />
-                              Organization
-                            </span>
+                              {t("Organization")}</span>
                           </div>
                           <select
                             className="select select-sm w-full border-base-300 !shadow-none"
@@ -333,7 +333,7 @@ export const TeamsToolbar = ({
                       top: sortPopoverPosition.top,
                       left: sortPopoverPosition.left,
                     }}
-                    className="fixed z-50 w-48 max-w-[calc(100vw-2rem)] rounded-2xl border border-base-content/10 bg-base-100/95 p-2 shadow-madaar-floating backdrop-blur-xl"
+                    className="fixed z-50 w-48 max-w-[calc(100vw-2rem)] rounded-2xl border border-base-content/10 bg-base-100/95 p-2 shadow-heledone-floating backdrop-blur-xl"
                   >
                     <ul className="menu w-full">
                       {sortOptions.map((opt) => (

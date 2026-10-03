@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/locale";
 // apps/web/src/features/roles/constants/permissions.ts
 
 export interface PermissionItem {
@@ -8,40 +9,40 @@ export interface PermissionItem {
 
 export const SYSTEM_PERMISSIONS: PermissionItem[] = [
   // Organization & Core
-  { id: "org.view", label: "View Organization", group: "ORGANIZATION" },
-  { id: "org.manage_settings", label: "Manage Org Settings", group: "ORGANIZATION" },
-  { id: "org.manage_roles", label: "Manage Roles & Permissions", group: "ORGANIZATION" },
-  { id: "org.manage_members", label: "Manage Organization Members", group: "ORGANIZATION" },
-  { id: "user.view", label: "View Users", group: "ORGANIZATION" },
-  { id: "role.view", label: "View Roles", group: "ORGANIZATION" },
+  { id: "org.view", get label() { return t("View Organization"); }, group: "ORGANIZATION" },
+  { id: "org.manage_settings", get label() { return t("Manage Org Settings"); }, group: "ORGANIZATION" },
+  { id: "org.manage_roles", get label() { return t("Manage Roles & Permissions"); }, group: "ORGANIZATION" },
+  { id: "org.manage_members", get label() { return t("Manage Organization Members"); }, group: "ORGANIZATION" },
+  { id: "user.view", get label() { return t("View Users"); }, group: "ORGANIZATION" },
+  { id: "role.view", get label() { return t("View Roles"); }, group: "ORGANIZATION" },
 
   // Projects
-  { id: "project.view", label: "View Projects", group: "PROJECTS" },
-  { id: "project.create", label: "Create Project", group: "PROJECTS" },
-  { id: "project.manage", label: "Manage All Projects", group: "PROJECTS" },
+  { id: "project.view", get label() { return t("View Projects"); }, group: "PROJECTS" },
+  { id: "project.create", get label() { return t("ساخت پروژه"); }, group: "PROJECTS" },
+  { id: "project.manage", get label() { return t("Manage All Projects"); }, group: "PROJECTS" },
 
   // Tasks & Boards
-  { id: "task.view", label: "View Tasks", group: "TASKS" },
-  { id: "task.create", label: "Create Task", group: "TASKS" },
-  { id: "task.manage_all", label: "Manage All Tasks", group: "TASKS" },
-  { id: "task.review", label: "Review Tasks", group: "TASKS" },
-  { id: "board.view", label: "View Boards", group: "TASKS" },
-  { id: "board.manage", label: "Manage Boards & Columns", group: "TASKS" },
+  { id: "task.view", get label() { return t("View Tasks"); }, group: "TASKS" },
+  { id: "task.create", get label() { return t("Create Task"); }, group: "TASKS" },
+  { id: "task.manage_all", get label() { return t("Manage All Tasks"); }, group: "TASKS" },
+  { id: "task.review", get label() { return t("Review Tasks"); }, group: "TASKS" },
+  { id: "board.view", get label() { return t("View Boards"); }, group: "TASKS" },
+  { id: "board.manage", get label() { return t("Manage Boards & Columns"); }, group: "TASKS" },
 
   // Attendance & Time-off
-  { id: "attendance.view_all", label: "View All Attendances", group: "ATTENDANCE" },
-  { id: "leave.approve", label: "Approve Leave Requests", group: "ATTENDANCE" },
+  { id: "attendance.view_all", get label() { return t("View All Attendances"); }, group: "ATTENDANCE" },
+  { id: "leave.approve", get label() { return t("Approve Leave Requests"); }, group: "ATTENDANCE" },
 
   // Finance & Payroll
-  { id: "finance.manage", label: "Manage Finance & Payroll", group: "FINANCE" },
-  { id: "finance.view_reports", label: "View Financial Reports", group: "FINANCE" },
+  { id: "finance.manage", get label() { return t("Manage Finance & Payroll"); }, group: "FINANCE" },
+  { id: "finance.view_reports", get label() { return t("View Financial Reports"); }, group: "FINANCE" },
 
   // Automations & Notifications
-  { id: "notification.view", label: "View Notifications", group: "AUTOMATIONS" },
-  { id: "automation.manage", label: "Manage Automations", group: "AUTOMATIONS" },
+  { id: "notification.view", get label() { return t("View Notifications"); }, group: "AUTOMATIONS" },
+  { id: "automation.manage", get label() { return t("Manage Automations"); }, group: "AUTOMATIONS" },
 
   // Reports
-  { id: "report.view", label: "View Reports & Dashboards", group: "REPORTS" },
+  { id: "report.view", get label() { return t("View Reports & Dashboards"); }, group: "REPORTS" },
 ];
 
 export const PERMISSIONS_BY_GROUP = SYSTEM_PERMISSIONS.reduce(

@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDown2,
   ArrowUp2,
@@ -24,6 +25,7 @@ export const TicketsToolbar = ({
   onSortChange,
   onFilterChange,
 }: ToolbarProps) => {
+  const t = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
@@ -37,10 +39,10 @@ export const TicketsToolbar = ({
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const sortOptions: { key: SortKey; label: string }[] = [
-    { key: "title", label: "Subject" },
-    { key: "priority", label: "Priority" },
-    { key: "status", label: "Status" },
-    { key: "created_at", label: "Created At" },
+    { key: "title", label: t("Subject") },
+    { key: "priority", label: t("اولویت") },
+    { key: "status", label: t("وضعیت") },
+    { key: "created_at", label: t("Created At") },
   ];
 
   const onSearchRef = useRef(onSearch);
@@ -85,7 +87,7 @@ export const TicketsToolbar = ({
       <div className="grow w-full">
         <InputField
           name="search"
-          placeholder="Search tickets..."
+          placeholder={t("Search tickets...")}
           icon={<SearchNormal1 size={18} />}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -101,7 +103,7 @@ export const TicketsToolbar = ({
             className={`${buttonBaseClass} ${isFilterOpen || hasActiveFilters ? "bg-primary/10 text-primary" : ""}`}
           >
             <Filter size={18} />
-            <span className="hidden sm:inline">Filter</span>
+            <span className="hidden sm:inline">{t("Filter")}</span>
           </button>
           <AnimatePresence>
             {isFilterOpen && (
@@ -115,36 +117,34 @@ export const TicketsToolbar = ({
                   <div className="form-control w-full">
                     <div className="label pb-1.5">
                       <span className="label-text text-xs font-semibold">
-                        Status
-                      </span>
+                        {t("وضعیت")}</span>
                     </div>
                     <select
                       className="select select-sm w-full !shadow-none border-base-300"
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                     >
-                      <option value="">All</option>
-                      <option value="open">Open</option>
-                      <option value="answered">Answered</option>
-                      <option value="closed">Closed</option>
+                      <option value="">{t("همه")}</option>
+                      <option value="open">{t("Open")}</option>
+                      <option value="answered">{t("Answered")}</option>
+                      <option value="closed">{t("Closed")}</option>
                     </select>
                   </div>
 
                   <div className="form-control w-full">
                     <div className="label pb-1.5">
                       <span className="label-text text-xs font-semibold">
-                        Priority
-                      </span>
+                        {t("اولویت")}</span>
                     </div>
                     <select
                       className="select select-sm w-full !shadow-none border-base-300"
                       value={priorityFilter}
                       onChange={(e) => setPriorityFilter(e.target.value)}
                     >
-                      <option value="">All</option>
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
+                      <option value="">{t("همه")}</option>
+                      <option value="low">{t("کم")}</option>
+                      <option value="medium">{t("متوسط")}</option>
+                      <option value="high">{t("بالا")}</option>
                     </select>
                   </div>
                 </div>

@@ -1,9 +1,10 @@
+import { getIntlLocale, t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 import { useAuthStore } from "../../auth/store/authStore";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
   ArrowDown2,
@@ -48,21 +49,21 @@ import { OrbitView } from "../components/OrbitView";
 type TabType = "overview" | "members" | "milestones" | "activity" | "analytics" | "reports" | "salaries" | "billing";
 
 
-const DEFAULT_COLOR = "#6366f1";
+const DEFAULT_COLOR = "#087F83";
 
 const statusStyles: Record<string, string> = {
-  active: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  draft: "bg-base-200 text-base-content/65",
-  on_hold: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  completed: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-  archived: "bg-red-500/15 text-red-500",
+  active: "bg-success/15 text-success dark:text-success",
+  draft: "bg-base-200 text-heledone-ink-muted",
+  on_hold: "bg-warning/15 text-warning dark:text-warning",
+  completed: "bg-primary/15 text-primary dark:text-primary",
+  archived: "bg-error/15 text-error",
 };
 
 const milestoneStatusConfig: Record<string, { label: string; cls: string }> = {
-  pending: { label: "Pending", cls: "bg-base-200 text-base-content/55" },
-  in_progress: { label: "In Progress", cls: "bg-blue-500/15 text-blue-600" },
-  completed: { label: "Done", cls: "bg-emerald-500/15 text-emerald-600" },
-  cancelled: { label: "Cancelled", cls: "bg-red-500/15 text-red-500" },
+  pending: { get label() { return translate("در انتظار"); }, cls: "bg-base-200 text-heledone-ink-muted" },
+  in_progress: { get label() { return translate("در حال انجام"); }, cls: "bg-primary/15 text-primary" },
+  completed: { get label() { return translate("انجام‌شده"); }, cls: "bg-success/15 text-success" },
+  cancelled: { get label() { return translate("Cancelled"); }, cls: "bg-error/15 text-error" },
 };
 
 const getUserDisplayName = (member: ProjectMember) => {
@@ -90,6 +91,7 @@ function MilestoneItem({
   onEdit: (ms: Milestone) => void;
   onDelete: (ms: Milestone) => void;
 }) {
+  const t = useTranslation();
   const { hasAnyPermission } = usePermissions();
   const canManageProject = hasAnyPermission(["project.manage"]);
 
@@ -120,10 +122,10 @@ function MilestoneItem({
             <p dir="auto" className="font-bold text-base-content truncate">
               {ms.title}
             </p>
-            <div className="flex items-center gap-3 text-[10px] text-base-content/45">
-              {ms.target_date && <span>Target: {formatDate(ms.target_date)}</span>}
-              <div className="flex items-center gap-1.5" title={`${completed} of ${total} tasks completed`}>
-                <TaskSquare size={12} className="text-base-content/40" />
+            <div className="flex items-center gap-3 text-[13px] text-heledone-ink-muted">
+              {ms.target_date && <span>{t("Target:")} {formatDate(ms.target_date)}</span>}
+              <div className="flex items-center gap-1.5" title={t("{value0} of {value1} tasks completed", { value0: completed, value1: total })}>
+                <TaskSquare size={12} className="text-heledone-ink-muted" />
                 <span>{completed}/{total}</span>
               </div>
             </div>
@@ -134,22 +136,22 @@ function MilestoneItem({
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
               <button
                 onClick={() => onEdit(ms)}
-                className="p-1 rounded-md text-base-content/40 hover:text-primary hover:bg-base-200"
-                title="Edit Milestone"
+                className="p-1 rounded-md text-heledone-ink-muted hover:text-primary hover:bg-base-200"
+                title={t("Edit Milestone")}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
               <button
                 onClick={() => onDelete(ms)}
-                className="p-1 rounded-md text-base-content/40 hover:text-error hover:bg-base-200"
-                title="Delete Milestone"
+                className="p-1 rounded-md text-heledone-ink-muted hover:text-error hover:bg-base-200"
+                title={t("Delete Milestone")}
               >
                 <Trash size={14} variant="Bold" />
               </button>
             </div>
           )}
-          <div className="hidden sm:flex flex-col items-end gap-1 mr-2">
-            <div className="text-[10px] font-medium text-base-content/60">{progressPercent}%</div>
+          <div className="hidden sm:flex flex-col items-end gap-1 me-2">
+            <div className="text-[13px] font-medium text-heledone-ink-muted">{progressPercent}%</div>
             <div className="w-16 h-1.5 rounded-full bg-base-300 overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-500"
@@ -157,10 +159,10 @@ function MilestoneItem({
               />
             </div>
           </div>
-          <span className={`rounded-md px-2.5 py-1 text-[10px] font-bold ${msCfg.cls}`}>
+          <span className={`rounded-md px-2.5 py-1 text-[13px] font-bold ${msCfg.cls}`}>
             {msCfg.label}
           </span>
-          <ArrowDown2 size={14} className={`text-base-content/50 transition-transform ${showChart ? "rotate-180" : ""}`} />
+          <ArrowDown2 size={14} className={`text-heledone-ink-muted transition-transform ${showChart ? "rotate-180" : ""}`} />
         </div>
       </div>
       <AnimatePresence initial={false}>
@@ -177,15 +179,15 @@ function MilestoneItem({
 
               {/* Tasks List */}
               <div className="px-2 pb-2">
-                <h4 className="text-[11px] font-bold text-base-content/50 uppercase tracking-wider mb-2">
-                  Linked Tasks ({milestoneTasks.length})
+                <h4 className="text-[13px] font-bold text-heledone-ink-muted uppercase tracking-wider mb-2">
+                  {t("Linked Tasks (")}{milestoneTasks.length})
                 </h4>
                 {isLoadingTasks ? (
                   <div className="flex justify-center p-4">
                     <span className="loading loading-dots loading-sm opacity-50"></span>
                   </div>
                 ) : milestoneTasks.length > 0 ? (
-                  <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pe-1 custom-scrollbar">
                     {milestoneTasks.map((task) => (
                       <div
                         key={task.id}
@@ -196,29 +198,29 @@ function MilestoneItem({
                         }}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`size-2 shrink-0 rounded-full ${task.is_finished ? "bg-emerald-500" : "bg-base-content/20"}`} />
+                          <div className={`size-2 shrink-0 rounded-full ${task.is_finished ? "bg-success" : "bg-base-content/20"}`} />
                           <p
                             dir="auto"
-                            className={`font-semibold truncate ${task.is_finished ? "line-through text-base-content/40" : "text-[12px] text-base-content/90 group-hover/task:text-primary transition-colors"}`}
+                            className={`font-semibold truncate ${task.is_finished ? "line-through text-heledone-ink-muted" : "text-[13px] text-base-content/90 group-hover/task:text-primary transition-colors"}`}
                           >
                             {task.title}
                           </p>
                         </div>
                         <div className="flex items-center gap-2.5 shrink-0 opacity-70 group-hover/task:opacity-100 transition-opacity">
                           {task.priority && (
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${task.priority === "critical"
-                              ? "bg-red-500/15 text-red-600 dark:text-red-400"
+                            <span className={`text-[13px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${task.priority === "critical"
+                              ? "bg-error/15 text-error dark:text-error"
                               : task.priority === "high"
-                                ? "bg-orange-500/15 text-orange-600 dark:text-orange-400"
+                                ? "bg-warning/15 text-warning dark:text-warning"
                                 : task.priority === "medium"
-                                  ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-500"
+                                  ? "bg-warning/15 text-warning dark:text-warning"
                                   : "bg-base-content/10 text-base-content/70"
                               }`}>
                               {task.priority}
                             </span>
                           )}
                           {task.status_detail?.name && (
-                            <span className="text-[10px] font-medium text-base-content/60 bg-base-content/5 px-2 py-0.5 rounded-full border border-base-content/10">
+                            <span className="text-[13px] font-medium text-heledone-ink-muted bg-base-content/5 px-2 py-0.5 rounded-full border border-base-content/10">
                               {task.status_detail.name}
                             </span>
                           )}
@@ -227,9 +229,8 @@ function MilestoneItem({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-[11px] text-base-content/40 text-center py-2 bg-base-100/30 rounded-lg">
-                    No tasks linked to this milestone yet.
-                  </div>
+                  <div className="text-[13px] text-heledone-ink-muted text-center py-2 bg-base-100/30 rounded-lg">
+                    {t("No tasks linked to this milestone yet.")}</div>
                 )}
               </div>
             </div>
@@ -241,23 +242,23 @@ function MilestoneItem({
 }
 
 const tabs: Array<{ id: TabType; label: string; icon: React.ReactNode }> = [
-  { id: "overview", label: "Overview", icon: <TaskSquare size={15} /> },
-  { id: "members", label: "Members", icon: <People size={15} /> },
-  { id: "milestones", label: "Milestones", icon: <Flag size={15} /> },
-  { id: "activity", label: "Activity", icon: <Activity size={15} /> },
-  { id: "analytics", label: "Analytics", icon: <Chart size={15} /> },
-  { id: "reports", label: "Reports", icon: <Chart size={15} variant="Bold" /> },
-  { id: "salaries", label: "Salaries", icon: <DollarCircle size={15} /> },
-  { id: "billing", label: "Billing", icon: <DollarCircle size={15} variant="Bold" /> },
+  { id: "overview", get label() { return translate("نمای کلی"); }, icon: <TaskSquare size={15} /> },
+  { id: "members", get label() { return translate("اعضا"); }, icon: <People size={15} /> },
+  { id: "milestones", get label() { return translate("Milestones"); }, icon: <Flag size={15} /> },
+  { id: "activity", get label() { return translate("رویدادها"); }, icon: <Activity size={15} /> },
+  { id: "analytics", get label() { return translate("Analytics"); }, icon: <Chart size={15} /> },
+  { id: "reports", get label() { return translate("Reports"); }, icon: <Chart size={15} variant="Bold" /> },
+  { id: "salaries", get label() { return translate("Salaries"); }, icon: <DollarCircle size={15} /> },
+  { id: "billing", get label() { return translate("Billing"); }, icon: <DollarCircle size={15} variant="Bold" /> },
 ];
 
 
 const STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "on_hold", label: "On Hold" },
-  { value: "completed", label: "Completed" },
-  { value: "archived", label: "Archived" },
+  { value: "draft", get label() { return translate("Draft"); } },
+  { value: "active", get label() { return translate("فعال"); } },
+  { value: "on_hold", get label() { return translate("On Hold"); } },
+  { value: "completed", get label() { return translate("Completed"); } },
+  { value: "archived", get label() { return translate("Archived"); } },
 ] as const;
 
 
@@ -270,6 +271,7 @@ function StatusDropdown({
   onChange: (s: Project["status"]) => void;
   disabled: boolean;
 }) {
+  useLocale();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedOption = STATUS_OPTIONS.find((o) => o.value === currentStatus) || STATUS_OPTIONS[0];
@@ -302,7 +304,7 @@ function StatusDropdown({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 top-7 min-w-[120px] rounded-xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl"
+            className="absolute start-0 top-7 min-w-[120px] rounded-xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl"
           >
             {STATUS_OPTIONS.map((opt) => (
               <button
@@ -312,7 +314,7 @@ function StatusDropdown({
                   onChange(opt.value);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-base-content/5 ${
+                className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start text-[13px] transition-colors hover:bg-base-content/5 ${
                   currentStatus === opt.value ? "bg-primary/10 font-bold text-primary" : "font-medium text-base-content"
                 }`}
               >
@@ -341,6 +343,7 @@ function MilestonesTab({
   | (() => void)
   | undefined;
 }) {
+  const t = useTranslation();
   const { hasAnyPermission } = usePermissions();
   const canManageProject = hasAnyPermission(["project.manage"]);
 
@@ -370,7 +373,7 @@ function MilestonesTab({
     if (!milestoneToDelete) return;
     deleteMilestoneMutation.mutate(milestoneToDelete.id, {
       onSuccess: () => {
-        toast.success("Milestone deleted.");
+        toast.success(t("Milestone deleted."));
         setMilestoneToDelete(null);
       }
     });
@@ -382,7 +385,7 @@ function MilestonesTab({
       <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5">
         <div className="flex items-center justify-between border-b border-base-content/8 pb-3 mb-4">
           <h3 className="text-sm font-bold text-base-content">
-            Project Milestones ({milestones.length})
+            {t("Project Milestones (")}{milestones.length})
           </h3>
           {canManageProject && (
             <button
@@ -390,8 +393,7 @@ function MilestonesTab({
               onClick={onCreateMilestone}
               className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
             >
-              <Add size={14} /> New Milestone
-            </button>
+              <Add size={14} />  {t("New Milestone")}</button>
           )}
         </div>
 
@@ -399,9 +401,8 @@ function MilestonesTab({
         {milestones.length > 0 && (
           <div className="mb-5 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-base-content/60 uppercase tracking-wider text-[10px]">
-                Weighted Project Progress
-              </span>
+              <span className="font-bold text-heledone-ink-muted uppercase tracking-wider text-[13px]">
+                {t("Weighted Project Progress")}</span>
               <span className="font-black text-primary">{weightedProgress}%</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-base-300">
@@ -410,17 +411,15 @@ function MilestonesTab({
                 style={{ width: `${weightedProgress}%` }}
               />
             </div>
-            <p className="text-[10px] text-base-content/40">
-              Based on milestone weights — only completed milestones count toward progress.
-            </p>
+            <p className="text-[13px] text-heledone-ink-muted">
+              {t("Based on milestone weights — only completed milestones count toward progress.")}</p>
           </div>
         )}
 
         {/* Milestone list */}
         {milestones.length === 0 ? (
-          <p className="py-8 text-center text-xs text-base-content/40">
-            No milestones added to this project yet.
-          </p>
+          <p className="py-8 text-center text-xs text-heledone-ink-muted">
+            {t("No milestones added to this project yet.")}</p>
         ) : (
           <div className="space-y-2">
             {milestones.map((ms: Milestone) => (
@@ -436,10 +435,10 @@ function MilestonesTab({
                     />
                   </div>
                   <div
-                    className="shrink-0 rounded-lg bg-base-200 px-2 py-1 text-[10px] font-bold text-base-content/60 whitespace-nowrap"
-                    title="Milestone weight (contributes this much to project progress)"
+                    className="shrink-0 rounded-lg bg-base-200 px-2 py-1 text-[13px] font-bold text-heledone-ink-muted whitespace-nowrap"
+                    title={t("Milestone weight (contributes this much to project progress)")}
                   >
-                    Weight: {ms.weight || 1}
+                    {t("Weight:")} {ms.weight || 1}
                   </div>
                 </div>
               </div>
@@ -450,23 +449,21 @@ function MilestonesTab({
 
       {/* Unlinked Tasks section */}
       {unlinkedCount > 0 && (
-        <div className="rounded-2xl border border-amber-500/20 bg-base-100 p-5 space-y-4">
+        <div className="rounded-2xl border border-warning/20 bg-base-100 p-5 space-y-4">
           <div className="flex items-center gap-2 border-b border-base-content/8 pb-3">
             <div className="flex items-center gap-1.5">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500 shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-warning shrink-0">
                 <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5zM11 10v5h2v-5h-2zm0 6v2h2v-2h-2z" />
               </svg>
               <h3 className="text-sm font-bold text-base-content">
-                Unlinked Tasks
-                <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600">
+                {t("Unlinked Tasks")}<span className="ms-2 rounded-full bg-warning/15 px-2 py-0.5 text-[13px] font-bold text-warning">
                   {unlinkedCount}
                 </span>
               </h3>
             </div>
           </div>
-          <p className="text-[10px] text-base-content/50 -mt-2">
-            These tasks are not linked to any milestone and do <strong>not</strong> affect project progress.
-          </p>
+          <p className="text-[13px] text-heledone-ink-muted -mt-2">
+            {t("These tasks are not linked to any milestone and do")} <strong>{t("not")}</strong>  {t("affect project progress.")}</p>
 
           {loadingUnlinked ? (
             <div className="space-y-2">
@@ -475,9 +472,9 @@ function MilestonesTab({
               ))}
             </div>
           ) : unlinkedTasks.length === 0 ? (
-            <p className="py-4 text-center text-xs text-base-content/40">Loading…</p>
+            <p className="py-4 text-center text-xs text-heledone-ink-muted">{t("Loading…")}</p>
           ) : (
-            <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-72 overflow-y-auto pe-1">
               {unlinkedTasks.map((task) => (
                 <div
                   key={task.id}
@@ -485,27 +482,27 @@ function MilestonesTab({
                   className="flex items-center justify-between rounded-xl border border-base-content/6 bg-base-200/40 px-3 py-2.5 text-xs cursor-pointer hover:bg-base-200/70 transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`size-2 shrink-0 rounded-full ${task.is_finished ? "bg-emerald-500" : "bg-base-content/20"}`} />
+                    <div className={`size-2 shrink-0 rounded-full ${task.is_finished ? "bg-success" : "bg-base-content/20"}`} />
                     <span
                       dir="auto"
-                      className={`font-semibold truncate ${task.is_finished ? "line-through text-base-content/40" : "text-base-content"}`}
+                      className={`font-semibold truncate ${task.is_finished ? "line-through text-heledone-ink-muted" : "text-base-content"}`}
                     >
                       {task.title}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <div className="flex items-center gap-2 shrink-0 ms-2">
                     {task.priority && (
-                      <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase ${task.priority === "critical" ? "bg-red-500/15 text-red-500" :
-                        task.priority === "high" ? "bg-orange-500/15 text-orange-500" :
-                          task.priority === "medium" ? "bg-amber-500/15 text-amber-600" :
-                            "bg-base-content/10 text-base-content/50"
+                      <span className={`rounded-md px-1.5 py-0.5 text-[13px] font-bold uppercase ${task.priority === "critical" ? "bg-error/15 text-error" :
+                        task.priority === "high" ? "bg-warning/15 text-warning" :
+                          task.priority === "medium" ? "bg-warning/15 text-warning" :
+                            "bg-base-content/10 text-heledone-ink-muted"
                         }`}>
                         {task.priority}
                       </span>
                     )}
                     {task.assignee_detail && (
-                      <span className="text-[10px] text-base-content/40 truncate max-w-[80px]">
-                        {`${task.assignee_detail.first_name} ${task.assignee_detail.last_name}`.trim() || task.assignee_detail.username || "Assigned"}
+                      <span className="text-[13px] text-heledone-ink-muted truncate max-w-[80px]">
+                        {`${task.assignee_detail.first_name} ${task.assignee_detail.last_name}`.trim() || task.assignee_detail.username || t("Assigned")}
                       </span>
                     )}
                   </div>
@@ -529,7 +526,7 @@ function MilestonesTab({
         isOpen={!!milestoneToDelete}
         onClose={() => setMilestoneToDelete(null)}
         onConfirm={handleDeleteConfirm}
-        title="Delete Milestone"
+        title={t("Delete Milestone")}
         isLoading={deleteMilestoneMutation.isPending}
       />
     </div>
@@ -537,6 +534,7 @@ function MilestonesTab({
 }
 
 export default function ProjectDetailsPage() {
+  const t = useTranslation();
 
   const updateProjectMutation = useUpdateProject();
   const user = useAuthStore((state) => state.user);
@@ -632,13 +630,13 @@ export default function ProjectDetailsPage() {
     if (deleteModalState.memberId && id) {
       removeMemberMutation.mutate(deleteModalState.memberId, {
         onSuccess: () => {
-          toast.success("Member removed successfully.");
+          toast.success(t("Member removed successfully."));
           setDeleteModalState({ open: false, memberId: null, memberName: "" });
           refetchMembers();
           refetchProject();
         },
         onError: () => {
-          toast.error("Could not remove member.");
+          toast.error(t("Could not remove member."));
         },
       });
     }
@@ -655,13 +653,12 @@ export default function ProjectDetailsPage() {
   if (!project) {
     return (
       <div className="rounded-2xl border border-dashed border-base-content/15 bg-base-100 p-12 text-center">
-        <p className="text-base font-semibold text-base-content">Project not found</p>
+        <p className="text-base font-semibold text-base-content">{t("Project not found")}</p>
         <button
           onClick={() => navigate("/projects")}
           className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-content"
         >
-          Back to Projects
-        </button>
+          {t("Back to Projects")}</button>
       </div>
     );
   }
@@ -678,7 +675,7 @@ export default function ProjectDetailsPage() {
       if (project.owner.username) return project.owner.username;
       if (project.owner.email) return project.owner.email;
     }
-    return "Project Admin";
+    return t("Project Admin");
   };
 
   const ownerName = getProjectOwnerName();
@@ -694,8 +691,8 @@ export default function ProjectDetailsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/projects")}
-            className="flex size-8.5 shrink-0 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-base-content/60 transition hover:bg-base-200 hover:text-base-content"
-            aria-label="Back to projects"
+            className="flex size-8.5 shrink-0 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-heledone-ink-muted transition hover:bg-base-200 hover:text-base-content"
+            aria-label={t("Back to projects")}
           >
             <ArrowLeft size={16} />
           </button>
@@ -703,8 +700,8 @@ export default function ProjectDetailsPage() {
             <div className="flex items-center gap-2">
               {project.prefix && (
                 <span
-                  className="rounded-lg px-2 py-0.5 text-[10px] font-bold text-white"
-                  style={{ background: themeColor }}
+                  className="rounded-lg px-2 py-0.5 text-[13px] font-bold text-base-content bg-base-200 border border-heledone-border"
+                  style={{ borderInlineStart: `3px solid ${themeColor}` }}
                 >
                   {project.prefix}
                 </span>
@@ -717,15 +714,15 @@ export default function ProjectDetailsPage() {
                 onChange={(s) => {
                   if (!project) return;
                   updateProjectMutation.mutate({ id: project.id, data: { status: s } }, {
-                    onSuccess: () => toast.success("Project status updated."),
-                    onError: () => toast.error("Failed to update status.")
+                    onSuccess: () => toast.success(t("Project status updated.")),
+                    onError: () => toast.error(t("Failed to update status."))
                   });
                 }}
                 disabled={updateProjectMutation.isPending}
               />
             </div>
             {project.description && (
-              <p dir="auto" className="mt-0.5 text-xs text-base-content/50 line-clamp-1">
+              <p dir="auto" className="mt-0.5 text-xs text-heledone-ink-muted line-clamp-1">
                 {project.description}
               </p>
             )}
@@ -738,7 +735,7 @@ export default function ProjectDetailsPage() {
           className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all self-start sm:self-auto"
         >
           <TaskSquare size={15} />
-          <span>Open Tasks Board</span>
+          <span>{t("Open Tasks Board")}</span>
         </button>
       </div>
 
@@ -754,7 +751,7 @@ export default function ProjectDetailsPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${activeTab === tab.id
               ? "bg-primary text-primary-content shadow-xs"
-              : "text-base-content/55 hover:bg-base-200 hover:text-base-content"
+              : "text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
               }`}
           >
             {tab.icon}
@@ -777,8 +774,8 @@ export default function ProjectDetailsPage() {
             <div className="space-y-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-base-content">Project overview</h2>
-                  <p className="mt-1 text-xs text-base-content/50">Track delivery health, milestones, and team activity.</p>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-base-content">{t("Project overview")}</h2>
+                  <p className="mt-1 text-xs text-heledone-ink-muted">{t("Track delivery health, milestones, and team activity.")}</p>
                 </div>
                 <ViewSwitcher
                   viewMode={viewMode}
@@ -823,35 +820,31 @@ export default function ProjectDetailsPage() {
               {/* Quick Metrics Bar */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                    Budget
-                  </p>
+                  <p className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+                    {t("Budget")}</p>
                   <p className="mt-1 text-sm font-bold text-base-content truncate">
                     {project.budget
-                      ? `${Number(project.budget).toLocaleString()} ${project.budget_currency || "IRR"}`
+                      ? `${Number(project.budget).toLocaleString(getIntlLocale())} ${project.budget_currency || "IRR"}`
                       : "—"}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                    Deadline
-                  </p>
+                  <p className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+                    {t("Deadline")}</p>
                   <p className="mt-1 text-sm font-bold text-base-content truncate">
-                    {formatDate(project.deadline) ?? "No deadline"}
+                    {formatDate(project.deadline) ?? t("No deadline")}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                    Progress
-                  </p>
+                  <p className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+                    {t("Progress")}</p>
                   <p className="mt-1 text-sm font-bold text-primary">
                     {progress}%
                   </p>
                 </div>
                 <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-                    Tasks
-                  </p>
+                  <p className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+                    {t("تسک‌ها")}</p>
                   <p className="mt-1 text-sm font-bold text-base-content">
                     {project.task_count || 0}
                   </p>
@@ -864,20 +857,18 @@ export default function ProjectDetailsPage() {
                 <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                      Upcoming Milestones
-                    </h3>
+                      {t("Upcoming Milestones")}</h3>
                     <button
                       onClick={() => setActiveTab("milestones")}
                       className="text-xs font-bold text-primary hover:underline"
                     >
-                      View all ({milestones.length})
+                      {t("View all (")}{milestones.length})
                     </button>
                   </div>
 
                   {milestones.length === 0 ? (
-                    <p className="py-6 text-center text-xs text-base-content/40">
-                      No milestones defined yet.
-                    </p>
+                    <p className="py-6 text-center text-xs text-heledone-ink-muted">
+                      {t("No milestones defined yet.")}</p>
                   ) : (
                     <div className="space-y-2">
                       {milestones.slice(0, 3).map((ms: Milestone) => {
@@ -893,7 +884,7 @@ export default function ProjectDetailsPage() {
                                 {ms.title}
                               </span>
                             </div>
-                            <span className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold ${msCfg.cls}`}>
+                            <span className={`shrink-0 rounded-md px-2 py-0.5 text-[13px] font-bold ${msCfg.cls}`}>
                               {msCfg.label}
                             </span>
                           </div>
@@ -907,23 +898,22 @@ export default function ProjectDetailsPage() {
                 <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                      Team Members
-                    </h3>
+                      {t("Team Members")}</h3>
                     <button
                       onClick={() => setActiveTab("members")}
                       className="text-xs font-bold text-primary hover:underline"
                     >
-                      {canManageProject ? "Manage" : "View all"} ({members.length})
+                      {canManageProject ? t("Manage") : t("View all")} ({members.length})
                     </button>
                   </div>
 
                   <div className="flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-2.5">
-                    <div className="grid size-7 place-items-center rounded-lg bg-primary text-white text-xs font-bold">
+                    <div className="grid size-7 place-items-center rounded-lg bg-primary text-primary-content text-xs font-bold">
                       <Crown size={14} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-base-content truncate">{ownerName}</p>
-                      <p className="text-[10px] font-semibold text-primary">Project Owner</p>
+                      <p className="text-[13px] font-semibold text-primary">{t("Project Owner")}</p>
                     </div>
                   </div>
 
@@ -934,10 +924,10 @@ export default function ProjectDetailsPage() {
                           key={m.id}
                           className="flex items-center gap-2 rounded-xl border border-base-content/6 bg-base-200/40 p-2 text-xs"
                         >
-                          <div className="grid size-6 place-items-center rounded-md bg-primary/10 text-[10px] font-bold text-primary shrink-0">
+                          <div className="grid size-6 place-items-center rounded-md bg-primary/10 text-[13px] font-bold text-primary shrink-0">
                             {getUserDisplayName(m)[0]?.toUpperCase() || "U"}
                           </div>
-                          <span dir="auto" className="font-semibold text-base-content truncate text-[11px]">
+                          <span dir="auto" className="font-semibold text-base-content truncate text-[13px]">
                             {getUserDisplayName(m)}
                           </span>
                         </div>
@@ -961,7 +951,7 @@ export default function ProjectDetailsPage() {
               <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
                 <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
                   <h3 className="text-sm font-bold text-base-content">
-                    Project Members &amp; Teams ({individualMembers.length + teamMembers.length + 1})
+                    {t("Project Members & Teams (")}{individualMembers.length + teamMembers.length + 1})
                   </h3>
                   {canManageProject && (
                     <button
@@ -969,26 +959,25 @@ export default function ProjectDetailsPage() {
                       onClick={() => setIsAddMemberOpen(true)}
                       className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
                     >
-                      <Add size={14} /> Add Member
-                    </button>
+                      <Add size={14} />  {t("Add Member")}</button>
                   )}
                 </div>
 
                 {/* Members Section */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                    Members ({individualMembers.length + 1})
+                    {t("Members (")}{individualMembers.length + 1})
                   </h4>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {/* Owner Card */}
                     <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="grid size-8 place-items-center rounded-lg bg-primary text-white text-xs font-bold shrink-0">
+                        <div className="grid size-8 place-items-center rounded-lg bg-primary text-primary-content text-xs font-bold shrink-0">
                           <Crown size={15} />
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-base-content truncate">{ownerName}</p>
-                          <p className="text-[10px] font-semibold text-primary">Owner</p>
+                          <p className="text-[13px] font-semibold text-primary">{t("Owner")}</p>
                         </div>
                       </div>
                     </div>
@@ -1007,8 +996,8 @@ export default function ProjectDetailsPage() {
                             <p dir="auto" className="text-xs font-bold text-base-content truncate">
                               {getUserDisplayName(m)}
                             </p>
-                            <p className="text-[10px] font-medium text-base-content/40 truncate">
-                              {m.specialty || "Member"}
+                            <p className="text-[13px] font-medium text-heledone-ink-muted truncate">
+                              {m.specialty || t("Member")}
                             </p>
                           </div>
                         </div>
@@ -1021,8 +1010,8 @@ export default function ProjectDetailsPage() {
                               memberName: getUserDisplayName(m),
                             })
                           }
-                          className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
-                          aria-label="Remove member"
+                          className="grid size-6 place-items-center rounded-lg text-error hover:bg-error/10 transition-all shrink-0"
+                          aria-label={t("Remove member")}
                         >
                           <Trash size={13} />
                         </button>
@@ -1035,7 +1024,7 @@ export default function ProjectDetailsPage() {
                 {teamMembers.length > 0 && (
                   <div className="space-y-3 pt-4 border-t border-base-content/8">
                     <h4 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                      Teams ({teamMembers.length})
+                      {t("Teams (")}{teamMembers.length})
                     </h4>
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                       {teamMembers.map((m: ProjectMember) => (
@@ -1051,8 +1040,8 @@ export default function ProjectDetailsPage() {
                               <p dir="auto" className="text-xs font-bold text-base-content truncate">
                                 {getUserDisplayName(m)}
                               </p>
-                              <p className="text-[10px] font-medium text-base-content/40 truncate">
-                                {m.specialty || "Team Squad"}
+                              <p className="text-[13px] font-medium text-heledone-ink-muted truncate">
+                                {m.specialty || t("Team Squad")}
                               </p>
                             </div>
                           </div>
@@ -1065,8 +1054,8 @@ export default function ProjectDetailsPage() {
                                 memberName: getUserDisplayName(m),
                               })
                             }
-                            className="grid size-6 place-items-center rounded-lg text-red-500 hover:bg-red-500/10 transition-all shrink-0"
-                            aria-label="Remove team"
+                            className="grid size-6 place-items-center rounded-lg text-error hover:bg-error/10 transition-all shrink-0"
+                            aria-label={t("Remove team")}
                           >
                             <Trash size={13} />
                           </button>
@@ -1093,17 +1082,15 @@ export default function ProjectDetailsPage() {
           {activeTab === "activity" && (
             <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-4">
               <h3 className="text-sm font-bold text-base-content border-b border-base-content/8 pb-3">
-                Activity Feed
-              </h3>
+                {t("Activity Feed")}</h3>
               {activities.length === 0 ? (
-                <p className="py-8 text-center text-xs text-base-content/40">
-                  No recent activity logged for this project.
-                </p>
+                <p className="py-8 text-center text-xs text-heledone-ink-muted">
+                  {t("No recent activity logged for this project.")}</p>
               ) : (
                 <div className="space-y-2">
                   {activities.map((act: ProjectActivity) => {
                     const actorName =
-                      act.actor?.full_name || act.actor?.username || "System";
+                      act.actor?.full_name || act.actor?.username || t("System");
                     return (
                       <div
                         key={act.id}
@@ -1114,7 +1101,7 @@ export default function ProjectDetailsPage() {
                           {" "}
                           {act.event_type_display || act.event_type}
                         </p>
-                        <span className="shrink-0 text-[10px] font-semibold text-base-content/40 ms-2">
+                        <span className="shrink-0 text-[13px] font-semibold text-heledone-ink-muted ms-2">
                           {formatDate(act.created_at)}
                         </span>
                       </div>

@@ -1,6 +1,7 @@
+import { useTranslation } from "../../../i18n/locale";
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { getLiveActivity } from '../../attendance/api/attendanceApi';
 
 interface LiveActivityIndicatorProps {
@@ -13,6 +14,7 @@ interface LiveActivityIndicatorProps {
  * Polling happens every 30 seconds to keep it fresh without overloading the server.
  */
 export const LiveActivityIndicator: React.FC<LiveActivityIndicatorProps> = ({ projectId, taskId }) => {
+  const t = useTranslation();
   const { data: liveActivities = [] } = useQuery({
     queryKey: ['live-activity', projectId],
     queryFn: () => getLiveActivity(projectId),
@@ -27,7 +29,7 @@ export const LiveActivityIndicator: React.FC<LiveActivityIndicatorProps> = ({ pr
     return null;
   }
 
-  const tooltipText = activeUsersOnTask.map(a => `${a.user.first_name || a.user.username} is working on this`).join(', ');
+  const tooltipText = activeUsersOnTask.map(a => t("{value0} is working on this", { value0: a.user.first_name || a.user.username })).join(', ');
 
   return (
     <AnimatePresence>
@@ -39,7 +41,7 @@ export const LiveActivityIndicator: React.FC<LiveActivityIndicatorProps> = ({ pr
         title={tooltipText}
       >
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75"></span>
-        <span className="relative inline-flex h-3 w-3 rounded-full bg-success border border-white dark:border-slate-900 shadow-sm"></span>
+        <span className="relative inline-flex h-3 w-3 rounded-full bg-success border border-white dark:border-heledone-border shadow-sm"></span>
       </motion.div>
     </AnimatePresence>
   );

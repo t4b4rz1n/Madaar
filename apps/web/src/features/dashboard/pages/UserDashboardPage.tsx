@@ -1,8 +1,10 @@
+import { getIntlLocale, t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
+import { BrandBeats } from "../../../components/Brand";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Clock,
   TaskSquare,
@@ -52,10 +54,10 @@ const formatDecimalHours = (
   decimalValue: number | string | null | undefined,
 ): string => {
   const num = Number(decimalValue);
-  if (!num || isNaN(num) || num <= 0) return "0h 0m";
+  if (!num || isNaN(num) || num <= 0) return translate("۰ ساعت");
   const h = Math.floor(num);
   const m = Math.round((num - h) * 60);
-  return `${h}h ${m}m`;
+  return translate("{value0} ساعت و {value1} دقیقه", { value0: h, value1: m });
 };
 
 const ProgressRing = ({
@@ -69,6 +71,7 @@ const ProgressRing = ({
   progress: number;
   color: string;
 }) => {
+  useLocale();
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = Math.max(0, circumference - (progress / 100) * circumference);
@@ -104,7 +107,7 @@ const ProgressRing = ({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[11px] font-black text-base-content">
+        <span className="text-[13px] font-black text-base-content">
           {Math.round(progress)}%
         </span>
       </div>
@@ -118,10 +121,11 @@ const formatSeconds = (
   const value = Math.max(0, Number(seconds || 0));
   const h = Math.floor(value / 3600);
   const m = Math.floor((value % 3600) / 60);
-  return `${h}h ${m}m`;
+  return translate("{value0} ساعت و {value1} دقیقه", { value0: h, value1: m });
 };
 
 export const UserDashboardPage = () => {
+  const t = useTranslation();
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -187,7 +191,7 @@ export const UserDashboardPage = () => {
       (attendance.check_in && !attendance.check_out)),
   );
   const checkInTime = attendance?.check_in
-    ? new Date(attendance.check_in).toLocaleTimeString([], {
+    ? new Date(attendance.check_in).toLocaleTimeString(getIntlLocale(), {
         hour: "2-digit",
         minute: "2-digit",
       })
@@ -203,7 +207,7 @@ export const UserDashboardPage = () => {
       const targetOrgId = orgs[0]?.id;
       if (!targetOrgId) {
         throw new Error(
-          "No active organization found. Please create or join an organization first.",
+          t("No active organization found. Please create or join an organization first."),
         );
       }
       return checkIn(String(targetOrgId));
@@ -211,7 +215,7 @@ export const UserDashboardPage = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(["today-attendance"], data);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
-      toast.success("Checked in successfully");
+      toast.success(t("ورود شما ثبت شد"));
     },
     onError: (err: any) => {
       // axiosClient transforms errors: err is already the response body
@@ -221,7 +225,7 @@ export const UserDashboardPage = () => {
         err?.response?.data?.error ||
         err?.response?.data?.detail ||
         err?.message ||
-        "Could not check in";
+        t("ثبت ورود ممکن نشد");
       toast.error(msg);
     },
   });
@@ -231,9 +235,9 @@ export const UserDashboardPage = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(["today-attendance"], data);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
-      toast.success("Checked out successfully");
+      toast.success(t("خروج شما ثبت شد"));
     },
-    onError: () => toast.error("Could not check out"),
+    onError: () => toast.error(t("ثبت خروج ممکن نشد")),
   });
 
   // Timer Mutations
@@ -243,9 +247,9 @@ export const UserDashboardPage = () => {
       queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Timer started");
+      toast.success(t("زمان‌سنج شروع شد"));
     },
-    onError: () => toast.error("Could not start timer"),
+    onError: () => toast.error(t("شروع زمان‌سنج ممکن نشد")),
   });
 
   const stopTimerMutation = useMutation({
@@ -254,9 +258,9 @@ export const UserDashboardPage = () => {
       queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Timer stopped");
+      toast.success(t("زمان‌سنج متوقف شد"));
     },
-    onError: () => toast.error("Could not stop timer"),
+    onError: () => toast.error(t("توقف زمان‌سنج ممکن نشد")),
   });
 
   // Mark Done Mutation
@@ -266,12 +270,12 @@ export const UserDashboardPage = () => {
       queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Task marked as completed");
+      toast.success(t("تسک انجام شد؛ خسته نباشید!"));
     },
-    onError: () => toast.error("Could not mark task as completed"),
+    onError: () => toast.error(t("ثبت انجام‌شدن تسک ممکن نشد")),
   });
 
-  const displayName = user?.first_name || user?.username || "Friend";
+  const displayName = user?.first_name || user?.username || t("دوست من");
   const allTasks: EmployeeTaskSummary[] = useMemo(() => {
     if (!dashboard) return [];
     return [
@@ -287,16 +291,15 @@ export const UserDashboardPage = () => {
       className="space-y-6 pb-12"
     >
       {/* ─── 1. Header Bar with Greetings & Quick Actions ─── */}
-      <div className="flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
+      <div className="heledone-welcome flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <BrandBeats />
             <h1 className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
-              Good day, {displayName} 👋
-            </h1>
+              {t("سلام")} {displayName}{t("، روزت به‌خیر")}</h1>
           </div>
-          <p className="mt-0.5 text-xs text-base-content/50">
-            {formatDay()} — Your daily command center.
-          </p>
+          <p className="mt-0.5 text-xs text-heledone-ink-muted">
+            {formatDay()}  {t("· امروز را با هم پیش می‌بریم.")}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
@@ -306,20 +309,20 @@ export const UserDashboardPage = () => {
               type="button"
               onClick={() => checkOutMutation.mutate()}
               disabled={checkOutMutation.isPending}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/10 px-3.5 text-xs font-bold text-red-500 hover:bg-red-500/20 transition-all"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-error/20 bg-error/10 px-3.5 text-xs font-bold text-error hover:bg-error/20 transition-all"
             >
               <LogoutCurve size={15} />
-              <span>Check Out</span>
+              <span>{t("ثبت خروج")}</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={() => checkInMutation.mutate()}
               disabled={checkInMutation.isPending}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-success/20 bg-success/10 px-3.5 text-xs font-bold text-success dark:text-success hover:bg-success/20 transition-all"
             >
               <User size={15} />
-              <span>Check In</span>
+              <span>{t("ثبت ورود")}</span>
             </button>
           )}
 
@@ -331,7 +334,7 @@ export const UserDashboardPage = () => {
           >
             <TickCircle size={15} />
             <span>
-              {dashboard?.today_standup ? "Update Standup" : "Log Standup"}
+              {dashboard?.today_standup ? t("ویرایش گزارش روزانه") : t("ثبت گزارش روزانه")}
             </span>
           </button>
         </div>
@@ -341,91 +344,86 @@ export const UserDashboardPage = () => {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {/* Attendance */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-          <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              Attendance
-            </span>
+          <div className="flex items-center justify-between text-heledone-ink-muted">
+            <span className="text-[13px] font-bold uppercase tracking-wider">
+              {t("حضور و کارکرد")}</span>
             <Clock size={16} className="text-primary" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
-            {isCheckedIn ? `Checked in ${checkInTime}` : "Not checked in"}
+            {isCheckedIn ? t("ورود: {value0}", { value0: checkInTime }) : t("ورود ثبت نشده")}
           </p>
-          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
+          <p className="mt-0.5 text-[13px] font-medium text-heledone-ink-muted">
             {isCheckedIn
-              ? "Working on today's shift"
-              : "Click Check In to start shift"}
+              ? t("زمان کار امروز آغاز شده است")
+              : t("برای آغاز کار، ورود را ثبت کنید")}
           </p>
         </div>
 
         {/* Focus Tasks */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-          <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              Focus Tasks
-            </span>
-            <TaskSquare size={16} className="text-blue-500" />
+          <div className="flex items-center justify-between text-heledone-ink-muted">
+            <span className="text-[13px] font-bold uppercase tracking-wider">
+              {t("تسک‌های پیش رو")}</span>
+            <TaskSquare size={16} className="text-primary" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
-            {allTasks.length} {allTasks.length === 1 ? "Task" : "Tasks"}
+            {allTasks.length} {allTasks.length === 1 ? t("تسک") : t("تسک‌ها")}
           </p>
-          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
+          <p className="mt-0.5 text-[13px] font-medium text-heledone-ink-muted">
             {dashboard?.overdue_tasks?.length
-              ? `${dashboard.overdue_tasks.length} overdue`
-              : "All on track"}
+              ? t("{value0} تسک عقب‌افتاده", { value0: dashboard.overdue_tasks.length })
+              : t("کارها طبق برنامه پیش می‌روند")}
           </p>
         </div>
 
         {/* Daily Standup */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-          <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              Daily Standup
-            </span>
-            <NoteText size={16} className="text-emerald-500" />
+          <div className="flex items-center justify-between text-heledone-ink-muted">
+            <span className="text-[13px] font-bold uppercase tracking-wider">
+              {t("گزارش روزانه")}</span>
+            <NoteText size={16} className="text-success" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
-            {dashboard?.today_standup ? "Submitted" : "Pending"}
+            {dashboard?.today_standup ? t("ثبت‌شده") : t("در انتظار")}
           </p>
-          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
+          <p className="mt-0.5 text-[13px] font-medium text-heledone-ink-muted">
             {dashboard?.today_standup
-              ? `${formatDecimalHours(dashboard.today_standup.hours_worked)} logged`
-              : "Log your daily progress"}
+              ? t("{value0} ثبت‌شده", { value0: formatDecimalHours(dashboard.today_standup.hours_worked) })
+              : t("پیشرفت امروز را ثبت کنید")}
           </p>
         </div>
 
         
         {/* Weekly Hours */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-          <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              Weekly Hours
-            </span>
-            <Timer1 size={16} className="text-violet-500" />
+          <div className="flex items-center justify-between text-heledone-ink-muted">
+            <span className="text-[13px] font-bold uppercase tracking-wider">
+              {t("کارکرد این هفته")}</span>
+            <Timer1 size={16} className="text-secondary" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
             {formatSeconds(dashboard?.weekly_time?.total_seconds)}
           </p>
-          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
-            {`${dashboard?.weekly_time?.total_logs ?? 0} time logs this week`}
+          <p className="mt-0.5 text-[13px] font-medium text-heledone-ink-muted">
+            {t("{value0} ثبت کارکرد در این هفته", { value0: dashboard?.weekly_time?.total_logs ?? 0 })}
           </p>
         </div>
 
         {/* Active Tickets */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-          <div className="flex items-center justify-between text-base-content/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              Open Tickets
-            </span>
-            <Ticket size={16} className="text-amber-500" />
+          <div className="flex items-center justify-between text-heledone-ink-muted">
+            <span className="text-[13px] font-bold uppercase tracking-wider">
+              {t("درخواست‌های باز")}</span>
+            <Ticket size={16} className="text-warning" />
           </div>
           <p className="mt-2 text-base font-bold text-base-content">
             {openTickets.length}{" "}
-            {openTickets.length === 1 ? "Ticket" : "Tickets"}
+            {openTickets.length === 1 ? t("درخواست") : t("درخواست‌ها")}
           </p>
-          <p className="mt-0.5 text-[11px] font-medium text-base-content/45">
+          <p className="mt-0.5 text-[13px] font-medium text-heledone-ink-muted">
             {openTickets.length
-              ? "Active support requests"
-              : "No active tickets"}
+              ? t("درخواست‌های پشتیبانی باز")
+              : t("درخواست بازی ندارید")}
           </p>
         </div>
       </div>
@@ -439,25 +437,24 @@ export const UserDashboardPage = () => {
             <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
               <div className="flex items-center gap-2">
                 <TaskSquare size={16} className="text-primary" />
-                <h2 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                  My Priority Tasks ({allTasks.length})
+                <h2 className="text-lg font-bold text-base-content uppercase tracking-wider">
+                  {t("تسک‌های مهم من (")}{allTasks.length})
                 </h2>
               </div>
               <Link
                 to="/tasks"
                 className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
               >
-                <span>View Board</span>
+                <span>{t("مشاهده کانبان")}</span>
                 <ArrowRight size={13} />
               </Link>
             </div>
 
             {allTasks.length === 0 ? (
-              <div className="py-8 text-center text-xs text-base-content/40">
-                No active tasks assigned to you right now.
-              </div>
+              <div className="py-8 text-center text-xs text-heledone-ink-muted">
+                {t("در حال حاضر تسک فعالی به شما سپرده نشده است.")}</div>
             ) : (
-              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-base-content/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-base-content/20">
+              <div className="space-y-2 max-h-[360px] overflow-y-auto pe-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-base-content/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-base-content/20">
                 {allTasks.map((t: EmployeeTaskSummary) => {
                   const isRunningTimer = dashboard?.active_timers?.some(
                     (at) => String(at.task_id) === String(t.id),
@@ -485,27 +482,26 @@ export const UserDashboardPage = () => {
             <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
               <div className="flex items-center gap-2">
                 <Briefcase size={16} className="text-primary" />
-                <h2 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                  Active Projects ({projectsData.filter((p: any) => p.status === "active").length})
+                <h2 className="text-lg font-bold text-base-content uppercase tracking-wider">
+                  {t("پروژه‌های فعال (")}{projectsData.filter((p: any) => p.status === "active").length})
                 </h2>
               </div>
               <Link
                 to="/projects"
                 className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
               >
-                <span>All Projects</span>
+                <span>{t("همه پروژه‌ها")}</span>
                 <ArrowRight size={13} />
               </Link>
             </div>
 
             {projectsData.filter((p: any) => p.status === "active").length === 0 ? (
-              <div className="py-8 text-center text-xs text-base-content/40">
-                No active projects assigned yet.
-              </div>
+              <div className="py-8 text-center text-xs text-heledone-ink-muted">
+                {t("هنوز پروژه فعالی به شما سپرده نشده است.")}</div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {projectsData.filter((p: any) => p.status === "active").slice(0, 4).map((p: any) => {
-                  const color = p.color || "#6366f1";
+                  const color = p.color || "#087F83";
 
                   return (
                     <div
@@ -515,42 +511,40 @@ export const UserDashboardPage = () => {
                     >
                       {/* Decorative colored glow based on project color */}
                       <div 
-                        className="absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40 pointer-events-none"
+                        className="absolute -end-10 -top-10 h-32 w-32 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40 pointer-events-none"
                         style={{ backgroundColor: color }}
                       />
                       
                       <div className="relative z-10 flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           {p.prefix && (
-                            <span className="mb-2 inline-block rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm" style={{ backgroundColor: color }}>
+                            <span className="mb-2 inline-block rounded-md px-2 py-0.5 text-[13px] font-extrabold uppercase tracking-widest text-base-content bg-base-200 border border-heledone-border shadow-sm" style={{ borderInlineStart: `3px solid ${color}` }}>
                               {p.prefix}
                             </span>
                           )}
                           <h3
                             dir="auto"
-                            className="text-base font-black text-base-content truncate"
+                            className="text-lg font-bold text-base-content break-words"
                             title={p.name}
                           >
                             {p.name}
                           </h3>
                         </div>
-                        <span className="shrink-0 rounded-full bg-base-200 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-base-content/70">
+                        <span className="shrink-0 rounded-full bg-base-200 px-2 py-1 text-[13px] font-bold uppercase tracking-wider text-base-content/70">
                           {p.status}
                         </span>
                       </div>
 
                       <div className="relative z-10 mt-6 flex items-end justify-between">
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">
-                            Tasks Progress
-                          </span>
+                          <span className="text-[13px] font-bold text-heledone-ink-muted uppercase tracking-wider">
+                            {t("پیشرفت تسک‌ها")}</span>
                           <div className="flex items-baseline gap-1">
                             <span className="text-2xl font-black text-base-content">
                               {Math.round(((p.task_count || 0) * (p.progress_percentage || 0)) / 100)}
                             </span>
-                            <span className="text-[11px] font-bold text-base-content/40">
-                              / {p.task_count || 0} Done
-                            </span>
+                            <span className="text-[13px] font-bold text-heledone-ink-muted">
+                              / {p.task_count || 0}  {t("Done")}</span>
                           </div>
                         </div>
 
@@ -573,22 +567,21 @@ export const UserDashboardPage = () => {
           <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                Today's Standup
-              </h3>
+                {t("گزارش امروز")}</h3>
               <button
                 type="button"
                 onClick={() => setStandupOpen(true)}
                 className="text-xs font-bold text-primary hover:underline"
               >
-                {dashboard?.today_standup ? "Edit" : "Write"}
+                {dashboard?.today_standup ? t("ویرایش") : t("نوشتن")}
               </button>
             </div>
 
             {dashboard?.today_standup ? (
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs space-y-1.5">
-                <div className="flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="rounded-xl border border-success/20 bg-success/5 p-3 text-xs space-y-1.5">
+                <div className="flex items-center justify-between font-bold text-success dark:text-success">
                   <span>
-                    Logged{" "}
+                    {t("ثبت‌شده:")}{" "}
                     {formatDecimalHours(dashboard.today_standup.hours_worked)}
                   </span>
                   <TickCircle size={15} />
@@ -596,7 +589,7 @@ export const UserDashboardPage = () => {
                 {dashboard.today_standup.today_work && (
                   <p
                     dir="auto"
-                    className="text-base-content/75 text-[11px] line-clamp-2"
+                    className="text-base-content/75 text-[13px] line-clamp-2"
                   >
                     {dashboard.today_standup.today_work}
                   </p>
@@ -604,45 +597,44 @@ export const UserDashboardPage = () => {
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-base-content/15 p-4 text-center">
-                <p className="text-xs text-base-content/50">
-                  You haven't logged today's standup yet.
-                </p>
+                <p className="text-xs text-heledone-ink-muted">
+                  {t("گزارش امروز را هنوز ثبت نکرده‌اید.")}</p>
                 <button
                   type="button"
                   onClick={() => setStandupOpen(true)}
                   className="mt-2.5 inline-flex h-8 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-primary-content"
                 >
-                  <Add size={14} /> Log Standup
-                </button>
+                  <Add size={14} />  {t("ثبت گزارش روزانه")}</button>
               </div>
             )}
           </div>
 
           {/* Blocked Tasks Widget */}
           {dashboard?.blocked_tasks && dashboard.blocked_tasks.length > 0 && (
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+            <div className="rounded-2xl border border-error/20 bg-error/5 p-5 space-y-3">
+              <div className="flex items-center gap-2 text-error dark:text-error">
                 <Danger size={16} />
                 <h3 className="text-xs font-bold uppercase tracking-wider">
-                  Blocked Tasks ({dashboard.blocked_tasks.length})
+                  {t("تسک‌های مسدود (")}{dashboard.blocked_tasks.length})
                 </h3>
               </div>
+              <p className="text-sm text-error">{t("علت مانع را بررسی و قدم بعدی را با مسئول تسک هماهنگ کنید.")}</p>
               <div className="space-y-2">
                 {dashboard.blocked_tasks.map((t: any) => (
                   <div
                     key={t.id}
-                    className="rounded-xl border border-amber-500/20 bg-base-100 p-2.5 text-xs"
+                    className="rounded-xl border border-error/20 bg-base-100 p-2.5 text-xs"
                   >
                     <p
                       dir="auto"
-                      className="font-bold text-base-content truncate"
+                      className="font-bold text-base-content break-words"
                     >
                       {t.title}
                     </p>
                     {t.blockers_reason && (
                       <p
                         dir="auto"
-                        className="mt-0.5 text-[10px] text-amber-600 font-medium line-clamp-1"
+                        className="mt-0.5 text-[13px] text-error font-medium break-words"
                       >
                         {t.blockers_reason}
                       </p>
@@ -658,20 +650,17 @@ export const UserDashboardPage = () => {
             <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                Support Tickets
-              </h3>
+                {t("درخواست‌های پشتیبانی")}</h3>
               <Link
                 to="/tickets"
                 className="text-xs font-bold text-primary hover:underline"
               >
-                View all
-              </Link>
+                {t("مشاهده همه")}</Link>
             </div>
 
             {openTickets.length === 0 ? (
-              <p className="py-4 text-center text-xs text-base-content/40">
-                No open tickets right now.
-              </p>
+              <p className="py-4 text-center text-xs text-heledone-ink-muted">
+                {t("در حال حاضر درخواست بازی ندارید.")}</p>
             ) : (
               <div className="space-y-2">
                 {openTickets.slice(0, 3).map((t: any) => (
@@ -687,13 +676,13 @@ export const UserDashboardPage = () => {
                       >
                         {t.subject || t.title}
                       </p>
-                      <span className="text-[10px] text-base-content/45 capitalize">
+                      <span className="text-[13px] text-heledone-ink-muted capitalize">
                         {t.status}
                       </span>
                     </div>
                     <ArrowRight
                       size={13}
-                      className="shrink-0 text-base-content/40"
+                      className="shrink-0 text-heledone-ink-muted"
                     />
                   </div>
                 ))}
@@ -765,6 +754,7 @@ function DashboardTaskCard({
   onStopTimer: () => void;
   onClickTitle: (id: string) => void;
 }) {
+  const t = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const isOverdue = task.is_overdue;
 
@@ -780,36 +770,36 @@ function DashboardTaskCard({
              type="button"
              onClick={(e) => { e.stopPropagation(); onMarkDone(String(task.id)); }}
              className={`size-4.5 rounded-md border shrink-0 transition ${
-                isOverdue ? "border-red-500/30 bg-base-100 hover:border-red-500" : "border-base-content/20 bg-base-100 hover:border-primary"
+                isOverdue ? "border-error/30 bg-base-100 hover:border-error" : "border-heledone-ink-muted bg-base-100 hover:border-primary"
              }`}
-             title="Mark complete"
+             title={t("ثبت انجام‌شدن")}
            />
            <div className="min-w-0">
              <div className="flex items-center gap-2">
                <p
                  dir="auto"
                  onClick={(e) => { e.stopPropagation(); onClickTitle(String(task.id)); }}
-                 className="font-bold truncate hover:underline text-base-content hover:text-primary"
+                 className="font-bold break-words hover:underline text-base-content hover:text-primary"
                >
                  {task.title}
                </p>
              </div>
 
-             <div className="mt-0.5 flex items-center gap-2 text-[10px] text-base-content/45">
+             <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-heledone-ink-muted">
                {task.project_name && (
                  <span className="font-semibold text-primary">
                    {task.project_name}
                  </span>
                )}
                {task.priority && (
-                 <span className="capitalize font-semibold text-amber-600">
-                   • {task.priority}
+                 <span className="capitalize font-semibold text-warning">
+                   • {{ low: t("کم"), medium: t("متوسط"), high: t("بالا"), critical: t("فوری") }[task.priority]}
                  </span>
                )}
                {task.due_date && (
-                 <div className="flex items-center gap-1 font-semibold ml-1">
-                   <Clock size={10} className={isOverdue ? "text-red-500" : "text-base-content/40"} />
-                   <span className={isOverdue ? "text-red-500" : "text-base-content/50"}>
+                 <div className="flex items-center gap-1 font-semibold ms-1">
+                   <Clock size={10} className={isOverdue ? "text-error" : "text-heledone-ink-muted"} />
+                   <span className={isOverdue ? "text-error" : "text-heledone-ink-muted"}>
                      {formatDisplayDate(task.due_date, "yyyy-MM-dd")}
                    </span>
                  </div>
@@ -825,24 +815,24 @@ function DashboardTaskCard({
                 <button
                   type="button"
                   onClick={() => onStopTimer()}
-                  className="inline-flex h-7 items-center gap-1 rounded-lg bg-red-500/10 px-2.5 text-[11px] font-bold text-red-500 hover:bg-red-500/20"
+                  className="inline-flex h-7 items-center gap-1 rounded-lg bg-error/10 px-2.5 text-[13px] font-bold text-error hover:bg-error/20"
                 >
                   <Stop size={12} variant="Bold" />
-                  <span>Stop</span>
+                  <span>{t("توقف")}</span>
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => onStartTimer(String(task.id))}
-                  aria-label="Start focus timer"
-                  title="Start focus timer"
+                  aria-label={t("شروع زمان‌سنج تمرکز")}
+                  title={t("شروع زمان‌سنج تمرکز")}
                   className="inline-flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20"
                 >
                   <Play size={12} variant="Bold" />
                 </button>
               )}
            </div>
-           <ArrowDown2 size={14} className={`text-base-content/30 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+           <ArrowDown2 size={14} className={`text-heledone-ink-muted transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
          </div>
       </div>
 
@@ -859,15 +849,15 @@ function DashboardTaskCard({
               <button
                 type="button"
                 onClick={() => onClickTitle(String(task.id))}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-base-content/10 bg-base-100 py-1.5 text-[11px] font-bold text-base-content hover:bg-base-200/50"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-base-content/10 bg-base-100 py-1.5 text-[13px] font-bold text-base-content hover:bg-base-200/50"
               >
                 <Maximize4 size={14} />
-                <span>Open Task</span>
+                <span>{t("باز کردن تسک")}</span>
               </button>
               <button
                 type="button"
                 className="inline-flex items-center justify-center rounded-lg border border-base-content/10 bg-base-100 p-1.5 text-base-content/70 hover:bg-base-200/50"
-                title="Add Note"
+                title={t("افزودن یادداشت")}
               >
                 <NoteAdd size={14} />
               </button>

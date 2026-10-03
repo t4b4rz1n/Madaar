@@ -16,11 +16,11 @@ export const TodayEmptyState = ({
   compact = false,
 }: TodayEmptyStateProps) => (
   <div className={`flex flex-col items-center justify-center px-6 text-center ${compact ? "py-8" : "py-12"}`}>
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-base-200 text-base-content/35">
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-base-200 text-heledone-ink-muted">
       {icon}
     </div>
     <h3 className="mt-4 text-sm font-bold text-base-content">{title}</h3>
-    <p className="mt-1 max-w-sm text-xs leading-5 text-base-content/50">{description}</p>
+    <p className="mt-1 max-w-sm text-xs leading-5 text-heledone-ink-muted">{description}</p>
     {action && <div className="mt-4">{action}</div>}
   </div>
 );

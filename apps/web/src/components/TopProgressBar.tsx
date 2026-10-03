@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 
 export const TopProgressBar: React.FC = () => {
   const location = useLocation();
@@ -35,7 +35,7 @@ export const TopProgressBar: React.FC = () => {
   return (
     <AnimatePresence>
       {isVisible && (
-        <div className="pointer-events-none fixed left-0 right-0 top-0 z-[100] h-[2.5px] overflow-hidden bg-transparent">
+        <div className="pointer-events-none fixed start-0 end-0 top-0 z-[100] h-[2.5px] overflow-hidden bg-transparent">
           <motion.div
             className="h-full bg-gradient-to-r from-primary via-secondary to-accent shadow-[0_0_8px_var(--color-primary)]"
             initial={{ width: "0%", opacity: 1 }}

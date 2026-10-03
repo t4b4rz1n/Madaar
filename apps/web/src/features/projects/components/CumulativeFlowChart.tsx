@@ -1,3 +1,5 @@
+import { useTranslation, useLocale } from "../../../i18n/locale";
+import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import { formatDisplayDate } from "../../../utils/date";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import { useEffect, useMemo, useState } from "react";
@@ -14,18 +16,6 @@ import {
 
 import { getProjectCfd } from "../api/analyticsApi";
 import type { CfdData, CfdStatus } from "../types/analytics";
-
-// Palette auto-assigned to statuses in order (can be extended)
-const STATUS_COLORS = [
-  "var(--color-primary)", // indigo
-  "var(--color-warning)", // amber
-  "var(--color-success)", // emerald
-  "var(--color-info)", // blue
-  "var(--color-error)", // red
-  "var(--color-secondary)", // violet
-  "#ec4899", // pink
-  "#14b8a6", // teal
-];
 
 interface CumulativeFlowChartProps {
   projectId: string;
@@ -45,6 +35,7 @@ export default function CumulativeFlowChart({
   tz,
   showControls = true,
 }: CumulativeFlowChartProps) {
+  const t = useTranslation();
   const [data, setData] = useState<CfdData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,9 +59,9 @@ export default function CumulativeFlowChart({
       tz: tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     })
       .then(setData)
-      .catch(() => setError("Error loading CFD data"))
+      .catch(() => setError(t("Error loading CFD data")))
       .finally(() => setLoading(false));
-  }, [projectId, boardId, start, end, tz]);
+  }, [projectId, boardId, start, end, tz, t]);
 
   // Build recharts-compatible data: [{date, <code>: count, ...}]
   const chartData = useMemo(() => {
@@ -82,12 +73,12 @@ export default function CumulativeFlowChart({
   }, [data]);
 
   const colorFor = (index: number) =>
-    STATUS_COLORS[index % STATUS_COLORS.length];
+    getWorkflowAppearance(data?.statuses[index]).color;
 
   if (loading) return <CFDSkeleton />;
   if (error) return <CFDError message={error} />;
   if (!data || data.data.length === 0)
-    return <CFDEmpty message="No data available for this time range." />;
+    return <CFDEmpty message={t("No data available for this time range.")} />;
 
   const statuses: CfdStatus[] = data.statuses;
 
@@ -121,17 +112,15 @@ export default function CumulativeFlowChart({
                 color: "var(--color-text-primary, var(--color-base-content))",
               }}
             >
-              Cumulative Flow Diagram (CFD)
-            </h3>
+              {t("Cumulative Flow Diagram (CFD)")}</h3>
             <p
               style={{
                 margin: "4px 0 0",
-                fontSize: 12,
+                fontSize: 13,
                 color: "var(--color-text-secondary, color-mix(in srgb, var(--color-base-content) 60%, transparent))",
               }}
             >
-              Task distribution across statuses over time
-            </p>
+              {t("Task distribution across statuses over time")}</p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <CustomDatePicker
@@ -171,12 +160,12 @@ export default function CumulativeFlowChart({
           <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--color-base-content) 6%, transparent)" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+            tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
             tickFormatter={(v) => formatDisplayDate(v, "M/d")}
           />
           <YAxis
             allowDecimals={false}
-            tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+            tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
             width={32}
           />
           <Tooltip
@@ -185,7 +174,7 @@ export default function CumulativeFlowChart({
               background: "var(--color-base-100)",
               border: "1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent)",
               borderRadius: 8,
-              fontSize: 12,
+              fontSize: 13,
             }}
             formatter={(value: any, name: any) => [
               value ?? 0,
@@ -198,13 +187,14 @@ export default function CumulativeFlowChart({
             }
             iconType="circle"
             iconSize={8}
-            wrapperStyle={{ fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+            wrapperStyle={{ fontSize: 13, color: "var(--color-heledone-ink-muted)" }}
           />
           {statuses.map((s, i) => (
             <Area
               key={s.code}
               type="monotone"
               dataKey={s.code}
+              name={getWorkflowAppearance(s).label}
               stackId="1"
               stroke={colorFor(i)}
               fill={`url(#cfd-grad-${s.code})`}
@@ -225,6 +215,7 @@ export default function CumulativeFlowChart({
 // ── Bottleneck detection ─────────────────────────────────────────────────────
 
 function BottleneckHint({ data }: { data: CfdData }) {
+  const t = useTranslation();
   if (data.data.length < 2) return null;
 
   const last = data.data[data.data.length - 1];
@@ -246,13 +237,11 @@ function BottleneckHint({ data }: { data: CfdData }) {
         background: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
         borderRadius: 8,
         borderLeft: "3px solid var(--color-warning)",
-        fontSize: 12,
+        fontSize: 13,
         color: "var(--color-warning)",
       }}
     >
-      Possible bottleneck: tasks in &laquo;{bottleneck.name}&raquo; are
-      growing faster than other columns.
-    </div>
+      {t("Possible bottleneck: tasks in «")}{bottleneck.name}{t("» are growing faster than other columns.")}</div>
   );
 }
 
@@ -260,6 +249,7 @@ function BottleneckHint({ data }: { data: CfdData }) {
 
 
 function CFDSkeleton() {
+  useLocale();
   return (
     <div
       style={{
@@ -284,6 +274,7 @@ function CFDSkeleton() {
 }
 
 function CFDError({ message }: { message: string }) {
+  const t = useTranslation();
   return (
     <div
       style={{
@@ -297,12 +288,13 @@ function CFDError({ message }: { message: string }) {
         borderRadius: 16,
       }}
     >
-      Error loading CFD data: {message}
+      {t("Error loading CFD data:")} {message}
     </div>
   );
 }
 
 function CFDEmpty({ message }: { message: string }) {
+  useLocale();
   return (
     <div
       style={{
@@ -310,7 +302,7 @@ function CFDEmpty({ message }: { message: string }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)",
+        color: "var(--color-heledone-ink-muted)",
         fontSize: 14,
         background: "var(--color-surface, var(--color-base-100))",
         borderRadius: 16,

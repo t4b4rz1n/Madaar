@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { motion } from "motion/react";
 import {
   Building3,
   CloseCircle,
@@ -35,6 +36,7 @@ export const UsersTable = ({
   onEdit,
   canManage = false,
 }: UsersTableProps) => {
+  const t = useTranslation();
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
     user: User | null;
@@ -72,11 +74,11 @@ export const UsersTable = ({
   if (isError) {
     return (
       <div className="bg-linear-to-br from-error/5 to-error/10 rounded-2xl border border-error/20 p-12 text-center backdrop-blur-sm">
-        <div className="text-error/40 mb-4">
+        <div className="text-error mb-4">
           <CloseCircle className="w-16 h-16 mx-auto" />
         </div>
-        <h3 className="text-lg font-bold text-error mb-2">Loading Error</h3>
-        <p className="text-error/70">There was a problem loading users</p>
+        <h3 className="text-lg font-bold text-error mb-2">{t("Loading Error")}</h3>
+        <p className="text-error">{t("There was a problem loading users")}</p>
       </div>
     );
   }
@@ -84,15 +86,13 @@ export const UsersTable = ({
   if (users.length === 0) {
     return (
       <div className="bg-base-100/70 backdrop-blur-xl rounded-2xl border border-base-content/8 p-12 text-center shadow-sm">
-        <div className="text-base-content/40 mb-4">
+        <div className="text-heledone-ink-muted mb-4">
           <UserIcon className="w-16 h-16 mx-auto" />
         </div>
         <h3 className="text-lg font-bold text-base-content mb-2">
-          No Users Found
-        </h3>
+          {t("No Users Found")}</h3>
         <p className="text-base-content/70">
-          No users match your search criteria
-        </p>
+          {t("No users match your search criteria")}</p>
       </div>
     );
   }
@@ -104,25 +104,19 @@ export const UsersTable = ({
           <table className="w-full">
             <thead className="border-b border-base-content/8">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-base-content/50 uppercase whitespace-nowrap">
-                  User
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-base-content/50 uppercase whitespace-nowrap">
-                  Contact
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-base-content/50 uppercase whitespace-nowrap">
-                  Full Name
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-base-content/50 uppercase whitespace-nowrap">
-                  Organization
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-base-content/50 uppercase whitespace-nowrap">
-                  Status
-                </th>
+                <th className="px-6 py-4 text-start text-xs font-semibold tracking-wider text-heledone-ink-muted uppercase whitespace-nowrap">
+                  {t("User")}</th>
+                <th className="px-6 py-4 text-start text-xs font-semibold tracking-wider text-heledone-ink-muted uppercase whitespace-nowrap">
+                  {t("Contact")}</th>
+                <th className="px-6 py-4 text-start text-xs font-semibold tracking-wider text-heledone-ink-muted uppercase whitespace-nowrap">
+                  {t("Full Name")}</th>
+                <th className="px-6 py-4 text-start text-xs font-semibold tracking-wider text-heledone-ink-muted uppercase whitespace-nowrap">
+                  {t("Organization")}</th>
+                <th className="px-6 py-4 text-start text-xs font-semibold tracking-wider text-heledone-ink-muted uppercase whitespace-nowrap">
+                  {t("وضعیت")}</th>
                 {canManage && (
-                  <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-base-content/50 uppercase whitespace-nowrap">
-                    Actions
-                  </th>
+                  <th className="px-6 py-4 text-start text-xs font-semibold tracking-wider text-heledone-ink-muted uppercase whitespace-nowrap">
+                    {t("Actions")}</th>
                 )}
               </tr>
             </thead>
@@ -150,7 +144,7 @@ export const UsersTable = ({
                             />
                           ) : (
                             <UserIcon
-                              className="w-5 h-5 text-primary/60"
+                              className="w-5 h-5 text-primary"
                               variant="Bold"
                             />
                           )}
@@ -161,8 +155,8 @@ export const UsersTable = ({
                               {user.username}
                             </span>
                           </div>
-                          <div className="text-xs text-base-content/40 mt-0.5">
-                            ID: #{user.id}
+                          <div className="text-xs text-heledone-ink-muted mt-0.5">
+                            {t("ID: #")}{user.id}
                           </div>
                         </div>
                       </div>
@@ -170,7 +164,7 @@ export const UsersTable = ({
 
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <Message className="w-3.5 h-3.5 text-base-content/40" />
+                        <Message className="w-3.5 h-3.5 text-heledone-ink-muted" />
                         <span className="text-sm text-base-content/70">
                           {user.email}
                         </span>
@@ -190,10 +184,9 @@ export const UsersTable = ({
                           {user.organization.name}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-base-content/30 border border-dashed border-base-content/10">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-heledone-ink-muted border border-dashed border-base-content/10">
                           <Building3 size={12} />
-                          No org
-                        </span>
+                          {t("No org")}</span>
                       )}
                     </td>
 
@@ -211,16 +204,16 @@ export const UsersTable = ({
                           ) : (
                             <CloseCircle size={12} variant="Bold" />
                           )}
-                          {user.is_active ? "Active" : "Inactive"}
+                          {user.is_active ? t("فعال") : t("Inactive")}
                         </span>
 
                         {user.is_staff && (
                           <span
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/5 text-primary border border-primary/15"
-                            title="Staff Member"
+                            title={t("Staff Member")}
                           >
                             <Verify size={12} variant="Bold" />
-                            <span>Staff</span>
+                            <span>{t("Staff")}</span>
                           </span>
                         )}
 
@@ -231,7 +224,7 @@ export const UsersTable = ({
                               return (
                                 <span
                                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm backdrop-blur-sm transition-all duration-200 hover:scale-[1.02] ${getRoleBadgeClass(roleName)}`}
-                                  title={`Role: ${roleName}`}
+                                  title={t("Role: {value0}", { value0: roleName })}
                                 >
                                   {RoleIcon ? (
                                     <RoleIcon size={14} variant="Bold" />
@@ -249,8 +242,8 @@ export const UsersTable = ({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => onEdit(user)}
-                            className="p-2 hover:bg-primary/5 text-base-content/40 hover:text-primary rounded-lg transition-colors"
-                            title="Edit"
+                            className="p-2 hover:bg-primary/5 text-heledone-ink-muted hover:text-primary rounded-lg transition-colors"
+                            title={t("ویرایش")}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -258,8 +251,8 @@ export const UsersTable = ({
                             onClick={() =>
                               setDeleteModalState({ open: true, user })
                             }
-                            className="p-2 hover:bg-error/5 text-base-content/40 hover:text-error rounded-lg transition-colors"
-                            title="Delete"
+                            className="p-2 hover:bg-error/5 text-heledone-ink-muted hover:text-error rounded-lg transition-colors"
+                            title={t("حذف")}
                           >
                             <Trash className="w-4 h-4" />
                           </button>
@@ -278,8 +271,8 @@ export const UsersTable = ({
         isOpen={deleteModalState.open}
         onClose={() => setDeleteModalState({ open: false, user: null })}
         onConfirm={handleDelete}
-        title="Delete User"
-        message={`Are you sure you want to delete the user "${deleteModalState.user?.username}"? This action cannot be undone.`}
+        title={t("Delete User")}
+        message={t("Are you sure you want to delete the user \"{value0}\"? This action cannot be undone.", { value0: deleteModalState.user?.username })}
         isLoading={deleteMutation.isPending}
       />
     </>

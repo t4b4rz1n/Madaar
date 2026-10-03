@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/locale";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -55,7 +56,7 @@ export const useCreateTicket = () => {
     mutationFn: (data: TicketFormData) => createTicket(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
-      toast.success("Ticket created successfully");
+      toast.success(t("Ticket created successfully"));
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to create ticket");
@@ -73,7 +74,7 @@ export const useUpdateTicketStatus = (ticketId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
       queryClient.invalidateQueries({ queryKey: ["ticket", scope, ticketId] });
-      toast.success("Ticket status updated successfully");
+      toast.success(t("Ticket status updated successfully"));
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to update ticket status");
@@ -137,7 +138,7 @@ export const useCreateTicketType = () => {
     mutationFn: (name: string) => createTicketType(name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ticket-types"] });
-      toast.success("Ticket category created successfully");
+      toast.success(t("Ticket category created successfully"));
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to create ticket category");
@@ -152,7 +153,7 @@ export const useUpdateTicketType = () => {
       updateTicketType(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ticket-types"] });
-      toast.success("Ticket category updated successfully");
+      toast.success(t("Ticket category updated successfully"));
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to update ticket category");
@@ -166,7 +167,7 @@ export const useDeleteTicketType = () => {
     mutationFn: (id: EntityId) => deleteTicketType(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ticket-types"] });
-      toast.success("Ticket category deleted successfully");
+      toast.success(t("Ticket category deleted successfully"));
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to delete ticket category");

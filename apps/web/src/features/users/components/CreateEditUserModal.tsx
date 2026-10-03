@@ -1,5 +1,6 @@
+import { useTranslation } from "../../../i18n/locale";
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Add, Edit, CloseCircle } from "iconsax-reactjs";
@@ -32,6 +33,7 @@ export const CreateEditUserModal = ({
   organizationId,
   onSuccess,
 }: CreateEditUserModalProps) => {
+  const t = useTranslation();
   const isEditMode = !!user;
   const schema = isEditMode ? updateUserSchema : createUserSchema;
   const { data: organizations = [] } = useOrganizations();
@@ -172,12 +174,12 @@ export const CreateEditUserModal = ({
                   </div>
                   <div>
                     <h3 className="font-bold text-2xl text-base-content">
-                      {isEditMode ? "Edit User" : "Create New User"}
+                      {isEditMode ? t("Edit User") : t("Create New User")}
                     </h3>
                     <p className="text-base-content/70 text-sm">
                       {isEditMode
-                        ? "Update user details"
-                        : "Add a new user to the system"}
+                        ? t("Update user details")
+                        : t("Add a new user to the system")}
                     </p>
                   </div>
                 </div>
@@ -186,7 +188,7 @@ export const CreateEditUserModal = ({
                   className="p-2 hover:bg-base-content/10 rounded-lg transition-colors"
                   disabled={isLoading}
                 >
-                  <CloseCircle className="w-6 h-6 text-base-content/60" />
+                  <CloseCircle className="w-6 h-6 text-heledone-ink-muted" />
                 </button>
               </div>
             </div>
@@ -211,8 +213,7 @@ export const CreateEditUserModal = ({
                   className="btn btn-ghost rounded-xl"
                   disabled={isLoading}
                 >
-                  Cancel
-                </button>
+                  {t("انصراف")}</button>
                 <button
                   type="button"
                   onClick={onSubmit}
@@ -222,12 +223,11 @@ export const CreateEditUserModal = ({
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="loading loading-spinner loading-sm"></span>
-                      Saving...
-                    </span>
+                      {t("در حال ذخیره…")}</span>
                   ) : isEditMode ? (
-                    "Update User"
+                    t("Update User")
                   ) : (
-                    "Create User"
+                    t("Create User")
                   )}
                 </button>
               </div>

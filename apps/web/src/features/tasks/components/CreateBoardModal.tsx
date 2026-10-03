@@ -1,5 +1,7 @@
+import { useTranslation } from "../../../i18n/locale";
+import { projectPalette } from "../../../core/config/designTokens";
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { CloseCircle, Add } from 'iconsax-reactjs';
 
 interface CreateBoardModalProps {
@@ -9,22 +11,12 @@ interface CreateBoardModalProps {
   isPending: boolean;
 }
 
-const PRESET_COLORS = [
-  { name: 'Purple', value: '#b39ddb' },
-  { name: 'Blue', value: '#81d4fa' },
-  { name: 'Teal', value: '#80cbc4' },
-  { name: 'Green', value: '#a5d6a7' },
-  { name: 'Orange', value: '#ffcc80' },
-  { name: 'Pink', value: '#f48fb1' },
-  { name: 'Indigo', value: '#9fa8da' },
-  { name: 'Cyan', value: '#80deea' },
-  { name: 'Lime', value: '#e6ee9c' },
-  { name: 'Red', value: '#ef9a9a' },
-];
+const PRESET_COLORS = projectPalette;
 
 export function CreateBoardModal({ isOpen, onClose, onSubmit, isPending }: CreateBoardModalProps) {
+  const t = useTranslation();
   const [title, setTitle] = useState('');
-  const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0].value);
+  const [selectedColor, setSelectedColor] = useState<string>(PRESET_COLORS[0].value);
 
   useEffect(() => {
     if (isOpen) {
@@ -53,29 +45,26 @@ export function CreateBoardModal({ isOpen, onClose, onSubmit, isPending }: Creat
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.96 }}
           transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
-          className="madaar-surface relative w-full max-w-md overflow-hidden rounded-[28px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl"
+          className="heledone-surface relative w-full max-w-md overflow-hidden rounded-[28px] border border-base-content/10 bg-base-100/95 shadow-heledone-floating backdrop-blur-xl"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="max-h-[calc(100vh-2rem)] overflow-y-auto">
             {/* Header */}
             <header className="flex items-start justify-between gap-4 border-b border-base-content/10 bg-base-200/20 px-6 py-5">
               <div className="min-w-0 flex-1">
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                  Board Setup
-                </p>
+                <p className="mb-2 text-xs font-bold uppercase  text-primary">
+                  {t("Board Setup")}</p>
                 <h2 className="text-2xl font-semibold tracking-tight text-base-content">
-                  Create a new board
-                </h2>
-                <p className="mt-1.5 text-sm leading-relaxed text-base-content/60">
-                  Boards help organize tasks into different workflows.
-                </p>
+                  {t("Create a new board")}</h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-heledone-ink-muted">
+                  {t("Boards help organize tasks into different workflows.")}</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isPending}
-                className="btn btn-ghost btn-square btn-sm shrink-0 rounded-xl text-base-content/50 transition hover:bg-base-200 hover:text-base-content"
-                aria-label="Close board form"
+                className="btn btn-ghost btn-square btn-sm shrink-0 rounded-xl text-heledone-ink-muted transition hover:bg-base-200 hover:text-base-content"
+                aria-label={t("Close board form")}
               >
                 <CloseCircle size={20} />
               </button>
@@ -86,7 +75,7 @@ export function CreateBoardModal({ isOpen, onClose, onSubmit, isPending }: Creat
               {/* Board Title */}
               <div className="space-y-2">
                 <label htmlFor="board-title" className="block text-sm font-medium text-base-content">
-                  Board title <span className="text-error">*</span>
+                  {t("Board title")} <span className="text-error">*</span>
                 </label>
                 <input
                   id="board-title"
@@ -96,7 +85,7 @@ export function CreateBoardModal({ isOpen, onClose, onSubmit, isPending }: Creat
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="input input-bordered w-full rounded-xl bg-base-200/50 transition-colors focus:border-primary focus:bg-base-100 focus:outline-none"
-                  placeholder="e.g. Backend, Frontend, Design"
+                  placeholder={t("e.g. Backend, Frontend, Design")}
                   disabled={isPending}
                 />
               </div>
@@ -104,8 +93,7 @@ export function CreateBoardModal({ isOpen, onClose, onSubmit, isPending }: Creat
               {/* Color Picker */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-base-content">
-                  Board color
-                </label>
+                  {t("Board color")}</label>
                 <div className="grid grid-cols-5 gap-2">
                   {PRESET_COLORS.map((color) => (
                     <button
@@ -144,9 +132,8 @@ export function CreateBoardModal({ isOpen, onClose, onSubmit, isPending }: Creat
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-base-content/45">
-                  Choose a color to identify this board easily.
-                </p>
+                <p className="text-xs text-heledone-ink-muted">
+                  {t("Choose a color to identify this board easily.")}</p>
               </div>
 
               {/* Actions */}
@@ -157,8 +144,7 @@ export function CreateBoardModal({ isOpen, onClose, onSubmit, isPending }: Creat
                   disabled={isPending}
                   className="btn btn-ghost rounded-xl"
                 >
-                  Cancel
-                </button>
+                  {t("انصراف")}</button>
                 <button
                   type="submit"
                   disabled={isPending || !title.trim()}
@@ -167,12 +153,12 @@ export function CreateBoardModal({ isOpen, onClose, onSubmit, isPending }: Creat
                   {isPending ? (
                     <>
                       <span className="loading loading-spinner loading-sm" />
-                      <span>Creating...</span>
+                      <span>{t("Creating...")}</span>
                     </>
                   ) : (
                     <>
                       <Add size={16} />
-                      <span>Create board</span>
+                      <span>{t("ساخت کانبان")}</span>
                     </>
                   )}
                 </button>
