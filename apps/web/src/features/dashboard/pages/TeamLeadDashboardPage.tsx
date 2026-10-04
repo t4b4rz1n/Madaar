@@ -705,7 +705,7 @@ const TeamLeadDashboardPage = () => {
       className="mx-auto max-w-[1480px] space-y-5 sm:space-y-6"
     >
       {/* ─── Header ─── */}
-      <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <section className="heledone-page-heading flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex items-center gap-2 text-xs font-black uppercase  text-primary">
             <Chart21 size={15} />

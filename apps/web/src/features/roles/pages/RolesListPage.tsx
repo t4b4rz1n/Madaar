@@ -91,8 +91,8 @@ const RolesListPage = () => {
   }
 
   return (
-    <div className="w-full p-4 sm:p-6 lg:p-8">
-      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+    <div className="heledone-page-content w-full">
+      <div className="heledone-page-heading mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-base-content sm:text-3xl tracking-tight">
             {t("Roles Management")}</h1>

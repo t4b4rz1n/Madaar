@@ -687,7 +687,7 @@ export default function ProjectDetailsPage() {
   return (
     <div key={id} className="space-y-5 pb-10">
       {/* Top Header */}
-      <div className="flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
+      <div className="heledone-page-heading flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/projects")}

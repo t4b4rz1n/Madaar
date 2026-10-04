@@ -29,7 +29,7 @@ export const ViewSwitcher = <T extends ViewMode>({
   const t = useTranslation();
   return (
     <div
-      className={`flex items-center p-0.5 bg-base-200/40 backdrop-blur-md border border-base-content/8 rounded-lg ${className}`}
+      className={`flex items-center p-1 bg-heledone-brand-soft border border-heledone-border rounded-xl ${className}`}
       role="group"
       aria-label={t("Choose view")}
     >
@@ -51,13 +51,13 @@ export const ViewSwitcher = <T extends ViewMode>({
               {isActive && (
                 <motion.div
                   layoutId="active-view-indicator"
-                  className="absolute inset-0 bg-base-100 shadow-sm rounded-md"
+                  className="absolute inset-0 bg-base-100 shadow-sm rounded-lg"
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 />
               )}
               <div
                 className={`relative flex items-center justify-center w-full gap-2 transition-colors duration-300 ${
-                  isActive ? "text-base-content" : "text-heledone-ink-muted"
+                  isActive ? "text-primary" : "text-heledone-ink-muted"
                 }`}
               >
                 <Icon size={18} />

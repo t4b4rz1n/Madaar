@@ -30,7 +30,7 @@ export const OnboardingWizard: React.FC = () => {
   return (
     <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4 font-sans">
       {/* Logo / Brand area */}
-      <div className="mb-8 text-center"><div className="mb-5 flex justify-center"><Brand /></div>
+      <div className="relative mb-8 w-full max-w-4xl overflow-hidden rounded-2xl border border-heledone-border bg-base-100 px-5 py-8 text-center"><img src="/images/heledone-assets/coastal-welcome.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15" /><div className="relative mb-5 flex justify-center"><Brand /></div>
         <h1 className="text-2xl font-bold text-base-content">{t("وقت هماهنگ شدن است")}</h1>
         <p className="text-heledone-ink-muted text-sm mt-1">{t("فضای کار تیم‌تان را در هله‌دان بسازید")}</p>
       </div>

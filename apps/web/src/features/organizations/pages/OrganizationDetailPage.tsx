@@ -166,7 +166,7 @@ export default function OrganizationDetailPage() {
         {t("Back to organizations")}</button>
 
       {/* Organization header */}
-      <div className="heledone-surface rounded-[24px] border border-base-content/10 bg-base-100/90 p-5 shadow-heledone-card backdrop-blur-xl sm:p-6">
+      <div className="heledone-page-heading">
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
           <div className="flex min-w-0 items-center gap-4">
             <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">

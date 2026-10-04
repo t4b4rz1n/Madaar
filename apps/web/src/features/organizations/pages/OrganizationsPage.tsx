@@ -256,7 +256,7 @@ export default function OrganizationsPage() {
 
   return (
     <div className="min-h-[calc(100vh-121px)] space-y-6 px-1 pb-10 sm:px-0">
-      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+      <div className="heledone-page-heading flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div><div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase  text-primary"><People size={16} />  {t("Organization")}</div><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("Organizations")}</h1><p className="mt-2 max-w-2xl text-heledone-ink-muted">{t("Create the spaces where your projects, teams and people come together.")}</p></div>
         <button type="button" onClick={() => setModalOrganization(null)} className="btn btn-primary w-full rounded-xl px-5 shadow-lg shadow-primary/15 sm:w-auto"><Add size={18} />  {t("New organization")}</button>
       </div>

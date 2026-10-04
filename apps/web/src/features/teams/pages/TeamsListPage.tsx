@@ -215,12 +215,12 @@ export default function TeamsListPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="heledone-surface min-h-[calc(100vh-121px)] rounded-[24px] border border-base-content/10 bg-base-100/85 p-4 shadow-heledone-card backdrop-blur-xl sm:p-6"
+        className="heledone-page-content min-h-[calc(100vh-121px)]"
       >
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center"
+          className="heledone-page-heading flex flex-col justify-between gap-5 lg:flex-row lg:items-center"
         >
           <div>
             <div className="flex flex-wrap items-center gap-2">

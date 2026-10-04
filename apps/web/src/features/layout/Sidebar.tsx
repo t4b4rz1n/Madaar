@@ -96,7 +96,7 @@ export const Sidebar = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const { hasAllPermissions, hasAnyPermission } = usePermissions();
-  const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen } = useLayoutStore();
+  const { isCollapsed, setIsCollapsed, isSidebarOpen, setSidebarOpen, sidebarWidth } = useLayoutStore();
   const { activeProjectId, setActiveProject } = useTaskStore();
 
 
@@ -109,6 +109,8 @@ export const Sidebar = () => {
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname, setSidebarOpen]);
+
+  const sidebarCollapsed = isCollapsed && !isSidebarOpen;
 
   const primaryItems = getVisibleDrawerItems(user, hasAllPermissions, hasAnyPermission, true);
 
@@ -128,17 +130,17 @@ export const Sidebar = () => {
 
       <motion.aside
         aria-label={t("ناوبری اصلی")}
-        variants={sidebarVariants}
-        animate={isCollapsed ? "collapsed" : "expanded"}
-        className={`heledone-sidebar fixed start-0 top-0 z-50 flex h-full flex-col bg-base-100 lg:relative ${
-          isSidebarOpen ? "visible translate-x-0" : "invisible -translate-x-full rtl:translate-x-full"
-        } transition-transform duration-300 ease-in-out lg:visible lg:translate-x-0`}
+        variants={{ ...sidebarVariants, expanded: { ...sidebarVariants.expanded, width: sidebarWidth } }}
+        animate={sidebarCollapsed ? "collapsed" : "expanded"}
+        data-open={isSidebarOpen}
+        data-collapsed={sidebarCollapsed}
+        className="heledone-sidebar fixed start-0 top-0 z-50 flex h-full shrink-0 flex-col bg-base-100"
       >
         {/* Header Logo */}
-        <div className="flex h-20 items-center justify-between border-b border-base-content/8 px-2">
-          {isCollapsed && <Link to="/dashboard" aria-label={t("خانه هله‌دان")}><BrandBeats /></Link>}
+        <div className={`heledone-sidebar-header flex h-20 shrink-0 items-center ${sidebarCollapsed ? 'flex-col justify-center gap-1 px-2' : 'justify-between px-4'}`}>
+          {sidebarCollapsed && <Link to="/dashboard" aria-label={t("خانه هله‌دان")}><BrandBeats /></Link>}
           <AnimatePresence>
-            {!isCollapsed && (
+            {!sidebarCollapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <Link to="/dashboard" aria-label={t("خانه هله‌دان")}><Brand /></Link>
               </motion.div>
@@ -148,12 +150,12 @@ export const Sidebar = () => {
             type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="motion-interactive btn btn-ghost btn-sm btn-circle hidden text-heledone-ink-muted hover:bg-base-200 hover:text-primary lg:flex"
-            aria-label={isCollapsed ? t("باز کردن منو") : t("جمع کردن منو")}
-            title={isCollapsed ? t("باز کردن منو") : t("جمع کردن منو")}
+            aria-label={sidebarCollapsed ? t("باز کردن منو") : t("جمع کردن منو")}
+            title={sidebarCollapsed ? t("باز کردن منو") : t("جمع کردن منو")}
           >
             <ArrowLeft2
               className={`transition-transform duration-300 ${
-                (isCollapsed !== (getDirection() === "rtl")) ? "rotate-180" : ""
+                (sidebarCollapsed !== (getDirection() === "rtl")) ? "rotate-180" : ""
               }`}
             />
           </button>
@@ -163,14 +165,14 @@ export const Sidebar = () => {
         {/* Scrollable Navigation */}
         <nav
           aria-label={t("ناوبری اصلی")}
-          className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4 pt-2 scrollbar-thin scrollbar-thumb-base-300"
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4 pt-2 scrollbar-thin scrollbar-thumb-base-300"
         >
           {/* Main Workspace items */}
           <ul className="space-y-1">
             <li className="px-3 pb-1 pt-2">
               <span
                 className={
-                  isCollapsed
+                  sidebarCollapsed
                     ? "sr-only"
                     : "text-[0.65rem] font-bold uppercase  text-heledone-ink-muted"
                 }
@@ -195,14 +197,15 @@ export const Sidebar = () => {
                 >
                   <Link
                     to={itemPath}
+                    aria-current={isActive ? "page" : undefined}
                     onClick={() => setSidebarOpen(false)}
                     onMouseEnter={() => routePrefetchers[item.link]?.()}
-                    className={`motion-interactive flex h-11 items-center gap-3 overflow-hidden rounded-xl px-3 ${
+                    className={`motion-interactive flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 ${sidebarCollapsed ? 'justify-center' : ''} ${
                       isActive
                         ? "bg-primary/10 text-primary font-bold"
                         : "text-heledone-ink-muted hover:bg-base-200/80 hover:text-base-content font-medium"
                     }`}
-                    title={isCollapsed ? item.title : ""}
+                    title={sidebarCollapsed ? item.title : ""}
                   >
                     <div
                       className={`flex h-6 w-6 shrink-0 items-center justify-center ${
@@ -213,13 +216,13 @@ export const Sidebar = () => {
                     </div>
 
                     <AnimatePresence>
-                      {!isCollapsed && (
+                      {!sidebarCollapsed && (
                         <motion.span
                           variants={textVariants}
                           initial="collapsed"
                           animate="expanded"
                           exit="collapsed"
-                          className="whitespace-nowrap text-sm"
+                          className="min-w-0 text-sm leading-6"
                         >
                           {item.title}
                         </motion.span>
@@ -236,13 +239,13 @@ export const Sidebar = () => {
             <div className="flex items-center justify-between px-3 pb-2">
               <span
                 className={
-                  isCollapsed
+                  sidebarCollapsed
                     ? "sr-only"
                     : "text-[0.65rem] font-bold uppercase  text-heledone-ink-muted"
                 }
               >
                 {t("پروژه‌های من")}</span>
-              {!isCollapsed && (
+              {!sidebarCollapsed && (
                 <button
                   type="button"
                   onClick={() => navigate("/projects")}
@@ -273,14 +276,14 @@ export const Sidebar = () => {
                           ? "bg-base-200 text-base-content font-semibold"
                           : "text-heledone-ink-muted hover:bg-base-200/50 hover:text-base-content"
                       }`}
-                      title={isCollapsed ? project.name : ""}
+                      title={sidebarCollapsed ? project.name : ""}
                     >
                       <span
                         className="h-2.5 w-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: color }}
                       />
                       <AnimatePresence>
-                        {!isCollapsed && (
+                        {!sidebarCollapsed && (
                           <motion.span
                             variants={textVariants}
                             initial="collapsed"
@@ -297,15 +300,25 @@ export const Sidebar = () => {
                 );
               })}
 
-              {!isCollapsed && (!projects || projects.length === 0) && (
+              {!sidebarCollapsed && (!projects || projects.length === 0) && (
                 <li className="px-3 text-xs text-heledone-ink-muted">{t("هنوز پروژه فعالی ندارید")}</li>
               )}
             </ul>
           </div>
         </nav>
 
+        <div className={`pointer-events-none relative hidden shrink-0 overflow-hidden lg:block ${sidebarCollapsed ? 'h-12' : 'h-28'}`} aria-hidden="true">
+          <img src="/images/heledone-assets/palm-sunset.png" alt="" className="absolute inset-0 h-full w-full object-cover object-center opacity-90" />
+        </div>
+
         {/* Footer with Admin Settings button & Profile */}
-        <div className="space-y-1 border-t border-base-content/8 p-2">
+        <div className="shrink-0 space-y-1 border-t border-base-content/8 p-2">
+          <Link to="/profile" onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 rounded-xl py-3 hover:bg-base-100 ${sidebarCollapsed ? 'justify-center px-1' : 'px-3'}`} aria-label={t("حساب من")}>
+            <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/10 text-primary">
+              {user?.profile_image_url ? <img src={user.profile_image_url} alt="" className="size-full object-cover" /> : <span className="font-bold">{user?.first_name?.[0] || user?.username?.[0]}</span>}
+            </span>
+            {!sidebarCollapsed && <span className="min-w-0"><span className="block truncate text-sm font-bold">{user?.first_name} {user?.last_name}</span><span className="block text-xs text-heledone-ink-muted">{t("حساب من")}</span></span>}
+          </Link>
           {/* تنظیمات فضای کار Link */}
           <Link
             to="/settings"
@@ -315,12 +328,12 @@ export const Sidebar = () => {
               location.pathname === "/settings" || location.pathname.startsWith("/settings")
                 ? "bg-primary/10 text-primary font-bold"
                 : "text-base-content/70 hover:bg-base-200 hover:text-primary"
-            } ${isCollapsed ? "justify-center" : ""}`}
-            title={isCollapsed ? t("تنظیمات فضای کار") : ""}
+            } ${sidebarCollapsed ? "justify-center" : ""}`}
+            title={sidebarCollapsed ? t("تنظیمات فضای کار") : ""}
           >
             <Setting2 size="18" className="shrink-0 text-heledone-ink-muted" />
             <AnimatePresence>
-              {!isCollapsed && (
+              {!sidebarCollapsed && (
                 <motion.span
                   variants={textVariants}
                   initial="collapsed"

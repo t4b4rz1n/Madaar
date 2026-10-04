@@ -5,6 +5,7 @@ import { getAdminDrawerItems } from "../features/layout/DrawerItems";
 import { useAuthStore } from "../features/auth/store/authStore";
 import { usePermissions } from "../features/auth/hooks/usePermissions";
 import { LanguagePicker } from "../components/LanguagePicker";
+import { PageHeading } from "../components/PageHeading";
 
 const SettingsPage: React.FC = () => {
   const t = useTranslation();
@@ -15,12 +16,7 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 py-2">
       {/* Header */}
-      <div className="flex flex-col gap-1 border-b border-base-content/8 pb-4">
-        <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
-          {t("Settings & Administration")}</h1>
-        <p className="text-xs font-medium text-heledone-ink-muted">
-          {t("Manage organization settings, user roles, team structures, and system configurations.")}</p>
-      </div>
+      <PageHeading title={t("Settings & Administration")} description={t("Manage organization settings, user roles, team structures, and system configurations.")} illustration="palm-sunset" />
 
       <LanguagePicker />
 

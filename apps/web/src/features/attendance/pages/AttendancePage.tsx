@@ -105,10 +105,10 @@ export const AttendancePage: React.FC = () => {
   const activeTabMeta = visibleTabs.find((tab) => tab.id === activeTab) || visibleTabs[0];
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-base-100 text-base-content custom-scrollbar">
-      <div className="mx-auto w-full max-w-[1480px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <div className="heledone-attendance flex h-full flex-col overflow-y-auto bg-base-200 text-base-content custom-scrollbar">
+      <div className="mx-auto w-full max-w-[1480px]">
         {/* Top Header */}
-        <header className="mb-5 flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
+        <header className="heledone-page-heading mb-5 flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
@@ -196,7 +196,7 @@ export const AttendancePage: React.FC = () => {
                 aria-selected={isActive}
                 aria-controls={`attendance-panel-${id}`}
                 onClick={() => setActiveTab(id)}
-                className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
+                className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
                   isActive
                     ? 'bg-primary text-primary-content shadow-xs'
                     : 'text-heledone-ink-muted hover:bg-base-200 hover:text-base-content'

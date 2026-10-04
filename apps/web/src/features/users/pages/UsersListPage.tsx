@@ -156,12 +156,12 @@ export default function UsersListPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="heledone-glass shadow-heledone-card min-h-[calc(100vh-121px)] rounded-2xl p-5 sm:p-8 flex flex-col"
+        className="heledone-page-content min-h-[calc(100vh-121px)] flex flex-col"
       >
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="heledone-page-heading flex flex-col md:flex-row md:justify-between md:items-start gap-4"
         >
           <div>
             <span className="text-[13px] font-semibold tracking-wider text-primary uppercase">{t("DIRECTORY")}</span>

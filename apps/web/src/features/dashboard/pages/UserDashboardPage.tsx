@@ -1,6 +1,5 @@
 import { getIntlLocale, t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
-import { BrandBeats } from "../../../components/Brand";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,7 +7,6 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Clock,
   TaskSquare,
-  Ticket,
   NoteText,
   Briefcase, Timer1,
   Play,
@@ -291,10 +289,11 @@ export const UserDashboardPage = () => {
       className="space-y-6 pb-12"
     >
       {/* ─── 1. Header Bar with Greetings & Quick Actions ─── */}
-      <div className="heledone-welcome flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
+      <div className="heledone-welcome relative min-h-[138px] overflow-hidden rounded-2xl border border-[#DCE6E2] bg-[#FFF8EE] shadow-sm">
+        <img src="/images/heledone-assets/coastal-welcome.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-left" />
+        <div className="relative z-10 flex h-full flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+        <div className="ms-auto max-w-[52%] text-end">
           <div className="flex items-center gap-3">
-            <BrandBeats />
             <h1 className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
               {t("سلام")} {displayName}{t("، روزت به‌خیر")}</h1>
           </div>
@@ -338,10 +337,11 @@ export const UserDashboardPage = () => {
             </span>
           </button>
         </div>
+        </div>
       </div>
 
       {/* ─── 2. Top Metrics Grid (4 Summary Cards) ─── */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {/* Attendance */}
         <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
           <div className="flex items-center justify-between text-heledone-ink-muted">
@@ -409,23 +409,6 @@ export const UserDashboardPage = () => {
           </p>
         </div>
 
-        {/* Active Tickets */}
-        <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
-          <div className="flex items-center justify-between text-heledone-ink-muted">
-            <span className="text-[13px] font-bold uppercase tracking-wider">
-              {t("درخواست‌های باز")}</span>
-            <Ticket size={16} className="text-warning" />
-          </div>
-          <p className="mt-2 text-base font-bold text-base-content">
-            {openTickets.length}{" "}
-            {openTickets.length === 1 ? t("درخواست") : t("درخواست‌ها")}
-          </p>
-          <p className="mt-0.5 text-[13px] font-medium text-heledone-ink-muted">
-            {openTickets.length
-              ? t("درخواست‌های پشتیبانی باز")
-              : t("درخواست بازی ندارید")}
-          </p>
-        </div>
       </div>
 
       {/* ─── 3. Main Dashboard Layout (2 Columns) ─── */}

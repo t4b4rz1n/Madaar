@@ -66,7 +66,7 @@ function StatusFilterDropdown({
   const selectedOption = statusFilterOptions.find((opt) => opt.value === value) || statusFilterOptions[0];
 
   // Close on outside click
-  useMemo(() => {
+  useEffect(() => {
     const listener = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
@@ -298,11 +298,11 @@ function ProjectCard({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.25, type: "spring", bounce: 0.2 }}
       onClick={onClick}
-      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl"
+      className="heledone-project-card group relative cursor-pointer rounded-2xl border border-heledone-border bg-base-100 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-heledone-raised"
     >
       {/* Subtle Halo effect on the right side */}
       <div
-        className="absolute -end-16 -top-16 h-48 w-48 rounded-full opacity-10 blur-[40px] pointer-events-none transition-opacity duration-300 group-hover:opacity-20"
+        className="absolute inset-x-5 top-0 h-1 rounded-b-full opacity-80 pointer-events-none"
         style={{ backgroundColor: projectColor }}
       />
 
@@ -480,7 +480,7 @@ export default function ProjectsPage() {
       className="min-h-[calc(100vh-121px)] space-y-6 pb-10"
     >
       {/* Top Bar: Title & Action & Search */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="heledone-page-heading flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
@@ -493,7 +493,7 @@ export default function ProjectsPage() {
             {t("Select a project to access its board, tasks, and settings.")}</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="heledone-heading-actions flex flex-wrap items-center gap-3">
           <label className="relative block w-full sm:w-64">
             <SearchNormal1
               size={15}
@@ -539,7 +539,7 @@ export default function ProjectsPage() {
           ))}
         </div>
       ) : projectsQuery.isError ? (
-        <div className="rounded-2xl border border-error bg-error p-8 text-center">
+        <div className="rounded-2xl border border-error/25 bg-error/5 p-8 text-center">
           <p className="font-semibold text-error">{t("Projects could not be loaded.")}</p>
           <button
             type="button"

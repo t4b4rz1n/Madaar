@@ -9,7 +9,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:i18n": "node scripts/test-i18n.mjs"
+    "test:i18n": "node scripts/test-i18n.mjs",
+    "test:api": "node scripts/test-api.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

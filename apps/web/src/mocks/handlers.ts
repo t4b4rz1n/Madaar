@@ -1,3 +1,4 @@
+import { getApiUrl } from "../core/api/config";
 import { http, HttpResponse } from "msw";
 import { db, mockProfile, mockRoles, mockUsers } from "./db";
 import type { UserFormData, UserUpdateData } from "../features/users/types";
@@ -11,7 +12,7 @@ import type { EmployeeDashboard } from "../features/dashboard/types";
 import type { ManagerDashboard, ManagerMemberDetail } from "../features/dashboard/types";
 import type { TimeOffRequest } from "../features/attendance/types";
 
-const apiUrl = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, "");
+const apiUrl = getApiUrl();
 
 const createPaginatedResponse = <T>(
   results: T[],

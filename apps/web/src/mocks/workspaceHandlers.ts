@@ -1,9 +1,10 @@
+import { getApiUrl } from "../core/api/config";
 import { http, HttpResponse } from "msw";
 import { mockProfile, mockProjectMembers } from "./db";
 import type { Board, Task } from "../features/tasks/types";
 
 // Local-only fixtures for reviewing the main working screens with VITE_USE_MOCK=true.
-const base = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, "");
+const base = getApiUrl();
 const respond = (data: unknown) => HttpResponse.json({ status: true, message: "Success", data });
 const board: Board = {
   id: "1", title: "کارهای تیم", background_color: "#DF765B",

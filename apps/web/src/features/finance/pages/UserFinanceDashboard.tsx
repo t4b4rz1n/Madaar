@@ -14,6 +14,7 @@ import {
 } from "iconsax-reactjs";
 import { useMyFinanceDashboard } from "../api/financeApi";
 import PageLoader from "../../../components/PageLoader";
+import { PageHeading } from "../../../components/PageHeading";
 
 const formatCurrency = (value: number, currency = "IRR") => {
   return `${value.toLocaleString(getIntlLocale())} ${currency === "IRR" ? translate("ریال") : currency}`;
@@ -67,14 +68,7 @@ export const UserFinanceDashboard = () => {
       className="space-y-6 pb-12"
     >
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
-            {t("حقوق و گزارش مالی")}</h1>
-          <p className="mt-0.5 text-xs text-heledone-ink-muted">
-            {t("نمای درآمد، پرداخت‌ها و کارکرد شما.")}</p>
-        </div>
-      </div>
+      <PageHeading title={t("حقوق و گزارش مالی")} description={t("نمای درآمد، پرداخت‌ها و کارکرد شما.")} />
 
       {/* ── Summary Cards ───────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

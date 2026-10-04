@@ -129,9 +129,9 @@ export const CheckInOut: React.FC = () => {
 
   return (
     <section className="heledone-surface rounded-[26px] border border-base-content/10 bg-base-100 p-5 sm:p-6">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-5">
         <div className="flex items-start gap-3">
-          <div className="grid size-11 place-items-center rounded-2xl bg-success/10 text-success">
+          <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-success/10 text-success">
             <Timer1 size={23} />
           </div>
           <div>

@@ -125,8 +125,8 @@ export const AutomationsPage = () => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-7xl space-y-6 p-6 md:p-10">
-      <header className="flex flex-col justify-between gap-4 border-b border-base-content/10 pb-6 md:flex-row md:items-end">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-7xl space-y-5">
+      <header className="heledone-page-heading flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h1 className="flex items-center gap-3 text-3xl font-bold text-base-content">
             <Flash size={30} variant="Bold" className="text-primary" />

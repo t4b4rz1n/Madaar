@@ -824,8 +824,8 @@ export const KanbanBoard: React.FC = () => {
                 <DroppableColumn
                   key={status.id}
                   id={`col-${status.id}`}
-                  className={`min-w-[282px] w-[282px] flex flex-col bg-transparent transition-opacity ${
-                    isDoneColumn ? 'border-t-2 border-success/30 rounded-t-xl pt-2' : ''
+                  className={`heledone-kanban-column min-w-[282px] w-[282px] flex flex-col transition-opacity ${
+                    isDoneColumn ? 'heledone-kanban-column-done' : ''
                   }`}
                   header={
                     <div className="mb-3 flex shrink-0 items-center justify-between px-1">

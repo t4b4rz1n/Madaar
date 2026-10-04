@@ -64,7 +64,7 @@ export const AdminFinanceDashboard = () => {
       className="space-y-6 pb-12"
     >
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-end">
+      <div className="heledone-page-heading flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
             {t("Organization Finances")}</h1>

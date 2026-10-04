@@ -122,7 +122,7 @@ export const MainLayout = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-base-200 font-sans text-base-content">
+    <div className="heledone-workspace flex h-screen overflow-hidden bg-base-200 font-sans text-base-content">
       <TopProgressBar />
       <a
         href="#main-content"
@@ -138,7 +138,7 @@ export const MainLayout = () => {
           breadcrumbs={breadcrumbs}
         />
 
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 outline-none sm:px-8 sm:py-7">
+        <main id="main-content" data-section={pathname.split('/')[1] || 'dashboard'} tabIndex={-1} className="heledone-page flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 outline-none sm:px-6 sm:py-5">
           <ErrorBoundary FallbackComponent={ErrorFallback}>
             <Suspense fallback={<ContentLoader />}>
               <Outlet />
@@ -156,4 +156,3 @@ export const MainLayout = () => {
     </div>
   );
 };
-

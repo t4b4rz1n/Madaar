@@ -1,6 +1,7 @@
 import { useTranslation } from "../../../i18n/locale";
 import { motion } from "motion/react";
 import { ProfileEditForm } from "../components/ProfileEditForm";
+import { PageHeading } from "../../../components/PageHeading";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -19,14 +20,9 @@ const ProfilePage = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-transparent min-h-[calc(100vh-121px)] p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto"
+      className="bg-transparent min-h-[calc(100vh-121px)] max-w-6xl mx-auto space-y-5"
     >
-      <motion.div variants={itemVariants} className="flex flex-col gap-1 border-b border-base-content/10 pb-6 mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-base-content">
-          {t("Account Settings")}</h1>
-        <p className="text-sm font-semibold text-heledone-ink-muted mt-1">
-          {t("Manage your personal information, account security, and notification preferences.")}</p>
-      </motion.div>
+      <PageHeading title={t("Account Settings")} description={t("Manage your personal information, account security, and notification preferences.")} illustration="coastal-house" />
       <motion.div variants={itemVariants}>
         <ProfileEditForm />
       </motion.div>

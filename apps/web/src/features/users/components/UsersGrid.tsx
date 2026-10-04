@@ -129,7 +129,7 @@ export const UsersGrid = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="group relative flex flex-col justify-between rounded-2xl border border-base-content/10 bg-base-100/30 p-5 backdrop-blur-xl transition-all duration-200 hover:-translate-y-1 hover:border-base-content/25 hover:bg-base-100/50 hover:shadow-xl"
+              className="heledone-surface group relative flex flex-col justify-between rounded-2xl border border-heledone-border bg-base-100 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-heledone-raised"
             >
               {/* Avatar section with status dot */}
               <div className="flex items-center gap-4 mb-5">

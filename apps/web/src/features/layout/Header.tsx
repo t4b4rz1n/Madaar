@@ -50,7 +50,7 @@ export const Header = ({
       variants={headerVariants}
       initial="hidden"
       animate="visible"
-      className="heledone-glass sticky top-0 z-30 flex min-h-14 items-center justify-between px-4 sm:px-8"
+      className="heledone-topbar sticky top-0 z-30 flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6"
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <motion.button
@@ -65,7 +65,7 @@ export const Header = ({
         </motion.button>
 
         <nav
-          className="flex min-w-0 items-center overflow-hidden text-sm sm:text-base"
+          className="hidden min-w-0 items-center overflow-hidden text-sm xl:flex"
           aria-label={t("مسیر صفحه")}
         >
           {breadcrumbs.map((crumb, index) => (
@@ -89,19 +89,13 @@ export const Header = ({
             </div>
           ))}
         </nav>
+        <button type="button" onClick={onCommandMenuClick} className="heledone-global-search flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-start text-sm text-heledone-ink-muted" aria-label={t("جست‌وجو در فضای کار")}>
+          <span className="truncate">{t("جست‌وجو در فضای کار")}</span>
+          <SearchNormal1 size={20} className="shrink-0" />
+        </button>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onCommandMenuClick}
-          className="motion-interactive inline-flex h-10 w-10 items-center justify-center gap-2 rounded-xl border border-base-content/10 bg-base-100/70 text-sm text-heledone-ink-muted shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-auto sm:px-3"
-          aria-label={t("جست‌وجو در فضای کار")}
-        >
-          <SearchNormal1 size={18} />
-          <span className="hidden sm:inline">{t("جست‌وجو")}</span>
-          <kbd className="hidden rounded-md border border-base-content/10 bg-base-200 px-1.5 py-0.5 text-[0.65rem] sm:inline">{t("⌘K")}</kbd>
-        </button>
         {canViewNotifications && <NotificationCenter />}
         <ThemeToggle />
 

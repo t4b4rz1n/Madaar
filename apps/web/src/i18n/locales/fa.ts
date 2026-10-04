@@ -1,5 +1,8 @@
 // Source messages are stable translation keys. Keep both catalogs in sync.
 const messages = {
+  "Choose a Heledone avatar": "انتخاب آواتار هله‌دان",
+  "Choose avatar {number}": "انتخاب آواتار {number}",
+  "Profile image could not be loaded.": "دریافت تصویر پروفایل ممکن نشد.",
   "هله‌دان": "هله‌دان",
   "heledone": "heledone",
   "انصراف": "انصراف",
