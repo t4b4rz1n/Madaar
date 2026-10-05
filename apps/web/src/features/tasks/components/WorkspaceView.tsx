@@ -7,10 +7,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'motion/react';
 import { getBoards, createBoard, updateBoard, deleteBoard } from '../api/tasksApi';
 import { useTaskStore } from '../store/useTaskStore';
+import { CreateBoardModal } from './CreateBoardModal';
 import {
   Add,
   FolderAdd,
-  CloseCircle,
   Element3,
   SearchNormal1,
   Sort,
@@ -48,13 +48,7 @@ export const WorkspaceView: React.FC = () => {
     isStaff;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [boardTitle, setBoardTitle] = useState('');
-  const [boardColor, setBoardColor] = useState('#EAF5F2');
-
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editColor, setEditColor] = useState('');
-
   const [deletingBoard, setDeletingBoard] = useState<Board | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,12 +92,12 @@ export const WorkspaceView: React.FC = () => {
   }, [boards]);
 
   const createBoardMutation = useMutation({
-    mutationFn: () => createBoard(activeProjectId!, boardTitle, boardColor),
+    mutationFn: ({ title, color }: { title: string; color: string }) =>
+      createBoard(activeProjectId!, title, color),
     onSuccess: (newBoard) => {
       queryClient.invalidateQueries({ queryKey: ['boards', activeProjectId] });
       setActiveBoard(newBoard.id.toString());
       setIsModalOpen(false);
-      setBoardTitle('');
       toast.success(t("Board created successfully"));
     },
     onError: (err: any) => {
@@ -112,10 +106,10 @@ export const WorkspaceView: React.FC = () => {
   });
 
   const updateBoardMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: ({ title, color }: { title: string; color: string }) =>
       updateBoard(editingBoard!.id.toString(), {
-        title: editTitle,
-        background_color: editColor,
+        title,
+        background_color: color,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['boards', activeProjectId] });
@@ -142,8 +136,6 @@ export const WorkspaceView: React.FC = () => {
   const openEditModal = (board: Board, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingBoard(board);
-    setEditTitle(board.title);
-    setEditColor(board.background_color || presetColors[0].value);
     setOpenMenuId(null);
   };
 
@@ -363,97 +355,33 @@ export const WorkspaceView: React.FC = () => {
       </div>
 
       {/* Create Board Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
-            onClick={() => { setIsModalOpen(false); setBoardTitle(''); setBoardColor(presetColors[0].value); }}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.97 }}
-              transition={{ type: 'spring', bounce: 0.15, duration: 0.35 }}
-              className="heledone-surface relative w-full max-w-md overflow-hidden rounded-[28px] border border-base-content/10 bg-base-100/95 shadow-heledone-floating backdrop-blur-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="max-h-[calc(100vh-2rem)] overflow-y-auto">
-                <header className="flex items-start justify-between gap-4 border-b border-base-content/10 bg-base-200/20 px-6 py-5">
-                  <div className="min-w-0 flex-1">
-                    <p className="mb-2 text-xs font-bold uppercase  text-primary">{t("Board Setup")}</p>
-                    <h2 className="text-2xl font-semibold tracking-tight text-base-content">{t("Create a new board")}</h2>
-                    <p className="mt-1.5 text-sm leading-relaxed text-heledone-ink-muted">{t("Boards help organize tasks into different workflows.")}</p>
-                  </div>
-                  <button type="button" onClick={() => { setIsModalOpen(false); setBoardTitle(''); }} disabled={createBoardMutation.isPending} className="btn btn-ghost btn-square btn-sm shrink-0 rounded-xl text-heledone-ink-muted transition hover:bg-base-200">
-                    <CloseCircle size={20} />
-                  </button>
-                </header>
-                <form className="space-y-6 p-6" onSubmit={(e) => { e.preventDefault(); createBoardMutation.mutate(); }}>
-                  <div className="space-y-2">
-                    <label htmlFor="board-title" className="block text-sm font-medium text-base-content">{t("Board title")} <span className="text-error">*</span></label>
-                    <input id="board-title" type="text" required autoFocus value={boardTitle} onChange={(e) => setBoardTitle(e.target.value)} className="input input-bordered w-full rounded-xl bg-base-200/50 transition-colors focus:border-primary focus:bg-base-100 focus:outline-none" placeholder={t("e.g. Backend, Frontend, Design")} disabled={createBoardMutation.isPending} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-base-content">{t("Board color")}</label>
-                    <div className="grid grid-cols-5 gap-2">
-                      {presetColors.map((color) => (
-                        <button key={color.value} type="button" onClick={() => setBoardColor(color.value)} disabled={createBoardMutation.isPending} className={`relative h-10 rounded-xl transition-all ${boardColor === color.value ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100 scale-105' : 'hover:scale-105'}`} style={{ backgroundColor: color.value }} title={color.name}>
-                          {boardColor === color.value && (<div className="absolute inset-0 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></div>)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-col-reverse gap-3 border-t border-base-content/10 pt-6 sm:flex-row sm:justify-end">
-                    <button type="button" onClick={() => { setIsModalOpen(false); setBoardTitle(''); }} disabled={createBoardMutation.isPending} className="btn btn-ghost rounded-xl">{t("انصراف")}</button>
-                    <button type="submit" disabled={createBoardMutation.isPending || !boardTitle.trim()} className="btn btn-primary rounded-xl px-6 shadow-lg shadow-primary/15 disabled:opacity-50">
-                      {createBoardMutation.isPending ? (<><span className="loading loading-spinner loading-sm" /><span>{t("Creating...")}</span></>) : (<><Add size={16} /><span>{t("ساخت کانبان")}</span></>)}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <CreateBoardModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={(title, backgroundColor) => {
+          createBoardMutation.mutate({ title, color: backgroundColor });
+        }}
+        isPending={createBoardMutation.isPending}
+      />
 
       {/* Edit Board Modal */}
-      <AnimatePresence>
-        {editingBoard && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onClick={() => setEditingBoard(null)}>
-            <motion.div initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.97 }} transition={{ type: 'spring', bounce: 0.15, duration: 0.35 }} className="w-full max-w-md overflow-hidden rounded-[28px] border border-base-content/10 bg-base-100 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <header className="flex items-start justify-between gap-4 border-b border-base-content/10 bg-base-200/20 px-6 py-5">
-                <div className="min-w-0 flex-1">
-                  <p className="mb-1 text-xs font-bold uppercase  text-primary">{t("Edit Board")}</p>
-                  <h2 className="text-xl font-semibold tracking-tight text-base-content">{t("Update board details")}</h2>
-                </div>
-                <button type="button" onClick={() => setEditingBoard(null)} className="btn btn-ghost btn-square btn-sm shrink-0 rounded-xl text-heledone-ink-muted"><CloseCircle size={20} /></button>
-              </header>
-              <form className="space-y-5 p-6" onSubmit={(e) => { e.preventDefault(); updateBoardMutation.mutate(); }}>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-base-content">{t("Board title")} <span className="text-error">*</span></label>
-                  <input type="text" required autoFocus value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="input input-bordered w-full rounded-xl bg-base-200/50 focus:border-primary focus:bg-base-100 focus:outline-none" />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-base-content">{t("Board color")}</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {presetColors.map((color) => (
-                      <button key={color.value} type="button" onClick={() => setEditColor(color.value)} className={`relative h-10 rounded-xl transition-all ${editColor === color.value ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100 scale-105' : 'hover:scale-105'}`} style={{ backgroundColor: color.value }} title={color.name}>
-                        {editColor === color.value && (<div className="absolute inset-0 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></div>)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col-reverse gap-3 border-t border-base-content/10 pt-4 sm:flex-row sm:justify-end">
-                  <button type="button" onClick={() => setEditingBoard(null)} className="btn btn-ghost rounded-xl">{t("انصراف")}</button>
-                  <button type="submit" disabled={updateBoardMutation.isPending || !editTitle.trim()} className="btn btn-primary rounded-xl px-6 disabled:opacity-50">
-                    {updateBoardMutation.isPending ? (<><span className="loading loading-spinner loading-sm" /><span>{t("در حال ذخیره…")}</span></>) : t("Save Changes")}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <CreateBoardModal
+        isOpen={Boolean(editingBoard)}
+        onClose={() => setEditingBoard(null)}
+        initialData={
+          editingBoard
+            ? {
+                title: editingBoard.title,
+                backgroundColor: editingBoard.background_color,
+              }
+            : null
+        }
+        mode="edit"
+        onSubmit={(title, backgroundColor) => {
+          updateBoardMutation.mutate({ title, color: backgroundColor });
+        }}
+        isPending={updateBoardMutation.isPending}
+      />
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>

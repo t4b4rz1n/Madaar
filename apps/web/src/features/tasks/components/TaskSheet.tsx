@@ -1,13 +1,17 @@
 import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
-import { t as translate, useTranslation, getDirection, formatRelativeTime } from "../../../i18n/locale";
+import { t as translate, useTranslation, formatRelativeTime } from "../../../i18n/locale";
+import { formatDisplayDate } from "../../../utils/date";
 import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Clock3, FileText, MessageCircle, Activity, Copy, Sparkles } from "lucide-react";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Add,
-  Calendar,
+  Calendar1,
+  CloseCircle,
   CloseSquare,
   Danger,
   Paperclip2,
@@ -15,7 +19,8 @@ import {
   Profile2User,
   Send2,
   Stop,
-  TaskSquare, Flag,
+  TaskSquare,
+  Flag,
   TickCircle,
   Trash,
 } from "iconsax-reactjs";
@@ -37,6 +42,7 @@ import {
   toggleChecklistItem,
   updateTask,
 } from "../api/tasksApi";
+import "./task-sheet.css";
 
 interface TaskSheetProps {
   task: Task | null;
@@ -57,23 +63,78 @@ const formatTime = (seconds?: number) => {
   const hours = Math.floor(value / 3600);
   const minutes = Math.floor((value % 3600) / 60);
   const secs = value % 60;
-  return [hours, minutes, secs].map((part) => part.toString().padStart(2, "0")).join(":");
+  return [hours, minutes, secs]
+    .map((part) => formatUiNumber(part, { minimumIntegerDigits: 2, useGrouping: false }))
+    .join(":");
 };
-
-
 
 const formatRelativeDate = formatRelativeTime;
 
-const initials = (firstName?: string, lastName?: string, username?: string) => {
-  const value = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-  return value || username?.[0]?.toUpperCase() || "U";
+export const getHeledoneAvatar = (id?: string | number, name?: string) => {
+  const seed = (String(id || "") + String(name || ""))
+    .split("")
+    .reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const index = (seed % 10) + 1;
+  return `/images/heledone-assets/avatar-${String(index).padStart(2, "0")}.png`;
 };
 
-const priorityConfig: Record<Task["priority"], { label: string; color: string; bg: string }> = {
-  low:      { get label() { return translate("اولویت کم"); },      color: "var(--color-heledone-todo)", bg: "bg-neutral/10 text-heledone-ink-muted" },
-  medium:   { get label() { return translate("اولویت متوسط"); },   color: "var(--color-primary)", bg: "bg-primary/10 text-primary" },
-  high:     { get label() { return translate("اولویت بالا"); },     color: "var(--color-warning)", bg: "bg-warning/10 text-warning" },
-  critical: { get label() { return translate("اولویت فوری"); }, color: "var(--color-error)", bg: "bg-error/10 text-error" },
+const getDueDateMeta = (isoString?: string | null) => {
+  if (!isoString) return null;
+  const target = new Date(isoString);
+  if (isNaN(target.getTime())) return null;
+
+  const now = new Date();
+  const diffMs = target.getTime() - now.getTime();
+
+  const isToday =
+    target.getFullYear() === now.getFullYear() &&
+    target.getMonth() === now.getMonth() &&
+    target.getDate() === now.getDate();
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow =
+    target.getFullYear() === tomorrow.getFullYear() &&
+    target.getMonth() === tomorrow.getMonth() &&
+    target.getDate() === tomorrow.getDate();
+
+  if (diffMs < 0) {
+    return {
+      status: "overdue" as const,
+      isOverdue: true,
+      label: translate("مهلت گذشته"),
+      badgeClass: "bg-error/15 text-error border-error/25",
+    };
+  }
+  if (isToday) {
+    return {
+      status: "today" as const,
+      isOverdue: false,
+      label: translate("امروز"),
+      badgeClass: "bg-warning/15 text-warning border-warning/25",
+    };
+  }
+  if (isTomorrow) {
+    return {
+      status: "tomorrow" as const,
+      isOverdue: false,
+      label: translate("فردا"),
+      badgeClass: "bg-primary/10 text-primary border-primary/25",
+    };
+  }
+  return {
+    status: "upcoming" as const,
+    isOverdue: false,
+    label: formatRelativeTime(target),
+    badgeClass: "bg-base-200 text-heledone-ink-muted border-base-content/10",
+  };
+};
+
+const priorityConfig: Record<Task["priority"], { label: string; color: string }> = {
+  low:      { get label() { return translate("اولویت کم"); },      color: "var(--color-heledone-todo)" },
+  medium:   { get label() { return translate("اولویت متوسط"); },   color: "var(--color-primary)" },
+  high:     { get label() { return translate("اولویت بالا"); },     color: "var(--color-heledone-sun)" },
+  critical: { get label() { return translate("اولویت فوری"); },    color: "var(--color-heledone-coral)" },
 };
 
 export const TaskSheet: React.FC<TaskSheetProps> = ({
@@ -109,6 +170,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   };
 
   const [dueDate, setDueDate] = useState(task?.due_date ? toLocalDatetimeInput(task.due_date) : "");
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const dueMeta = useMemo(() => getDueDateMeta(dueDate), [dueDate]);
   const [commentText, setCommentText] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [checklistText, setChecklistText] = useState("");
@@ -185,9 +248,11 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     },
     onError: (error: any) =>
       toast.error(
-        translateError(error.response?.data?.detail ||
-          error.response?.data?.error ||
-          "Failed to log manual time")
+        translateError(
+          error.response?.data?.detail ||
+            error.response?.data?.error ||
+            "Failed to log manual time"
+        )
       ),
   });
 
@@ -198,8 +263,18 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     setIsEditingDescription(Boolean(task.description));
     setPriority(task.priority || "low");
     setDueDate(task.due_date ? toLocalDatetimeInput(task.due_date) : "");
-    setActiveTab("overview");
   }, [task]);
+
+  useEffect(() => {
+    setActiveTab("overview");
+    setIsManualTimeOpen(false);
+  }, [taskId]);
+
+  useEffect(() => {
+    if (!titleRef.current) return;
+    titleRef.current.style.height = "auto";
+    titleRef.current.style.height = `${Math.min(titleRef.current.scrollHeight, 140)}px`;
+  }, [title, taskId]);
 
   useEffect(() => {
     if (isManualTimeOpen && task) {
@@ -246,16 +321,21 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     };
 
     window.addEventListener("keydown", handleKeyDown);
+    const focusFrame = window.requestAnimationFrame(() => {
+      sheetRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    });
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
       previousActiveElement.current?.focus();
     };
   }, [task, onClose]);
 
-  // Focus due date input when opened from the card menu's "سررسید" action
+  // Focus due date input when opened from card menu's due date action
   useEffect(() => {
     if (!focusDueDate || !task) return;
+    setIsDatePickerOpen(true);
     const timer = window.setTimeout(() => {
       dueDateInputRef.current?.focus();
       dueDateInputRef.current?.showPicker?.();
@@ -264,16 +344,13 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     return () => window.clearTimeout(timer);
   }, [focusDueDate, task, onFocusDueDateHandled]);
 
-
-
   const invalidateTaskDetails = () => {
     queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    queryClient.invalidateQueries({ queryKey: ["projects"] });
     queryClient.invalidateQueries({ queryKey: ["taskChecklists", taskId] });
     queryClient.invalidateQueries({ queryKey: ["taskComments", taskId] });
     queryClient.invalidateQueries({ queryKey: ["taskActivities", taskId] });
   };
-
 
   const updateMutation = useMutation({
     mutationFn: (patch: Partial<Task>) => updateTask(task!.id, patch),
@@ -315,7 +392,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   });
 
   const checklistToggleMutation = useMutation({
-    mutationFn: ({ id, completed: _completed }: { id: string | number; completed: boolean }) =>
+    mutationFn: ({ id }: { id: string | number; completed: boolean }) =>
       toggleChecklistItem(id),
     onSuccess: invalidateTaskDetails,
     onError: (error: any) =>
@@ -332,6 +409,46 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   const save = (patch: Partial<Task>) => {
     onPatch(task!.id, patch);
     updateMutation.mutate(patch);
+  };
+
+  const handleSetToday = () => {
+    const d = new Date();
+    d.setHours(18, 0, 0, 0);
+    const local = toLocalDatetimeInput(d.toISOString());
+    setDueDate(local);
+    save({ due_date: d.toISOString() });
+  };
+
+  const handleSetTomorrow = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(18, 0, 0, 0);
+    const local = toLocalDatetimeInput(d.toISOString());
+    setDueDate(local);
+    save({ due_date: d.toISOString() });
+  };
+
+  const handleSetNextWeek = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    d.setHours(18, 0, 0, 0);
+    const local = toLocalDatetimeInput(d.toISOString());
+    setDueDate(local);
+    save({ due_date: d.toISOString() });
+  };
+
+  const handleClearDueDate = () => {
+    setDueDate("");
+    save({ due_date: null as any });
+    setIsDatePickerOpen(false);
+    toast.success(t("حذف سررسید"));
+  };
+
+  const handleTimePreset = (timeStr: string) => {
+    const datePart = dueDate ? dueDate.split("T")[0] : new Date().toISOString().split("T")[0];
+    const newVal = `${datePart}T${timeStr}`;
+    setDueDate(newVal);
+    save({ due_date: new Date(newVal).toISOString() });
   };
 
   const elapsedSeconds = useMemo(() => {
@@ -355,10 +472,10 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   const assignee = task.assignee_detail;
   const isBusy = updateMutation.isPending || blockerMutation.isPending;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[100] bg-black/30 backdrop-blur-xs"
+        className="task-sheet-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -371,227 +488,440 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           role="dialog"
           aria-modal="true"
           aria-label={t("Task details: {value0}", { value0: task.title })}
-          className="absolute inset-y-0 end-0 flex w-full max-w-xl flex-col rounded-s-3xl border-s border-base-content/10 bg-base-100 shadow-2xl"
-          initial={{ x: getDirection() === "rtl" ? "-100%" : "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: getDirection() === "rtl" ? "-100%" : "100%" }}
+          className="task-sheet"
+          initial={{ y: 24, scale: 0.97, opacity: 0 }}
+          animate={{ y: 0, scale: 1, opacity: 1 }}
+          exit={{ y: 16, scale: 0.97, opacity: 0 }}
           transition={spring}
         >
-          {/* ─── Top Bar: Context Breadcrumb + Close ─── */}
-          <header className="flex shrink-0 items-center justify-between border-b border-base-content/6 px-6 py-3.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-heledone-ink-muted">
-              <span
+          {/* ─── Top Bar: Coastal Ambience + Context + Brand Beats ─── */}
+          <header className="task-sheet-header">
+            {/* Coastal skyline artwork backdrop */}
+            <img
+              src="/images/heledone-assets/home-welcome-v2.png"
+              alt=""
+              aria-hidden="true"
+              className="task-sheet-header-art"
+            />
+
+            <div className="task-sheet-header-content">
+              {/* Task key pill with copy */}
+              <button
+                type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(task.key);
                   toast.success(t("Copied {key}", { key: task.key }));
                 }}
-                className="cursor-pointer rounded-md bg-primary/10 px-2 py-0.5 font-mono font-bold text-primary hover:bg-primary/20 transition"
+                className="task-sheet-key"
+                aria-label={t("کپی شناسه تسک")}
                 title={t("Click to copy key")}
               >
-                {task.key}
-              </span>
-              <span>·</span>
-              <span className="rounded-full px-2.5 py-0.5 text-[13px] font-semibold"
-                style={{ color: getWorkflowAppearance(task.status_detail).ink, background: `color-mix(in srgb, ${getWorkflowAppearance(task.status_detail).color} 10%, transparent)` }}>
+                <Copy size={13} />
+                <bdi>{task.key}</bdi>
+              </button>
+
+              {/* Workflow status badge */}
+              <span
+                className="task-sheet-status-pill"
+                style={{
+                  color: getWorkflowAppearance(task.status_detail).ink,
+                  background: `color-mix(in srgb, ${getWorkflowAppearance(task.status_detail).color} 12%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${getWorkflowAppearance(task.status_detail).color} 26%, transparent)`,
+                }}
+              >
+                <span
+                  className="size-1.5 rounded-full"
+                  style={{ backgroundColor: getWorkflowAppearance(task.status_detail).color }}
+                />
                 {task.status_detail ? getWorkflowAppearance(task.status_detail).label : t("بدون وضعیت")}
               </span>
-            </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl p-1.5 text-heledone-ink-muted transition hover:bg-base-200 hover:text-base-content"
-              aria-label={t("بستن جزئیات تسک")}
-            >
-              <CloseSquare size={20} />
-            </button>
+              {/* Due date status badge in header if set */}
+              {dueMeta && (
+                <span
+                  className={`task-sheet-status-pill border ${dueMeta.badgeClass}`}
+                  title={t("زمان سررسید")}
+                >
+                  {dueMeta.isOverdue ? <Danger size={12} /> : <Calendar1 size={12} />}
+                  <span>
+                    {dueMeta.isOverdue ? t("مهلت گذشته") : t("سررسید")}: {formatDisplayDate(dueDate, "d MMMM")}
+                  </span>
+                </span>
+              )}
+
+              {/* Heledone syncopated brand beats */}
+              <span className="task-sheet-brand-beats" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+
+              {/* Close button */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="task-sheet-close"
+                aria-label={t("بستن جزئیات تسک")}
+              >
+                <CloseSquare size={20} />
+              </button>
+            </div>
           </header>
 
-          {/* ─── Main Title (Prominent at top) ─── */}
-          <div className="px-6 pt-5 pb-2">
+          {/* ─── Main Title Area ─── */}
+          <div className="task-sheet-title">
+            <span className="task-sheet-title-badge">
+              <TaskSquare size={14} className="text-primary" />
+              {t("جزئیات تسک")}
+            </span>
             <textarea
-              rows={3}
+              rows={1}
               aria-label={t("عنوان تسک")}
               ref={titleRef}
-
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={() =>
                 title.trim() && title.trim() !== task.title && save({ title: title.trim() })
               }
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); }
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
               }}
-              className="w-full resize-y bg-transparent leading-relaxed text-2xl font-extrabold tracking-tight text-base-content outline-none placeholder:text-heledone-ink-muted"
+              className="task-sheet-title-input"
               placeholder={t("عنوان تسک…")}
             />
           </div>
 
-          {/* ─── Compact Inline Property Strip (Linear-Style) ─── */}
-          <div className="flex flex-wrap items-center gap-2 px-6 py-2 border-b border-base-content/6">
-            {/* Priority Button Badge */}
-            <div className="relative inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-xs font-semibold text-base-content/70 hover:bg-base-200 transition">
-              <span
-                className="size-2 rounded-full me-1.5 shrink-0"
-                style={{ background: priorityConfig[priority]?.color }}
-              />
-              <select
-                value={priority}
-                onChange={(e) => {
-                  const val = e.target.value as Task["priority"];
-                  setPriority(val);
-                  save({ priority: val });
-                }}
-                className="bg-transparent font-bold capitalize text-base-content outline-none cursor-pointer pe-1 text-[13px]"
-              >
-                <option value="low">{t("کم")}</option>
-                <option value="medium">{t("متوسط")}</option>
-                <option value="high">{t("بالا")}</option>
-                <option value="critical">{t("فوری")}</option>
-              </select>
+          {/* ─── Properties Sidebar (Heledone Styling) ─── */}
+          <div className="task-sheet-properties">
+            <div className="task-sheet-properties-title">
+              <span>{t("اطلاعات تسک")}</span>
+              <span className="text-[10px] font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">
+                {t("هله‌دان")}
+              </span>
             </div>
 
-            {/* Assignee Pill */}
-            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[13px] font-semibold text-base-content/70 hover:bg-base-200 transition">
-              <Profile2User size={13} className="me-1.5 text-heledone-ink-muted shrink-0" />
-              <select
-                value={assignee?.id || ""}
-                onChange={(e) => {
-                  const newId = e.target.value;
-                  const selectedMember = projectMembers.find(
-                    (m) => String(m.user?.id) === newId
-                  );
-                  save({
-                    assignee: newId ? newId : null,
-                    assignee_detail: selectedMember?.user || null,
-                  } as any);
-                }}
-                className="bg-transparent font-semibold text-base-content outline-none cursor-pointer truncate max-w-[110px]"
-              >
-                <option value="">{t("بدون مسئول")}</option>
-                {projectMembers.map(
-                  (m) =>
-                    m.user && (
-                      <option key={m.id} value={m.user.id}>
-                        {m.user.first_name || m.user.last_name ? `${m.user.first_name || ""} ${m.user.last_name || ""}`.trim() : m.user.full_name || m.user.username}
-                      </option>
-                    )
-                )}
-              </select>
-            </div>
-
-            {/* Milestone Pill */}
-            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[13px] font-semibold text-base-content/70 hover:bg-base-200 transition">
-              <Flag size={13} className="me-1.5 text-heledone-ink-muted shrink-0" />
-              <select
-                value={task.milestone?.toString() || ""}
-                onChange={(e) => {
-                  const newId = e.target.value;
-                  const selectedMilestone = projectMilestones.find(
-                    (m) => String(m.id) === newId
-                  );
-                  save({
-                    milestone: newId ? newId : null,
-                    milestone_detail: selectedMilestone || null,
-                  } as any);
-                }}
-                className="bg-transparent font-semibold text-base-content outline-none cursor-pointer truncate max-w-[110px]"
-              >
-                <option value="">{t("No Milestone")}</option>
-                {projectMilestones.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Due Date Picker Pill */}
-            <div className="inline-flex items-center rounded-xl bg-base-200/60 px-2.5 py-1 text-[13px] font-semibold text-base-content/70 hover:bg-base-200 transition">
-              <Calendar size={13} className="me-1.5 text-heledone-ink-muted shrink-0" />
-              <div className="flex items-center gap-1">
-                <CustomDatePicker
-                  value={dueDate ? dueDate.split('T')[0] : ''}
-                  onChange={(date) => {
-                    const time = dueDate ? (dueDate.split('T')[1] || '00:00') : '00:00';
-                    const newVal = `${date}T${time}`;
-                    setDueDate(newVal);
-                    save({ due_date: new Date(newVal).toISOString() });
-                  }}
-                  triggerClassName="bg-transparent font-semibold text-base-content outline-none cursor-pointer w-[80px]"
+            {/* Priority Selector */}
+            <div className="task-sheet-property">
+              <label htmlFor="task-sheet-priority">{t("اولویت")}</label>
+              <div className="task-sheet-property-control">
+                <span
+                  className="size-2.5 rounded-full shrink-0 shadow-2xs"
+                  style={{ background: priorityConfig[priority]?.color }}
                 />
-                <input
-                  type="time"
-                  value={dueDate ? dueDate.split('T')[1]?.slice(0, 5) : ''}
+                <select
+                  id="task-sheet-priority"
+                  value={priority}
                   onChange={(e) => {
-                    const date = dueDate ? dueDate.split('T')[0] : new Date().toISOString().split('T')[0];
-                    const newVal = `${date}T${e.target.value}`;
-                    setDueDate(newVal);
-                    save({ due_date: new Date(newVal).toISOString() });
+                    const val = e.target.value as Task["priority"];
+                    setPriority(val);
+                    save({ priority: val });
                   }}
-                  className="bg-transparent font-semibold text-base-content outline-none cursor-pointer w-[60px]"
-                />
+                >
+                  <option value="low">{t("کم")}</option>
+                  <option value="medium">{t("متوسط")}</option>
+                  <option value="high">{t("بالا")}</option>
+                  <option value="critical">{t("فوری")}</option>
+                </select>
               </div>
             </div>
 
-            {/* Timer Control Pill */}
-            <button
-              type="button"
-              onClick={() =>
-                timerIsRunning ? onStopTimer?.(task.id) : onPlayTimer?.(task.id)
-              }
-              className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[13px] font-bold transition ${
-                timerIsRunning
-                  ? "bg-error/10 text-error hover:bg-error/20"
-                  : "bg-primary/10 text-primary hover:bg-primary/20"
-              }`}
-            >
-              {timerIsRunning ? <Stop size={13} /> : <Play size={13} />}
-              {timerIsRunning ? formatTime(elapsedSeconds) : t("زمان‌سنج")}
-            </button>
+            {/* Assignee Card with Heledone Avatar Portrait */}
+            <div className="task-sheet-property">
+              <label htmlFor="task-sheet-assignee">{t("مسئول تسک")}</label>
+              <div className="task-sheet-property-control">
+                {assignee ? (
+                  <img
+                    src={assignee.avatar || getHeledoneAvatar(assignee.id, assignee.username)}
+                    alt=""
+                    className="task-sheet-assignee-avatar"
+                  />
+                ) : (
+                  <Profile2User size={16} />
+                )}
+                <select
+                  id="task-sheet-assignee"
+                  value={assignee?.id || ""}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    const selectedMember = projectMembers.find(
+                      (m) => String(m.user?.id) === newId
+                    );
+                    save({
+                      assignee: newId ? newId : null,
+                      assignee_detail: selectedMember?.user || null,
+                    } as any);
+                  }}
+                >
+                  <option value="">{t("بدون مسئول")}</option>
+                  {projectMembers.map(
+                    (m) =>
+                      m.user && (
+                        <option key={m.id} value={m.user.id}>
+                          {m.user.first_name || m.user.last_name
+                            ? `${m.user.first_name || ""} ${m.user.last_name || ""}`.trim()
+                            : m.user.full_name || m.user.username}
+                        </option>
+                      )
+                  )}
+                </select>
+              </div>
+            </div>
 
-            {/* Manual Log Time Trigger Pill */}
-            <div className="relative inline-block">
+            {/* Milestone Selector */}
+            <div className="task-sheet-property">
+              <label htmlFor="task-sheet-milestone">{t("نقطه عطف")}</label>
+              <div className="task-sheet-property-control">
+                <Flag size={15} />
+                <select
+                  id="task-sheet-milestone"
+                  value={task.milestone?.toString() || ""}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    const selectedMilestone = projectMilestones.find(
+                      (m) => String(m.id) === newId
+                    );
+                    save({
+                      milestone: newId ? newId : null,
+                      milestone_detail: selectedMilestone || null,
+                    } as any);
+                  }}
+                >
+                  <option value="">{t("No Milestone")}</option>
+                  {projectMilestones.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Due Date & Time Section */}
+            <div className="task-sheet-property">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-heledone-ink-muted">{t("سررسید")}</label>
+                {dueDate && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                    className="text-[11px] font-bold text-primary hover:underline"
+                  >
+                    {isDatePickerOpen ? t("بستن") : t("تغییر سررسید")}
+                  </button>
+                )}
+              </div>
+
+              {dueDate ? (
+                <div className="task-sheet-due-card">
+                  <div className="task-sheet-due-header">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Calendar1 size={15} className="text-primary shrink-0" />
+                      <span className="font-bold text-xs text-base-content truncate">
+                        {formatDisplayDate(dueDate, "d MMMM yyyy")}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`task-sheet-due-badge border ${dueMeta?.badgeClass}`}>
+                        {dueMeta?.isOverdue && <Danger size={11} />}
+                        {dueMeta?.label}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleClearDueDate}
+                        className="task-sheet-due-clear"
+                        title={t("حذف سررسید")}
+                        aria-label={t("حذف سررسید")}
+                      >
+                        <CloseCircle size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="task-sheet-due-time-row">
+                    <div className="flex items-center gap-1.5 text-xs text-heledone-ink-muted font-medium">
+                      <Clock3 size={13} className="text-primary" />
+                      <span>{t("ساعت {time}", { time: dueDate.split("T")[1]?.slice(0, 5) || "18:00" })}</span>
+                    </div>
+
+                    <div className="text-[11px] font-semibold text-heledone-ink-muted">
+                      {formatRelativeDate(dueDate)}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsDatePickerOpen(true)}
+                  className="task-sheet-due-empty-btn"
+                >
+                  <Calendar1 size={16} className="text-primary" />
+                  <span>{t("تعیین سررسید و زمان")}</span>
+                </button>
+              )}
+
+              {/* Quick Presets Bar */}
+              <div className="task-sheet-due-presets">
+                <button
+                  type="button"
+                  onClick={handleSetToday}
+                  className="task-sheet-due-preset-btn"
+                >
+                  {t("امروز")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSetTomorrow}
+                  className="task-sheet-due-preset-btn"
+                >
+                  {t("فردا")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSetNextWeek}
+                  className="task-sheet-due-preset-btn"
+                >
+                  {t("هفته آینده")}
+                </button>
+              </div>
+
+              {/* Expanded Date & Time Editor */}
+              {isDatePickerOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="task-sheet-due-editor space-y-3"
+                >
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-bold text-heledone-ink-muted">
+                      {t("انتخاب تاریخ")}
+                    </span>
+                    <CustomDatePicker
+                      value={dueDate ? dueDate.split("T")[0] : ""}
+                      onChange={(date) => {
+                        const time = dueDate ? dueDate.split("T")[1] || "18:00" : "18:00";
+                        const newVal = `${date}T${time}`;
+                        setDueDate(newVal);
+                        save({ due_date: new Date(newVal).toISOString() });
+                      }}
+                      triggerClassName="w-full p-2.5 bg-base-100 border border-base-content/15 rounded-xl flex items-center justify-between text-xs font-bold text-base-content text-start hover:border-primary/50 transition-colors shadow-2xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 border-t border-base-content/8 pt-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-heledone-ink-muted">
+                        {t("زمان و ساعت")}
+                      </span>
+                      <input
+                        type="time"
+                        ref={dueDateInputRef}
+                        aria-label={t("زمان سررسید")}
+                        value={dueDate ? dueDate.split("T")[1]?.slice(0, 5) : "18:00"}
+                        onChange={(e) => {
+                          const date = dueDate
+                            ? dueDate.split("T")[0]
+                            : new Date().toISOString().split("T")[0];
+                          const newVal = `${date}T${e.target.value}`;
+                          setDueDate(newVal);
+                          save({ due_date: new Date(newVal).toISOString() });
+                        }}
+                        className="rounded-lg border border-base-content/15 bg-base-100 px-2 py-0.5 text-xs font-bold text-base-content outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div className="task-sheet-due-time-chips">
+                      {[
+                        { label: "۰۹:۰۰", val: "09:00" },
+                        { label: "۱۲:۰۰", val: "12:00" },
+                        { label: "۱۸:۰۰", val: "18:00" },
+                        { label: "۲۳:۵۹", val: "23:59" },
+                      ].map((chip) => {
+                        const currentT = dueDate?.split("T")[1]?.slice(0, 5);
+                        const isActive = currentT === chip.val;
+                        return (
+                          <button
+                            key={chip.val}
+                            type="button"
+                            onClick={() => handleTimePreset(chip.val)}
+                            className={`task-sheet-due-time-chip ${isActive ? "is-active" : ""}`}
+                          >
+                            {chip.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Marine Chronometer / Time Log Card */}
+            <div className="task-sheet-time-card">
+              <div className="task-sheet-time-heading">
+                <Clock3 size={16} />
+                <span>{t("زمان‌سنج هله‌دان")}</span>
+                <i className={timerIsRunning ? "is-running" : ""} />
+              </div>
+
+              <strong className="task-sheet-clock">
+                {formatTime(elapsedSeconds)}
+              </strong>
+
               <button
                 type="button"
-                onClick={() => setIsManualTimeOpen(!isManualTimeOpen)}
-                className="inline-flex items-center gap-1 rounded-xl bg-base-200/60 px-2 py-1 text-[13px] font-semibold text-heledone-ink-muted hover:bg-base-200 transition"
+                onClick={() =>
+                  timerIsRunning ? onStopTimer?.(task.id) : onPlayTimer?.(task.id)
+                }
+                disabled={(!onPlayTimer && !timerIsRunning) || (!onStopTimer && timerIsRunning)}
+                className={`task-sheet-timer-button ${timerIsRunning ? "is-running" : ""}`}
               >
-                <span>⏱ {formatTime(elapsedSeconds)}</span>
-                <span className="text-[13px] text-primary font-bold">{t("ثبت دستی")}</span>
+                {timerIsRunning ? <Stop size={15} /> : <Play size={15} />}
+                <span>{timerIsRunning ? t("توقف زمان‌سنج") : t("شروع زمان‌سنج")}</span>
               </button>
 
-              {isManualTimeOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setIsManualTimeOpen(false)}
-                  />
-                  <div className="absolute top-full start-0 mt-2 z-50 w-44 rounded-2xl border border-base-content/10 bg-base-100 p-3 shadow-xl space-y-2.5">
-                    <p className="text-xs font-bold text-base-content">{t("Log Time")}</p>
+              {/* Manual Time Log Toggle */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setIsManualTimeOpen(!isManualTimeOpen)}
+                  className="task-sheet-manual-toggle"
+                  aria-expanded={isManualTimeOpen}
+                >
+                  <span>{t("ثبت دستی زمان کارکرد")}</span>
+                </button>
+
+                {isManualTimeOpen && (
+                  <div className="task-sheet-manual-form space-y-2">
+                    <p className="text-[11px] font-bold text-base-content">{t("Log Time")}</p>
                     <div className="flex gap-2">
                       <label className="flex-1">
-                        <span className="text-[13px] text-heledone-ink-muted">{t("ساعت")}</span>
+                        <span className="text-[11px] text-heledone-ink-muted">{t("ساعت")}</span>
                         <input
                           type="number"
                           min="0"
                           value={manualHours}
                           onChange={(e) => setManualHours(e.target.value)}
-                          className="w-full rounded-lg bg-base-200 px-2 py-1 text-xs outline-none"
+                          className="w-full rounded-xl border border-base-content/10 bg-base-100 px-2 py-1 text-xs outline-none focus:border-primary"
                         />
                       </label>
                       <label className="flex-1">
-                        <span className="text-[13px] text-heledone-ink-muted">{t("Mins")}</span>
+                        <span className="text-[11px] text-heledone-ink-muted">{t("Mins")}</span>
                         <input
                           type="number"
                           min="0"
                           max="59"
                           value={manualMinutes}
                           onChange={(e) => setManualMinutes(e.target.value)}
-                          className="w-full rounded-lg bg-base-200 px-2 py-1 text-xs outline-none"
+                          className="w-full rounded-xl border border-base-content/10 bg-base-100 px-2 py-1 text-xs outline-none focus:border-primary"
                         />
                       </label>
                     </div>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -621,51 +951,71 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                         }
                       }}
                       disabled={manualTimeMutation.isPending || updateMutation.isPending}
-                      className="w-full rounded-xl bg-primary py-1 text-xs font-bold text-primary-content disabled:opacity-50"
+                      className="w-full rounded-xl bg-primary py-1.5 text-xs font-bold text-primary-content transition hover:bg-[#006D73] disabled:opacity-50"
                     >
-                      {t("ذخیره")}</button>
+                      {t("ذخیره")}
+                    </button>
                   </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Blocker Pill Toggle */}
-            <button
-              type="button"
-              onClick={() => blockerMutation.mutate(!task.is_blocked)}
-              className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-[13px] font-bold transition ${
-                task.is_blocked
-                  ? "bg-error/10 text-error border border-error/30"
-                  : "bg-base-200/60 text-heledone-ink-muted hover:text-error hover:bg-error/10"
-              }`}
-            >
-              <Danger size={13} />
-              {task.is_blocked ? t("مسدود · رفع مانع") : t("ثبت مانع")}
-            </button>
+            {/* Blocker Pill & Help */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => blockerMutation.mutate(!task.is_blocked)}
+                className={`task-sheet-blocker-btn ${
+                  task.is_blocked
+                    ? "bg-error/15 text-error border border-error/30 shadow-xs"
+                    : "bg-base-200/80 text-heledone-ink-muted hover:text-error hover:bg-error/10 border border-base-content/10"
+                }`}
+              >
+                <Danger size={15} />
+                <span>{task.is_blocked ? t("مسدود · رفع مانع") : t("ثبت مانع")}</span>
+              </button>
+
+              {task.is_blocked && (
+                <p className="task-sheet-blocker-help">
+                  {t(
+                    "این تسک مانع دارد. علت و قدم بعدی را در توضیح یا دیدگاه ثبت کنید؛ پس از رفع مانع، «رفع مانع» را بزنید."
+                  )}
+                </p>
+              )}
+            </div>
           </div>
 
-          {task.is_blocked && <p className="mx-6 mb-3 rounded-xl bg-error/10 px-3 py-2 text-sm text-error">{t("این تسک مانع دارد. علت و قدم بعدی را در توضیح یا دیدگاه ثبت کنید؛ پس از رفع مانع، «رفع مانع» را بزنید.")}</p>}
-
-          {/* ─── Nav Tabs ─── */}
-          <div className="flex shrink-0 gap-1 border-b border-base-content/6 px-6">
+          {/* ─── Navigation Tabs ─── */}
+          <div className="task-sheet-tabs" role="tablist" aria-label={t("بخش‌های تسک")}>
             {(
               [
                 ["overview", t("نمای کلی")],
-                ["comments", t("دیدگاه‌ها {value0}", { value0: comments.length ? `(${comments.length})` : "" })],
+                [
+                  "comments",
+                  t("دیدگاه‌ها {value0}", {
+                    value0: comments.length ? `(${comments.length})` : "",
+                  }),
+                ],
                 ["activity", t("رویدادها")],
               ] as const
             ).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
+                role="tab"
+                id={`task-sheet-tab-${value}`}
+                aria-selected={activeTab === value}
+                aria-controls="task-sheet-content"
                 onClick={() => setActiveTab(value)}
-                className={`relative px-3 py-2.5 text-xs font-bold transition-colors ${
-                  activeTab === value
-                    ? "text-primary"
-                    : "text-heledone-ink-muted hover:text-base-content"
-                }`}
               >
-                {label}
+                {value === "overview" ? (
+                  <FileText size={16} />
+                ) : value === "comments" ? (
+                  <MessageCircle size={16} />
+                ) : (
+                  <Activity size={16} />
+                )}
+                <span>{label}</span>
                 {activeTab === value && (
                   <motion.div
                     layoutId="sheet-tab-underline"
@@ -676,52 +1026,68 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
             ))}
           </div>
 
-          {/* ─── Main Content ─── */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+          {/* ─── Tab Content Panels ─── */}
+          <div
+            id="task-sheet-content"
+            role="tabpanel"
+            aria-labelledby={`task-sheet-tab-${activeTab}`}
+            className="task-sheet-content space-y-6"
+          >
             {focusMode && (
-              <div className="rounded-2xl border border-primary/15 bg-primary/8 p-3 text-primary">
-                <p className="text-[13px] font-bold uppercase ">{t("Focus mode")}</p>
-                <p className="mt-0.5 text-xs font-semibold">{t("Keep one clear next step in view.")}</p>
+              <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/8 p-3.5 text-primary">
+                <Sparkles size={18} className="shrink-0" />
+                <div>
+                  <p className="text-xs font-bold">{t("Focus mode")}</p>
+                  <p className="text-[11px] font-semibold text-heledone-ink-muted">
+                    {t("Keep one clear next step in view.")}
+                  </p>
+                </div>
               </div>
             )}
 
             {/* ─── TAB 1: OVERVIEW ─── */}
             {activeTab === "overview" && (
               <>
-                {/* ─── Description Section (Compact when empty) ─── */}
-                <div className="space-y-1.5">
+                {/* Description Card */}
+                <div className="task-sheet-section space-y-3.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-base-content">{t("توضیح")}</span>
+                    <h2 className="task-sheet-section-title">
+                      <FileText size={17} />
+                      <span>{t("توضیح")}</span>
+                    </h2>
                     {!isEditingDescription && !description && (
                       <button
                         type="button"
                         onClick={() => setIsEditingDescription(true)}
-                        className="text-[13px] font-semibold text-primary hover:underline"
+                        className="text-xs font-bold text-primary hover:underline"
                       >
-                        {t("+ Add description")}</button>
+                        {t("+ Add description")}
+                      </button>
                     )}
                   </div>
 
                   {isEditingDescription || description ? (
-                    <div className="rounded-2xl border border-base-content/8 bg-base-200/30 p-3 transition focus-within:border-primary/40 focus-within:bg-base-100">
+                    <div className="rounded-2xl border border-base-content/10 bg-base-200/30 p-3.5 transition focus-within:border-primary/40 focus-within:bg-base-100">
                       <textarea
-
+                        aria-label={t("توضیح تسک")}
                         autoFocus={!description}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder={t("Add context, acceptance criteria or links...")}
-                        className="min-h-20 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-heledone-ink-muted"
+                        className="min-h-24 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-heledone-ink-muted"
                       />
-                      <div className="flex items-center justify-between border-t border-base-content/6 pt-2">
+                      <div className="flex items-center justify-between border-t border-base-content/8 pt-2.5">
                         <button
                           type="button"
                           onClick={() => {
                             if (!task.description) setIsEditingDescription(false);
                             else setDescription(task.description);
                           }}
-                          className="text-[13px] text-heledone-ink-muted hover:text-base-content"
+                          className="rounded-xl px-3 py-1.5 text-xs text-heledone-ink-muted transition hover:bg-base-200"
                         >
-                          {t("انصراف")}</button>
+                          {t("انصراف")}
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => save({ description })}
@@ -729,81 +1095,85 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                             description.trim() === (task.description || "").trim() ||
                             updateMutation.isPending
                           }
-                          className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1 text-xs font-bold text-primary-content disabled:opacity-40 hover:bg-primary/90 transition"
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-xs font-bold text-primary-content transition hover:bg-[#006D73] disabled:opacity-40"
                         >
-                          <Send2 size={12} />
+                          <Send2 size={13} />
                           {updateMutation.isPending ? t("در حال ذخیره…") : t("ذخیره")}
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div
+                    <button
+                      type="button"
                       onClick={() => setIsEditingDescription(true)}
-                      className="cursor-pointer rounded-xl border border-dashed border-base-content/10 px-3 py-2.5 text-xs text-heledone-ink-muted hover:border-base-content/25 hover:text-heledone-ink-muted transition"
+                      className="w-full cursor-pointer rounded-2xl border border-dashed border-base-content/15 p-4 text-center text-xs text-heledone-ink-muted transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                     >
-                      {t("No description added. Click to add details...")}</div>
+                      {t("No description added. Click to add details...")}
+                    </button>
                   )}
                 </div>
 
-                {/* ─── Checklist Section (Compact when empty) ─── */}
-                <div className="space-y-2">
+                {/* Checklist Section */}
+                <div className="task-sheet-section space-y-3.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <TaskSquare size={15} className="text-primary" />
-                      <span className="text-xs font-bold text-base-content">{t("چک‌لیست")}</span>
+                      <TaskSquare size={17} className="text-primary" />
+                      <h2 className="task-sheet-section-title">{t("فهرست گام‌ها و چک‌لیست")}</h2>
                       {checklists.length > 0 && (
-                        <span className="text-[13px] text-heledone-ink-muted">
-                          ({formatUiNumber(checklistDone)}/{formatUiNumber(checklists.length)})
+                        <span className="rounded-full bg-base-200 px-2.5 py-0.5 text-xs font-bold text-heledone-ink-muted">
+                          {formatUiNumber(checklistDone)}/{formatUiNumber(checklists.length)}
                         </span>
                       )}
                     </div>
 
                     {checklists.length > 0 && (
-                      <span className="text-xs font-bold text-primary">
+                      <span className="text-xs font-black text-primary">
                         {formatUiNumber(checklistProgress)}%
                       </span>
                     )}
                   </div>
 
                   {checklists.length > 0 && (
-                    <div className="h-1.5 overflow-hidden rounded-full bg-base-200">
+                    <div className="h-2 overflow-hidden rounded-full bg-base-200">
                       <div
-                        className="h-full rounded-full bg-primary transition-all duration-300"
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-[#F2BA49] transition-all duration-300"
                         style={{ width: `${checklistProgress}%` }}
                       />
                     </div>
                   )}
 
-                  {/* Checklist items list */}
-                  <div className="space-y-1">
+                  {/* Checklist Items */}
+                  <div className="space-y-1 pt-1">
                     {isChecklistLoading && (
                       <p className="py-2 text-xs text-heledone-ink-muted">{t("Loading items...")}</p>
                     )}
                     {checklists.map((item) => (
                       <div
                         key={item.id}
-                        className="group flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-base-200/60 transition"
+                        className="group flex items-center justify-between rounded-xl px-2.5 py-2 transition hover:bg-base-200/60"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
                           <button
                             type="button"
+                            role="checkbox"
+                            aria-checked={item.is_completed}
+                            aria-label={item.description}
                             onClick={() =>
                               checklistToggleMutation.mutate({
                                 id: item.id,
                                 completed: !item.is_completed,
                               })
                             }
-                            className={`grid size-4 shrink-0 place-items-center rounded-md border transition ${
+                            className={`grid size-5 shrink-0 place-items-center rounded-lg border transition ${
                               item.is_completed
-                                ? "border-success bg-success text-white"
-                                : "border-base-content/20 text-transparent hover:border-primary"
+                                ? "border-success bg-success text-white shadow-2xs"
+                                : "border-base-content/25 text-transparent hover:border-primary"
                             }`}
                           >
-                            {item.is_completed && <TickCircle size={12} variant="Bold" />}
+                            {item.is_completed && <TickCircle size={14} variant="Bold" />}
                           </button>
                           <span
-
-                            className={`truncate text-xs ${
+                            className={`text-xs break-words font-medium ${
                               item.is_completed
                                 ? "text-heledone-ink-muted line-through"
                                 : "text-base-content"
@@ -814,16 +1184,17 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                         </div>
                         <button
                           type="button"
+                          aria-label={t("حذف مورد چک‌لیست")}
                           onClick={() => checklistDeleteMutation.mutate(item.id)}
-                          className="rounded-lg p-1 text-heledone-ink-muted opacity-0 transition hover:bg-error hover:text-error group-hover:opacity-100"
+                          className="task-sheet-checklist-delete"
                         >
-                          <Trash size={13} />
+                          <Trash size={14} />
                         </button>
                       </div>
                     ))}
                   </div>
 
-                  {/* Quick Add Checklist Input */}
+                  {/* Quick Add Checklist Form */}
                   {showAddChecklist || checklists.length > 0 ? (
                     <form
                       onSubmit={(e) => {
@@ -833,27 +1204,30 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       className="flex gap-2 pt-1"
                     >
                       <input
-
+                        aria-label={t("Add step item...")}
                         value={checklistText}
                         onChange={(e) => setChecklistText(e.target.value)}
                         placeholder={t("Add step item...")}
-                        className="flex-1 rounded-xl border border-base-content/10 bg-base-100 px-3 py-1.5 text-xs text-base-content outline-none placeholder:text-heledone-ink-muted focus:border-primary/40"
+                        className="flex-1 rounded-2xl border border-base-content/15 bg-base-100 px-3.5 py-2 text-xs text-base-content outline-none transition placeholder:text-heledone-ink-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
                       />
                       <button
                         type="submit"
+                        aria-label={t("Add checklist item")}
                         disabled={!checklistText.trim() || checklistAddMutation.isPending}
-                        className="grid size-7 place-items-center rounded-xl bg-primary text-primary-content disabled:opacity-40 transition shrink-0"
+                        className="grid size-9 place-items-center rounded-2xl bg-primary text-primary-content shadow-xs transition hover:bg-[#006D73] disabled:opacity-40 shrink-0"
                       >
-                        <Add size={15} />
+                        <Add size={17} />
                       </button>
                     </form>
                   ) : (
                     <button
                       type="button"
                       onClick={() => setShowAddChecklist(true)}
-                      className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
                     >
-                      <Add size={13} />  {t("Add checklist item")}</button>
+                      <Add size={15} />
+                      <span>{t("Add checklist item")}</span>
+                    </button>
                   )}
                 </div>
               </>
@@ -861,30 +1235,36 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
 
             {/* ─── TAB 2: COMMENTS ─── */}
             {activeTab === "comments" && (
-              <section className="space-y-4">
+              <section className="space-y-5">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (commentText.trim() || selectedFile) commentMutation.mutate();
                   }}
-                  className="rounded-2xl border border-base-content/8 bg-base-200/30 p-3 space-y-2 focus-within:border-primary/40 focus-within:bg-base-100 transition"
+                  className="rounded-2xl border border-base-content/10 bg-base-200/30 p-4 space-y-3 transition focus-within:border-primary/40 focus-within:bg-base-100 shadow-2xs"
                 >
                   <textarea
-
+                    aria-label={t("Write a comment...")}
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     placeholder={t("Write a comment...")}
                     className="min-h-20 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-heledone-ink-muted"
                   />
+
                   {selectedFile && (
                     <div className="flex items-center justify-between rounded-xl bg-primary/10 px-3 py-1.5 text-xs text-primary">
                       <span className="truncate">{selectedFile.name}</span>
-                      <button type="button" onClick={() => setSelectedFile(null)}>
-                        <CloseSquare size={14} />
+                      <button
+                        type="button"
+                        aria-label={t("حذف پیوست انتخاب‌شده")}
+                        onClick={() => setSelectedFile(null)}
+                      >
+                        <CloseSquare size={16} />
                       </button>
                     </div>
                   )}
-                  <div className="flex items-center justify-between border-t border-base-content/6 pt-2">
+
+                  <div className="flex items-center justify-between border-t border-base-content/8 pt-2.5">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -899,18 +1279,20 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                     />
                     <button
                       type="button"
+                      aria-label={t("افزودن پیوست")}
                       onClick={() => fileInputRef.current?.click()}
-                      className="rounded-lg p-1.5 text-heledone-ink-muted hover:bg-base-200 hover:text-primary transition"
+                      className="rounded-xl p-2 text-heledone-ink-muted hover:bg-base-200 hover:text-primary transition"
                     >
-                      <Paperclip2 size={16} />
+                      <Paperclip2 size={17} />
                     </button>
+
                     <button
                       type="submit"
                       disabled={commentMutation.isPending || (!commentText.trim() && !selectedFile)}
-                      className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-content disabled:opacity-40"
+                      className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-primary to-[#006D73] px-4 py-2 text-xs font-bold text-primary-content shadow-md shadow-primary/20 transition hover:from-[#006D73] hover:to-[#005B60] disabled:opacity-40"
                     >
-                      <Send2 size={13} />
-                      {commentMutation.isPending ? t("Sending...") : t("Comment")}
+                      <Send2 size={14} />
+                      <span>{commentMutation.isPending ? t("Sending...") : t("Comment")}</span>
                     </button>
                   </div>
                 </form>
@@ -919,52 +1301,83 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   {isCommentsLoading && (
                     <p className="py-4 text-center text-xs text-heledone-ink-muted">{t("Loading comments...")}</p>
                   )}
+
                   {!isCommentsLoading && comments.length === 0 && (
-                    <p className="rounded-2xl border border-dashed border-base-content/10 py-8 text-center text-xs text-heledone-ink-muted">
-                      {t("No comments yet.")}</p>
-                  )}
-                  {comments.map((comment) => (
-                    <article
-                      key={comment.id}
-                      className="rounded-2xl border border-base-content/8 bg-base-100 p-3.5 space-y-2 shadow-xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[13px] font-bold text-primary">
-                            {initials(
-                              comment.author_detail?.first_name,
-                              comment.author_detail?.last_name,
-                              comment.author_detail?.username
-                            )}
-                          </span>
-                          <span className="text-xs font-bold text-base-content">
-                            {comment.author_detail?.first_name ||
-                              comment.author_detail?.username ||
-                              t("User")}
-                          </span>
-                        </div>
-                        <span className="text-[13px] text-heledone-ink-muted">
-                          {formatRelativeDate(comment.created_at)}
-                        </span>
-                      </div>
-                      <p  className="text-xs leading-relaxed text-base-content/75">
-                        {comment.content}
+                    <div className="rounded-3xl border border-dashed border-base-content/15 p-8 text-center bg-base-100/50">
+                      <img
+                        src="/images/heledone-assets/boat-lenj.png"
+                        alt=""
+                        aria-hidden="true"
+                        className="mx-auto h-20 w-auto object-contain opacity-35 mb-2 select-none"
+                      />
+                      <p className="text-xs font-bold text-base-content">
+                        {t("هنوز دیدگاهی ثبت نشده است. اولین نظر یا یادداشت را بنویسید.")}
                       </p>
-                      {comment.attached_file_url && (
-                        <div className="mt-2 pt-2 border-t border-base-content/10">
-                          {comment.attached_file_url.match(/\.(jpeg|jpg|gif|png)$/i) ? (
-                            <a href={comment.attached_file_url} target="_blank" rel="noreferrer" className="block w-48 h-32 rounded-lg overflow-hidden border border-base-content/10 hover:border-primary/50 transition-colors">
-                              <img src={comment.attached_file_url} alt={t("Attachment")} className="w-full h-full object-cover" />
-                            </a>
-                          ) : (
-                            <a href={comment.attached_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 bg-base-200/50 hover:bg-base-200 border border-base-content/10 rounded-lg text-xs text-base-content/80 transition-colors">
-                              <Paperclip2 size={14} />
-                              {t("Download Attachment")}</a>
-                          )}
+                    </div>
+                  )}
+
+                  {comments.map((comment) => {
+                    const authorAvatar =
+                      comment.author_detail?.avatar ||
+                      getHeledoneAvatar(comment.author_detail?.id, comment.author_detail?.username);
+                    return (
+                      <article
+                        key={comment.id}
+                        className="rounded-2xl border border-base-content/8 bg-base-100 p-4 space-y-2.5 shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <img
+                              src={authorAvatar}
+                              alt=""
+                              className="size-7 rounded-full object-cover border border-base-content/10 shadow-2xs"
+                            />
+                            <span className="text-xs font-bold text-base-content">
+                              {comment.author_detail?.first_name ||
+                                comment.author_detail?.username ||
+                                t("User")}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-heledone-ink-muted font-medium">
+                            {formatRelativeDate(comment.created_at)}
+                          </span>
                         </div>
-                      )}
-                    </article>
-                  ))}
+
+                        <p className="text-xs leading-relaxed text-base-content/80">
+                          {comment.content}
+                        </p>
+
+                        {comment.attached_file_url && (
+                          <div className="mt-2 pt-2 border-t border-base-content/8">
+                            {comment.attached_file_url.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                              <a
+                                href={comment.attached_file_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block w-48 h-32 rounded-xl overflow-hidden border border-base-content/10 hover:border-primary/50 transition-colors shadow-2xs"
+                              >
+                                <img
+                                  src={comment.attached_file_url}
+                                  alt={t("Attachment")}
+                                  className="w-full h-full object-cover"
+                                />
+                              </a>
+                            ) : (
+                              <a
+                                href={comment.attached_file_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-base-200/50 hover:bg-base-200 border border-base-content/10 rounded-xl text-xs text-base-content transition"
+                              >
+                                <Paperclip2 size={14} />
+                                <span>{t("Download Attachment")}</span>
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -975,16 +1388,29 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                 {isActivitiesLoading && (
                   <p className="py-4 text-center text-xs text-heledone-ink-muted">{t("Loading activity...")}</p>
                 )}
+
                 {!isActivitiesLoading && activities.length === 0 && (
-                  <p className="rounded-2xl border border-dashed border-base-content/10 py-8 text-center text-xs text-heledone-ink-muted">
-                    {t("No activities recorded yet.")}</p>
+                  <div className="rounded-3xl border border-dashed border-base-content/15 p-8 text-center bg-base-100/50">
+                    <img
+                      src="/images/heledone-assets/palm-corner.png"
+                      alt=""
+                      aria-hidden="true"
+                      className="mx-auto h-20 w-auto object-contain opacity-35 mb-2 select-none"
+                    />
+                    <p className="text-xs font-bold text-base-content">
+                      {t("هنوز فعالیتی برای این تسک ثبت نشده است.")}
+                    </p>
+                  </div>
                 )}
-                <div className="relative border-s border-base-content/10 ms-3 ps-5 space-y-4">
+
+                <div className="relative border-s-2 border-primary/20 ms-3 ps-5 space-y-4">
                   {activities.map((act) => (
                     <div key={act.id} className="relative">
-                      <span className="absolute -start-[25px] top-1 size-2 rounded-full bg-primary" />
-                      <p className="text-xs font-semibold text-base-content">{act.metadata?.action || act.event_type}</p>
-                      <p className="text-[13px] text-heledone-ink-muted">
+                      <span className="absolute -start-[27px] top-1 size-2.5 rounded-full bg-primary shadow-xs ring-4 ring-base-100" />
+                      <p className="text-xs font-bold text-base-content">
+                        {act.metadata?.action || act.event_type}
+                      </p>
+                      <p className="text-[11px] text-heledone-ink-muted font-medium">
                         {act.actor_detail?.first_name || act.actor_detail?.username || t("System")} ·{" "}
                         {formatRelativeDate(act.created_at)}
                       </p>
@@ -996,13 +1422,22 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           </div>
 
           {/* ─── Footer ─── */}
-          <footer className="flex shrink-0 items-center justify-between border-t border-base-content/8 px-6 py-2.5 text-[13px] text-heledone-ink-muted">
-            <span>{isBusy ? t("Saving changes...") : t("تغییرات خودکار ذخیره می‌شوند")}</span>
-            <span className="font-mono font-bold text-heledone-ink-muted">
-              {formatTime(elapsedSeconds)}  {t("ثبت‌شده")}</span>
+          <footer className="task-sheet-footer">
+            <span role="status">
+              <TickCircle size={16} variant="Bold" className="text-success" />
+              <span>{isBusy ? t("در حال ذخیره…") : t("تغییرات خودکار ذخیره می‌شوند")}</span>
+            </span>
+
+            <span className="text-heledone-ink-muted flex items-center gap-1.5">
+              <kbd className="px-1.5 py-0.5 rounded-md border border-base-content/15 bg-base-200/60 font-mono text-[10px] font-bold">
+                {t("ESC")}
+              </kbd>
+              <span>{t("برای بستن، Esc را بزنید")}</span>
+            </span>
           </footer>
         </motion.aside>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
