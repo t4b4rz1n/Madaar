@@ -190,21 +190,30 @@
   display: block;
   width: 100%;
   resize: none;
+  overflow: hidden;
   background: transparent;
   color: var(--color-heledone-ink);
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 850;
-  line-height: 1.5;
+  line-height: 1.4;
   text-align: start;
-  border: 0;
-  border-radius: 8px;
-  padding: 2px 0;
-  transition: box-shadow 150ms ease;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 6px 10px;
+  margin: 0 -10px;
+  transition: all 150ms ease;
+}
+
+.task-sheet-title-input:hover {
+  background: color-mix(in srgb, var(--color-heledone-brand-soft) 40%, transparent);
+  border-color: color-mix(in srgb, var(--color-heledone-brand) 25%, transparent);
 }
 
 .task-sheet-title-input:focus {
+  background: var(--color-heledone-surface);
   outline: none;
-  box-shadow: 0 2px var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent), 0 2px 8px rgb(8 127 131 / 10%);
 }
 
 .task-sheet-title-input::placeholder {
@@ -241,6 +250,7 @@
 }
 
 .task-sheet-property {
+  position: relative;
   min-width: 0;
 }
 
@@ -253,6 +263,7 @@
 }
 
 .task-sheet-property-control {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -297,6 +308,124 @@
 .task-sheet-property-control select option {
   background: var(--color-heledone-surface);
   color: var(--color-heledone-ink);
+}
+
+/* ─── Custom Interactive Dropdown for Properties ─── */
+.task-sheet-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.task-sheet-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-heledone-border);
+  border-radius: 14px;
+  background: var(--color-heledone-surface);
+  color: var(--color-heledone-ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: start;
+  box-shadow: 0 1px 3px rgb(23 60 70 / 3%);
+  transition: all 160ms ease;
+  cursor: pointer;
+}
+
+.task-sheet-dropdown-trigger:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-heledone-border));
+  background: color-mix(in srgb, var(--color-heledone-surface) 90%, var(--color-heledone-brand-soft));
+}
+
+.task-sheet-dropdown-trigger.is-open {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.task-sheet-dropdown-chevron {
+  flex-shrink: 0;
+  color: var(--color-heledone-ink-muted);
+  transition: transform 200ms ease;
+}
+
+.task-sheet-dropdown-trigger.is-open .task-sheet-dropdown-chevron {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+
+.task-sheet-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  z-index: 60;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-heledone-brand) 30%, var(--color-heledone-border));
+  border-radius: 16px;
+  background: var(--color-heledone-surface);
+  box-shadow:
+    0 16px 36px -8px rgb(23 60 70 / 18%),
+    0 4px 12px -2px rgb(23 60 70 / 8%);
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.task-sheet-dropdown-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--color-heledone-border);
+  color: var(--color-heledone-ink-muted);
+}
+
+.task-sheet-dropdown-search input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-heledone-ink);
+}
+
+.task-sheet-dropdown-search input::placeholder {
+  color: var(--color-heledone-ink-muted);
+}
+
+.task-sheet-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--color-heledone-ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.task-sheet-dropdown-item:hover {
+  background: var(--color-heledone-brand-soft);
+  color: var(--color-primary);
+}
+
+.task-sheet-dropdown-item.is-active {
+  background: var(--color-heledone-brand-soft);
+  color: var(--color-primary);
+  font-weight: 800;
 }
 
 .task-sheet-assignee-avatar {
@@ -675,6 +804,126 @@
   opacity: 1;
   color: var(--color-error);
   background: #FFF0F0;
+}
+
+/* ─── Markdown Editor Box & Toolbar ─── */
+.task-sheet-editor-box {
+  border: 1px solid var(--color-heledone-border);
+  border-radius: 18px;
+  background: var(--color-heledone-surface);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgb(23 60 70 / 4%);
+  transition: all 180ms ease;
+}
+
+.task-sheet-editor-box:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.task-sheet-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--color-heledone-border);
+  background: color-mix(in srgb, var(--color-heledone-canvas) 70%, var(--color-heledone-surface));
+}
+
+.task-sheet-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--color-heledone-ink-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.task-sheet-toolbar-btn:hover {
+  background: var(--color-heledone-brand-soft);
+  color: var(--color-primary);
+}
+
+.task-sheet-editor-textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 12px 14px;
+  background: transparent;
+  border: 0;
+  outline: none;
+  resize: vertical;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-heledone-ink);
+}
+
+.task-sheet-editor-textarea::placeholder {
+  color: var(--color-heledone-ink-muted);
+}
+
+.task-sheet-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--color-heledone-border);
+  background: color-mix(in srgb, var(--color-heledone-canvas) 50%, var(--color-heledone-surface));
+}
+
+/* ─── Checklist Form & Item Upgrades ─── */
+.task-sheet-checklist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: all 140ms ease;
+}
+
+.task-sheet-checklist-item:hover {
+  background: color-mix(in srgb, var(--color-heledone-brand-soft) 40%, transparent);
+  border-color: color-mix(in srgb, var(--color-heledone-brand) 15%, transparent);
+}
+
+.task-sheet-checklist-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--color-heledone-border);
+  border-radius: 14px;
+  background: var(--color-heledone-surface);
+  box-shadow: 0 1px 3px rgb(23 60 70 / 3%);
+  transition: all 160ms ease;
+}
+
+.task-sheet-checklist-input-group:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.task-sheet-checklist-input-group input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-size: 13px;
+  color: var(--color-heledone-ink);
+}
+
+.task-sheet-checklist-input-group input::placeholder {
+  color: var(--color-heledone-ink-muted);
 }
 
 /* ─── Footer ─── */

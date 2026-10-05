@@ -5,7 +5,23 @@ import { formatDisplayDate } from "../../../utils/date";
 import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Clock3, FileText, MessageCircle, Activity, Copy, Sparkles } from "lucide-react";
+import {
+  Clock3,
+  FileText,
+  MessageCircle,
+  Activity,
+  Copy,
+  Sparkles,
+  ChevronDown,
+  Search,
+  UserX,
+  Check,
+  Bold,
+  Italic,
+  List,
+  Code,
+  Link,
+} from "lucide-react";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -155,11 +171,20 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
+  const descTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const checklistInputRef = useRef<HTMLInputElement>(null);
+  const priorityRef = useRef<HTMLDivElement>(null);
+  const assigneeRef = useRef<HTMLDivElement>(null);
+  const milestoneRef = useRef<HTMLDivElement>(null);
 
   const [title, setTitle] = useState(task?.title || "");
   const [description, setDescription] = useState(task?.description || "");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [priority, setPriority] = useState<Task["priority"]>(task?.priority || "low");
+  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
+  const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
+  const [assigneeSearch, setAssigneeSearch] = useState("");
+  const [isMilestoneOpen, setIsMilestoneOpen] = useState(false);
 
   const toLocalDatetimeInput = (isoString?: string | null) => {
     if (!isoString) return "";
@@ -451,6 +476,47 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     save({ due_date: new Date(newVal).toISOString() });
   };
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (priorityRef.current && !priorityRef.current.contains(e.target as Node)) {
+        setIsPriorityOpen(false);
+      }
+      if (assigneeRef.current && !assigneeRef.current.contains(e.target as Node)) {
+        setIsAssigneeOpen(false);
+      }
+      if (milestoneRef.current && !milestoneRef.current.contains(e.target as Node)) {
+        setIsMilestoneOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleInsertMarkdown = (prefix: string, suffix: string = "") => {
+    const textarea = descTextareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = description.substring(start, end);
+    const replacement = `${prefix}${selected || ""}${suffix}`;
+    const newDesc = description.substring(0, start) + replacement + description.substring(end);
+    setDescription(newDesc);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + prefix.length,
+        start + prefix.length + (selected ? selected.length : 0)
+      );
+    }, 0);
+  };
+
+  const handleAddQuickTime = (minutesToAdd: number) => {
+    const currentTotalMinutes = Number(manualHours || 0) * 60 + Number(manualMinutes || 0);
+    const newTotal = currentTotalMinutes + minutesToAdd;
+    setManualHours(String(Math.floor(newTotal / 60)));
+    setManualMinutes(String(newTotal % 60));
+  };
+
   const elapsedSeconds = useMemo(() => {
     if (!task) return 0;
     if (timerBelongsToTask && activeTimer) {
@@ -603,99 +669,298 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
               </span>
             </div>
 
-            {/* Priority Selector */}
-            <div className="task-sheet-property">
-              <label htmlFor="task-sheet-priority">{t("اولویت")}</label>
-              <div className="task-sheet-property-control">
-                <span
-                  className="size-2.5 rounded-full shrink-0 shadow-2xs"
-                  style={{ background: priorityConfig[priority]?.color }}
-                />
-                <select
-                  id="task-sheet-priority"
-                  value={priority}
-                  onChange={(e) => {
-                    const val = e.target.value as Task["priority"];
-                    setPriority(val);
-                    save({ priority: val });
-                  }}
+            {/* Priority Selector (Custom Dropdown) */}
+            <div className="task-sheet-property" ref={priorityRef}>
+              <label>{t("اولویت")}</label>
+              <div className="task-sheet-dropdown">
+                <button
+                  type="button"
+                  onClick={() => setIsPriorityOpen(!isPriorityOpen)}
+                  className={`task-sheet-dropdown-trigger ${isPriorityOpen ? "is-open" : ""}`}
+                  aria-expanded={isPriorityOpen}
                 >
-                  <option value="low">{t("کم")}</option>
-                  <option value="medium">{t("متوسط")}</option>
-                  <option value="high">{t("بالا")}</option>
-                  <option value="critical">{t("فوری")}</option>
-                </select>
-              </div>
-            </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="size-2.5 rounded-full shrink-0 shadow-2xs"
+                      style={{ background: priorityConfig[priority]?.color }}
+                    />
+                    <span className="truncate">{priorityConfig[priority]?.label}</span>
+                  </div>
+                  <ChevronDown size={14} className="task-sheet-dropdown-chevron" />
+                </button>
 
-            {/* Assignee Card with Heledone Avatar Portrait */}
-            <div className="task-sheet-property">
-              <label htmlFor="task-sheet-assignee">{t("مسئول تسک")}</label>
-              <div className="task-sheet-property-control">
-                {assignee ? (
-                  <img
-                    src={assignee.avatar || getHeledoneAvatar(assignee.id, assignee.username)}
-                    alt=""
-                    className="task-sheet-assignee-avatar"
-                  />
-                ) : (
-                  <Profile2User size={16} />
-                )}
-                <select
-                  id="task-sheet-assignee"
-                  value={assignee?.id || ""}
-                  onChange={(e) => {
-                    const newId = e.target.value;
-                    const selectedMember = projectMembers.find(
-                      (m) => String(m.user?.id) === newId
-                    );
-                    save({
-                      assignee: newId ? newId : null,
-                      assignee_detail: selectedMember?.user || null,
-                    } as any);
-                  }}
-                >
-                  <option value="">{t("بدون مسئول")}</option>
-                  {projectMembers.map(
-                    (m) =>
-                      m.user && (
-                        <option key={m.id} value={m.user.id}>
-                          {m.user.first_name || m.user.last_name
-                            ? `${m.user.first_name || ""} ${m.user.last_name || ""}`.trim()
-                            : m.user.full_name || m.user.username}
-                        </option>
-                      )
+                <AnimatePresence>
+                  {isPriorityOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="task-sheet-dropdown-panel"
+                    >
+                      {(
+                        [
+                          {
+                            key: "critical",
+                            label: t("فوری"),
+                            desc: t("نیاز به بررسی سریع"),
+                            color: "var(--color-heledone-coral)",
+                          },
+                          {
+                            key: "high",
+                            label: t("بالا"),
+                            desc: t("اولویت زیاد"),
+                            color: "var(--color-heledone-sun)",
+                          },
+                          {
+                            key: "medium",
+                            label: t("متوسط"),
+                            desc: t("اولویت عادی"),
+                            color: "var(--color-primary)",
+                          },
+                          {
+                            key: "low",
+                            label: t("کم"),
+                            desc: t("اولویت پایین"),
+                            color: "var(--color-heledone-todo)",
+                          },
+                        ] as const
+                      ).map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => {
+                            setPriority(item.key);
+                            save({ priority: item.key });
+                            setIsPriorityOpen(false);
+                          }}
+                          className={`task-sheet-dropdown-item ${
+                            priority === item.key ? "is-active" : ""
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="size-2.5 rounded-full shrink-0"
+                              style={{ background: item.color }}
+                            />
+                            <div className="flex flex-col text-start min-w-0">
+                              <span className="font-bold text-xs">{item.label}</span>
+                              <span className="text-[10px] text-heledone-ink-muted">
+                                {item.desc}
+                              </span>
+                            </div>
+                          </div>
+                          {priority === item.key && (
+                            <Check size={14} className="text-primary shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </motion.div>
                   )}
-                </select>
+                </AnimatePresence>
               </div>
             </div>
 
-            {/* Milestone Selector */}
-            <div className="task-sheet-property">
-              <label htmlFor="task-sheet-milestone">{t("نقطه عطف")}</label>
-              <div className="task-sheet-property-control">
-                <Flag size={15} />
-                <select
-                  id="task-sheet-milestone"
-                  value={task.milestone?.toString() || ""}
-                  onChange={(e) => {
-                    const newId = e.target.value;
-                    const selectedMilestone = projectMilestones.find(
-                      (m) => String(m.id) === newId
-                    );
-                    save({
-                      milestone: newId ? newId : null,
-                      milestone_detail: selectedMilestone || null,
-                    } as any);
-                  }}
+            {/* Assignee Card with Search & Heledone Avatar (Custom Dropdown) */}
+            <div className="task-sheet-property" ref={assigneeRef}>
+              <label>{t("مسئول تسک")}</label>
+              <div className="task-sheet-dropdown">
+                <button
+                  type="button"
+                  onClick={() => setIsAssigneeOpen(!isAssigneeOpen)}
+                  className={`task-sheet-dropdown-trigger ${isAssigneeOpen ? "is-open" : ""}`}
+                  aria-expanded={isAssigneeOpen}
                 >
-                  <option value="">{t("No Milestone")}</option>
-                  {projectMilestones.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.title}
-                    </option>
-                  ))}
-                </select>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {assignee ? (
+                      <img
+                        src={assignee.avatar || getHeledoneAvatar(assignee.id, assignee.username)}
+                        alt=""
+                        className="task-sheet-assignee-avatar"
+                      />
+                    ) : (
+                      <span className="grid size-6 place-items-center rounded-full bg-base-200 text-heledone-ink-muted">
+                        <Profile2User size={13} />
+                      </span>
+                    )}
+                    <span className="truncate">
+                      {assignee
+                        ? assignee.first_name || assignee.last_name
+                          ? `${assignee.first_name || ""} ${assignee.last_name || ""}`.trim()
+                          : assignee.username
+                        : t("بدون مسئول")}
+                    </span>
+                  </div>
+                  <ChevronDown size={14} className="task-sheet-dropdown-chevron" />
+                </button>
+
+                <AnimatePresence>
+                  {isAssigneeOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="task-sheet-dropdown-panel"
+                    >
+                      <div className="task-sheet-dropdown-search">
+                        <Search size={13} />
+                        <input
+                          autoFocus
+                          type="text"
+                          value={assigneeSearch}
+                          onChange={(e) => setAssigneeSearch(e.target.value)}
+                          placeholder={t("Search members...")}
+                        />
+                      </div>
+
+                      {/* Unassigned button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          save({ assignee: null, assignee_detail: null } as any);
+                          setIsAssigneeOpen(false);
+                          setAssigneeSearch("");
+                        }}
+                        className={`task-sheet-dropdown-item ${!assignee ? "is-active" : ""}`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="grid size-6 place-items-center rounded-full bg-base-200 text-heledone-ink-muted">
+                            <UserX size={13} />
+                          </span>
+                          <span className="truncate">{t("بدون مسئول")}</span>
+                        </div>
+                        {!assignee && <Check size={14} className="text-primary shrink-0" />}
+                      </button>
+
+                      {projectMembers
+                        .filter((m) => {
+                          if (!m.user) return false;
+                          if (!assigneeSearch.trim()) return true;
+                          const q = assigneeSearch.toLowerCase();
+                          const name = `${m.user.first_name || ""} ${m.user.last_name || ""} ${
+                            m.user.username || ""
+                          }`.toLowerCase();
+                          return name.includes(q);
+                        })
+                        .map((m) => {
+                          const u = m.user!;
+                          const isCurrent = String(assignee?.id) === String(u.id);
+                          const displayName =
+                            u.first_name || u.last_name
+                              ? `${u.first_name || ""} ${u.last_name || ""}`.trim()
+                              : u.username;
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => {
+                                save({
+                                  assignee: String(u.id),
+                                  assignee_detail: u,
+                                } as any);
+                                setIsAssigneeOpen(false);
+                                setAssigneeSearch("");
+                              }}
+                              className={`task-sheet-dropdown-item ${isCurrent ? "is-active" : ""}`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <img
+                                  src={u.avatar || getHeledoneAvatar(u.id, u.username)}
+                                  alt=""
+                                  className="task-sheet-assignee-avatar"
+                                />
+                                <div className="flex flex-col text-start min-w-0">
+                                  <span className="font-bold text-xs truncate">{displayName}</span>
+                                  {u.username && (
+                                    <span className="text-[10px] text-heledone-ink-muted truncate">
+                                      @{u.username}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {isCurrent && <Check size={14} className="text-primary shrink-0" />}
+                            </button>
+                          );
+                        })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Milestone Selector (Custom Dropdown) */}
+            <div className="task-sheet-property" ref={milestoneRef}>
+              <label>{t("نقطه عطف")}</label>
+              <div className="task-sheet-dropdown">
+                <button
+                  type="button"
+                  onClick={() => setIsMilestoneOpen(!isMilestoneOpen)}
+                  className={`task-sheet-dropdown-trigger ${isMilestoneOpen ? "is-open" : ""}`}
+                  aria-expanded={isMilestoneOpen}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Flag
+                      size={14}
+                      className={task.milestone ? "text-primary" : "text-heledone-ink-muted"}
+                    />
+                    <span className="truncate">
+                      {projectMilestones.find((m) => String(m.id) === String(task.milestone))
+                        ?.title ||
+                        task.milestone_detail?.title ||
+                        t("No Milestone")}
+                    </span>
+                  </div>
+                  <ChevronDown size={14} className="task-sheet-dropdown-chevron" />
+                </button>
+
+                <AnimatePresence>
+                  {isMilestoneOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="task-sheet-dropdown-panel"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          save({ milestone: null, milestone_detail: null } as any);
+                          setIsMilestoneOpen(false);
+                        }}
+                        className={`task-sheet-dropdown-item ${!task.milestone ? "is-active" : ""}`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Flag size={13} className="text-heledone-ink-muted shrink-0" />
+                          <span className="truncate">{t("No Milestone")}</span>
+                        </div>
+                        {!task.milestone && <Check size={14} className="text-primary shrink-0" />}
+                      </button>
+
+                      {projectMilestones.map((m) => {
+                        const isCurrent = String(task.milestone) === String(m.id);
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => {
+                              save({
+                                milestone: String(m.id),
+                                milestone_detail: m,
+                              } as any);
+                              setIsMilestoneOpen(false);
+                            }}
+                            className={`task-sheet-dropdown-item ${isCurrent ? "is-active" : ""}`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Flag size={13} className="text-primary shrink-0" />
+                              <span className="truncate">{m.title}</span>
+                            </div>
+                            {isCurrent && <Check size={14} className="text-primary shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -896,28 +1161,65 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                 </button>
 
                 {isManualTimeOpen && (
-                  <div className="task-sheet-manual-form space-y-2">
+                  <div className="task-sheet-manual-form space-y-2.5">
                     <p className="text-[11px] font-bold text-base-content">{t("Log Time")}</p>
+
+                    {/* Quick Add Pills */}
+                    <div className="task-sheet-quick-time-grid">
+                      <button
+                        type="button"
+                        onClick={() => handleAddQuickTime(15)}
+                        className="task-sheet-quick-time-chip"
+                      >
+                        {t("+۱۵ دقیقه")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddQuickTime(30)}
+                        className="task-sheet-quick-time-chip"
+                      >
+                        {t("+۳۰ دقیقه")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddQuickTime(60)}
+                        className="task-sheet-quick-time-chip"
+                      >
+                        {t("+۱ ساعت")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddQuickTime(120)}
+                        className="task-sheet-quick-time-chip"
+                      >
+                        {t("+۲ ساعت")}
+                      </button>
+                    </div>
+
                     <div className="flex gap-2">
                       <label className="flex-1">
-                        <span className="text-[11px] text-heledone-ink-muted">{t("ساعت")}</span>
+                        <span className="text-[11px] font-semibold text-heledone-ink-muted">
+                          {t("ساعت")}
+                        </span>
                         <input
                           type="number"
                           min="0"
                           value={manualHours}
                           onChange={(e) => setManualHours(e.target.value)}
-                          className="w-full rounded-xl border border-base-content/10 bg-base-100 px-2 py-1 text-xs outline-none focus:border-primary"
+                          className="w-full rounded-xl border border-base-content/10 bg-base-100 px-2.5 py-1 text-xs font-bold outline-none focus:border-primary"
                         />
                       </label>
                       <label className="flex-1">
-                        <span className="text-[11px] text-heledone-ink-muted">{t("Mins")}</span>
+                        <span className="text-[11px] font-semibold text-heledone-ink-muted">
+                          {t("Mins")}
+                        </span>
                         <input
                           type="number"
                           min="0"
                           max="59"
                           value={manualMinutes}
                           onChange={(e) => setManualMinutes(e.target.value)}
-                          className="w-full rounded-xl border border-base-content/10 bg-base-100 px-2 py-1 text-xs outline-none focus:border-primary"
+                          className="w-full rounded-xl border border-base-content/10 bg-base-100 px-2.5 py-1 text-xs font-bold outline-none focus:border-primary"
                         />
                       </label>
                     </div>
@@ -1055,60 +1357,136 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       <FileText size={17} />
                       <span>{t("توضیح")}</span>
                     </h2>
-                    {!isEditingDescription && !description && (
+                    {!isEditingDescription && (
                       <button
                         type="button"
                         onClick={() => setIsEditingDescription(true)}
                         className="text-xs font-bold text-primary hover:underline"
                       >
-                        {t("+ Add description")}
+                        {description ? t("ویرایش") : t("+ Add description")}
                       </button>
                     )}
                   </div>
 
-                  {isEditingDescription || description ? (
-                    <div className="rounded-2xl border border-base-content/10 bg-base-200/30 p-3.5 transition focus-within:border-primary/40 focus-within:bg-base-100">
-                      <textarea
-                        aria-label={t("توضیح تسک")}
-                        autoFocus={!description}
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder={t("Add context, acceptance criteria or links...")}
-                        className="min-h-24 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-heledone-ink-muted"
-                      />
-                      <div className="flex items-center justify-between border-t border-base-content/8 pt-2.5">
+                  {isEditingDescription ? (
+                    <div className="task-sheet-editor-box">
+                      {/* Markdown Toolbar */}
+                      <div className="task-sheet-editor-toolbar">
                         <button
                           type="button"
-                          onClick={() => {
-                            if (!task.description) setIsEditingDescription(false);
-                            else setDescription(task.description);
-                          }}
-                          className="rounded-xl px-3 py-1.5 text-xs text-heledone-ink-muted transition hover:bg-base-200"
+                          onClick={() => handleInsertMarkdown("**", "**")}
+                          className="task-sheet-toolbar-btn font-bold"
+                          title={t("متن درشت")}
                         >
-                          {t("انصراف")}
+                          <Bold size={13} />
                         </button>
-
                         <button
                           type="button"
-                          onClick={() => save({ description })}
-                          disabled={
-                            description.trim() === (task.description || "").trim() ||
-                            updateMutation.isPending
-                          }
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-xs font-bold text-primary-content transition hover:bg-[#006D73] disabled:opacity-40"
+                          onClick={() => handleInsertMarkdown("*", "*")}
+                          className="task-sheet-toolbar-btn italic font-serif"
+                          title={t("متن مورب")}
                         >
-                          <Send2 size={13} />
-                          {updateMutation.isPending ? t("در حال ذخیره…") : t("ذخیره")}
+                          <Italic size={13} />
+                        </button>
+                        <span className="w-px h-3.5 bg-base-content/10 mx-1" />
+                        <button
+                          type="button"
+                          onClick={() => handleInsertMarkdown("\n- ")}
+                          className="task-sheet-toolbar-btn"
+                          title={t("فهرست نشانه‌دار")}
+                        >
+                          <List size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertMarkdown("`", "`")}
+                          className="task-sheet-toolbar-btn"
+                          title={t("کد یا دستور")}
+                        >
+                          <Code size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertMarkdown("[", "](url)")}
+                          className="task-sheet-toolbar-btn"
+                          title={t("پیوند")}
+                        >
+                          <Link size={13} />
                         </button>
                       </div>
+
+                      <textarea
+                        ref={descTextareaRef}
+                        aria-label={t("توضیح تسک")}
+                        autoFocus
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                            e.preventDefault();
+                            save({ description });
+                            setIsEditingDescription(false);
+                          }
+                        }}
+                        placeholder={t("افزودن توضیح و مستندات...")}
+                        className="task-sheet-editor-textarea"
+                      />
+
+                      <div className="task-sheet-editor-footer">
+                        <span className="text-[10px] text-heledone-ink-muted">
+                          <kbd className="px-1 py-0.5 rounded border border-base-content/10 bg-base-100 font-mono text-[9px]">
+                            {t("Ctrl+Enter")}
+                          </kbd>{" "}
+                          {t("Ctrl + Enter برای ذخیره")}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDescription(task.description || "");
+                              setIsEditingDescription(false);
+                            }}
+                            className="rounded-xl px-3 py-1.5 text-xs text-heledone-ink-muted transition hover:bg-base-200"
+                          >
+                            {t("انصراف")}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              save({ description });
+                              setIsEditingDescription(false);
+                            }}
+                            disabled={
+                              description.trim() === (task.description || "").trim() ||
+                              updateMutation.isPending
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-xs font-bold text-primary-content transition hover:bg-[#006D73] disabled:opacity-40"
+                          >
+                            <Send2 size={13} />
+                            <span>
+                              {updateMutation.isPending ? t("در حال ذخیره…") : t("ذخیره")}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : description ? (
+                    <div
+                      onClick={() => setIsEditingDescription(true)}
+                      className="cursor-pointer rounded-2xl border border-base-content/8 bg-base-200/20 p-4 text-xs leading-relaxed text-base-content hover:border-primary/40 transition"
+                      title={t("ویرایش")}
+                    >
+                      <p className="whitespace-pre-wrap">{description}</p>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => setIsEditingDescription(true)}
-                      className="w-full cursor-pointer rounded-2xl border border-dashed border-base-content/15 p-4 text-center text-xs text-heledone-ink-muted transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+                      className="w-full cursor-pointer rounded-2xl border border-dashed border-base-content/15 p-5 text-center text-xs text-heledone-ink-muted transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                     >
-                      {t("No description added. Click to add details...")}
+                      {t("توضیحی اضافه نشده است. برای نوشتن کلیک کنید...")}
                     </button>
                   )}
                 </div>
@@ -1199,17 +1577,27 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();
-                        if (checklistText.trim()) checklistAddMutation.mutate(checklistText.trim());
+                        if (checklistText.trim()) {
+                          checklistAddMutation.mutate(checklistText.trim(), {
+                            onSuccess: () => {
+                              setChecklistText("");
+                              checklistInputRef.current?.focus();
+                            },
+                          });
+                        }
                       }}
                       className="flex gap-2 pt-1"
                     >
-                      <input
-                        aria-label={t("Add step item...")}
-                        value={checklistText}
-                        onChange={(e) => setChecklistText(e.target.value)}
-                        placeholder={t("Add step item...")}
-                        className="flex-1 rounded-2xl border border-base-content/15 bg-base-100 px-3.5 py-2 text-xs text-base-content outline-none transition placeholder:text-heledone-ink-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
-                      />
+                      <div className="task-sheet-checklist-input-group flex-1">
+                        <Add size={16} className="text-heledone-ink-muted shrink-0" />
+                        <input
+                          ref={checklistInputRef}
+                          aria-label={t("گام جدید را وارد کنید… (Enter برای افزودن)")}
+                          value={checklistText}
+                          onChange={(e) => setChecklistText(e.target.value)}
+                          placeholder={t("گام جدید را وارد کنید… (Enter برای افزودن)")}
+                        />
+                      </div>
                       <button
                         type="submit"
                         aria-label={t("Add checklist item")}
@@ -1247,6 +1635,12 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                     aria-label={t("Write a comment...")}
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        if (commentText.trim() || selectedFile) commentMutation.mutate();
+                      }
+                    }}
                     placeholder={t("Write a comment...")}
                     className="min-h-20 w-full resize-none bg-transparent text-xs leading-relaxed text-base-content outline-none placeholder:text-heledone-ink-muted"
                   />
@@ -1277,14 +1671,22 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                         e.target.value = "";
                       }}
                     />
-                    <button
-                      type="button"
-                      aria-label={t("افزودن پیوست")}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="rounded-xl p-2 text-heledone-ink-muted hover:bg-base-200 hover:text-primary transition"
-                    >
-                      <Paperclip2 size={17} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label={t("افزودن پیوست")}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="rounded-xl p-2 text-heledone-ink-muted hover:bg-base-200 hover:text-primary transition"
+                      >
+                        <Paperclip2 size={17} />
+                      </button>
+                      <span className="text-[10px] text-heledone-ink-muted hidden sm:inline">
+                        <kbd className="px-1 py-0.5 rounded border border-base-content/10 bg-base-100 font-mono text-[9px]">
+                          {t("Ctrl+Enter")}
+                        </kbd>{" "}
+                        {t("Ctrl + Enter برای ارسال")}
+                      </span>
+                    </div>
 
                     <button
                       type="submit"
