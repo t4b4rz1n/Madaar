@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
 import { AnimatePresence, motion } from "motion/react";
 import { Add } from "iconsax-reactjs";
@@ -233,7 +234,7 @@ export default function TeamsListPage() {
                 </span>
               )}
               <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-                {totalResults}
+                {formatUiNumber(totalResults)}
               </span>
             </div>
             <p className="mt-1 text-xs font-medium text-heledone-ink-muted">

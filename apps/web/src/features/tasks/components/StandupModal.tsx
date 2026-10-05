@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import React, { useEffect, useMemo, useState } from "react";
@@ -165,7 +167,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
       }
     } catch (error) {
       console.error("Failed to save standup", error);
-      toast.error(S.toastSaveFailed);
+      toast.error(translateError(S.toastSaveFailed));
     }
   };
 
@@ -290,7 +292,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                     <span>{S.whatDidYouDoToday.replace(" *", "")}</span>
                   </div>
                   <p
-                    dir="auto"
+
                     className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6"
                   >
                     {initial.todayWork}
@@ -305,7 +307,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                     <span>{S.blockers}</span>
                   </div>
                   <p
-                    dir="auto"
+
                     className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6"
                   >
                     {initial.blockers}
@@ -330,7 +332,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                         onClick={() => setValue("hoursWorked", String(h))}
                         className="flex-1 rounded-lg py-1 text-[13px] font-bold bg-base-200/50 text-heledone-ink-muted hover:bg-primary/15 hover:text-primary transition-all border border-transparent hover:border-primary/20"
                       >
-                        {h}  {t("Hours")}</button>
+                        {formatUiNumber(h)}  {t("Hours")}</button>
                     ))}
                   </div>
 
@@ -371,7 +373,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                 </label>
                 <textarea
                   rows={3}
-                  dir="auto"
+
                   placeholder={S.whatDidYouDoTodayPlaceholder}
                   disabled={readOnly}
                   className={`w-full rounded-xl border bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-heledone-ink-muted ${
@@ -392,7 +394,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                 </label>
                 <textarea
                   rows={2}
-                  dir="auto"
+
                   placeholder={S.blockersPlaceholder}
                   disabled={readOnly}
                   className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-heledone-ink-muted"
@@ -458,7 +460,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                           onDeleted?.();
                           onClose();
                         } catch {
-                          toast.error(S.toastDeleteFailed);
+                          toast.error(translateError(S.toastDeleteFailed));
                           setConfirmDelete(false);
                         } finally {
                           setIsDeleting(false);

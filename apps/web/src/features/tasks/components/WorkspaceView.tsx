@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { projectPalette } from "../../../core/config/designTokens";
 import React, { useState, useMemo } from 'react';
@@ -105,7 +107,7 @@ export const WorkspaceView: React.FC = () => {
       toast.success(t("Board created successfully"));
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.detail || err?.response?.data?.error || t("ساخت کانبان ممکن نشد"));
+      toast.error(translateError(err?.response?.data?.detail || err?.response?.data?.error || t("ساخت کانبان ممکن نشد")));
     },
   });
 
@@ -121,7 +123,7 @@ export const WorkspaceView: React.FC = () => {
       toast.success(t("Board updated successfully"));
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.detail || 'Failed to update board');
+      toast.error(translateError(err?.response?.data?.detail || 'Failed to update board'));
     },
   });
 
@@ -133,7 +135,7 @@ export const WorkspaceView: React.FC = () => {
       toast.success(t("Board deleted"));
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.detail || 'Failed to delete board');
+      toast.error(translateError(err?.response?.data?.detail || 'Failed to delete board'));
     },
   });
 
@@ -185,7 +187,7 @@ export const WorkspaceView: React.FC = () => {
             <div>
               <h2 className="text-lg font-bold text-base-content">{t("Workspace Boards")}</h2>
               <p className="text-xs text-heledone-ink-muted">
-                {stats.total}  {t("boards ·")} {stats.doneTasks}/{stats.totalTasks}  {t("tasks done")}</p>
+                {formatUiNumber(stats.total)}  {t("boards ·")} {formatUiNumber(stats.doneTasks)}/{formatUiNumber(stats.totalTasks)}  {t("tasks done")}</p>
             </div>
           </div>
           {canManageBoard && (
@@ -285,7 +287,7 @@ export const WorkspaceView: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-base-200 px-2.5 py-1 text-xs font-bold text-heledone-ink-muted">
-                          {statusCount} {statusCount === 1 ? t("وضعیت") : t("وضعیت‌ها")}
+                          {formatUiNumber(statusCount)} {statusCount === 1 ? t("وضعیت") : t("وضعیت‌ها")}
                         </div>
                         {canManageBoard && (
                           <div className="relative" onClick={(e) => e.stopPropagation()}>
@@ -328,7 +330,7 @@ export const WorkspaceView: React.FC = () => {
                     </div>
 
                     <h3
-                      dir="auto"
+
                       className="mb-3 text-base font-bold tracking-tight text-base-content line-clamp-2 group-hover:text-primary transition-colors"
                     >
                       {board.title}

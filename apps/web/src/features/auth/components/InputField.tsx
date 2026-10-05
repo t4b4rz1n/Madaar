@@ -74,7 +74,7 @@ export const InputField = <T extends Record<string, any>>({
         <div className="relative">
           <input
             id={name}
-            dir={type === "email" || isPassword || name === "username" ? "ltr" : "auto"}
+
             {...register(name as any)}
             type={isPassword ? (show ? "text" : "password") : type}
             placeholder={placeholder}
@@ -84,9 +84,9 @@ export const InputField = <T extends Record<string, any>>({
             }}
             aria-invalid={!!error}
             aria-describedby={error ? `${name}-error` : undefined}
-            className={`w-full bg-base-100 border rounded-xl pl-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 shadow-sm ${
-              // LTR Adjustment: Added pr-12 if password toggle exists to prevent text overlap
-              showPasswordToggle && isPassword ? "pr-12" : "pr-4"
+            className={`w-full bg-base-100 border rounded-xl ps-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 shadow-sm ${
+              // Keep room for the password toggle at the logical end.
+              showPasswordToggle && isPassword ? "pe-12" : "pe-4"
             } ${
               error
                 ? "border-error focus:border-error focus:ring-error/20"
@@ -98,8 +98,8 @@ export const InputField = <T extends Record<string, any>>({
               type="button"
               aria-label={show ? t("پنهان کردن رمز عبور") : t("نمایش رمز عبور")}
               onClick={() => setShow((s) => !s)}
-              // LTR Adjustment: Moved icon to absolute right-3
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm opacity-70 hover:opacity-100 w-8 h-8 flex items-center justify-center text-base-content"
+              // Follow the interface direction.
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-sm opacity-70 hover:opacity-100 w-8 h-8 flex items-center justify-center text-base-content"
             >
               <AnimatePresence mode="wait" initial={false}>
                 {show ? (

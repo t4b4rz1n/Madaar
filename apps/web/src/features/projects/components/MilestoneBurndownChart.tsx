@@ -1,4 +1,4 @@
-import { t as translate,  useTranslation, useLocale } from "../../../i18n/locale";
+import { formatNumber, t as translate,  useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -108,10 +108,10 @@ export default function MilestoneBurndownChart({
           color={isLate ? "var(--color-error)" : "var(--color-warning)"}
         />
         {isLate && !isDone && (
-          <StatBadge label={t("وضعیت")} value="Delayed" color="var(--color-error)" />
+          <StatBadge label={t("وضعیت")} value={t("Delayed")} color="var(--color-error)" />
         )}
         {isDone && (
-          <StatBadge label={t("وضعیت")} value="Completed" color="var(--color-success)" />
+          <StatBadge label={t("وضعیت")} value={t("Completed")} color="var(--color-success)" />
         )}
       </div>
 
@@ -131,6 +131,7 @@ export default function MilestoneBurndownChart({
               tickFormatter={shortDate}
             />
             <YAxis
+            tickFormatter={(value) => formatNumber(Number(value))}
               allowDecimals={false}
               tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
               width={32}
@@ -184,7 +185,7 @@ export default function MilestoneBurndownChart({
             <Line
               type="monotone"
               dataKey="ideal"
-              name="Ideal Line"
+              name={t("Ideal Line")}
               stroke="color-mix(in srgb, var(--color-base-content) 50%, transparent)"
               strokeDasharray="6 4"
               strokeWidth={2}
@@ -193,7 +194,7 @@ export default function MilestoneBurndownChart({
             <Line
               type="monotone"
               dataKey="actual"
-              name="Actual Remaining"
+              name={t("Actual Remaining")}
               stroke="var(--color-primary)"
               strokeWidth={2.5}
               dot={false}
@@ -222,6 +223,7 @@ export default function MilestoneBurndownChart({
               tickFormatter={shortDate}
             />
             <YAxis
+            tickFormatter={(value) => formatNumber(Number(value))}
               allowDecimals={false}
               tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
               width={32}
@@ -260,7 +262,7 @@ export default function MilestoneBurndownChart({
             <Line
               type="monotone"
               dataKey="total"
-              name="Total Tasks"
+              name={t("Total Tasks")}
               stroke="color-mix(in srgb, var(--color-base-content) 50%, transparent)"
               strokeDasharray="4 4"
               strokeWidth={1.5}
@@ -269,7 +271,7 @@ export default function MilestoneBurndownChart({
             <Line
               type="monotone"
               dataKey="done"
-              name="Done Tasks"
+              name={t("Done Tasks")}
               stroke="var(--color-success)"
               strokeWidth={2.5}
               dot={false}
@@ -394,7 +396,7 @@ const BurndownTooltip = ({ active, payload, label }: any) => {
       <p style={{ margin: "0 0 6px", color: "var(--color-heledone-ink-muted)" }}>{formatDisplayDate(label, "MMM d, yyyy")}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ margin: "2px 0", color: p.color }}>
-          {p.name}: {p.value}
+          {p.name}: {typeof p.value === "number" ? formatNumber(p.value) : p.value}
         </p>
       ))}
     </div>

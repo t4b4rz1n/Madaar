@@ -1,4 +1,5 @@
-import { useTranslation } from "../../../i18n/locale";
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { formatNumber, useTranslation } from "../../../i18n/locale";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { Task, TickCircle, Profile2User, TrendUp } from "iconsax-reactjs";
@@ -128,7 +129,7 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                 <Task size={18} />
               </div>
             </div>
-            <p className="text-4xl font-black text-base-content">{totalTasks}</p>
+            <p className="text-4xl font-black text-base-content">{formatUiNumber(totalTasks)}</p>
           </div>
 
           <div className="rounded-2xl bg-gradient-to-br from-success/10 to-success/5 p-5 space-y-3 border border-success/10 shadow-sm">
@@ -138,7 +139,7 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                 <TickCircle size={18} variant="Bold" />
               </div>
             </div>
-            <p className="text-4xl font-black text-success">{completedTasks}</p>
+            <p className="text-4xl font-black text-success">{formatUiNumber(completedTasks)}</p>
           </div>
 
           <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 p-5 space-y-3 border border-primary/10 shadow-sm">
@@ -149,7 +150,7 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
               </div>
             </div>
             <p className="text-4xl font-black text-primary">
-              {totalSpentHours.toFixed(1)} <span className="text-lg font-bold opacity-60">{t("hrs")}</span>
+              {formatNumber(totalSpentHours, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-lg font-bold opacity-60">{t("hrs")}</span>
             </p>
           </div>
         </div>
@@ -166,7 +167,7 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
           <Profile2User size={18} className="text-primary" variant="Bold" />
           <h2 className="text-lg font-bold text-base-content">{t("Member Statistics")}</h2>
           <span className="ms-auto text-xs font-bold text-heledone-ink-muted">
-            {memberStatsList.length}  {t("Members")}</span>
+            {formatUiNumber(memberStatsList.length)}  {t("Members")}</span>
         </div>
 
         {memberStatsList.length === 0 ? (
@@ -204,12 +205,12 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="rounded-lg bg-base-100/60 px-3 py-2 text-center">
-                      <p className="text-xl font-black text-base-content">{member.totalTasks}</p>
+                      <p className="text-xl font-black text-base-content">{formatUiNumber(member.totalTasks)}</p>
                       <p className="text-[13px] font-medium text-heledone-ink-muted uppercase tracking-wider">
                         {t("Total")}</p>
                     </div>
                     <div className="rounded-lg bg-success/15 px-3 py-2 text-center">
-                      <p className="text-xl font-black text-success">{member.completedTasks}</p>
+                      <p className="text-xl font-black text-success">{formatUiNumber(member.completedTasks)}</p>
                       <p className="text-[13px] font-medium text-success uppercase tracking-wider">
                         {t("انجام‌شده")}</p>
                     </div>
@@ -221,7 +222,7 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-heledone-ink-muted uppercase tracking-wider">{t("Task Progress")}</span>
                     <span className="text-xs font-bold text-base-content">
-                      {member.totalTasks > 0 ? Math.round((member.completedTasks / member.totalTasks) * 100) : 0}%
+                      {formatUiNumber(member.totalTasks > 0 ? Math.round((member.completedTasks / member.totalTasks) * 100) : 0)}%
                     </span>
                   </div>
                   <div className="h-1.5 w-full bg-base-content/10 rounded-full overflow-hidden mb-4">
@@ -239,7 +240,7 @@ export function ProjectReportView({ projectId }: ProjectReportViewProps) {
                       <span className="text-xs font-bold uppercase tracking-wider">{t("Time Spent")}</span>
                     </div>
                     <span className="text-sm font-black text-primary">
-                      {member.spentHours.toFixed(1)} <span className="text-xs font-bold opacity-60">{t("hrs")}</span>
+                      {formatNumber(member.spentHours, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-xs font-bold opacity-60">{t("hrs")}</span>
                     </span>
                   </div>
                 </div>

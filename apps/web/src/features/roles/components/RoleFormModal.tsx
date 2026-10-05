@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { SYSTEM_PERMISSIONS } from "../constants/permissions";
 import { useTranslation } from "../../../i18n/locale";
 import React, { useEffect, useMemo, useRef } from "react";
@@ -237,7 +238,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
               <h4 className="border-s-4 border-primary ps-2 text-sm font-bold text-base-content/80">
                 {t("Permissions")}{totalCount > 0 && (
                   <span className="ms-2 text-xs font-normal text-heledone-ink-muted">
-                    ({selectedCount}/{totalCount}  {t("selected)")}</span>
+                    ({formatUiNumber(selectedCount)}/{formatUiNumber(totalCount)}  {t("selected)")}</span>
                 )}
               </h4>
               {totalCount > 0 && (

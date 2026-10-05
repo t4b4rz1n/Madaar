@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
 import { useMemo, useState } from "react";
 import { CreateRoleModal } from "../components/CreateRoleModal";
@@ -188,7 +189,7 @@ const RolesListPage = () => {
                         <td className="py-4 text-center">
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                            {role.permissions?.length ?? 0}  {t("Keys")}</div>
+                            {formatUiNumber(role.permissions?.length ?? 0)}  {t("Keys")}</div>
                         </td>
 
                         <td className="py-4 text-center">
@@ -202,7 +203,7 @@ const RolesListPage = () => {
                             )}
                             {role.member_count !== undefined && (
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-base-300 bg-base-200 px-2.5 py-1 text-xs font-semibold text-heledone-ink-muted">
-                                {role.member_count}  {t("members")}</span>
+                                {formatUiNumber(role.member_count)}  {t("members")}</span>
                             )}
                           </div>
                         </td>

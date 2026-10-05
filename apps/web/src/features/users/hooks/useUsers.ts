@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t } from "../../../i18n/locale";
 import {
   keepPreviousData,
@@ -46,7 +47,7 @@ export const useCreateUser = () => {
         error?.response?.data?.message ||
         error.message ||
         "Failed to create user";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -70,7 +71,7 @@ export const useUpdateUser = () => {
         error?.response?.data?.message ||
         error.message ||
         "Failed to update user";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -88,7 +89,7 @@ export const useDeleteUser = () => {
       toast.success(t("User deleted successfully"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to delete user");
+      toast.error(translateError(error?.response?.data?.message || "Failed to delete user"));
     },
   });
 };

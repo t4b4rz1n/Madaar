@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t } from "../../../i18n/locale";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -74,7 +75,7 @@ export const useTelegramMagicLink = () => {
       }
     },
     onError: (error: any) => {
-      toast.error(error.message || "Error generating Telegram magic link.");
+      toast.error(translateError(error.message || "Error generating Telegram magic link."));
     },
   });
 };

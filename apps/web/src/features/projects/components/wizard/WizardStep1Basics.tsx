@@ -90,7 +90,7 @@ export const WizardStep1Basics: React.FC = () => {
             onKeyDown={(e) => { if (e.key === 'Enter') handleNext(); }}
             className="input input-bordered w-full bg-base-200/50 focus:input-primary"
             placeholder={t("e.g. Q4 Product Launch")}
-            dir="auto"
+
           />
         </div>
 

@@ -518,3 +518,839 @@ msgstr "تکمیل شده"
 
 msgid "Archived"
 msgstr "بایگانی شده"
+
+#: attendance/services.py
+msgid "No check-in record found for today."
+msgstr "برای امروز ورود ثبت نشده است."
+
+#: attendance/services.py
+msgid "Already checked out or no active session."
+msgstr "خروج قبلاً ثبت شده یا حضور فعالی وجود ندارد."
+
+#: attendance/services.py
+msgid "You can only start a timer for tasks assigned to or created by you, or if you are a project lead/admin."
+msgstr "فقط برای تسک‌های واگذارشده به خودتان، تسک‌هایی که ساخته‌اید یا پروژه‌هایی که مدیرشان هستید می‌توانید زمان‌سنج را شروع کنید."
+
+#: attendance/services.py
+msgid "A timer is already running for this task."
+msgstr "زمان‌سنج این تسک از قبل در حال اجراست."
+
+#: attendance/services.py
+msgid "Timer not found or already stopped."
+msgstr "زمان‌سنج پیدا نشد یا قبلاً متوقف شده است."
+
+#: attendance/serializers.py
+msgid "End time must be after start time."
+msgstr "زمان پایان باید پس از زمان شروع باشد."
+
+#: attendance/services.py
+msgid "Time log not found."
+msgstr "رکورد کارکرد پیدا نشد."
+
+#: attendance/services.py
+msgid "Only pending requests can be approved."
+msgstr "فقط درخواست‌های در انتظار را می‌توان تأیید کرد."
+
+#: attendance/services.py
+msgid "Only pending requests can be rejected."
+msgstr "فقط درخواست‌های در انتظار را می‌توان رد کرد."
+
+#: attendance/services.py
+msgid "Only pending requests can be cancelled."
+msgstr "فقط درخواست‌های در انتظار را می‌توان لغو کرد."
+
+#: attendance/services.py
+msgid "You do not have permission to log time for this task."
+msgstr "اجازهٔ ثبت کارکرد برای این تسک را ندارید."
+
+#: attendance/services.py
+msgid "You do not have permission to approve requests in this organization."
+msgstr "اجازهٔ تأیید درخواست‌های این سازمان را ندارید."
+
+#: attendance/services.py
+msgid "You do not have permission to reject requests in this organization."
+msgstr "اجازهٔ رد درخواست‌های این سازمان را ندارید."
+
+#: attendance/serializers.py
+msgid "You are not a member of this organization."
+msgstr "شما عضو این سازمان نیستید."
+
+#: attendance/models.py
+msgid "Vacation"
+msgstr "استحقاقی"
+
+#: attendance/models.py
+msgid "Sick Leave"
+msgstr "استعلاجی"
+
+#: attendance/models.py
+msgid "Hourly Leave"
+msgstr "مرخصی ساعتی"
+
+#: attendance/models.py
+msgid "Overtime"
+msgstr "اضافه‌کاری"
+
+#: attendance/serializers.py
+msgid "Date cannot be in the future."
+msgstr "تاریخ نمی‌تواند در آینده باشد."
+
+#: attendance/serializers.py
+msgid "Start time cannot be in the past."
+msgstr "زمان شروع نمی‌تواند در گذشته باشد."
+
+#: attendance/serializers.py
+msgid "Check-out time must be after check-in time."
+msgstr "زمان خروج باید پس از زمان ورود باشد."
+
+#: attendance/serializers.py
+msgid "Project must match the task's project."
+msgstr "پروژه باید با پروژهٔ تسک یکسان باشد."
+
+#: attendance/serializers.py
+msgid "Hourly leave cannot exceed 8 hours."
+msgstr "مرخصی ساعتی نمی‌تواند بیش از ۸ ساعت باشد."
+
+#: attendance/serializers.py
+msgid "Only managers and admins can modify attendance records for past dates."
+msgstr "فقط مدیران می‌توانند حضور تاریخ‌های گذشته را ویرایش کنند."
+
+#: attendance/serializers.py
+msgid "Check-in time must be on the same date as attendance date."
+msgstr "تاریخ ورود باید با تاریخ حضور یکسان باشد."
+
+#: attendance/serializers.py
+msgid "Check-out time must be on the same date as attendance date."
+msgstr "تاریخ خروج باید با تاریخ حضور یکسان باشد."
+
+#: attendance/serializers.py
+msgid "Only superusers can create global holidays."
+msgstr "فقط مدیر کل می‌تواند تعطیلی عمومی بسازد."
+
+#: attendance/serializers.py
+msgid "You do not have permission to manage holidays for this organization."
+msgstr "اجازهٔ مدیریت تعطیلی‌های این سازمان را ندارید."
+
+#: attendance/views.py
+msgid "Project ID is required."
+msgstr "شناسهٔ پروژه الزامی است."
+
+#: projects/permissions.py
+msgid "You do not have permission to view this project's activity."
+msgstr "اجازهٔ مشاهدهٔ فعالیت این پروژه را ندارید."
+
+#: tasks/services.py
+msgid "Estimated hours"
+msgstr "ساعت برآوردشده"
+
+#: tasks/services.py
+msgid "Parent task"
+msgstr "تسک والد"
+
+#: tasks/services.py
+msgid "Finished"
+msgstr "پایان‌یافته"
+
+#: tasks/services.py
+msgid "Blocked"
+msgstr "مسدود"
+
+#: projects/models.py
+msgid "Milestone"
+msgstr "نقطه عطف"
+
+#: tasks/services.py
+msgid "completed"
+msgstr "انجام‌شده"
+
+#: tasks/services.py
+msgid "uncompleted"
+msgstr "انجام‌نشده"
+
+#: tasks/serializers.py
+msgid "Parent task must belong to the same project."
+msgstr "تسک والد باید متعلق به همین پروژه باشد."
+
+#: tasks/serializers.py
+msgid "Comment must contain either text content or an attached file."
+msgstr "نظر باید متن یا فایل پیوست داشته باشد."
+
+#: tasks/serializers.py
+msgid "The 'today/tomorrow' description is required."
+msgstr "توضیح کارهای امروز و فردا الزامی است."
+
+#: tasks/serializers.py
+msgid "You cannot log standups for future days."
+msgstr "ثبت گزارش روزانه برای روزهای آینده ممکن نیست."
+
+#: tasks/services.py
+msgid "You have already logged a standup for this project on this day."
+msgstr "گزارش روزانهٔ این پروژه را برای این روز قبلاً ثبت کرده‌اید."
+
+#: tasks/serializers.py
+msgid "Hours worked cannot be negative."
+msgstr "ساعت کارکرد نمی‌تواند منفی باشد."
+
+#: tasks/serializers.py
+msgid "Hours worked cannot exceed 24 hours per day."
+msgstr "کارکرد روزانه نمی‌تواند بیش از ۲۴ ساعت باشد."
+
+#: tasks/services.py
+msgid "Doing"
+msgstr "در حال انجام"
+
+#: tasks/models.py
+msgid "Done"
+msgstr "انجام‌شده"
+
+#: tasks/services.py
+msgid "Assignee must be a member of the organization."
+msgstr "مسئول تسک باید عضو سازمان باشد."
+
+#: tasks/services.py
+msgid "No statuses found for this project."
+msgstr "برای این پروژه وضعیتی پیدا نشد."
+
+#: tasks/services.py
+msgid "You do not have permission to move this task."
+msgstr "اجازهٔ جابه‌جایی این تسک را ندارید."
+
+#: tasks/services.py
+msgid "Target status does not belong to the same project."
+msgstr "وضعیت مقصد متعلق به همین پروژه نیست."
+
+#: tasks/services.py
+msgid "Order changed"
+msgstr "ترتیب تغییر کرد"
+
+#: tasks/services.py
+msgid "Invalid date format. Use YYYY-MM-DD."
+msgstr "قالب تاریخ نامعتبر است. از YYYY-MM-DD استفاده کنید."
+
+#: tasks/services.py
+msgid "You are not a member of this project."
+msgstr "شما عضو این پروژه نیستید."
+
+#: tasks/services.py
+msgid "empty"
+msgstr "خالی"
+
+#: tasks/services.py
+msgid "Status changed to %(st)s"
+msgstr "وضعیت به %(st)s تغییر کرد"
+
+#: tasks/services.py
+msgid "Task created: %(title)s"
+msgstr "تسک ساخته شد: %(title)s"
+
+#: tasks/services.py
+msgid "Task unassigned"
+msgstr "مسئول تسک حذف شد"
+
+#: tasks/services.py
+msgid "Added a comment."
+msgstr "نظر اضافه شد."
+
+#: tasks/services.py
+msgid "Task assigned to %(user)s"
+msgstr "تسک به %(user)s واگذار شد"
+
+#: tasks/services.py
+msgid "Deleted task: %(title)s"
+msgstr "تسک حذف شد: %(title)s"
+
+#: tasks/services.py
+msgid "Reordered boards in project '%(project)s'"
+msgstr "ترتیب بردهای پروژهٔ «%(project)s» تغییر کرد"
+
+#: tasks/services.py
+msgid "Added status '%(name)s' to board"
+msgstr "وضعیت «%(name)s» به برد اضافه شد"
+
+#: tasks/services.py
+msgid "Removed status '%(name)s' from board"
+msgstr "وضعیت «%(name)s» از برد حذف شد"
+
+#: tasks/services.py
+msgid "Reordered statuses on board '%(board)s'"
+msgstr "ترتیب وضعیت‌های برد «%(board)s» تغییر کرد"
+
+#: tasks/services.py
+msgid "Added checklist item: %(desc)s"
+msgstr "مورد چک‌لیست اضافه شد: %(desc)s"
+
+#: tasks/services.py
+msgid "Marked checklist '%(desc)s' as %(status)s"
+msgstr "وضعیت مورد چک‌لیست «%(desc)s» به %(status)s تغییر کرد"
+
+#: tasks/services.py
+msgid "Deleted checklist item: %(desc)s"
+msgstr "مورد چک‌لیست حذف شد: %(desc)s"
+
+#: billing/models.py
+msgid "Code"
+msgstr "کد"
+
+#: tasks/models.py
+msgid "Category"
+msgstr "دسته‌بندی"
+
+#: tasks/serializers.py
+msgid "Status must belong to a board in the same project."
+msgstr "وضعیت باید متعلق به بردی در همین پروژه باشد."
+
+#: tasks/serializers.py
+msgid "Invalid background_color format. Use hex format or linear-gradient."
+msgstr "قالب رنگ پس‌زمینه نامعتبر است. از رنگ هگز یا گرادیان خطی استفاده کنید."
+
+#: tasks/serializers.py
+msgid "Checklist item description cannot be empty."
+msgstr "توضیح مورد چک‌لیست نمی‌تواند خالی باشد."
+
+#: tasks/serializers.py
+msgid "Estimated hours cannot be negative."
+msgstr "ساعت برآوردشده نمی‌تواند منفی باشد."
+
+#: tasks/serializers.py
+msgid "A task cannot be its own parent."
+msgstr "یک تسک نمی‌تواند والد خودش باشد."
+
+#: tasks/serializers.py
+msgid "The assignee must be an active member or owner of the project."
+msgstr "مسئول تسک باید عضو فعال یا مالک پروژه باشد."
+
+#: tasks/serializers.py
+msgid "Parent task hierarchy is too deep."
+msgstr "تعداد سطح‌های تسک والد بیش از حد مجاز است."
+
+#: tasks/serializers.py
+msgid "Circular parent task detected."
+msgstr "در ساختار تسک‌های والد یک چرخه پیدا شد."
+
+#: tasks/permissions.py
+msgid "You do not have permission to perform this action on standups."
+msgstr "اجازهٔ انجام این اقدام روی گزارش‌های روزانه را ندارید."
+
+#: tasks/views.py
+msgid "Task has no valid status."
+msgstr "تسک وضعیت معتبری ندارد."
+
+#: tasks/views.py
+msgid "The 'project' query parameter is required."
+msgstr "پارامتر project الزامی است."
+
+#: finance/views.py
+msgid "Project not found."
+msgstr "پروژه پیدا نشد."
+
+#: tasks/views.py
+msgid "You do not have access to this project's standups."
+msgstr "به گزارش‌های روزانهٔ این پروژه دسترسی ندارید."
+
+#: tasks/views.py
+msgid "Invalid date parameters."
+msgstr "پارامترهای تاریخ نامعتبرند."
+
+#: tasks/views.py
+msgid "Month must be between 1 and 12."
+msgstr "ماه باید بین ۱ و ۱۲ باشد."
+
+#: config/renderers.py
+msgid "An error occurred during the operation"
+msgstr "هنگام انجام عملیات خطایی رخ داد"
+
+#: config/renderers.py
+msgid "The operation was successful"
+msgstr "عملیات با موفقیت انجام شد"
+
+#: billing/payment_gateways/zarinpal.py
+msgid "An unknown error occurred"
+msgstr "خطای نامشخصی رخ داد"
+
+#: projects/models.py
+msgid "Budget"
+msgstr "بودجه"
+
+#: projects/models.py
+msgid "Deadline"
+msgstr "مهلت"
+
+#: projects/models.py
+msgid "Specialty"
+msgstr "تخصص"
+
+#: projects/models.py
+msgid "Milestones"
+msgstr "نقاط عطف"
+
+#: finance/models.py
+msgid "Organization"
+msgstr "سازمان"
+
+#: projects/models.py
+msgid "In progress"
+msgstr "در حال انجام"
+
+#: projects/models.py
+msgid "Cancelled"
+msgstr "لغوشده"
+
+#: automations/catalog.py
+msgid "Project created"
+msgstr "ساخت پروژه"
+
+#: projects/models.py
+msgid "Board deleted"
+msgstr "کانبان حذف شد"
+
+#: projects/models.py
+msgid "Member"
+msgstr "عضو"
+
+#: projects/serializers.py
+msgid "Deadline must be on or after the start date."
+msgstr "مهلت باید در تاریخ شروع یا پس از آن باشد."
+
+#: projects/serializers.py
+msgid "You cannot change the organisation of an existing project."
+msgstr "تغییر سازمان پروژهٔ موجود ممکن نیست."
+
+#: projects/serializers.py
+msgid "A project member must have either a user or a team assigned."
+msgstr "عضو پروژه باید یک کاربر یا تیم داشته باشد."
+
+#: projects/serializers.py
+msgid "Allocation end date must be on or after the allocation start date."
+msgstr "تاریخ پایان تخصیص باید در تاریخ شروع تخصیص یا پس از آن باشد."
+
+#: projects/serializers.py
+msgid "Target date must be on or after the start date."
+msgstr "تاریخ هدف باید در تاریخ شروع یا پس از آن باشد."
+
+#: projects/serializers.py
+msgid "The selected owner is not a member of this organisation."
+msgstr "مالک انتخاب‌شده عضو این سازمان نیست."
+
+#: projects/serializers.py
+msgid "This user is already a member of this project."
+msgstr "این کاربر از قبل عضو پروژه است."
+
+#: projects/serializers.py
+msgid "This team is already a member of this project."
+msgstr "این تیم از قبل عضو پروژه است."
+
+#: projects/serializers.py
+msgid "Allocation start date cannot be before the project's start date."
+msgstr "شروع تخصیص نمی‌تواند پیش از شروع پروژه باشد."
+
+#: projects/serializers.py
+msgid "Allocation end date cannot be after the project's deadline."
+msgstr "پایان تخصیص نمی‌تواند پس از مهلت پروژه باشد."
+
+#: projects/serializers.py
+msgid "The selected user is not a member of the project's organisation."
+msgstr "کاربر انتخاب‌شده عضو سازمان پروژه نیست."
+
+#: projects/serializers.py
+msgid "The selected team does not belong to the project's organisation."
+msgstr "تیم انتخاب‌شده متعلق به سازمان پروژه نیست."
+
+#: projects/serializers.py
+msgid "Target date cannot be after the project's deadline."
+msgstr "تاریخ هدف نمی‌تواند پس از مهلت پروژه باشد."
+
+#: projects/serializers.py
+msgid "Start date cannot be before the project's start date."
+msgstr "تاریخ شروع نمی‌تواند پیش از شروع پروژه باشد."
+
+#: projects/serializers.py
+msgid "Start date cannot be after an existing milestone."
+msgstr "تاریخ شروع نمی‌تواند پس از یک نقطهٔ عطف موجود باشد."
+
+#: projects/serializers.py
+msgid "Start date cannot be after an existing member allocation."
+msgstr "تاریخ شروع نمی‌تواند پس از یک تخصیص عضو موجود باشد."
+
+#: projects/serializers.py
+msgid "Deadline cannot be before an existing milestone."
+msgstr "مهلت نمی‌تواند پیش از یک نقطهٔ عطف موجود باشد."
+
+#: projects/serializers.py
+msgid "Deadline cannot be before an existing member allocation."
+msgstr "مهلت نمی‌تواند پیش از یک تخصیص عضو موجود باشد."
+
+#: projects/permissions.py
+msgid "You do not have permission to modify this project."
+msgstr "اجازهٔ ویرایش این پروژه را ندارید."
+
+#: projects/permissions.py
+msgid "Only organisation admins or staff can create projects."
+msgstr "فقط مدیران سازمان یا کارکنان مجاز می‌توانند پروژه بسازند."
+
+#: projects/permissions.py
+msgid "You do not have permission to manage project members."
+msgstr "اجازهٔ مدیریت اعضای پروژه را ندارید."
+
+#: projects/permissions.py
+msgid "You must be a project member to manage milestones."
+msgstr "برای مدیریت نقطه‌های عطف باید عضو پروژه باشید."
+
+#: projects/views.py
+msgid "Provide at least salary_type or salary_amount."
+msgstr "حداقل نوع حقوق یا مبلغ حقوق را وارد کنید."
+
+#: accounts/validators.py
+msgid "Your password must contain at least one uppercase letter."
+msgstr "رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد."
+
+#: accounts/validators.py
+msgid "The type of entered file must be png, jpg or jpeg."
+msgstr "نوع فایل باید png، jpg یا jpeg باشد."
+
+#: accounts/validators.py
+msgid "Profile picture size must not exceed 5MB."
+msgstr "حجم تصویر پروفایل نباید بیش از ۵ مگابایت باشد."
+
+#: accounts/validators.py
+msgid "Password must contain at least one uppercase letter."
+msgstr "رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد."
+
+#: accounts/validators.py
+msgid "Invalid character in the username. Only English letters, numbers, hyphens, and underscores are allowed."
+msgstr "نام کاربری فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد."
+
+#: accounts/managers.py
+msgid "The Email field must be set"
+msgstr "ایمیل الزامی است"
+
+#: accounts/managers.py
+msgid "The Username field must be set"
+msgstr "نام کاربری الزامی است"
+
+#: finance/models.py
+msgid "Rate"
+msgstr "نرخ"
+
+#: finance/views.py
+msgid "You are not a member of any active organization."
+msgstr "شما عضو هیچ سازمان فعالی نیستید."
+
+#: finance/views.py
+msgid "You do not have permission to view finance reports."
+msgstr "اجازهٔ مشاهدهٔ گزارش‌های مالی را ندارید."
+
+#: finance/views.py
+msgid "You do not have permission to view this project's billing."
+msgstr "اجازهٔ مشاهدهٔ صورت‌حساب این پروژه را ندارید."
+
+#: automations/catalog.py
+msgid "Project owner"
+msgstr "مالک پروژه"
+
+#: automations/catalog.py
+msgid "Project members"
+msgstr "اعضای پروژه"
+
+#: automations/catalog.py
+msgid "Users with org settings permission"
+msgstr "کاربران دارای دسترسی تنظیمات سازمان"
+
+#: automations/catalog.py
+msgid "Users who can approve leaves"
+msgstr "کاربران دارای دسترسی تأیید مرخصی"
+
+#: automations/catalog.py
+msgid "Users who can manage projects"
+msgstr "کاربران دارای دسترسی مدیریت پروژه"
+
+#: automations/catalog.py
+msgid "Users who can review tasks"
+msgstr "کاربران دارای دسترسی بررسی تسک"
+
+#: automations/catalog.py
+msgid "Users who can manage tasks"
+msgstr "کاربران دارای دسترسی مدیریت تسک"
+
+#: automations/catalog.py
+msgid "Task assignee"
+msgstr "مسئول تسک"
+
+#: automations/catalog.py
+msgid "Task reporter"
+msgstr "ثبت‌کنندهٔ تسک"
+
+#: automations/catalog.py
+msgid "Users directly affected by the event"
+msgstr "کاربران مرتبط با رویداد"
+
+#: automations/catalog.py
+msgid "Mentioned users"
+msgstr "کاربران اشاره‌شده"
+
+#: automations/catalog.py
+msgid "Leave requester"
+msgstr "درخواست‌کنندهٔ مرخصی"
+
+#: automations/catalog.py
+msgid "System superusers"
+msgstr "مدیران کل سامانه"
+
+#: automations/catalog.py
+msgid "Member added to project"
+msgstr "عضو به پروژه اضافه شد"
+
+#: automations/catalog.py
+msgid "A user is added to a project."
+msgstr "یک کاربر به پروژه اضافه می‌شود."
+
+#: automations/catalog.py
+msgid "Member removed from project"
+msgstr "عضو از پروژه حذف شد"
+
+#: automations/catalog.py
+msgid "A user loses access to a project."
+msgstr "دسترسی یک کاربر به پروژه قطع می‌شود."
+
+#: automations/catalog.py
+msgid "The project budget requires attention."
+msgstr "بودجهٔ پروژه نیازمند بررسی است."
+
+#: automations/catalog.py
+msgid "A milestone is due within 48 hours."
+msgstr "مهلت یک نقطهٔ عطف تا ۴۸ ساعت آینده می‌رسد."
+
+#: automations/catalog.py
+msgid "Task assigned"
+msgstr "تسک واگذار شد"
+
+#: automations/catalog.py
+msgid "A task is assigned to a user."
+msgstr "یک تسک به کاربر واگذار می‌شود."
+
+#: automations/catalog.py
+msgid "A task enters the review column."
+msgstr "یک تسک وارد ستون بررسی می‌شود."
+
+#: automations/catalog.py
+msgid "A task is marked complete."
+msgstr "یک تسک انجام‌شده ثبت می‌شود."
+
+#: automations/catalog.py
+msgid "Task deadline approaching"
+msgstr "مهلت تسک نزدیک است"
+
+#: automations/catalog.py
+msgid "An unfinished task is due within 24 hours."
+msgstr "مهلت یک تسک ناتمام تا ۲۴ ساعت آینده می‌رسد."
+
+#: automations/catalog.py
+msgid "User mentioned"
+msgstr "به کاربر اشاره شد"
+
+#: automations/catalog.py
+msgid "A user is mentioned in a task comment."
+msgstr "در نظر یک تسک به کاربر اشاره می‌شود."
+
+#: automations/catalog.py
+msgid "A new comment is added to a task."
+msgstr "نظر جدیدی به تسک اضافه می‌شود."
+
+#: automations/catalog.py
+msgid "Daily stand-up submitted"
+msgstr "گزارش روزانه ثبت شد"
+
+#: automations/catalog.py
+msgid "A team member submits a daily stand-up."
+msgstr "یکی از اعضای تیم گزارش روزانه ثبت می‌کند."
+
+#: automations/catalog.py
+msgid "A user submits a leave request."
+msgstr "یک کاربر درخواست مرخصی ثبت می‌کند."
+
+#: automations/catalog.py
+msgid "Leave request resolved"
+msgstr "درخواست مرخصی تعیین تکلیف شد"
+
+#: automations/catalog.py
+msgid "A leave request is approved or rejected."
+msgstr "درخواست مرخصی تأیید یا رد می‌شود."
+
+#: automations/catalog.py
+msgid "Work timer started"
+msgstr "زمان‌سنج کار شروع شد"
+
+#: automations/catalog.py
+msgid "A work timer is started for a task."
+msgstr "زمان‌سنج یک تسک شروع می‌شود."
+
+#: automations/catalog.py
+msgid "Organization created"
+msgstr "سازمان ساخته شد"
+
+#: automations/catalog.py
+msgid "A new organization is created."
+msgstr "سازمان جدیدی ساخته می‌شود."
+
+#: automations/catalog.py
+msgid "A new project is created in the system."
+msgstr "پروژهٔ جدیدی در سامانه ساخته می‌شود."
+
+#: automations/catalog.py
+msgid "Project budget set or changed"
+msgstr "بودجهٔ پروژه تعیین یا تغییر کرد"
+
+#: automations/catalog.py
+msgid "The budget for a project is set or updated."
+msgstr "بودجهٔ پروژه تعیین یا به‌روزرسانی می‌شود."
+
+#: automations/catalog.py
+msgid "Member added to project (admin view)"
+msgstr "عضو به پروژه اضافه شد (نمای مدیر)"
+
+#: automations/catalog.py
+msgid "A user is added to a project — admins and superusers are notified."
+msgstr "یک کاربر به پروژه اضافه می‌شود و مدیران سازمان و سامانه مطلع می‌شوند."
+
+#: automations/catalog.py
+msgid "Member added to organization (admin view)"
+msgstr "عضو به سازمان اضافه شد (نمای مدیر)"
+
+#: automations/catalog.py
+msgid "A user is added to an organization — admins and superusers are notified."
+msgstr "یک کاربر به سازمان اضافه می‌شود و مدیران سازمان و سامانه مطلع می‌شوند."
+
+#: automations/catalog.py
+msgid "You joined an organization"
+msgstr "به سازمان پیوستید"
+
+#: automations/catalog.py
+msgid "A user is notified when they are added to an organization."
+msgstr "هنگام اضافه‌شدن کاربر به سازمان، به او اطلاع داده می‌شود."
+
+#: automations/catalog.py
+msgid "A new board is created in a project."
+msgstr "برد جدیدی در پروژه ساخته می‌شود."
+
+#: automations/catalog.py
+msgid "A new milestone is created in a project."
+msgstr "نقطهٔ عطف جدیدی در پروژه ساخته می‌شود."
+
+#: automations/catalog.py
+msgid "A new task is created in the project."
+msgstr "تسک جدیدی در پروژه ساخته می‌شود."
+
+#: automations/catalog.py
+msgid "A project milestone is completed."
+msgstr "یک نقطهٔ عطف پروژه تکمیل می‌شود."
+
+#: automations/rules.py
+msgid "New member added to project"
+msgstr "عضو جدید به پروژه اضافه شد"
+
+#: billing/models.py
+msgid "Expiration Date"
+msgstr "تاریخ انقضا"
+
+#: billing/models.py
+msgid "Discount Code"
+msgstr "کد تخفیف"
+
+#: reports/services.py
+msgid "No organisation found for this user."
+msgstr "سازمانی برای این کاربر پیدا نشد."
+
+#: reports/apps.py
+msgid "Reports & Analytics"
+msgstr "گزارش‌ها و تحلیل‌ها"
+
+#: reports/permissions.py
+msgid "You must be a member of an organisation to access dashboards."
+msgstr "برای دسترسی به داشبورد باید عضو یک سازمان باشید."
+
+#: reports/permissions.py
+msgid "You must be a team lead or organisation admin to access this dashboard."
+msgstr "برای دسترسی به این داشبورد باید سرپرست تیم یا مدیر سازمان باشید."
+
+#: reports/permissions.py
+msgid "Only organisation owners and admins can access the executive dashboard."
+msgstr "فقط مالکان و مدیران سازمان به داشبورد کل دسترسی دارند."
+
+#: panel/Notification/models.py
+msgid "Link"
+msgstr "پیوند"
+
+#: panel/Notification/models.py
+msgid "Notifications"
+msgstr "اعلان‌ها"
+
+#: panel/User/serializers.py
+msgid "You do not have permission to create members for this organization."
+msgstr "اجازهٔ ساخت عضو برای این سازمان را ندارید."
+
+#: panel/User/serializers.py
+msgid "A user with this email already exists."
+msgstr "کاربری با این ایمیل وجود دارد."
+
+#: panel/User/serializers.py
+msgid "Organization not found."
+msgstr "سازمان پیدا نشد."
+
+#: panel/Feedback/models.py
+msgid "Subject"
+msgstr "موضوع"
+
+#: panel/Ticketing/models.py
+msgid "Message"
+msgstr "پیام"
+
+#: panel/Ticketing/models.py
+msgid "Attachment"
+msgstr "پیوست"
+
+#: panel/Ticketing/models.py
+msgid "Open"
+msgstr "↵ باز کردن"
+
+#: panel/Ticketing/models.py
+msgid "Answered"
+msgstr "پاسخ‌داده‌شده"
+
+#: dashboard/Ticketing/serializers.py
+msgid "Closed"
+msgstr "بسته"
+
+#: billing/payment_gateways/zarinpal.py
+msgid "Validation error"
+msgstr "خطای اعتبارسنجی"
+
+#: billing/payment_gateways/zarinpal.py
+msgid "Success"
+msgstr "موفق"
+
+#: billing/payment_gateways/zarinpal.py
+msgid "Invalid authority."
+msgstr "شناسهٔ پرداخت نامعتبر است."
+
+#: billing/payment_gateways/zarinpal.py
+msgid "Verified"
+msgstr "تأیید شد"
+
+#: billing/payment_gateways/zarinpal.py
+msgid "Connection timed out"
+msgstr "زمان اتصال تمام شد"
+
+#: billing/payment_gateways/zarinpal.py
+msgid "Error in connection with the payment gateway"
+msgstr "خطا در اتصال به درگاه پرداخت"
+
+msgid "Task comment added"
+msgstr "نظر به تسک اضافه شد"
+
+msgid "Board created"
+msgstr "برد ساخته شد"
+
+msgid "Milestone created"
+msgstr "نقطهٔ عطف ساخته شد"
+
+msgid "Task created"
+msgstr "تسک ساخته شد"

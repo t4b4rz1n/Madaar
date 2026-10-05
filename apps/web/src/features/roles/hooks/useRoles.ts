@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t } from "../../../i18n/locale";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -48,7 +49,7 @@ export const useCreateRole = () => {
         error?.response?.data?.detail ||
         error?.message ||
         "Failed to create role";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -73,7 +74,7 @@ export const useUpdateRole = () => {
         error?.response?.data?.detail ||
         error?.message ||
         "Failed to update role";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -95,7 +96,7 @@ export const useDeleteRole = () => {
         error?.response?.data?.detail ||
         error?.message ||
         "Failed to delete role";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };

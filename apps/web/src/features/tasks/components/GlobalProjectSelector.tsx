@@ -76,7 +76,7 @@ export const GlobalProjectSelector: React.FC = () => {
             {activeProject.prefix}
           </span>
         )}
-        <span dir="auto" className="truncate max-w-[140px] text-xs font-bold">
+        <span  className="truncate max-w-[140px] text-xs font-bold">
           {activeProject?.name || t("انتخاب پروژه")}
         </span>
         <ArrowDown2
@@ -129,7 +129,7 @@ export const GlobalProjectSelector: React.FC = () => {
                         {p.prefix}
                       </span>
                     )}
-                    <span dir="auto" className="truncate text-xs">
+                    <span  className="truncate text-xs">
                       {p.name}
                     </span>
                   </div>

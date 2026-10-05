@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import React, { useState } from 'react';
@@ -28,7 +29,7 @@ export const TimeOffRequestForm: React.FC<{ onSuccess?: () => void }> = ({ onSuc
       onSuccess?.();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Failed to submit request');
+      toast.error(translateError(err.response?.data?.error || 'Failed to submit request'));
     }
   });
 

@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t } from "../../../i18n/locale";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -59,7 +60,7 @@ export const useCreateTicket = () => {
       toast.success(t("Ticket created successfully"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to create ticket");
+      toast.error(translateError(error?.response?.data?.message || "Failed to create ticket"));
     },
   });
 };
@@ -77,7 +78,7 @@ export const useUpdateTicketStatus = (ticketId: string) => {
       toast.success(t("Ticket status updated successfully"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to update ticket status");
+      toast.error(translateError(error?.response?.data?.message || "Failed to update ticket status"));
     },
   });
 };
@@ -115,7 +116,7 @@ export const useSendTicketMessage = (ticketId: string) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to send message");
+      toast.error(translateError(error?.response?.data?.message || "Failed to send message"));
     },
   });
 };
@@ -141,7 +142,7 @@ export const useCreateTicketType = () => {
       toast.success(t("Ticket category created successfully"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to create ticket category");
+      toast.error(translateError(error?.response?.data?.message || "Failed to create ticket category"));
     },
   });
 };
@@ -156,7 +157,7 @@ export const useUpdateTicketType = () => {
       toast.success(t("Ticket category updated successfully"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to update ticket category");
+      toast.error(translateError(error?.response?.data?.message || "Failed to update ticket category"));
     },
   });
 };
@@ -170,7 +171,7 @@ export const useDeleteTicketType = () => {
       toast.success(t("Ticket category deleted successfully"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to delete ticket category");
+      toast.error(translateError(error?.response?.data?.message || "Failed to delete ticket category"));
     },
   });
 };

@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +25,7 @@ const ActiveTimerRow = ({ timer, tasks, invalidate }: { timer: TimeLog; tasks: T
     return () => window.clearInterval(interval);
   }, [timer.start_time]);
 
-  const stopMutation = useMutation({ mutationFn: () => stopTimer(timer.id), onSuccess: () => { invalidate(); toast.success(t("Time logged")); }, onError: (error: any) => toast.error(error.response?.data?.detail || "Could not stop the timer.") });
+  const stopMutation = useMutation({ mutationFn: () => stopTimer(timer.id), onSuccess: () => { invalidate(); toast.success(t("Time logged")); }, onError: (error: any) => toast.error(translateError(error.response?.data?.detail || "Could not stop the timer.")) });
   const cancelMutation = useMutation({ mutationFn: () => cancelTimer(timer.id), onSuccess: () => { invalidate(); toast.success(t("Timer cancelled")); }, onError: () => toast.error(t("Could not cancel the timer.")) });
 
   return (
@@ -54,7 +55,7 @@ export const LiveTimer: React.FC<LiveTimerProps> = ({ tasks = [] }) => {
     queryClient.invalidateQueries({ queryKey: ["myWeeklyTimesheet"] });
     queryClient.invalidateQueries({ queryKey: ["employee-dashboard"] });
   };
-  const startMutation = useMutation({ mutationFn: () => startTimer(selectedTaskId), onSuccess: () => { invalidate(); toast.success(t("زمان‌سنج شروع شد")); }, onError: (error: any) => toast.error(error.response?.data?.detail || "Could not start the timer.") });
+  const startMutation = useMutation({ mutationFn: () => startTimer(selectedTaskId), onSuccess: () => { invalidate(); toast.success(t("زمان‌سنج شروع شد")); }, onError: (error: any) => toast.error(translateError(error.response?.data?.detail || "Could not start the timer.")) });
 
   return <section className="heledone-surface overflow-hidden rounded-[26px] border border-base-content/10 bg-base-100"><div className="flex flex-col gap-5 p-5 sm:p-7"><div className="flex items-start justify-between gap-4"><div className="flex items-start gap-3"><div className={`grid size-12 place-items-center rounded-2xl ${hasActiveTimers ? "bg-primary text-primary-content shadow-lg shadow-primary/20" : "bg-primary/10 text-primary"}`}><Timer1 size={25} variant={hasActiveTimers ? "Bold" : "Outline"} /></div><div><p className="text-xs font-bold uppercase  text-primary">{t("زمان‌سنج تمرکز")}</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-base-content">{hasActiveTimers ? t("زمان کار شما در حال ثبت است") : t("زمان کارتان را ثبت کنید")}</h2><p className="mt-1 text-sm text-heledone-ink-muted">{hasActiveTimers ? t("زمان‌سنج فعال دارید.") : t("تسک را انتخاب و زمان‌سنج را شروع کنید؛ پس از پایان کار، آن را متوقف کنید.")}</p></div></div>{hasActiveTimers && <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-[13px] font-bold text-success"><span className="size-1.5 animate-pulse rounded-full bg-success" />  {t("Live")}</span>}</div>
       {hasActiveTimers && (
@@ -66,7 +67,7 @@ export const LiveTimer: React.FC<LiveTimerProps> = ({ tasks = [] }) => {
       <div className="flex flex-col gap-3 sm:flex-row mt-2">
         <label className="flex-1"><span className="sr-only">{t("Choose a task")}</span><select value={selectedTaskId} onChange={(event) => setSelectedTaskId(event.target.value)} className="select select-bordered h-12 w-full rounded-xl bg-base-200/60 text-sm font-semibold" disabled={tasks.length === 0}><option value="">{t("Choose a task to track...")}</option>{tasks.map((task) => {
           const isRunning = activeTimers.some(t => sameId(t.task, task.id));
-          return <option key={task.id} value={task.id} disabled={isRunning}>{task.key} · {task.title}{isRunning ? " (Running)" : ""}</option>;
+          return <option key={task.id} value={task.id} disabled={isRunning}>{task.key} · {task.title}{isRunning ? ` (${t("Running")})` : ""}</option>;
         })}</select></label><button type="button" onClick={() => startMutation.mutate()} disabled={!selectedTaskId || startMutation.isPending || activeTimers.some(t => sameId(t.task, selectedTaskId))} className="motion-interactive inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-content shadow-lg shadow-primary/15 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"><Play size={17} variant="Bold" />  {t("Start new timer")}</button>
       </div>
 

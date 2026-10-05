@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t } from "../../../i18n/locale";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -95,7 +96,7 @@ export const useSaveAutomationRule = (organizationId?: string) => {
         (typeof error === "object" && error && "message" in error
           ? String(error.message)
           : t("Failed to save the automation rule."));
-      toast.error(message);
+      toast.error(translateError(message));
     },
   });
 };

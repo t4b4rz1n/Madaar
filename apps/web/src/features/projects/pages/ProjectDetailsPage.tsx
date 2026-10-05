@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getIntlLocale, t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState, useRef } from "react";
@@ -119,14 +120,14 @@ function MilestoneItem({
         <div className="flex items-center gap-3 min-w-0">
           <Flag size={15} className="shrink-0 text-primary" />
           <div className="min-w-0 flex flex-col gap-1">
-            <p dir="auto" className="font-bold text-base-content truncate">
+            <p  className="font-bold text-base-content truncate">
               {ms.title}
             </p>
             <div className="flex items-center gap-3 text-[13px] text-heledone-ink-muted">
               {ms.target_date && <span>{t("Target:")} {formatDate(ms.target_date)}</span>}
               <div className="flex items-center gap-1.5" title={t("{value0} of {value1} tasks completed", { value0: completed, value1: total })}>
                 <TaskSquare size={12} className="text-heledone-ink-muted" />
-                <span>{completed}/{total}</span>
+                <span>{formatUiNumber(completed)}/{formatUiNumber(total)}</span>
               </div>
             </div>
           </div>
@@ -151,7 +152,7 @@ function MilestoneItem({
             </div>
           )}
           <div className="hidden sm:flex flex-col items-end gap-1 me-2">
-            <div className="text-[13px] font-medium text-heledone-ink-muted">{progressPercent}%</div>
+            <div className="text-[13px] font-medium text-heledone-ink-muted">{formatUiNumber(progressPercent)}%</div>
             <div className="w-16 h-1.5 rounded-full bg-base-300 overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-500"
@@ -180,7 +181,7 @@ function MilestoneItem({
               {/* Tasks List */}
               <div className="px-2 pb-2">
                 <h4 className="text-[13px] font-bold text-heledone-ink-muted uppercase tracking-wider mb-2">
-                  {t("Linked Tasks (")}{milestoneTasks.length})
+                  {t("Linked Tasks (")}{formatUiNumber(milestoneTasks.length)})
                 </h4>
                 {isLoadingTasks ? (
                   <div className="flex justify-center p-4">
@@ -200,7 +201,7 @@ function MilestoneItem({
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div className={`size-2 shrink-0 rounded-full ${task.is_finished ? "bg-success" : "bg-base-content/20"}`} />
                           <p
-                            dir="auto"
+
                             className={`font-semibold truncate ${task.is_finished ? "line-through text-heledone-ink-muted" : "text-[13px] text-base-content/90 group-hover/task:text-primary transition-colors"}`}
                           >
                             {task.title}
@@ -385,7 +386,7 @@ function MilestonesTab({
       <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5">
         <div className="flex items-center justify-between border-b border-base-content/8 pb-3 mb-4">
           <h3 className="text-sm font-bold text-base-content">
-            {t("Project Milestones (")}{milestones.length})
+            {t("Project Milestones (")}{formatUiNumber(milestones.length)})
           </h3>
           {canManageProject && (
             <button
@@ -403,7 +404,7 @@ function MilestonesTab({
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-heledone-ink-muted uppercase tracking-wider text-[13px]">
                 {t("Weighted Project Progress")}</span>
-              <span className="font-black text-primary">{weightedProgress}%</span>
+              <span className="font-black text-primary">{formatUiNumber(weightedProgress)}%</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-base-300">
               <div
@@ -438,7 +439,7 @@ function MilestonesTab({
                     className="shrink-0 rounded-lg bg-base-200 px-2 py-1 text-[13px] font-bold text-heledone-ink-muted whitespace-nowrap"
                     title={t("Milestone weight (contributes this much to project progress)")}
                   >
-                    {t("Weight:")} {ms.weight || 1}
+                    {t("Weight:")} {formatUiNumber(ms.weight || 1)}
                   </div>
                 </div>
               </div>
@@ -457,7 +458,7 @@ function MilestonesTab({
               </svg>
               <h3 className="text-sm font-bold text-base-content">
                 {t("Unlinked Tasks")}<span className="ms-2 rounded-full bg-warning/15 px-2 py-0.5 text-[13px] font-bold text-warning">
-                  {unlinkedCount}
+                  {formatUiNumber(unlinkedCount)}
                 </span>
               </h3>
             </div>
@@ -484,7 +485,7 @@ function MilestonesTab({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className={`size-2 shrink-0 rounded-full ${task.is_finished ? "bg-success" : "bg-base-content/20"}`} />
                     <span
-                      dir="auto"
+
                       className={`font-semibold truncate ${task.is_finished ? "line-through text-heledone-ink-muted" : "text-base-content"}`}
                     >
                       {task.title}
@@ -706,7 +707,7 @@ export default function ProjectDetailsPage() {
                   {project.prefix}
                 </span>
               )}
-              <h1 dir="auto" className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
+              <h1  className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
                 {project.name}
               </h1>
               <StatusDropdown
@@ -722,7 +723,7 @@ export default function ProjectDetailsPage() {
               />
             </div>
             {project.description && (
-              <p dir="auto" className="mt-0.5 text-xs text-heledone-ink-muted line-clamp-1">
+              <p  className="mt-0.5 text-xs text-heledone-ink-muted line-clamp-1">
                 {project.description}
               </p>
             )}
@@ -839,14 +840,14 @@ export default function ProjectDetailsPage() {
                   <p className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
                     {t("Progress")}</p>
                   <p className="mt-1 text-sm font-bold text-primary">
-                    {progress}%
+                    {formatUiNumber(progress)}%
                   </p>
                 </div>
                 <div className="rounded-2xl border border-base-content/8 bg-base-100 p-4">
                   <p className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
                     {t("تسک‌ها")}</p>
                   <p className="mt-1 text-sm font-bold text-base-content">
-                    {project.task_count || 0}
+                    {formatUiNumber(project.task_count || 0)}
                   </p>
                 </div>
               </div>
@@ -862,7 +863,7 @@ export default function ProjectDetailsPage() {
                       onClick={() => setActiveTab("milestones")}
                       className="text-xs font-bold text-primary hover:underline"
                     >
-                      {t("View all (")}{milestones.length})
+                      {t("View all (")}{formatUiNumber(milestones.length)})
                     </button>
                   </div>
 
@@ -880,7 +881,7 @@ export default function ProjectDetailsPage() {
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <Flag size={14} className="shrink-0 text-primary" />
-                              <span dir="auto" className="font-semibold text-base-content truncate">
+                              <span  className="font-semibold text-base-content truncate">
                                 {ms.title}
                               </span>
                             </div>
@@ -903,7 +904,7 @@ export default function ProjectDetailsPage() {
                       onClick={() => setActiveTab("members")}
                       className="text-xs font-bold text-primary hover:underline"
                     >
-                      {canManageProject ? t("Manage") : t("View all")} ({members.length})
+                      {canManageProject ? t("Manage") : t("View all")} ({formatUiNumber(members.length)})
                     </button>
                   </div>
 
@@ -927,7 +928,7 @@ export default function ProjectDetailsPage() {
                           <div className="grid size-6 place-items-center rounded-md bg-primary/10 text-[13px] font-bold text-primary shrink-0">
                             {getUserDisplayName(m)[0]?.toUpperCase() || "U"}
                           </div>
-                          <span dir="auto" className="font-semibold text-base-content truncate text-[13px]">
+                          <span  className="font-semibold text-base-content truncate text-[13px]">
                             {getUserDisplayName(m)}
                           </span>
                         </div>
@@ -951,7 +952,7 @@ export default function ProjectDetailsPage() {
               <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5 space-y-5">
                 <div className="flex items-center justify-between border-b border-base-content/8 pb-3">
                   <h3 className="text-sm font-bold text-base-content">
-                    {t("Project Members & Teams (")}{individualMembers.length + teamMembers.length + 1})
+                    {t("Project Members & Teams (")}{formatUiNumber(individualMembers.length + teamMembers.length + 1)})
                   </h3>
                   {canManageProject && (
                     <button
@@ -966,7 +967,7 @@ export default function ProjectDetailsPage() {
                 {/* Members Section */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                    {t("Members (")}{individualMembers.length + 1})
+                    {t("Members (")}{formatUiNumber(individualMembers.length + 1)})
                   </h4>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {/* Owner Card */}
@@ -993,7 +994,7 @@ export default function ProjectDetailsPage() {
                             {getUserDisplayName(m)[0]?.toUpperCase() || "U"}
                           </div>
                           <div className="min-w-0">
-                            <p dir="auto" className="text-xs font-bold text-base-content truncate">
+                            <p  className="text-xs font-bold text-base-content truncate">
                               {getUserDisplayName(m)}
                             </p>
                             <p className="text-[13px] font-medium text-heledone-ink-muted truncate">
@@ -1024,7 +1025,7 @@ export default function ProjectDetailsPage() {
                 {teamMembers.length > 0 && (
                   <div className="space-y-3 pt-4 border-t border-base-content/8">
                     <h4 className="text-xs font-bold text-base-content uppercase tracking-wider">
-                      {t("Teams (")}{teamMembers.length})
+                      {t("Teams (")}{formatUiNumber(teamMembers.length)})
                     </h4>
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                       {teamMembers.map((m: ProjectMember) => (
@@ -1037,7 +1038,7 @@ export default function ProjectDetailsPage() {
                               <People size={15} />
                             </div>
                             <div className="min-w-0">
-                              <p dir="auto" className="text-xs font-bold text-base-content truncate">
+                              <p  className="text-xs font-bold text-base-content truncate">
                                 {getUserDisplayName(m)}
                               </p>
                               <p className="text-[13px] font-medium text-heledone-ink-muted truncate">

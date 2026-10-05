@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { projectPalette } from "../../../core/config/designTokens";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
@@ -150,7 +151,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
           msg = Array.isArray(firstVal) ? firstVal[0] : String(firstVal);
         }
       }
-      toast.error(msg);
+      toast.error(translateError(msg));
     };
 
     if (project) {
@@ -263,7 +264,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
             <input
               type="text"
               name="name"
-              dir="auto"
+
               required
               placeholder={t("e.g. Heledone System")}
               value={formData.name}
@@ -277,7 +278,7 @@ export const CreateEditProjectModal: React.FC<CreateEditProjectModalProps> = ({
               {t("توضیح")}</label>
             <textarea
               name="description"
-              dir="auto"
+
               rows={2}
               placeholder={t("Brief project summary...")}
               value={formData.description}

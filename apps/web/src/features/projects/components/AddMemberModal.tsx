@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -150,7 +152,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             responseData.non_field_errors?.[0] ||
             errorMsg;
         }
-        toast.error(String(errorMsg));
+        toast.error(translateError(String(errorMsg)));
       },
     });
   };
@@ -226,7 +228,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               </div>
               <input
                 type="text"
-                dir="auto"
+
                 placeholder={
                   memberType === "user"
                     ? t("Type user name, username, or email...")
@@ -295,7 +297,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                               {displayName[0]?.toUpperCase() || "U"}
                             </div>
                             <div className="min-w-0">
-                              <p dir="auto" className="truncate text-xs font-bold">
+                              <p  className="truncate text-xs font-bold">
                                 {displayName}
                               </p>
                               {u.email && (
@@ -357,7 +359,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                           <div className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary text-[13px] font-bold shrink-0">
                             <People size={14} />
                           </div>
-                          <span dir="auto" className="truncate text-xs font-bold">
+                          <span  className="truncate text-xs font-bold">
                             {t.name}
                           </span>
                         </div>
@@ -388,7 +390,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             <div className="flex items-center justify-between font-bold text-heledone-ink-muted mb-1.5 uppercase tracking-wider text-[13px]">
               <span>{t("Capacity Allocation")}</span>
               <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[13px] font-bold text-primary">
-                {allocation}%
+                {formatUiNumber(allocation)}%
               </span>
             </div>
 
@@ -405,7 +407,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                       : "bg-base-200/50 text-heledone-ink-muted hover:bg-base-200 border border-transparent"
                   }`}
                 >
-                  {val}%
+                  {formatUiNumber(val)}%
                 </button>
               ))}
             </div>

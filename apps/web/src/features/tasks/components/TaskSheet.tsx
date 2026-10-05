@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t as translate, useTranslation, getDirection, formatRelativeTime } from "../../../i18n/locale";
 import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -183,9 +185,9 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     },
     onError: (error: any) =>
       toast.error(
-        error.response?.data?.detail ||
+        translateError(error.response?.data?.detail ||
           error.response?.data?.error ||
-          "Failed to log manual time"
+          "Failed to log manual time")
       ),
   });
 
@@ -277,7 +279,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     mutationFn: (patch: Partial<Task>) => updateTask(task!.id, patch),
     onSuccess: invalidateTaskDetails,
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || error.message || "Could not update task."),
+      toast.error(translateError(error.response?.data?.detail || error.message || "Could not update task.")),
   });
 
   const blockerMutation = useMutation({
@@ -286,7 +288,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
     onSuccess: invalidateTaskDetails,
     onError: (error: any, blocked) => {
       onPatch(task!.id, { is_blocked: !blocked });
-      toast.error(error.response?.data?.detail || error.message || "Could not update blocker state.");
+      toast.error(translateError(error.response?.data?.detail || error.message || "Could not update blocker state."));
     },
   });
 
@@ -299,7 +301,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
       toast.success(t("Comment added"));
     },
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || error.message || "Could not add comment."),
+      toast.error(translateError(error.response?.data?.detail || error.message || "Could not add comment.")),
   });
 
   const checklistAddMutation = useMutation({
@@ -309,7 +311,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
       invalidateTaskDetails();
     },
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || error.message || "Could not add checklist item."),
+      toast.error(translateError(error.response?.data?.detail || error.message || "Could not add checklist item.")),
   });
 
   const checklistToggleMutation = useMutation({
@@ -317,14 +319,14 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
       toggleChecklistItem(id),
     onSuccess: invalidateTaskDetails,
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || error.message || "Could not update checklist item."),
+      toast.error(translateError(error.response?.data?.detail || error.message || "Could not update checklist item.")),
   });
 
   const checklistDeleteMutation = useMutation({
     mutationFn: (id: string | number) => deleteChecklistItem(id),
     onSuccess: invalidateTaskDetails,
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || error.message || "Could not delete checklist item."),
+      toast.error(translateError(error.response?.data?.detail || error.message || "Could not delete checklist item.")),
   });
 
   const save = (patch: Partial<Task>) => {
@@ -411,7 +413,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
               rows={3}
               aria-label={t("عنوان تسک")}
               ref={titleRef}
-              dir="auto"
+
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={() =>
@@ -703,7 +705,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   {isEditingDescription || description ? (
                     <div className="rounded-2xl border border-base-content/8 bg-base-200/30 p-3 transition focus-within:border-primary/40 focus-within:bg-base-100">
                       <textarea
-                        dir="auto"
+
                         autoFocus={!description}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -751,14 +753,14 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       <span className="text-xs font-bold text-base-content">{t("چک‌لیست")}</span>
                       {checklists.length > 0 && (
                         <span className="text-[13px] text-heledone-ink-muted">
-                          ({checklistDone}/{checklists.length})
+                          ({formatUiNumber(checklistDone)}/{formatUiNumber(checklists.length)})
                         </span>
                       )}
                     </div>
 
                     {checklists.length > 0 && (
                       <span className="text-xs font-bold text-primary">
-                        {checklistProgress}%
+                        {formatUiNumber(checklistProgress)}%
                       </span>
                     )}
                   </div>
@@ -800,7 +802,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                             {item.is_completed && <TickCircle size={12} variant="Bold" />}
                           </button>
                           <span
-                            dir="auto"
+
                             className={`truncate text-xs ${
                               item.is_completed
                                 ? "text-heledone-ink-muted line-through"
@@ -831,7 +833,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                       className="flex gap-2 pt-1"
                     >
                       <input
-                        dir="auto"
+
                         value={checklistText}
                         onChange={(e) => setChecklistText(e.target.value)}
                         placeholder={t("Add step item...")}
@@ -868,7 +870,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                   className="rounded-2xl border border-base-content/8 bg-base-200/30 p-3 space-y-2 focus-within:border-primary/40 focus-within:bg-base-100 transition"
                 >
                   <textarea
-                    dir="auto"
+
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     placeholder={t("Write a comment...")}
@@ -945,7 +947,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                           {formatRelativeDate(comment.created_at)}
                         </span>
                       </div>
-                      <p dir="auto" className="text-xs leading-relaxed text-base-content/75">
+                      <p  className="text-xs leading-relaxed text-base-content/75">
                         {comment.content}
                       </p>
                       {comment.attached_file_url && (

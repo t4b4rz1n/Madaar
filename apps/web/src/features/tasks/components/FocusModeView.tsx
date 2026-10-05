@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -142,7 +143,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                     <ArrowLeft2 size={14} />
                   </button>
                   <span className="text-[13px] font-semibold text-heledone-ink-muted">
-                    {currentIndex + 1}/{tasks.length}
+                    {formatUiNumber(currentIndex + 1)}/{formatUiNumber(tasks.length)}
                   </span>
                   <button
                     type="button"
@@ -169,7 +170,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
           {/* Task Title & Description */}
           <div className="mt-5">
             <h1
-              dir="auto"
+
               className={`text-xl font-bold leading-snug sm:text-2xl ${
                 isActuallyDone ? 'text-heledone-ink-muted line-through' : 'text-base-content'
               }`}
@@ -179,7 +180,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
 
             {task.description && (
               <p
-                dir="auto"
+
                 className="mt-2 line-clamp-3 text-xs leading-relaxed text-heledone-ink-muted"
               >
                 {task.description}

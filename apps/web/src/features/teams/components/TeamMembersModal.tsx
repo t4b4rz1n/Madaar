@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -270,7 +271,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
             {/* Footer */}
             <div className="flex-shrink-0 border-t border-base-content/10 bg-base-200/30 p-5 sm:p-6">
               <span className="text-xs text-heledone-ink-muted">
-                {memberCount}  {t("member")}{memberCount !== 1 ? "s" : ""}
+                {formatUiNumber(memberCount)}  {t("member")}{memberCount !== 1 ? "s" : ""}
               </span>
             </div>
           </motion.div>

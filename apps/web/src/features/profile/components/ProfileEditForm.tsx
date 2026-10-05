@@ -202,8 +202,8 @@ export const ProfileEditForm = () => {
             </button>
             <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handleProfileImageChange} className="hidden" />
 
-            <div className="w-full border-t border-base-content/8 pt-4" dir="ltr">
-              <p className="mb-3 text-start text-xs font-bold text-heledone-ink-muted" dir="auto">{t("Choose a Heledone avatar")}</p>
+            <div className="w-full border-t border-base-content/8 pt-4" >
+              <p className="mb-3 text-start text-xs font-bold text-heledone-ink-muted" >{t("Choose a Heledone avatar")}</p>
               <div className="grid grid-cols-5 gap-2">
                 {defaultAvatars.map((url, index) => (
                   <button key={url} type="button" disabled={loadingAvatar} onClick={() => void selectDefaultAvatar(url)} aria-label={t("Choose avatar {number}", { number: index + 1 })} aria-pressed={profileImagePreview === url} className={`overflow-hidden rounded-full border-2 transition hover:scale-105 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${profileImagePreview === url ? "border-primary ring-2 ring-primary/20" : "border-transparent"}`}>
@@ -216,7 +216,7 @@ export const ProfileEditForm = () => {
             <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-outline rounded-lg bg-base-100 mb-4">
               {t("Update Photo")}</button>
 
-            <h2 className="font-bold text-xl text-base-content">{user.first_name} {user.last_name}</h2>
+            <h2 className="w-full text-start font-bold text-xl text-base-content">{user.first_name} {user.last_name}</h2>
             {user.is_staff && (
               <span className="badge badge-success bg-success/10 text-success border-success/20 gap-1 font-bold mt-2 py-3 px-3">
                 {t("Staff Member")} <TickCircle size={14} variant="Bold" />

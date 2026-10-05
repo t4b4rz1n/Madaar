@@ -1,4 +1,4 @@
-import { useTranslation } from "../../../i18n/locale";
+import { formatNumber, normalizeNumericInput, useTranslation } from "../../../i18n/locale";
 import { motion } from "motion/react";
 import { Lock, Message, TickSquare, User, Hierarchy, CardCoin, Coin1 } from "iconsax-reactjs";
 import { Controller, useWatch } from "react-hook-form";
@@ -288,11 +288,11 @@ export const UserForm = ({
                   {...field}
                   value={
                     field.value
-                      ? Number(field.value.toString().replace(/,/g, "")).toLocaleString("en-US")
+                      ? formatNumber(Number(normalizeNumericInput(field.value.toString())))
                       : ""
                   }
                   onChange={(e) => {
-                    const rawValue = e.target.value.replace(/,/g, "");
+                    const rawValue = normalizeNumericInput(e.target.value);
                     // Allow empty or valid numbers, up to 12 digits
                     if (rawValue === "" || (!isNaN(Number(rawValue)) && rawValue.length <= 12)) {
                       field.onChange(rawValue);

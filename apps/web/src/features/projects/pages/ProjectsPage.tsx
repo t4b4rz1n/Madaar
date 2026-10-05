@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import {
 AnimatePresence, motion } from "motion/react";
@@ -166,7 +167,7 @@ const ProgressRing = ({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-xs font-black text-base-content">
-          {Math.round(progress)}%
+          {formatUiNumber(Math.round(progress))}%
         </span>
       </div>
     </div>
@@ -309,7 +310,7 @@ function ProjectCard({
       {/* Content wrapper to stay above the halo */}
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-3">
-          <h2 dir="auto" className="flex-1 min-w-0 break-words text-xl font-bold tracking-tight text-base-content">
+          <h2  className="flex-1 min-w-0 break-words text-xl font-bold tracking-tight text-base-content">
             {project.name}
           </h2>
           <div className="flex items-center gap-2">
@@ -334,10 +335,10 @@ function ProjectCard({
               {t("Milestone Progress")}</p>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl font-bold text-base-content">
-                {completedMilestones}
+                {formatUiNumber(completedMilestones)}
               </span>
               <span className="text-sm font-medium text-heledone-ink-muted">
-                / {totalMilestones}  {t("Done")}</span>
+                / {formatUiNumber(totalMilestones)}  {t("Done")}</span>
             </div>
           </div>
 
@@ -352,7 +353,7 @@ function ProjectCard({
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5zM11 10v5h2v-5h-2zm0 6v2h2v-2h-2z"/>
             </svg>
-            <span>{project.unlinked_task_count}  {t("unlinked task")}{(project.unlinked_task_count || 0) > 1 ? "s" : ""}</span>
+            <span>{(project.unlinked_task_count || 0) === 1 ? t("{count} unlinked task", { count: 1 }) : t("{count} unlinked tasks", { count: project.unlinked_task_count || 0 })}</span>
           </div>
         )}
 
@@ -363,7 +364,7 @@ function ProjectCard({
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <span className="font-medium">{memberCount}  {t("members")}</span>
+          <span className="font-medium">{formatUiNumber(memberCount)}  {t("members")}</span>
         </div>
       </div>
     </motion.article>
@@ -486,7 +487,7 @@ export default function ProjectsPage() {
             <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
               {t("پروژه‌ها")}</h1>
             <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-              {projects.length}
+              {formatUiNumber(projects.length)}
             </span>
           </div>
           <p className="mt-1 text-xs font-medium text-heledone-ink-muted">

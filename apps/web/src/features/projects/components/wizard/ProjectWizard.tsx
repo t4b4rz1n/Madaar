@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../../core/utils/errorHandler";
 import { t as translate, useTranslation } from "../../../../i18n/locale";
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -96,7 +98,7 @@ export const ProjectWizard: React.FC = () => {
       // Navigate cleanly (no query params needed)
       navigate('/tasks');
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Failed to create project');
+      toast.error(translateError(err?.response?.data?.detail || 'Failed to create project'));
     } finally {
       setIsSubmitting(false);
     }
@@ -172,7 +174,7 @@ export const ProjectWizard: React.FC = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
-                              step.number
+                              formatUiNumber(step.number)
                             )}
                           </div>
                           {idx < STEPS.length - 1 && (
@@ -218,7 +220,7 @@ export const ProjectWizard: React.FC = () => {
                     {currentStep === 3 && t("Board Template")}
                   </h2>
                   <p className="text-xs text-heledone-ink-muted mt-0.5">
-                    {t("Step")} {currentStep}  {t("of")} {STEPS.length}
+                    {t("Step")} {formatUiNumber(currentStep)}  {t("of")} {formatUiNumber(STEPS.length)}
                   </p>
                 </div>
                 <button

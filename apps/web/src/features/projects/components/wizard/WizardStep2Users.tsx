@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../../i18n/locale";
 import { useTranslation } from "../../../../i18n/locale";
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -122,7 +123,7 @@ export const WizardStep2Users: React.FC = () => {
         </div>
 
         <p className="text-xs text-heledone-ink-muted mt-3">
-          {selectedUserIds.length + 1}  {t("member(s) will be added to this project")}</p>
+          {formatUiNumber(selectedUserIds.length + 1)}  {t("member(s) will be added to this project")}</p>
       </div>
 
       {/* Footer */}

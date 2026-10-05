@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import React from 'react';
@@ -17,7 +18,7 @@ export const HolidayCalendar: React.FC<{ year?: number }> = ({ year = new Date()
     <div className="heledone-surface overflow-hidden rounded-[26px] border border-base-content/10 bg-base-100 shadow-sm">
       <div className="flex items-center gap-3 border-b border-base-content/10 p-5 sm:p-6">
         <div className="grid size-10 place-items-center rounded-xl bg-warning/10 text-warning"><CalendarTick size={20} /></div>
-        <div><h2 className="text-base font-semibold text-base-content">{t("Holiday calendar")}</h2><p className="mt-1 text-xs text-heledone-ink-muted">{t("Company and official holidays in")} {year}.</p></div>
+        <div><h2 className="text-base font-semibold text-base-content">{t("Holiday calendar")}</h2><p className="mt-1 text-xs text-heledone-ink-muted">{t("Company and official holidays in")} {formatUiNumber(year)}.</p></div>
       </div>
 
       <div className="p-5 sm:p-6">

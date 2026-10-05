@@ -10,3 +10,6 @@ Generated with the built-in ImageGen tool for the Heledone southern-Iran visual 
 - `sea-divider.png`: restrained wave separator.
 
 The assets use the palette `#FFF8EE`, `#087F83`, `#DF765B`, and `#F2BA49`; decorative imagery is kept independent from semantic status colors.
+
+- `home-welcome-v2.png`: bright shenashir and sea panorama matched to the home reference.
+- `home-sidebar-coast.png`: transparent flat coastal scene for the home sidebar.

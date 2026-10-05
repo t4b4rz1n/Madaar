@@ -79,6 +79,15 @@ export function formatNumber(value: number, options?: Intl.NumberFormatOptions):
   return new Intl.NumberFormat(getIntlLocale(), options).format(value);
 }
 
+/** Keep API/form values ASCII while accepting Persian and Arabic keyboard digits. */
+export function normalizeNumericInput(value: string): string {
+  return value
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[٬,\s\u200e\u200f]/g, "")
+    .replace(/٫/g, ".");
+}
+
 export function formatRelativeTime(value: string | Date): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";

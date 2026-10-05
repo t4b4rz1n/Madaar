@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
 import { motion } from "motion/react";
 import {
@@ -145,7 +146,7 @@ export const DiscountsGrid = ({
                     )}
                   </div>
                   <p className="text-sm font-medium text-primary">
-                    {discount.percent}{t("% OFF")}</p>
+                    {formatUiNumber(discount.percent)}{t("% OFF")}</p>
                 </div>
                 <span
                   className={`shrink-0 px-2 py-0.5 rounded-full text-[13px] font-bold border uppercase ${
@@ -164,7 +165,7 @@ export const DiscountsGrid = ({
                   <span className="text-heledone-ink-muted flex items-center gap-1">
                     <User size={12} />  {t("Usage")}</span>
                   <span className="font-medium">
-                    {discount.current_usage}/{discount.max_usage}
+                    {formatUiNumber(discount.current_usage)}/{formatUiNumber(discount.max_usage)}
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-base-200 rounded-full overflow-hidden">

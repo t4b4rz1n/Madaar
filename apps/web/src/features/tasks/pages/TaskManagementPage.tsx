@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import React, { lazy, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -65,7 +66,7 @@ export const TaskManagementPage: React.FC = () => {
       toast.success(t("کانبان ساخته شد"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || t("ساخت کانبان ممکن نشد"));
+      toast.error(translateError(error?.response?.data?.detail || t("ساخت کانبان ممکن نشد")));
     },
   });
 

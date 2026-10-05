@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import { formatDisplayDate } from "../../../utils/date";
@@ -116,7 +117,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       }, 800);
     },
     onError: (error: any) => {
-      toast.error(error.message || error.response?.data?.due_date?.[0] || 'Failed to update task.');
+      toast.error(translateError(error.message || error.response?.data?.due_date?.[0] || 'Failed to update task.'));
       // Revert local date if it was changed
       setLocalDueDate(task.due_date ? new Date(task.due_date).toISOString() : null);
     }
@@ -133,7 +134,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
     onError: (error: any) => {
-      toast.error(error.message || error.response?.data?.detail || 'Failed to add comment.');
+      toast.error(translateError(error.message || error.response?.data?.detail || 'Failed to add comment.'));
     }
   });
 
@@ -148,7 +149,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       setIsAddingChecklist(false);
     },
     onError: (error: any) => {
-      toast.error(error.message || error.response?.data?.detail || 'Failed to add checklist item.');
+      toast.error(translateError(error.message || error.response?.data?.detail || 'Failed to add checklist item.'));
       setIsAddingChecklist(false);
     }
   });
@@ -162,7 +163,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
     onError: (error: any) => {
-      toast.error(error.message || error.response?.data?.detail || 'Failed to toggle checklist item.');
+      toast.error(translateError(error.message || error.response?.data?.detail || 'Failed to toggle checklist item.'));
     }
   });
 
@@ -174,7 +175,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.message || error.response?.data?.detail || 'Failed to delete task.');
+      toast.error(translateError(error.message || error.response?.data?.detail || 'Failed to delete task.'));
     }
   });
 
@@ -186,7 +187,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['taskComments', task.id] });
     },
     onError: (error: any) => {
-      toast.error(error.message || error.response?.data?.detail || 'Failed to update comment.');
+      toast.error(translateError(error.message || error.response?.data?.detail || 'Failed to update comment.'));
     }
   });
 
@@ -199,7 +200,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
     onError: (error: any) => {
-      toast.error(error.message || error.response?.data?.detail || 'Failed to delete comment.');
+      toast.error(translateError(error.message || error.response?.data?.detail || 'Failed to delete comment.'));
       setDeletingCommentId(null);
     }
   });
@@ -641,7 +642,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
                               <>
                                 <div className="backdrop-blur-md bg-white/[0.03] p-4 rounded-xl text-[14px] text-base-content shadow-sm border border-base-content/5 prose  prose-p:leading-relaxed prose-pre:bg-base-100 prose-pre:border prose-pre:border-base-content/10 prose-pre:rounded-lg prose-a:text-primary max-w-none">
                                   <ReactMarkdown>
-                                    {typeof item.content === 'string' ? item.content : '*No content*'}
+                                    {typeof item.content === 'string' ? item.content : t("No content")}
                                   </ReactMarkdown>
 
                                   {typeof item.attached_file_url === 'string' && (

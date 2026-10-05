@@ -7,6 +7,7 @@ export interface EmployeeTaskSummary {
   due_date: string | null;
   status_name: string | null;
   status_code?: string | null;
+  board_id?: string | null;
   project_name: string | null;
   project_id: string | null;
 }

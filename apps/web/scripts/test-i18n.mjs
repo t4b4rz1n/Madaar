@@ -12,9 +12,10 @@ globalThis.localStorage = {
   setItem: (key, value) => storage.set(key, value),
   removeItem: (key) => storage.delete(key),
 };
-const server = await createServer({ configFile: false, root, server: { middlewareMode: true, hmr: false, ws: false, watch: null }, appType: "custom" });
+const server = await createServer({ configFile: false, root, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false, ws: false, watch: null }, appType: "custom" });
 try {
-  const { languages, useLocaleStore, t, getDirection, formatNumber } = await server.ssrLoadModule("/src/i18n/locale.ts");
+  const { languages, useLocaleStore, t, getDirection, formatNumber, normalizeNumericInput } = await server.ssrLoadModule("/src/i18n/locale.ts");
+  const { getErrorMessage } = await server.ssrLoadModule("/src/core/utils/errorHandler.ts");
   const { formatDisplayDate } = await server.ssrLoadModule("/src/utils/date.ts");
   const { formatDuration } = await server.ssrLoadModule("/src/i18n/formatters.ts");
   const { getWorkflowAppearance } = await server.ssrLoadModule("/src/core/config/designTokens.ts");
@@ -30,6 +31,7 @@ try {
     assert.ok(message.trim(), `empty Persian translation: ${key}`);
     assert.ok(en.messages[key].trim(), `empty English translation: ${key}`);
     assert.deepEqual(placeholders(message), placeholders(en.messages[key]), `interpolation mismatch: ${key}`);
+    assert.ok(!/[\u0600-\u06ff]/.test(en.messages[key]), `Persian leaked into English UI message: ${key}`);
   }
 
   const missing = [];
@@ -40,10 +42,13 @@ try {
       if (!/\.tsx?$/.test(file)) continue;
       const source = ts.createSourceFile(file, await readFile(file, "utf8"), ts.ScriptTarget.Latest, true);
       function visit(node) {
-        if (ts.isCallExpression(node) && ["t", "translate"].includes(node.expression.getText(source)) && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) {
+        if (ts.isCallExpression(node) && ["t", "translate", "translateError"].includes(node.expression.getText(source)) && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) {
           const key = node.arguments[0].text;
           if (!Object.hasOwn(en.messages, key)) missing.push(`${path.relative(root, file)}: ${key}`);
         }
+        if (ts.isJsxText(node) && /[A-Za-z\u0600-\u06ff]{2}/.test(node.text)) missing.push(`${path.relative(root, file)}: untranslated JSX text ${node.text.trim()}`);
+        if (ts.isJsxAttribute(node) && ["placeholder", "aria-label", "title", "alt"].includes(node.name.getText(source)) && node.initializer && ts.isStringLiteral(node.initializer) && /[A-Za-z\u0600-\u06ff]{2}/.test(node.initializer.text) && !/^https?:\/\//.test(node.initializer.text)) missing.push(`${path.relative(root, file)}: untranslated ${node.name.getText(source)}`);
+        if (ts.isJsxAttribute(node) && node.name.getText(source) === "dir" && node.initializer && ts.isStringLiteral(node.initializer) && ["ltr", "auto"].includes(node.initializer.text) && !file.endsWith("Brand.tsx")) missing.push(`${path.relative(root, file)}: direction must follow the selected UI language`);
         ts.forEachChild(node, visit);
       }
       visit(source);
@@ -60,6 +65,9 @@ try {
   assert.equal(getWorkflowAppearance({ category: "done", name: "آماده انتشار API v2" }).label, "آماده انتشار API v2", "preserve custom status names");
   assert.equal(t("Open {section}", { section: "API v2 — طرح فارسی" }), "Open API v2 — طرح فارسی");
   assert.equal(formatNumber(1234567.5), "1,234,567.5");
+  assert.equal(normalizeNumericInput("۱٬۲۳۴٫۵"), "1234.5");
+  assert.equal(normalizeNumericInput("١٬٢٣٤٫٥"), "1234.5");
+  assert.equal(normalizeNumericInput("1,234.5"), "1234.5");
   const nowruz = new Date("2025-03-21T12:00:00Z");
   assert.equal(formatDisplayDate(nowruz, "yyyy-MM-dd", "jalali"), "1404-01-01");
   assert.equal(formatDisplayDate(nowruz, "yyyy-MM-dd", "gregorian"), "2025-03-21");
@@ -77,6 +85,13 @@ try {
   assert.equal(formatDisplayDate(nowruz, "yyyy-MM-dd", "jalali"), "۱۴۰۴-۰۱-۰۱");
   assert.equal(formatDisplayDate(nowruz, "yyyy-MM-dd", "gregorian"), "۲۰۲۵-۰۳-۲۱");
   assert.equal(formatDuration(5400), "۱ ساعت و ۳۰ دقیقه");
+  assert.equal(t("{count} projects in total", { count: 3 }), "در مجموع ۳ پروژه");
+  assert.equal(t("Ideal Line"), "روند ایده‌آل");
+  assert.equal(t("Running"), "در حال اجرا");
+  assert.equal(getErrorMessage({ message: "Request failed with status code 400", response: { data: { message: "Failed to create team" } } }, "Fallback"), "ساخت تیم ممکن نشد", "prefer translated backend errors over Axios transport messages");
+  assert.equal(getErrorMessage({ message: "Network Error" }, "Fallback"), "اتصال به سرور برقرار نشد.");
+  assert.equal(getErrorMessage({}, "Could not complete action."), "انجام این اقدام ممکن نشد.");
+  assert.equal(getErrorMessage("Request failed with status code 500"), "انجام این اقدام ممکن نشد.");
 
   languages.push({ code: "fr", nativeName: "Français", intlLocale: "fr-FR", direction: "ltr", productName: "Heledone", messages: { Language: "Langue" } });
   useLocaleStore.getState().setLocale("fr");

@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { t as translate, useTranslation } from "../../../i18n/locale";
 import React, { useState } from 'react';
 import { useOnboardingStore } from '../store/useOnboardingStore';
@@ -62,7 +63,7 @@ export const StepAddUsers: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="input input-bordered w-full focus:input-primary"
                   placeholder={t("user@company.com")}
-                  dir="ltr"
+
                 />
               </div>
 
@@ -78,7 +79,7 @@ export const StepAddUsers: React.FC = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="input input-bordered w-full focus:input-primary"
                   placeholder={t("e.g. johndoe")}
-                  dir="ltr"
+
                 />
               </div>
 
@@ -93,14 +94,14 @@ export const StepAddUsers: React.FC = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input input-bordered w-full pr-11 focus:input-primary"
+                    className="input input-bordered w-full pe-11 focus:input-primary"
                     placeholder={t("Min. 8 characters")}
-                    dir="ltr"
+
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted hover:text-base-content transition-colors z-10"
+                    className="absolute end-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted hover:text-base-content transition-colors z-10"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -149,7 +150,7 @@ export const StepAddUsers: React.FC = () => {
           <div className="w-full lg:w-72 flex flex-col">
             <h4 className="font-semibold text-base-content mb-3">
               {t("Users to be added")}{' '}
-              <span className="badge badge-primary badge-sm ml-1">{pendingUsers.length}</span>
+              <span className="badge badge-primary badge-sm ms-1">{formatUiNumber(pendingUsers.length)}</span>
             </h4>
 
             {pendingUsers.length === 0 ? (

@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t } from "../../../i18n/locale";
 import {
   keepPreviousData,
@@ -43,7 +44,7 @@ export const useCreateTeam = () => {
         error.message ||
         "Failed to create team";
 
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -67,7 +68,7 @@ export const useUpdateTeam = () => {
         error.message ||
         "Failed to update team";
 
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -90,7 +91,7 @@ export const useDeleteTeam = () => {
         error.message ||
         "Failed to delete team";
 
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -126,7 +127,7 @@ export const useAddTeamMember = () => {
         error?.response?.data?.message ||
         error.message ||
         "Failed to add member";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -150,7 +151,7 @@ export const useRemoveTeamMember = () => {
       const errorMessage =
         error?.response?.data?.message || error?.response?.data?.detail || error?.message ||
         "Failed to remove member";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -175,7 +176,7 @@ export const useUpdateTeamMemberRole = () => {
         error?.response?.data?.message ||
         error.message ||
         "Failed to update member role";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };

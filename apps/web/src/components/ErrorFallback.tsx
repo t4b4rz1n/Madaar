@@ -12,6 +12,7 @@ export const ErrorFallback = ({
 }: ErrorFallbackProps) => {
   const t = useTranslation();
   const errorMessage = error instanceof Error ? error.message : String(error);
+  const isModuleLoadError = /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|Loading chunk .+ failed/i.test(errorMessage);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
@@ -22,10 +23,14 @@ export const ErrorFallback = ({
         <h2 className="text-xl font-bold text-base-content mb-2">
           {t("Something went wrong")}</h2>
         <p className="text-sm text-heledone-ink-muted mb-6 bg-base-200 p-3 rounded-xl font-mono text-start overflow-auto max-h-32">
-          {errorMessage}
+          {isModuleLoadError ? t("بارگذاری صفحه کامل نشد. برای دریافت نسخهٔ تازه، دوباره تلاش کنید.") : errorMessage}
         </p>
         <button
-          onClick={resetErrorBoundary}
+          onClick={() => {
+            // React.lazy remembers a rejected import; resetting the boundary alone cannot retry it.
+            if (isModuleLoadError) window.location.reload();
+            else resetErrorBoundary();
+          }}
           className="btn btn-primary w-full rounded-xl gap-2"
         >
           <Refresh size={20} />

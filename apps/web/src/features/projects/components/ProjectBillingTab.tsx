@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getIntlLocale, useTranslation } from "../../../i18n/locale";
 import { useState } from "react";
 import { motion } from "motion/react";
@@ -105,10 +106,10 @@ export const ProjectBillingTab = ({ projectId }: ProjectBillingTabProps) => {
             </div>
           </div>
           <p className="mt-3 text-2xl font-black text-base-content">
-            {members.length}
+            {formatUiNumber(members.length)}
           </p>
           <p className="mt-1 text-[13px] text-heledone-ink-muted">
-            {membersWithSalary.length}  {t("with salary configured")}</p>
+            {formatUiNumber(membersWithSalary.length)}  {t("with salary configured")}</p>
         </div>
 
         {/* Hourly Total Rate */}
@@ -124,7 +125,7 @@ export const ProjectBillingTab = ({ projectId }: ProjectBillingTabProps) => {
             {totalHourlyRate > 0 ? formatCurrency(totalHourlyRate, data.currency) : "—"}
           </p>
           <p className="mt-1 text-[13px] text-heledone-ink-muted">
-            {hourlyMembers.length}  {t("hourly member")}{hourlyMembers.length !== 1 ? "s" : ""}
+            {formatUiNumber(hourlyMembers.length)}  {t("hourly member")}{hourlyMembers.length !== 1 ? "s" : ""}
           </p>
         </div>
       </motion.div>
@@ -259,9 +260,9 @@ export const ProjectBillingTab = ({ projectId }: ProjectBillingTabProps) => {
         {data.pagination && data.pagination.total_pages > 1 && (
           <div className="mt-4 flex items-center justify-between border-t border-base-content/8 pt-4 text-sm">
             <span className="text-heledone-ink-muted">
-              {t("Showing page")} {data.pagination.current_page}  {t("of")}{" "}
-              {data.pagination.total_pages}  {t("(Total:")}{" "}
-              {data.pagination.total_results}  {t("members)")}</span>
+              {t("Showing page")} {formatUiNumber(data.pagination.current_page)}  {t("of")}{" "}
+              {formatUiNumber(data.pagination.total_pages)}  {t("(Total:")}{" "}
+              {formatUiNumber(data.pagination.total_results)}  {t("members)")}</span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}

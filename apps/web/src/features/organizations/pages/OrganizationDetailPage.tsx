@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { getIntlLocale, useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { AnimatePresence, motion } from "motion/react";
@@ -110,7 +112,7 @@ export default function OrganizationDetailPage() {
       toast.success(t("Member removed successfully"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to remove member");
+      toast.error(translateError(error?.response?.data?.message || "Failed to remove member"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-members", orgId] });
@@ -238,7 +240,7 @@ export default function OrganizationDetailPage() {
             <UserIcon size={18} className="text-heledone-ink-muted" />
             <h2 className="text-lg font-semibold">{t("اعضا")}</h2>
             <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-heledone-ink-muted">
-              {members.length}
+              {formatUiNumber(members.length)}
             </span>
           </div>
         </div>
@@ -339,7 +341,7 @@ export default function OrganizationDetailPage() {
             <Profile2User size={18} className="text-heledone-ink-muted" />
             <h2 className="text-lg font-semibold">{t("تیم‌ها")}</h2>
             <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-heledone-ink-muted">
-              {teams.length}
+              {formatUiNumber(teams.length)}
             </span>
           </div>
         </div>
@@ -388,7 +390,7 @@ export default function OrganizationDetailPage() {
                       <span>
                         {t("Leader:")} {leader ? `${leader.first_name} ${leader.last_name}`.trim() : t("بدون مسئول")}
                       </span>
-                      {memberCount !== undefined && <span>{memberCount}  {t("members")}</span>}
+                      {memberCount !== undefined && <span>{formatUiNumber(memberCount)}  {t("members")}</span>}
                     </div>
                   </motion.div>
                 );
@@ -405,7 +407,7 @@ export default function OrganizationDetailPage() {
             <Briefcase size={18} className="text-heledone-ink-muted" />
             <h2 className="text-lg font-semibold">{t("پروژه‌ها")}</h2>
             <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium text-heledone-ink-muted">
-              {projects.length}
+              {formatUiNumber(projects.length)}
             </span>
           </div>
         </div>
@@ -442,7 +444,7 @@ export default function OrganizationDetailPage() {
                   </p>
                   <div className="mt-4 flex items-center justify-between text-xs text-heledone-ink-muted">
                     <span>{project.deadline ? t("Due {value0}", { value0: formatDisplayDate(project.deadline, "yyyy-MM-dd") }) : t("No deadline")}</span>
-                    {project.progress_percentage !== undefined && <span>{project.progress_percentage}{t("% complete")}</span>}
+                    {project.progress_percentage !== undefined && <span>{formatUiNumber(project.progress_percentage)}{t("% complete")}</span>}
                   </div>
                 </motion.div>
               ))}

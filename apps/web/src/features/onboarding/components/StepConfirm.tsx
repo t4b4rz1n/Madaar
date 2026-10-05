@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import React, { useState } from 'react';
 import { useOnboardingStore } from '../store/useOnboardingStore';
@@ -66,7 +68,7 @@ export const StepConfirm: React.FC = () => {
         window.location.href = '/projects?wizard=1';
       }, 1200);
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Failed to create organization');
+      toast.error(translateError(err.response?.data?.detail || 'Failed to create organization'));
       setLoading(false);
     }
   };
@@ -119,7 +121,7 @@ export const StepConfirm: React.FC = () => {
               <Users className="w-5 h-5 text-primary" />
               <span className="font-semibold text-base-content">
                 {t("Users to create")}{' '}
-                <span className="badge badge-primary badge-sm">{pendingUsers.length}</span>
+                <span className="badge badge-primary badge-sm">{formatUiNumber(pendingUsers.length)}</span>
               </span>
             </div>
             {pendingUsers.length === 0 ? (

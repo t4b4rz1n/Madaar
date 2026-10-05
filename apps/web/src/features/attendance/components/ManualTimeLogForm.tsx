@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,7 +14,7 @@ export const ManualTimeLogForm: React.FC<{ taskId?: string | number; tasks?: Tas
   const mutation = useMutation({
     mutationFn: (data: { task: string | number; start_time: string; end_time: string; description?: string }) => createManualLog(data as any),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["myWeeklyTimesheet"] }); queryClient.invalidateQueries({ queryKey: ["tasks"] }); toast.success(t("Time logged successfully")); setFormData({ task: taskId?.toString() || "", hours: "", minutes: "", description: "" }); onSuccess?.(); },
-    onError: (error: any) => toast.error(error.response?.data?.detail || error.response?.data?.error || "Could not log time."),
+    onError: (error: any) => toast.error(translateError(error.response?.data?.detail || error.response?.data?.error || "Could not log time.")),
   });
   const submit = (event: React.FormEvent) => {
     event.preventDefault();

@@ -1,4 +1,4 @@
-import { useTranslation } from "../../../i18n/locale";
+import { getIntlLocale, formatNumber, useTranslation } from "../../../i18n/locale";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
@@ -179,7 +179,7 @@ export default function TicketDetailsPage() {
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-bold text-sm text-base-content truncate max-w-[150px] sm:max-w-sm" dir="auto">
+                  <h2 className="font-bold text-sm text-base-content truncate max-w-[150px] sm:max-w-sm" >
                     {ticket.title}
                   </h2>
                   <span className={`inline-flex items-center text-[13px] px-1.5 py-0.5 rounded border uppercase font-medium shrink-0 ${pCfg.bg} ${pCfg.color}`}>
@@ -192,7 +192,7 @@ export default function TicketDetailsPage() {
                   )}
                 </div>
                 <p className="text-xs text-heledone-ink-muted flex items-center flex-wrap gap-1.5 mt-1">
-                  <span className="font-bold text-base-content/85" dir="auto">{ticket.user?.username || t("Guest")}</span>
+                  <span className="font-bold text-base-content/85" >{ticket.user?.username || t("Guest")}</span>
                   {ticket.user?.email && <span className="opacity-75 text-[13px] truncate max-w-[150px]">({ticket.user.email})</span>}
                   <span>•</span>
                   <span>{formatDate(ticket.created_at)}</span>
@@ -240,7 +240,7 @@ export default function TicketDetailsPage() {
           {/* Messages */}
           <div
             className="flex-1 overflow-y-auto p-5 flex flex-col-reverse gap-3 bg-base-100"
-            dir="ltr"
+
           >
             <div ref={chatEndRef} />
 
@@ -254,7 +254,7 @@ export default function TicketDetailsPage() {
                 return (
                   <div key={message.id} className={`flex ${isStaff ? "justify-end" : "justify-start"}`}>
                     <div
-                      dir="auto"
+
                       className={`max-w-[min(70%,42rem)] min-w-0 rounded-2xl px-4 py-3 shadow-xs ${isStaff
                         ? "bg-primary text-primary-content rounded-br-none"
                         : "bg-base-200 text-base-content border border-base-content/5 rounded-bl-none"
@@ -265,7 +265,7 @@ export default function TicketDetailsPage() {
                           {message.sender?.username || t("User")}
                         </span>
                         <span className={`text-[13px] ${isStaff ? "text-primary-content" : "text-heledone-ink-muted"}`}>
-                          {new Date(message.created_at).toLocaleTimeString("en-US", {
+                          {new Date(message.created_at).toLocaleTimeString(getIntlLocale(), {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
@@ -298,7 +298,7 @@ export default function TicketDetailsPage() {
                         </div>
                       ))}
 
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed" dir="auto">
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed" >
                         {message.text}
                       </p>
                     </div>
@@ -306,7 +306,7 @@ export default function TicketDetailsPage() {
                 );
               })
             ) : (
-              <div className="my-auto flex flex-col justify-center items-center text-center p-10" dir="auto">
+              <div className="my-auto flex flex-col justify-center items-center text-center p-10" >
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
                   <Messages2 size={32} className="text-primary" />
                 </div>
@@ -332,7 +332,7 @@ export default function TicketDetailsPage() {
                 )}
                 <div>
                   <p className="text-xs font-semibold text-base-content truncate max-w-[220px]">{selectedFile.name}</p>
-                  <p className="text-[13px] text-heledone-ink-muted">{(selectedFile.size / 1024).toFixed(1)}  {t("KB")}</p>
+                  <p className="text-[13px] text-heledone-ink-muted">{formatNumber(selectedFile.size / 1024, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}  {t("KB")}</p>
                 </div>
               </div>
               <button
@@ -458,7 +458,7 @@ export default function TicketDetailsPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex justify-between items-baseline gap-2">
-                        <span className={`font-bold text-xs truncate block ${isCurrent ? "text-primary" : "text-base-content/85"}`} dir="auto">
+                        <span className={`font-bold text-xs truncate block ${isCurrent ? "text-primary" : "text-base-content/85"}`} >
                           {tItem.title}
                         </span>
                         <span className="text-[13px] text-heledone-ink-muted shrink-0">
@@ -467,7 +467,7 @@ export default function TicketDetailsPage() {
                       </div>
 
                       <div className="flex justify-between items-center mt-1">
-                        <span className="text-[13px] text-heledone-ink-muted truncate block" dir="auto">
+                        <span className="text-[13px] text-heledone-ink-muted truncate block" >
                           {tItem.user?.username || t("Guest")}
                         </span>
 

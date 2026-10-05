@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import { formatDisplayDate } from "../../../utils/date";
@@ -99,7 +101,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       toast.success(t("تسک حذف شد"));
     },
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || "Could not delete task."),
+      toast.error(translateError(error.response?.data?.detail || "Could not delete task.")),
   });
 
   const updateMutation = useMutation({
@@ -110,7 +112,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       queryClient.invalidateQueries({ queryKey: ["taskActivities", task.id] });
     },
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || "Could not update task."),
+      toast.error(translateError(error.response?.data?.detail || "Could not update task.")),
   });
 
   const storeProjectId = useTaskStore((state) => state.activeProjectId);
@@ -216,7 +218,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <More size={14} />
         </button>
 
-        {/* ─── Title & Checkbox (Inline with dir="auto") ─── */}
+        {/* ─── Title & Checkbox (Inline with ) ─── */}
         <div className="flex items-start gap-2 pe-4">
           <button
             type="button"
@@ -236,7 +238,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           <div className="min-w-0 flex-1">
             <h3
-              dir="auto"
+
               className={`text-sm font-semibold leading-relaxed tracking-tight ${
                 isActuallyDone
                   ? "text-heledone-ink-muted line-through"
@@ -325,7 +327,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 {task.checklist_stats && task.checklist_stats.total > 0 && (
                   <div className={`flex items-center gap-1 ${task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? 'text-success font-bold bg-success/10 px-1.5 py-0.5 rounded-md -ms-1' : ''}`} title={t("Checklist items")}>
                     <TaskSquare size={13} variant={task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? "Bold" : "Linear"} />
-                    <span>{task.checklist_stats.done}/{task.checklist_stats.total}</span>
+                    <span>{formatUiNumber(task.checklist_stats.done)}/{formatUiNumber(task.checklist_stats.total)}</span>
                   </div>
                 )}
               </div>

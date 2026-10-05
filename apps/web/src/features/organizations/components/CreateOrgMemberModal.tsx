@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t as translate, useTranslation } from "../../../i18n/locale";
 import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -105,7 +106,7 @@ export const CreateOrgMemberModal = ({
         toast.error(t("User is already a member of this organization"));
         return;
       }
-      toast.error(error?.response?.data?.message || "Failed to add member");
+      toast.error(translateError(error?.response?.data?.message || "Failed to add member"));
     },
   });
 
@@ -302,7 +303,7 @@ export const CreateOrgMemberModal = ({
                       </div>
                       <input
                         type="text"
-                        dir="auto"
+
                         placeholder={t("Search by name, username or email...")}
                         value={userSearch}
                         onFocus={() => setIsUserDropdownOpen(true)}
@@ -347,7 +348,7 @@ export const CreateOrgMemberModal = ({
                                     {displayName[0]?.toUpperCase() || "U"}
                                   </div>
                                   <div className="min-w-0">
-                                    <p dir="auto" className="truncate text-xs font-bold">{displayName}</p>
+                                    <p  className="truncate text-xs font-bold">{displayName}</p>
                                     {u.email && (
                                       <p className="truncate text-[13px] text-heledone-ink-muted">{u.email}</p>
                                     )}
@@ -422,7 +423,7 @@ export const CreateOrgMemberModal = ({
                       disabled={isLoading || !selectedUserId}
                       className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
                     >
-                      {isLoading ? "Adding…" : t("Add Member")}
+                      {isLoading ? t("Adding…") : t("Add Member")}
                     </button>
                   </div>
                 </>
@@ -625,7 +626,7 @@ export const CreateOrgMemberModal = ({
                       disabled={isLoading}
                       className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
                     >
-                      {isLoading ? "CreatingΓÇª" : t("Create User")}
+                      {isLoading ? t("Creating…") : t("Create User")}
                     </button>
                   </div>
                 </form>

@@ -1,4 +1,4 @@
-import { useTranslation, useLocale } from "../../../i18n/locale";
+import { formatNumber, useTranslation, useLocale } from "../../../i18n/locale";
 import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import { formatDisplayDate } from "../../../utils/date";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
@@ -164,6 +164,7 @@ export default function CumulativeFlowChart({
             tickFormatter={(v) => formatDisplayDate(v, "M/d")}
           />
           <YAxis
+            tickFormatter={(value) => formatNumber(Number(value))}
             allowDecimals={false}
             tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
             width={32}
@@ -177,7 +178,7 @@ export default function CumulativeFlowChart({
               fontSize: 13,
             }}
             formatter={(value: any, name: any) => [
-              value ?? 0,
+              formatNumber(Number(value ?? 0)),
               statuses.find((s) => s.code === String(name))?.name ?? name,
             ] as any}
           />

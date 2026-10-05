@@ -5,6 +5,7 @@ import { PermissionGuard } from "../../auth/components/PermissionGuard";
 
 const DashboardPage = lazy(() => import("../pages/DashboardPage"));
 const UserDashboardPage = lazy(() => import("../pages/UserDashboardPage"));
+const PersonalWorkspacePage = lazy(() => import("../pages/PersonalWorkspacePage"));
 const ManagerDashboardPage = lazy(() => import("../pages/ManagerDashboardPage"));
 const TeamLeadDashboardPage = lazy(() => import("../pages/TeamLeadDashboardPage"));
 
@@ -24,6 +25,7 @@ export const dashboardRoutes: RouteObject[] = [
     path: "dashboard",
     element: <UserDashboardPage />,
   },
+  { path: "dashboard/workspace", element: <PersonalWorkspacePage /> },
   {
     path: "manager",
     element: (

@@ -493,6 +493,22 @@ class TimeOffRequestTests(AttendanceBaseTestCase):
         req = TimeOffRequest.objects.get(id=req_id)
         self.assertEqual(req.status, TimeOffRequest.Status.APPROVED)
 
+    def test_list_user_filter_keeps_personal_visibility(self):
+        TimeOffRequest.objects.create(
+            user=self.lead, organization=self.org,
+            request_type=TimeOffRequest.Type.VACATION,
+            start_datetime=timezone.now() + timedelta(days=1),
+            end_datetime=timezone.now() + timedelta(days=2),
+        )
+        url = reverse("timeoff-requests-list")
+        own = self.client.get(url, {"user": str(self.employee.id)})
+        self.assertEqual(own.status_code, status.HTTP_200_OK)
+        self.assertEqual([item["id"] for item in own.data["results"]], [str(self.req.id)])
+
+        someone_else = self.client.get(url, {"user": str(self.lead.id)})
+        self.assertEqual(someone_else.status_code, status.HTTP_200_OK)
+        self.assertEqual(someone_else.data["results"], [])
+
     def test_cancel_endpoint(self):
         url_cancel = reverse("timeoff-requests-cancel-request", kwargs={"pk": self.req.id})
         res = self.client.post(url_cancel)

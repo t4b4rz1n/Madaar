@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t } from "../../../i18n/locale";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +27,7 @@ export const useLogin = () => {
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(translateError(error.message));
     },
   });
 };
@@ -42,7 +43,7 @@ export const useRegister = () => {
       navigate("/login", { replace: true });
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(translateError(error.message));
     },
   });
 };

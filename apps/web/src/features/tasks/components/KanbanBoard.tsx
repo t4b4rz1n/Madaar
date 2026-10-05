@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import React, { useState, useEffect, useRef } from 'react';
@@ -136,7 +138,7 @@ export const KanbanBoard: React.FC = () => {
       const errorData = err.response?.data;
       const errorMessage = errorData?.message || errorData?.detail || errorData?.error || err.message || 'Failed to move task';
       console.error('Move task error:', err.response?.status, errorData);
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
       if (context?.previousTasks) {
         setLocalTasks(context.previousTasks);
         queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
@@ -205,7 +207,7 @@ export const KanbanBoard: React.FC = () => {
         queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
         setLocalTasks(context.previousTasks);
       }
-      toast.error(err.response?.data?.detail || err.message || 'Error creating task.');
+      toast.error(translateError(err.response?.data?.detail || err.message || 'Error creating task.'));
     }
   });
 
@@ -252,7 +254,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onError: (err: any, taskId, context: any) => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to start timer';
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
       // Revert completely
       if (context?.previousTasks) {
         setLocalTasks(context.previousTasks);
@@ -295,7 +297,7 @@ export const KanbanBoard: React.FC = () => {
     },
     onError: (err: any, taskId) => {
       const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to stop timer';
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
       // Revert
       setLocalTasks(tasks => tasks.map(t => sameId(t.id, taskId) ? { ...t, is_active_timer_running: true } : t));
     }
@@ -358,7 +360,7 @@ export const KanbanBoard: React.FC = () => {
         setLocalTasks(context.previousTasks);
         queryClient.setQueryData(['tasks', activeProjectId, activeBoardId], context.previousTasks);
       }
-      toast.error(err?.response?.data?.detail || t("ثبت وضعیت انجام‌شدن تسک ممکن نشد"));
+      toast.error(translateError(err?.response?.data?.detail || t("ثبت وضعیت انجام‌شدن تسک ممکن نشد")));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId, activeBoardId] });
@@ -406,7 +408,7 @@ export const KanbanBoard: React.FC = () => {
         errorData?.name?.[0] ||
         err.message ||
         'Failed to add status';
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     }
   });
 
@@ -422,7 +424,7 @@ export const KanbanBoard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['boards', activeProjectId] });
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.detail || err?.response?.data?.error || "Failed to reorder columns");
+      toast.error(translateError(err?.response?.data?.detail || err?.response?.data?.error || "Failed to reorder columns"));
       queryClient.invalidateQueries({ queryKey: ['boards', activeProjectId] });
     }
   });
@@ -720,9 +722,9 @@ export const KanbanBoard: React.FC = () => {
                     style={{ width: `${boardProgress}%` }}
                   />
                 </div>
-                <span className="text-[13px] font-bold text-success">{boardProgress}%</span>
+                <span className="text-[13px] font-bold text-success">{formatUiNumber(boardProgress)}%</span>
                 <span className="text-[13px] font-semibold text-heledone-ink-muted">
-                  ({completedCount}/{localTasks.length}  {t("انجام‌شده)")}</span>
+                  ({formatUiNumber(completedCount)}/{formatUiNumber(localTasks.length)}  {t("انجام‌شده)")}</span>
               </div>
             )}
           </div>
@@ -839,7 +841,7 @@ export const KanbanBoard: React.FC = () => {
                           className="rounded-full px-2 py-0.5 text-[13px] font-bold text-white"
                           style={{ background: `color-mix(in srgb, ${statusColor} 12%, transparent)`, color: appearance.ink }}
                         >
-                          {columnTasks.length}
+                          {formatUiNumber(columnTasks.length)}
                         </span>
                       </div>
 
@@ -1039,7 +1041,7 @@ export const KanbanBoard: React.FC = () => {
                               setNewTaskPriority('low');
                             }
                           }}
-                          dir="auto"
+
                           placeholder={t("What needs to be done?")}
                           className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-heledone-ink-muted resize-none leading-snug"
                         />
@@ -1127,7 +1129,7 @@ export const KanbanBoard: React.FC = () => {
                       setNewStatusName('');
                     }
                   }}
-                  dir="auto"
+
                   placeholder={t("New column name...")}
                   className="w-full bg-transparent text-[13px] font-semibold text-base-content outline-none placeholder:text-heledone-ink-muted px-2 py-1 mb-3.5 border-b border-base-content/10"
                 />

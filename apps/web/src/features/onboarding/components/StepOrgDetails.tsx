@@ -40,7 +40,7 @@ export const StepOrgDetails: React.FC = () => {
               onChange={(e) => setName(e.target.value)}
               className="input input-bordered w-full focus:input-primary"
               placeholder={t("e.g. Acme Corporation")}
-              dir="auto"
+
             />
           </div>
 

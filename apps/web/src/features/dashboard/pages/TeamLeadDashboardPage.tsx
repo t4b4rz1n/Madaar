@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getIntlLocale, t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 /**
@@ -203,9 +204,9 @@ const MemberRow = ({ member, maxTasks, workSeconds }: { member: ManagerMemberDet
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-black text-primary">{getInitials(member.first_name, member.last_name, member.username?.[0]?.toUpperCase())}</div>
         <div className="min-w-0"><p className="truncate text-sm font-bold text-base-content">{member.first_name || member.username} {member.last_name}</p><p className="truncate text-xs text-heledone-ink-muted">@{member.username}</p></div>
       </div>
-      <div><div className="mb-1 flex items-center justify-between text-[13px] font-bold text-heledone-ink-muted"><span>{t("Workload")}</span><span>{member.total_tasks}  {t("tasks")}</span></div><div className="h-2 overflow-hidden rounded-full bg-base-200"><motion.div initial={{ width: 0 }} animate={{ width: `${workload}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-primary" /></div></div>
-      <div className="text-start sm:text-end"><p className="text-sm font-black text-base-content">{completion}%</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("done")}</p></div>
-      <div className="text-start sm:text-end"><p className={`text-sm font-black ${member.overdue_tasks > 0 ? "text-error" : "text-base-content"}`}>{member.overdue_tasks}</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("overdue")}</p></div>
+      <div><div className="mb-1 flex items-center justify-between text-[13px] font-bold text-heledone-ink-muted"><span>{t("Workload")}</span><span>{formatUiNumber(member.total_tasks)}  {t("tasks")}</span></div><div className="h-2 overflow-hidden rounded-full bg-base-200"><motion.div initial={{ width: 0 }} animate={{ width: `${workload}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-primary" /></div></div>
+      <div className="text-start sm:text-end"><p className="text-sm font-black text-base-content">{formatUiNumber(completion)}%</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("done")}</p></div>
+      <div className="text-start sm:text-end"><p className={`text-sm font-black ${member.overdue_tasks > 0 ? "text-error" : "text-base-content"}`}>{formatUiNumber(member.overdue_tasks)}</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("overdue")}</p></div>
       <div className="col-span-full flex items-center gap-1 text-[13px] font-semibold text-heledone-ink-muted sm:col-auto sm:justify-end"><Timer1 size={13} /> {formatHours(workSeconds)}</div>
     </motion.div>
   );
@@ -340,7 +341,7 @@ const WorkHoursPanel = ({
                       </p>
                       {overdueTasks > 0 && (
                         <p className="text-[13px] font-bold text-error">
-                          {overdueTasks}  {t("Overdue Tasks")}</p>
+                          {formatUiNumber(overdueTasks)}  {t("Overdue Tasks")}</p>
                       )}
                     </div>
                   </div>
@@ -423,8 +424,8 @@ const ProjectSummaryPanel = ({
                   </p>
                   <p className="mt-1 text-[13px] font-semibold text-heledone-ink-muted">
                     {t("Deadline")} {formatDate(project.deadline)} ·{" "}
-                    {project.active_member_count}  {t("members ·")}{" "}
-                    {project.done_tasks}/{project.total_tasks}  {t("tasks")}</p>
+                    {formatUiNumber(project.active_member_count)}  {t("members ·")}{" "}
+                    {formatUiNumber(project.done_tasks)}/{formatUiNumber(project.total_tasks)}  {t("tasks")}</p>
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-1 text-[13px] font-black ${toneClass}`}
@@ -440,7 +441,7 @@ const ProjectSummaryPanel = ({
                   />
                 </div>
                 <span className="text-xs font-black text-heledone-ink-muted">
-                  {progress}%
+                  {formatUiNumber(progress)}%
                 </span>
               </div>
               {project.total_time_seconds != null && (
@@ -470,7 +471,7 @@ const OverdueSummaryPanel = ({
       action={
         overdue.total_overdue > 0 ? (
           <span className="rounded-full bg-error/10 px-2.5 py-1 text-[13px] font-black text-error">
-            {overdue.total_overdue}  {t("tasks")}</span>
+            {formatUiNumber(overdue.total_overdue)}  {t("tasks")}</span>
         ) : (
           <span className="rounded-full bg-success/10 px-2.5 py-1 text-[13px] font-black text-success">
             {t("All Up to Date")}</span>
@@ -510,7 +511,7 @@ const OverdueSummaryPanel = ({
               </div>
             </div>
             <span className="shrink-0 rounded-full bg-error/10 px-2.5 py-1 text-xs font-black text-error">
-              {member.count}  {t("tasks")}</span>
+              {formatUiNumber(member.count)}  {t("tasks")}</span>
           </div>
         ))}
       </div>
@@ -576,7 +577,7 @@ const TaskStatsPanel = ({
                     </span>
                   </div>
                   <span className="text-sm font-black text-base-content">
-                    {stat.count}
+                    {formatUiNumber(stat.count)}
                   </span>
                 </div>
               ))}
@@ -837,7 +838,7 @@ const TeamLeadDashboardPage = () => {
                   <p className="text-xs font-black uppercase  text-error">
                     {t("Needs Attention")}</p>
                   <h2 className="mt-1 text-lg font-black text-base-content">
-                    {dashboard.overdue_summary.total_overdue}  {t("tasks behind schedule")}</h2>
+                    {formatUiNumber(dashboard.overdue_summary.total_overdue)}  {t("tasks behind schedule")}</h2>
                   <p className="mt-1 text-xs font-semibold text-heledone-ink-muted">
                     {t("See details in the overdue tasks section.")}</p>
                 </div>
@@ -949,7 +950,7 @@ const TeamLeadDashboardPage = () => {
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-heledone-ink-muted">
               <TaskSquare size={14} />
-              {totalTasks}  {t("tasks ·")} {doneTasks}  {t("Completed")}</div>
+              {formatUiNumber(totalTasks)}  {t("tasks ·")} {formatUiNumber(doneTasks)}  {t("Completed")}</div>
           </section>
         </>
       )}

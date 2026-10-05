@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import React, { useState } from 'react';
@@ -177,7 +178,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not approve the request.';
-      toast.error(msg);
+      toast.error(translateError(msg));
     },
   });
 
@@ -189,7 +190,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not reject the request.';
-      toast.error(msg);
+      toast.error(translateError(msg));
     },
   });
 
@@ -201,7 +202,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not cancel the request.';
-      toast.error(msg);
+      toast.error(translateError(msg));
     },
   });
 

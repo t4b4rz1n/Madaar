@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t } from "../../../i18n/locale";
 import {
   useMutation,
@@ -90,7 +91,7 @@ export const useSendNotification = () => {
         error?.response?.data?.message ||
         error.message ||
         "Failed to send notification.";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };

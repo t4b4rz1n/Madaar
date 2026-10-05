@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../../i18n/locale";
 import { useTranslation } from "../../../../i18n/locale";
 import { getWorkflowAppearance } from "../../../../core/config/designTokens";
 import React from 'react';
@@ -69,7 +70,7 @@ export const WizardStep3Board: React.FC<Props> = ({ onSubmit, isSubmitting }) =>
                   ))}
                   {tmpl.statuses.length > 4 && (
                     <span className="px-1.5 py-0.5 text-[13px] rounded bg-base-300 text-heledone-ink-muted">
-                      +{tmpl.statuses.length - 4}
+                      +{formatUiNumber(tmpl.statuses.length - 4)}
                     </span>
                   )}
                 </div>

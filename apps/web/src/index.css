@@ -223,10 +223,19 @@ input, textarea, select, .input, .textarea, .select {
   transition: border-color var(--heledone-duration-fast), box-shadow var(--heledone-duration-fast);
 }
 
-input[type="text"], input[type="search"], input:not([type]), textarea {
-  unicode-bidi: plaintext;
+:where(h1, h2, h3, h4, h5, h6, p, label, legend, th, td) {
   text-align: start;
 }
+
+:where(h1, h2, h3, h4, h5, h6) { align-self: stretch; }
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]), textarea, select {
+  direction: inherit;
+  unicode-bidi: isolate;
+  text-align: start;
+}
+
+input::placeholder, textarea::placeholder { text-align: inherit; }
 
 input:focus-visible, textarea:focus-visible, select:focus-visible,
 .input:focus-within, .textarea:focus-within, .select:focus-within {

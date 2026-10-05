@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getIntlLocale, useTranslation } from "../../../i18n/locale";
 import { useState } from "react";
 import { motion } from "motion/react";
@@ -102,7 +103,7 @@ export const AdminFinanceDashboard = () => {
               {formatCurrency(totalIncome)}
             </p>
             <p className="mt-1 text-[13px] text-heledone-ink-muted">
-              {data.total_results}  {t("members")}</p>
+              {formatUiNumber(data.total_results)}  {t("members")}</p>
           </div>
 
           <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5">
@@ -189,7 +190,7 @@ export const AdminFinanceDashboard = () => {
                       <td className="py-3 text-center">
                         <span className="inline-flex items-center gap-1 rounded-lg bg-base-200 px-2 py-1 text-xs font-semibold">
                           <Briefcase size={11} />
-                          {r.active_projects}
+                          {formatUiNumber(r.active_projects)}
                         </span>
                       </td>
                       <td className="py-3 text-end font-semibold text-primary">

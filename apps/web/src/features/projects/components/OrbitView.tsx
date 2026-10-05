@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getIntlLocale, t as translate, useTranslation } from "../../../i18n/locale";
 import {
   ArrowLeft2,
@@ -322,7 +323,7 @@ function MemberDetails({
   );
 
   return (
-    <div className="relative p-5" dir="auto">
+    <div className="relative p-5" >
       <button
         type="button"
         onClick={onClose}
@@ -362,7 +363,7 @@ function MemberDetails({
           <div className="flex items-center justify-between gap-3">
             <dt className="text-[13px] font-semibold text-heledone-ink-muted">
               {t("Allocation")}</dt>
-            <dd className="font-bold text-base-content">{allocation}%</dd>
+            <dd className="font-bold text-base-content">{formatUiNumber(allocation)}%</dd>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-base-300">
             <div
@@ -425,7 +426,7 @@ function ClusterDetails({
 }) {
   const t = useTranslation();
   return (
-    <div className="relative p-5" dir="auto">
+    <div className="relative p-5" >
       <button
         type="button"
         onClick={onClose}
@@ -439,8 +440,8 @@ function ClusterDetails({
           {cluster.label}
         </p>
         <p className="mt-1 text-xs font-medium text-heledone-ink-muted">
-          {cluster.members.length}  {t("more")}{" "}
-          {cluster.members.length === 1 ? "member" : "members"}
+          {formatUiNumber(cluster.members.length)}  {t("more")}{" "}
+          {cluster.members.length === 1 ? t("member") : t("members")}
         </p>
       </div>
       <div className="mt-4 grid gap-2">
@@ -495,7 +496,7 @@ function OverflowDetails({
 }) {
   const t = useTranslation();
   return (
-    <div className="relative p-5" dir="auto">
+    <div className="relative p-5" >
       <button
         type="button"
         onClick={onClose}
@@ -506,7 +507,7 @@ function OverflowDetails({
       </button>
       <div className="pe-10">
         <p className="text-sm font-bold text-base-content">
-          {t("Remaining")} {mode === "teams" ? "teams" : "milestones"}
+          {t("Remaining")} {mode === "teams" ? t("teams") : t("milestones")}
         </p>
         <p className="mt-1 text-xs font-medium text-heledone-ink-muted">
           {t("These labels share the dashed overflow ring.")}</p>
@@ -552,7 +553,7 @@ function ProjectDetails({
 }) {
   const t = useTranslation();
   return (
-    <div className="relative p-5" dir="auto">
+    <div className="relative p-5" >
       <button
         type="button"
         onClick={onClose}
@@ -580,7 +581,7 @@ function ProjectDetails({
           <span
             className={`font-black ${progress === 100 ? "text-success" : "text-primary"}`}
           >
-            {progress}%
+            {formatUiNumber(progress)}%
           </span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-base-300">
@@ -603,7 +604,7 @@ function ProjectDetails({
           <dt className="text-[13px] font-semibold text-heledone-ink-muted">
             {t("Team size")}</dt>
           <dd className="mt-1 font-bold text-base-content">
-            {memberCount} {memberCount === 1 ? "member" : "members"}
+            {formatUiNumber(memberCount)} {memberCount === 1 ? t("member") : t("members")}
           </dd>
         </div>
       </dl>
@@ -1110,13 +1111,13 @@ export function OrbitView({
                               </span>
                               <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] start-1/2 z-50 hidden w-max max-w-44 -translate-x-1/2 rounded-xl border border-base-content/10 bg-base-100/95 px-3 py-2 text-center shadow-xl backdrop-blur-xl group-hover:block group-focus-within:block rtl:translate-x-1/2">
                                 <p
-                                  dir="auto"
+
                                   className="max-w-36 truncate text-[13px] font-bold text-base-content"
                                 >
                                   {name}
                                 </p>
                                 <p
-                                  dir="auto"
+
                                   className="mt-0.5 max-w-36 truncate text-[13px] font-semibold text-secondary"
                                 >
                                   {role}
@@ -1191,9 +1192,9 @@ export function OrbitView({
                                       : remainingMembers.length, value1: ring.label })}
                                 >
                                   +
-                                  {isFilterActive
+                                  {formatUiNumber(isFilterActive
                                     ? matchingClusterMembers.length
-                                    : remainingMembers.length}
+                                    : remainingMembers.length)}
                                 </button>
                               </div>
                             </div>
@@ -1231,7 +1232,7 @@ export function OrbitView({
                 aria-label={t("Open details for {value0}", { value0: project.name })}
               >
                 <span
-                  dir="auto"
+
                   className="line-clamp-2 max-w-[80%] text-[13px] font-black leading-tight"
                 >
                   {project.name}
@@ -1254,7 +1255,7 @@ export function OrbitView({
                 >
                   <div className="min-w-0">
                     <p
-                      dir="auto"
+
                       className="line-clamp-2 text-[13px] font-black leading-tight md:text-xs"
                     >
                       {project.name}
@@ -1266,7 +1267,7 @@ export function OrbitView({
                       }}
                     >
                       <div className="grid size-7 place-items-center rounded-full bg-base-100 text-[13px] font-black text-base-content md:size-8 md:text-[13px]">
-                        {progress}%
+                        {formatUiNumber(progress)}%
                       </div>
                     </div>
                     <span
@@ -1289,7 +1290,7 @@ export function OrbitView({
       </div>
 
       <div className="pointer-events-none absolute bottom-3 end-3 z-40 sm:bottom-4 sm:end-4">
-        <div className="pointer-events-auto relative" dir="auto">
+        <div className="pointer-events-auto relative" >
           <AnimatePresence>
             {isLegendOpen && (
               <motion.div
@@ -1412,9 +1413,9 @@ export function OrbitView({
                     <p className="text-[13px] font-semibold text-heledone-ink-muted">
                       {t("Orbit layers")}</p>
                     <p className="mt-1 text-[13px] leading-relaxed text-heledone-ink-muted">
-                      {t("Each ring represents a")} {ringMode === "teams" ? "team" : "milestone"}.
+                      {ringMode === "teams" ? t("Each ring represents a team.") : t("Each ring represents a milestone.")}
                       {overflowLabels.length > 0 &&
-                        " The dashed outer ring groups all remaining labels."}
+                        t("The dashed outer ring groups all remaining labels.")}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {rings.map((ring) => {

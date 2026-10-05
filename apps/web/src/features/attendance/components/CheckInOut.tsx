@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState } from "react";
@@ -107,7 +108,7 @@ export const CheckInOut: React.FC = () => {
     },
     onError: (error: MutationError) =>
       toast.error(
-        error?.detail || error?.message || "Could not complete action.",
+        translateError(error?.detail || error?.message || "Could not complete action."),
       ),
   });
 
@@ -120,7 +121,7 @@ export const CheckInOut: React.FC = () => {
     },
     onError: (error: MutationError) =>
       toast.error(
-        error?.detail || error?.message || "Could not complete action.",
+        translateError(error?.detail || error?.message || "Could not complete action."),
       ),
   });
 

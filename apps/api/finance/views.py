@@ -1,4 +1,5 @@
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Exists, OuterRef
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -9,18 +10,26 @@ from finance.services import FinanceService
 
 
 def _get_user_org(request):
-    """Return (user, organization) for the current request."""
+    """Return the requested organization, or the user's active project workspace."""
     from organizations.models import OrganizationMembership
+    from projects.models import ProjectMember
 
     user = request.user
-    membership = (
-        OrganizationMembership.objects.filter(
-            user=user,
-            is_deleted=False,
+    memberships = OrganizationMembership.objects.filter(
+        user=user, is_deleted=False, organization__is_deleted=False,
+    ).select_related("organization")
+    organization_id = request.query_params.get("organization_id") or request.headers.get("X-Organization-Id")
+    if organization_id:
+        membership = memberships.filter(organization_id=organization_id).first()
+    else:
+        active_project = ProjectMember.objects.filter(
+            user=user, is_active=True, is_deleted=False,
+            project__organization_id=OuterRef("organization_id"),
+            project__is_deleted=False,
         )
-        .select_related("organization")
-        .first()
-    )
+        membership = memberships.annotate(has_project=Exists(active_project)).order_by(
+            "-has_project", "created_at"
+        ).first()
     return user, membership.organization if membership else None
 
 

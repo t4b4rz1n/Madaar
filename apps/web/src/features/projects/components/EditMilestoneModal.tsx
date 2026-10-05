@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import React, { useState, useEffect } from "react";
@@ -75,7 +76,7 @@ export const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({
             errorData?.start_date?.[0] ||
             errorData?.detail ||
             "Could not update milestone.";
-          toast.error(msg);
+          toast.error(translateError(msg));
         },
       }
     );

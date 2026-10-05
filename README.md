@@ -62,9 +62,11 @@ docker compose up --build -d
 ### 3. Access the Application
 Once the containers are healthy, access the services locally:
 
-- **Web App (Frontend):** `http://localhost:3000`
-- **API Endpoint:** `http://localhost:3000/api/v1/`
-- **Django Admin:** `http://localhost:3000/admin/`
+- **Web App (Docker build):** `http://localhost:8080`
+- **API Endpoint:** `http://localhost:8080/api/v1/`
+- **Django Admin:** `http://localhost:8080/admin/`
+
+For frontend development, run `npm install` and `npm run web:dev` from the repository root. Vite serves the current source at `http://127.0.0.1:3000` and proxies API requests to port 8000. Docker uses port 8080 by default so its built frontend can run alongside Vite; set `WEB_PORT` to override the Docker port.
 
 *Default superuser credentials (created automatically on first boot):*
 - **Username:** `admin`

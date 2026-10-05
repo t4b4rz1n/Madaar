@@ -1,3 +1,4 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import React, { useState } from "react";
@@ -62,7 +63,7 @@ export const CreateMilestoneModal: React.FC<CreateMilestoneModalProps> = ({
             errorData?.start_date?.[0] ||
             errorData?.detail ||
             "Could not create milestone.";
-          toast.error(msg);
+          toast.error(translateError(msg));
         },
       }
     );

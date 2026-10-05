@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { formatDisplayDate } from "../../../utils/date";
 import { useTranslation, getIntlLocale } from "../../../i18n/locale";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -470,7 +472,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
         invalidateMatrix();
       } catch (error) {
         console.error('Failed to quick-save standup hours', error);
-        toast.error(S.toastSaveFailed);
+        toast.error(translateError(S.toastSaveFailed));
       } finally {
         setSavingCellKeys((prev) => {
           const next = new Set(prev);
@@ -654,7 +656,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                       {selectedProject.prefix}
                     </span>
                   )}
-                  <span dir="auto" className="truncate max-w-[150px] text-xs font-bold">
+                  <span  className="truncate max-w-[150px] text-xs font-bold">
                     {selectedProject?.name || t("انتخاب پروژه")}
                   </span>
                   <ArrowDown2
@@ -702,7 +704,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                                   {p.prefix}
                                 </span>
                               )}
-                              <span dir="auto" className="truncate text-xs">{p.name}</span>
+                              <span  className="truncate text-xs">{p.name}</span>
                             </div>
 
                             {isSelected && <TickCircle size={15} className="shrink-0 text-primary" />}
@@ -744,7 +746,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                             : 'bg-base-200/20 text-heledone-ink-muted'
                           }`}
                       >
-                        {day}
+                        {formatUiNumber(day)}
                       </th>
                     );
                   })}
@@ -779,7 +781,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                           )}
                           <div className="min-w-0">
                             <p
-                              dir="auto"
+
                               className={`truncate text-xs font-bold ${isCurrent ? 'text-primary' : 'text-base-content'
                                 }`}
                               title={row.label}

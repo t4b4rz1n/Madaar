@@ -70,8 +70,8 @@ export default function CycleLeadTimeReport({
   const formatHours = (h: number | null) => {
     if (h === null) return "—";
     if (h < 1) return t("{minutes} minutes", { minutes: Math.round(h * 60) });
-    if (h < 24) return t("{hours} hours", { hours: h.toFixed(1) });
-    return t("{value0} days", { value0: (h / 24).toFixed(1) });
+    if (h < 24) return t("{hours} hours", { hours: Number(h.toFixed(1)) });
+    return t("{value0} days", { value0: Number((h / 24).toFixed(1)) });
   };
 
   const barData = data.by_status.map((s) => ({
@@ -137,7 +137,7 @@ export default function CycleLeadTimeReport({
               />
               <YAxis
                 tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
-                tickFormatter={(v) => `${v}h`}
+                tickFormatter={(value) => t("{hours} hours", { hours: Number(value) })}
                 width={40}
               />
               <Tooltip
@@ -189,7 +189,7 @@ export default function CycleLeadTimeReport({
                         key={h}
                         style={{
                           padding: "8px 12px",
-                          textAlign: "right",
+                          textAlign: "start",
                           color: "var(--color-heledone-ink-muted)",
                           fontWeight: 600,
                           whiteSpace: "nowrap",

@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -185,7 +186,7 @@ export const SendNotificationModal = ({
                                 : "text-heledone-ink-muted"
                             }`}
                           >
-                            {textValue?.length || 0}/500
+                            {formatUiNumber(textValue?.length || 0)}/500
                           </span>
                         </div>
                       </div>

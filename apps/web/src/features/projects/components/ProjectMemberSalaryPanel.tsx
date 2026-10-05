@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getIntlLocale, useTranslation } from "../../../i18n/locale";
 import { useState } from "react";
 import { motion } from "motion/react";
@@ -150,7 +151,7 @@ export const ProjectMemberSalaryPanel = ({
               </div>
             </div>
             <p className="text-2xl lg:text-3xl font-black text-warning">
-              {overrideCount}
+              {formatUiNumber(overrideCount)}
             </p>
           </div>
         </div>
@@ -166,7 +167,7 @@ export const ProjectMemberSalaryPanel = ({
           <DollarCircle size={18} className="text-primary" variant="Bold" />
           <h2 className="text-lg font-bold text-base-content">{t("Member Salaries")}</h2>
           <span className="ms-auto text-xs font-bold text-heledone-ink-muted">
-            {userMembers.length}  {t("Members")}</span>
+            {formatUiNumber(userMembers.length)}  {t("Members")}</span>
         </div>
 
         {userMembers.length === 0 ? (

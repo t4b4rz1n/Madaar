@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { motion, AnimatePresence } from "motion/react";
@@ -117,9 +119,9 @@ const MemberRow = ({ member, maxTasks, workSeconds }: { member: ManagerMemberDet
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-black text-primary">{getInitials(member.first_name, member.last_name, member.username?.[0]?.toUpperCase())}</div>
         <div className="min-w-0"><p className="truncate text-sm font-bold text-base-content">{member.first_name || member.username} {member.last_name}</p><p className="truncate text-xs text-heledone-ink-muted">@{member.username}</p></div>
       </div>
-      <div><div className="mb-1 flex items-center justify-between text-[13px] font-bold text-heledone-ink-muted"><span>{t("Workload")}</span><span>{member.total_tasks}  {t("tasks")}</span></div><div className="h-2 overflow-hidden rounded-full bg-base-200"><motion.div initial={{ width: 0 }} animate={{ width: `${workload}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-primary" /></div></div>
-      <div className="text-start sm:text-end"><p className="text-sm font-black text-base-content">{completion}%</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("done")}</p></div>
-      <div className="text-start sm:text-end"><p className={`text-sm font-black ${member.overdue_tasks > 0 ? "text-error" : "text-base-content"}`}>{member.overdue_tasks}</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("overdue")}</p></div>
+      <div><div className="mb-1 flex items-center justify-between text-[13px] font-bold text-heledone-ink-muted"><span>{t("Workload")}</span><span>{formatUiNumber(member.total_tasks)}  {t("tasks")}</span></div><div className="h-2 overflow-hidden rounded-full bg-base-200"><motion.div initial={{ width: 0 }} animate={{ width: `${workload}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-primary" /></div></div>
+      <div className="text-start sm:text-end"><p className="text-sm font-black text-base-content">{formatUiNumber(completion)}%</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("done")}</p></div>
+      <div className="text-start sm:text-end"><p className={`text-sm font-black ${member.overdue_tasks > 0 ? "text-error" : "text-base-content"}`}>{formatUiNumber(member.overdue_tasks)}</p><p className="text-[13px] font-bold text-heledone-ink-muted">{t("overdue")}</p></div>
       <div className="col-span-full flex items-center gap-1 text-[13px] font-semibold text-heledone-ink-muted sm:col-auto sm:justify-end"><Timer1 size={13} /> {formatHours(workSeconds)}</div>
     </motion.div>
   );
@@ -127,7 +129,7 @@ const MemberRow = ({ member, maxTasks, workSeconds }: { member: ManagerMemberDet
 
 const ApprovalInbox = ({ requests, isLoading, onApprove, onReject, pendingId }: { requests: TimeOffRequest[]; isLoading: boolean; onApprove: (id: string | number) => void; onReject: (id: string | number) => void; pendingId: string | number | null }) => { const t = useTranslation(); return (
   <section className={panelClass}>
-    <SectionHeading title={t("Approval inbox")} description={t("Requests waiting for a decision")} action={<span className="rounded-full bg-warning/10 px-2.5 py-1 text-[13px] font-black text-warning">{requests.length}  {t("pending")}</span>} />
+    <SectionHeading title={t("Approval inbox")} description={t("Requests waiting for a decision")} action={<span className="rounded-full bg-warning/10 px-2.5 py-1 text-[13px] font-black text-warning">{formatUiNumber(requests.length)}  {t("pending")}</span>} />
     {isLoading ? <div className="space-y-3 px-5 pb-5">{[1, 2, 3].map(item => <div key={item} className="h-16 animate-pulse rounded-xl bg-base-200" />)}</div> : requests.length === 0 ? <div className="px-5 pb-6"><div className="rounded-2xl bg-success/10 p-4"><div className="flex items-center gap-2 text-sm font-black text-success"><TickCircle size={18} />  {t("Inbox is clear")}</div><p className="mt-1 text-xs font-semibold text-heledone-ink-muted">{t("No requests need your attention right now.")}</p></div></div> : <div className="divide-y divide-base-content/8">{requests.slice(0, 5).map(request => <div key={request.id} className="px-5 py-4"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-xs font-black text-secondary">{getInitials(request.user_detail?.first_name, request.user_detail?.last_name, request.user_detail?.username?.[0]?.toUpperCase())}</div><div className="min-w-0"><p className="truncate text-sm font-bold text-base-content">{request.user_detail?.first_name || request.user_detail?.username || t("Team member")}</p><p className="mt-0.5 text-xs font-semibold capitalize text-heledone-ink-muted">{request.request_type.replace("_", " ")} · {formatDate(request.start_datetime)}</p></div></div><span className="shrink-0 rounded-full bg-warning/10 px-2 py-1 text-[13px] font-black uppercase text-warning">{t("در انتظار")}</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-heledone-ink-muted">{request.reason || t("No reason provided.")}</p><div className="mt-3 flex items-center gap-2"><button type="button" disabled={pendingId === request.id} onClick={() => onApprove(request.id)} className="motion-interactive inline-flex items-center gap-1.5 rounded-lg bg-success/10 px-3 py-1.5 text-[13px] font-black text-success hover:bg-success/15 disabled:opacity-50"><TickCircle size={14} />  {t("Approve")}</button><button type="button" disabled={pendingId === request.id} onClick={() => onReject(request.id)} className="motion-interactive inline-flex items-center gap-1.5 rounded-lg bg-error/10 px-3 py-1.5 text-[13px] font-black text-error hover:bg-error/15 disabled:opacity-50"><CloseCircle size={14} />  {t("Decline")}</button></div></div>)}</div>}
   </section>
 ); };
@@ -135,7 +137,7 @@ const ApprovalInbox = ({ requests, isLoading, onApprove, onReject, pendingId }: 
 const ProjectHealth = ({ projects }: { projects: ManagerProjectSummary[] }) => { const t = useTranslation(); return (
   <section className={panelClass}>
     <SectionHeading title={t("Project health")} description={t("Where attention may be needed next")} action={<Link to="/tasks" className="motion-interactive inline-flex items-center gap-1 text-xs font-black text-primary">{t("Open workspace")} <ArrowRight size={14} /></Link>} />
-    {projects.length === 0 ? <div className="px-5 pb-6 text-sm font-semibold text-heledone-ink-muted">{t("No active projects in this scope.")}</div> : <div className="grid gap-3 px-5 pb-5">{projects.slice(0, 6).map(project => { const health = getHealth(project); return <motion.div key={project.id} layout className="rounded-2xl border border-base-content/8 bg-base-200/50 p-4"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-black text-base-content">{project.name}</p><p className="mt-1 text-[13px] font-semibold text-heledone-ink-muted">{t("Due")} {formatDate(project.deadline)} · {project.active_member_count}  {t("contributors")}</p></div><span className={`rounded-full px-2.5 py-1 text-[13px] font-black ${health.tone === "error" ? "bg-error/10 text-error" : health.tone === "warning" ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>{health.label}</span></div><div className="mt-3 flex items-center gap-3"><div className="h-2 flex-1 overflow-hidden rounded-full bg-base-100"><div className={`h-full rounded-full ${health.tone === "error" ? "bg-error text-error-content" : health.tone === "warning" ? "bg-warning text-warning-content" : "bg-success text-success-content"}`} style={{ width: `${Math.round(health.progress * 100)}%` }} /></div><span className="text-xs font-black text-heledone-ink-muted">{Math.round(health.progress * 100)}%</span></div></motion.div>; })}</div>}
+    {projects.length === 0 ? <div className="px-5 pb-6 text-sm font-semibold text-heledone-ink-muted">{t("No active projects in this scope.")}</div> : <div className="grid gap-3 px-5 pb-5">{projects.slice(0, 6).map(project => { const health = getHealth(project); return <motion.div key={project.id} layout className="rounded-2xl border border-base-content/8 bg-base-200/50 p-4"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-black text-base-content">{project.name}</p><p className="mt-1 text-[13px] font-semibold text-heledone-ink-muted">{t("Due")} {formatDate(project.deadline)} · {formatUiNumber(project.active_member_count)}  {t("contributors")}</p></div><span className={`rounded-full px-2.5 py-1 text-[13px] font-black ${health.tone === "error" ? "bg-error/10 text-error" : health.tone === "warning" ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>{health.label}</span></div><div className="mt-3 flex items-center gap-3"><div className="h-2 flex-1 overflow-hidden rounded-full bg-base-100"><div className={`h-full rounded-full ${health.tone === "error" ? "bg-error text-error-content" : health.tone === "warning" ? "bg-warning text-warning-content" : "bg-success text-success-content"}`} style={{ width: `${Math.round(health.progress * 100)}%` }} /></div><span className="text-xs font-black text-heledone-ink-muted">{formatUiNumber(Math.round(health.progress * 100))}%</span></div></motion.div>; })}</div>}
   </section>
 ); };
 
@@ -170,7 +172,7 @@ const ManagerDashboardPage = () => {
       return { previousRequests };
     },
     onSuccess: (_data, variables) => toast.success(variables.action === "approve" ? t("Request approved") : t("Request declined")),
-    onError: (error: Error & { detail?: string }, _variables, context) => { if (context?.previousRequests) queryClient.setQueryData(approvalsKey, context.previousRequests); toast.error(error.detail || error.message || "Could not update request"); },
+    onError: (error: Error & { detail?: string }, _variables, context) => { if (context?.previousRequests) queryClient.setQueryData(approvalsKey, context.previousRequests); toast.error(translateError(error.detail || error.message || "Could not update request")); },
     onSettled: () => queryClient.invalidateQueries({ queryKey: approvalsKey }),
   });
 
@@ -247,7 +249,7 @@ const ManagerDashboardPage = () => {
                 <div>
                   <p className="text-xs font-black uppercase  text-primary">{t("Your decision queue")}</p>
                   <h2 className="mt-1 text-lg font-black text-base-content">{globalDecisionCount === 0 ? t("Everything looks steady") : t("Signals needing attention: {count}", { count: globalDecisionCount })}</h2>
-                  <p className="mt-1 text-xs font-semibold text-heledone-ink-muted">{dashboard.overdue_summary.total_overdue}  {t("overdue tasks ·")} {atRiskProjects}  {t("project risks ·")} {approvalQuery.data?.length || 0}  {t("approvals")}</p>
+                  <p className="mt-1 text-xs font-semibold text-heledone-ink-muted">{formatUiNumber(dashboard.overdue_summary.total_overdue)}  {t("overdue tasks ·")} {formatUiNumber(atRiskProjects)}  {t("project risks ·")} {formatUiNumber(approvalQuery.data?.length || 0)}  {t("approvals")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-xs font-bold text-heledone-ink-muted"><Calendar size={15} />  {t("Updated just now")}</div>
@@ -343,16 +345,16 @@ const ProjectSpecificView = ({ project, tasks, isLoading }: { project: ManagerPr
             <p className="text-xs font-black uppercase  text-primary">{t("Project Health")}</p>
             <div className="mt-1 flex items-center gap-2">
               <h2 className="text-lg font-black text-base-content">{health.label}</h2>
-              <span className={`rounded-full px-2.5 py-1 text-[13px] font-black ${health.tone === "error" ? "bg-error/10 text-error" : health.tone === "warning" ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>{Math.round(health.progress * 100)}{t("% Completed")}</span>
+              <span className={`rounded-full px-2.5 py-1 text-[13px] font-black ${health.tone === "error" ? "bg-error/10 text-error" : health.tone === "warning" ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>{formatUiNumber(Math.round(health.progress * 100))}{t("% Completed")}</span>
             </div>
             <p className="mt-1 text-xs font-semibold text-heledone-ink-muted">
-              {t("Due")} {formatDate(project.deadline)} · {project.active_member_count}  {t("contributors")}</p>
+              {t("Due")} {formatDate(project.deadline)} · {formatUiNumber(project.active_member_count)}  {t("contributors")}</p>
           </div>
         </div>
         <div className="w-full sm:w-1/3">
           <div className="flex items-center justify-between text-xs font-bold text-heledone-ink-muted mb-1">
             <span>{t("Progress")}</span>
-            <span>{Math.round(health.progress * 100)}%</span>
+            <span>{formatUiNumber(Math.round(health.progress * 100))}%</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-base-200">
             <div className={`h-full rounded-full ${health.tone === "error" ? "bg-error text-error-content" : health.tone === "warning" ? "bg-warning text-warning-content" : "bg-success text-success-content"}`} style={{ width: `${Math.round(health.progress * 100)}%` }} />
@@ -401,7 +403,7 @@ const WorkloadPanel = ({ taskStats }: { taskStats: { status_code?: string | null
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${palette[index % palette.length]}`} />
                 <span className="truncate text-xs font-bold text-heledone-ink-muted">{stat.status_name || stat.name || stat.status_code || stat.code || t("Unsorted")}</span>
               </div>
-              <span className="text-sm font-black text-base-content">{stat.count}</span>
+              <span className="text-sm font-black text-base-content">{formatUiNumber(stat.count)}</span>
             </div>
           ))}
         </div>
@@ -470,7 +472,7 @@ const ProjectFocusPanel = ({ tasks, isLoading }: { tasks?: Task[], isLoading: bo
                     <h3 className="text-sm font-bold text-base-content">
                       {group.user.id === "unassigned" ? t("بدون مسئول") : `${group.user.first_name || ""} ${group.user.last_name || ""}`.trim() || group.user.username}
                     </h3>
-                    <p className="text-[13px] font-semibold text-heledone-ink-muted">{group.tasks.length}  {t("active task")}{group.tasks.length !== 1 ? 's' : ''}</p>
+                    <p className="text-[13px] font-semibold text-heledone-ink-muted">{formatUiNumber(group.tasks.length)}  {t("active task")}{group.tasks.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
                 <div className="space-y-2 max-h-[350px] overflow-y-auto pe-2 heledone-scrollbar">

@@ -1,4 +1,4 @@
-import { useTranslation } from "../i18n/locale";
+import { formatNumber, useTranslation } from "../i18n/locale";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowDown2, ArrowLeft2, ArrowRight2 } from "iconsax-reactjs";
 import { useMemo } from "react";
@@ -41,7 +41,7 @@ export const Pagination = ({
           className="btn btn-ghost rounded-full text-sm"
           whileTap={{ scale: 0.95 }}
         >
-          {t("Show")} {pageSize}  {t("items")}<ArrowDown2 size={16} className="text-heledone-ink-muted" />
+          {t("Show")} {formatNumber(pageSize)}  {t("items")}<ArrowDown2 size={16} className="text-heledone-ink-muted" />
         </motion.button>
         <ul
           tabIndex={0}
@@ -49,13 +49,13 @@ export const Pagination = ({
         >
           {pageSizes.map((size) => (
             <li
-              key={size}
+              key={formatNumber(size)}
               onClick={() => {
                 onPageSizeChange(size);
                 (document.activeElement as HTMLElement)?.blur();
               }}
             >
-              <a className={pageSize === size ? "active" : ""}>{size}</a>
+              <a className={pageSize === size ? "active" : ""}>{formatNumber(size)}</a>
             </li>
           ))}
         </ul>
@@ -74,9 +74,9 @@ export const Pagination = ({
 
         <div className="font-bold text-base-content/80 text-sm px-2 flex gap-2">
           <p>{t("Page")}</p>
-          <span>{currentPage}</span>
+          <span>{formatNumber(currentPage)}</span>
           <p>{t("of")}</p>
-          {totalPages}
+          {formatNumber(totalPages)}
         </div>
 
         <motion.button
@@ -99,7 +99,7 @@ export const Pagination = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {startItem}-{endItem}  {t("of")} {totalCount}  {t("results")}</motion.span>
+            {formatNumber(startItem)}-{formatNumber(endItem)}  {t("of")} {formatNumber(totalCount)}  {t("results")}</motion.span>
         </AnimatePresence>
       </div>
     </div>

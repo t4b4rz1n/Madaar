@@ -13,6 +13,8 @@ import {
   useSaveAutomationRule,
 } from "../hooks/useAutomations";
 
+const ADMIN_EVENT_CODES = new Set(["organization_created", "project_actually_created", "project_budget_set", "member_added_to_project", "member_added_to_org"]);
+
 const payloadForEvent = (
   event: AutomationEvent,
   organization: string,
@@ -131,7 +133,7 @@ export const AutomationsPage = () => {
           <h1 className="flex items-center gap-3 text-3xl font-bold text-base-content">
             <Flash size={30} variant="Bold" className="text-primary" />
             {t("Workflow automation")}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-heledone-ink-muted">{t("Manage delivery settings for the")} {catalog?.events ? catalog.events.filter(event => ![t("Organization created"), t("Project created"), t("Project budget set or changed"), t("Member added to project (admin view)"), t("Member added to organization")].includes(event.label)).length : 'standard'}  {t("workflow events in the organization.")}</p>
+          <p className="mt-2 max-w-2xl text-sm text-heledone-ink-muted">{catalog?.events ? t("Manage delivery settings for {count} workflow events in the organization.", { count: catalog.events.filter(event => !ADMIN_EVENT_CODES.has(event.code)).length }) : t("Manage delivery settings for the organization’s workflow events.")}</p>
         </div>
         <div className="w-full md:w-72">
           <label htmlFor="automation-organization" className="mb-2 block text-sm font-medium text-base-content/70">{t("Organization")}</label>
@@ -148,13 +150,7 @@ export const AutomationsPage = () => {
         <div className="flex justify-center py-16"><span className="loading loading-spinner loading-lg text-primary" /></div>
       ) : (
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {catalog?.events.filter(event => ![
-            t("Organization created"),
-            t("Project created"),
-            t("Project budget set or changed"),
-            t("Member added to project (admin view)"),
-            t("Member added to organization")
-          ].includes(event.label)).map((event) => {
+          {catalog?.events.filter(event => !ADMIN_EVENT_CODES.has(event.code)).map((event) => {
             const rule = event.rule;
             const recipients = rule?.recipients ?? event.default_recipients;
             const active = rule?.is_active ?? true;

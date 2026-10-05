@@ -1,3 +1,4 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
 import { motion } from "motion/react";
 import {
@@ -179,7 +180,7 @@ export const DiscountsTable = ({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-baseline gap-1">
                         <span className="text-lg font-bold text-primary">
-                          {discount.percent}%
+                          {formatUiNumber(discount.percent)}%
                         </span>
                         <span className="text-xs text-heledone-ink-muted font-medium">
                           {t("OFF")}</span>
@@ -191,10 +192,10 @@ export const DiscountsTable = ({
                       <div className="w-32">
                         <div className="flex justify-between items-center text-xs mb-1.5">
                           <span className="text-base-content/70 font-medium flex items-center gap-1">
-                            <User size={12} /> {discount.current_usage}
+                            <User size={12} /> {formatUiNumber(discount.current_usage)}
                           </span>
                           <span className="text-heledone-ink-muted">
-                            / {discount.max_usage}
+                            / {formatUiNumber(discount.max_usage)}
                           </span>
                         </div>
                         <div className="w-full h-1.5 bg-base-200 rounded-full overflow-hidden border border-base-content/5">

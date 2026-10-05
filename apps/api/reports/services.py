@@ -179,6 +179,7 @@ class EmployeeDashboardService:
             .annotate(
                 status_name=F("status__name"),
                 status_code=F("status__code"),
+                board_id=F("status__board_id"),
                 project_name=F("project__name"),
             )
             .order_by(F("due_date").asc(nulls_last=True), "created_at")
@@ -190,6 +191,7 @@ class EmployeeDashboardService:
                 "due_date",
                 "status_name",
                 "status_code",
+                "board_id",
                 "project_name",
                 "project_id",
             )[:UPCOMING_TASKS_LIMIT]
@@ -214,6 +216,7 @@ class EmployeeDashboardService:
             .annotate(
                 status_name=F("status__name"),
                 status_code=F("status__code"),
+                board_id=F("status__board_id"),
                 project_name=F("project__name"),
             )
             .values(
@@ -224,6 +227,7 @@ class EmployeeDashboardService:
                 "due_date",
                 "status_name",
                 "status_code",
+                "board_id",
                 "project_name",
                 "project_id",
             )
