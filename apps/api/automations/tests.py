@@ -129,6 +129,57 @@ class AutomationRuleProcessingTests(TestCase):
         send_email.delay.assert_not_called()
 
 
+class InAppNotificationLocalizationTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            email="notifications@example.com", username="notification-admin"
+        )
+        self.client.force_authenticate(self.user)
+
+    @patch("automations.rules.send_telegram_notification")
+    @patch("automations.rules.send_email_notification")
+    @patch("automations.rules._determine_target_users")
+    def test_event_data_preserves_display_values_and_is_exposed_by_api(
+        self, targets, send_email, send_telegram
+    ):
+        from panel.Notification.models import Notification
+
+        targets.return_value = {str(self.user.id)}
+        title = "Task with {braces} " * 30
+        process_rules_for_event(
+            "task_created",
+            {
+                "task_title": title,
+                "project_name": "Launch",
+                "budget": "private unrelated value",
+                "internal_token": "private unrelated value",
+            },
+        )
+        notification = Notification.objects.get(user=self.user)
+        self.assertLessEqual(len(notification.text), 255)
+        self.assertEqual(notification.message_data, {
+            "event": "task_created",
+            "values": {"task_title": title, "project_name": "Launch"},
+        })
+        for language in ("fa", "en"):
+            response = self.client.get(
+                f"/api/v1/dashboard/notifications/{notification.id}/",
+                HTTP_ACCEPT_LANGUAGE=language,
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            body = response.data.get("data", response.data)
+            self.assertEqual(body["message_data"], notification.message_data)
+
+    def test_broadcasts_and_existing_records_have_no_event_data(self):
+        from panel.Notification.models import Notification
+        from dashboard.Notification.serializers import NotificationSerializer
+
+        notification = Notification.objects.create(user=self.user, text="Team lunch at noon")
+        body = NotificationSerializer(notification).data
+        self.assertEqual(body["text"], "Team lunch at noon")
+        self.assertEqual(body["message_data"], {})
+
+
 class TelegramBotLocalizationTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_superuser(

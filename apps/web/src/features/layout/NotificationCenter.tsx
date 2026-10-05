@@ -13,6 +13,7 @@ import { motionTokens } from "../../core/config/designTokens";
 
 import { formatDisplayDate } from "../../utils/date";
 import { buildNotificationLink } from "../notifications/utils/routing";
+import { formatNotificationMessage } from "../notifications/utils/messages";
 
 const formatNotificationDate = (date: string) => {
   const value = new Date(date);
@@ -150,7 +151,7 @@ const NotificationRow = ({ notification, onClick }: { notification: Notification
           }`}
       />
       <span className="min-w-0 flex-1">
-        <span className="block text-sm leading-6 text-base-content/80">{notification.text}</span>
+        <span className="block break-words text-sm leading-6 text-base-content/80">{formatNotificationMessage(notification)}</span>
         <span className="mt-1 block text-[0.68rem] text-heledone-ink-muted">
           {formatNotificationDate(notification.created_at)}
         </span>

@@ -124,6 +124,7 @@ export const SendNotificationModal = ({
                 </div>
                 <button
                   onClick={onClose}
+                  aria-label={t("Close notification")}
                   className="p-2 hover:bg-base-content/5 rounded-lg transition-colors"
                   disabled={isLoading}
                 >
@@ -163,7 +164,7 @@ export const SendNotificationModal = ({
                               ? "border-2 border-error focus:border-error"
                               : "border border-base-content/20 focus:border-primary focus:ring-2 focus:ring-primary/10"
                           }`}
-                          maxLength={500}
+                          maxLength={255}
                         />
                         <div className="flex items-center justify-between mt-2">
                           {errors.text ? (
@@ -181,12 +182,12 @@ export const SendNotificationModal = ({
                           )}
                           <span
                             className={`text-xs ${
-                              (textValue?.length || 0) > 450
+                              (textValue?.length || 0) > 230
                                 ? "text-warning"
                                 : "text-heledone-ink-muted"
                             }`}
                           >
-                            {formatUiNumber(textValue?.length || 0)}/500
+                            {formatUiNumber(textValue?.length || 0)}/{formatUiNumber(255)}
                           </span>
                         </div>
                       </div>
@@ -262,7 +263,7 @@ export const SendNotificationModal = ({
 
             {/* Footer */}
             <div className="px-6 py-4 border-t border-base-content/10 bg-base-200/30">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-sm">
                   {isValid ? (
                     <span className="flex items-center gap-2 text-success font-medium">

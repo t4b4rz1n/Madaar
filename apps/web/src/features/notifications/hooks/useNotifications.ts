@@ -87,11 +87,7 @@ export const useSendNotification = () => {
       toast.success(t("Notification sent successfully."));
     },
     onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to send notification.";
-      toast.error(translateError(errorMessage));
+      toast.error(translateError(error, "Failed to send notification."));
     },
   });
 };

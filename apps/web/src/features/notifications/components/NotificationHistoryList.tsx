@@ -11,6 +11,7 @@ import { formatDate } from "../../../utils/formatDate";
 import { useMarkNotificationSeen } from "../hooks/useNotifications";
 import type { Notification as NotificationType } from "../types";
 import { buildNotificationLink } from "../utils/routing";
+import { formatNotificationMessage } from "../utils/messages";
 
 interface NotificationHistoryListProps {
   notifications: NotificationType[];
@@ -145,7 +146,7 @@ export const NotificationHistoryList = ({
 
               <div className="mb-4 grow">
                 <p className="text-base-content/80 text-sm leading-relaxed line-clamp-3">
-                  {notification.text}
+                  {formatNotificationMessage(notification)}
                 </p>
               </div>
 
@@ -212,7 +213,7 @@ export const NotificationHistoryList = ({
                     <td className="px-6 py-4">
                       <div className="max-w-md">
                         <p className="text-sm text-base-content/80 line-clamp-1">
-                          {notif.text}
+                          {formatNotificationMessage(notif)}
                         </p>
                       </div>
                     </td>
