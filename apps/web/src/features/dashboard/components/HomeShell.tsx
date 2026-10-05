@@ -1,16 +1,12 @@
-import { useEffect, useState, type ComponentType } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, FolderOpen, Clock3, Users, ChartNoAxesColumnIncreasing, Wallet, BookOpen, Settings, Menu, Search, Plus, X } from "lucide-react";
-import { toast } from "sonner";
+import { useEffect, type ComponentType } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Home, FolderOpen, Clock3, Users, ChartNoAxesColumnIncreasing, Wallet, BookOpen, Settings, Menu, Search, X } from "lucide-react";
 import { Brand } from "../../../components/Brand";
+import ThemeToggle from "../../../components/ThemeToggle";
 import { useTranslation } from "../../../i18n/locale";
-import { getErrorMessage } from "../../../core/utils/errorHandler";
-import ApiService from "../../../core/api/apiService";
-import { getProjects } from "../../projects/api/projectsApi";
-import { getBoards } from "../../tasks/api/tasksApi";
 import { useLayoutStore } from "../../layout/store/layoutStore";
 import { NotificationCenter } from "../../layout/NotificationCenter";
+import { UserMenu } from "../../layout/UserMenu";
 import { useAuthStore } from "../../auth/store/authStore";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 import "../home.css";
@@ -59,32 +55,14 @@ export function HomeSidebar() {
 
 export function HomeHeader({ onSearch }: { onSearch: () => void }) {
   const t = useTranslation();
-  const [newTask, setNewTask] = useState(false);
   const setSidebarOpen = useLayoutStore((s) => s.setSidebarOpen);
-  const { hasAnyPermission } = usePermissions();
-  const canCreateTask = hasAnyPermission(["task.create", "task.manage_all"]);
-  return <><header className="home-topbar">
+  return <header className="home-topbar">
     <button className="home-menu" aria-label={t("باز کردن منو")} onClick={() => setSidebarOpen(true)}><Menu/></button>
     <button className="home-search" onClick={onSearch}><span>{t("جستجو در هله‌دان")}</span><Search size={22}/></button>
-    <div className="home-notifications"><NotificationCenter/></div>
-    {canCreateTask && <button className="home-create" onClick={() => setNewTask(true)}><Plus size={22}/>{t("تسک جدید")}</button>}
-  </header><NewTaskDialog open={newTask} onClose={() => setNewTask(false)} /></>;
-}
-
-function NewTaskDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const t = useTranslation(); const navigate = useNavigate(); const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
-  const [projectId, setProjectId] = useState(""); const [title, setTitle] = useState("");
-  const projects = useQuery({ queryKey: ["home-create-projects"], queryFn: () => getProjects(), enabled: open });
-  const selectedProject = projectId || String(projects.data?.find((project) => project.status === "active")?.id ?? projects.data?.[0]?.id ?? "");
-  const boards = useQuery({ queryKey: ["home-create-boards", selectedProject], queryFn: () => getBoards(selectedProject), enabled: open && !!selectedProject });
-  const status = boards.data?.flatMap((board) => board.statuses).find((status) => status.code === "todo") ?? boards.data?.[0]?.statuses[0];
-  const selectedBoardId = boards.data?.find((board) => board.statuses.some((item) => item.id === status?.id))?.id;
-  const create = useMutation({ mutationFn: async () => {
-    const result = await ApiService.post<{ id: string }>("/tasks/", { project: selectedProject, title: title.trim(), status: status!.id, assignee: user?.id, priority: "medium" });
-    return result.data;
-  }, onSuccess: async (task) => { await Promise.all([queryClient.invalidateQueries({ queryKey: ["home-dashboard"] }), queryClient.invalidateQueries({ queryKey: ["home-projects"] }), queryClient.invalidateQueries({ queryKey: ["projects"] })]); onClose(); setTitle(""); toast.success(t("تسک با موفقیت ساخته شد")); navigate(`/tasks?project=${encodeURIComponent(selectedProject)}&board=${encodeURIComponent(selectedBoardId ?? "")}&task=${encodeURIComponent(task.id)}`); }, onError: (error) => toast.error(getErrorMessage(error)) });
-  useEffect(() => { if (!open) return; const handle = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); }; window.addEventListener("keydown", handle); return () => window.removeEventListener("keydown", handle); }, [open, onClose]);
-  if (!open) return null;
-  return <div className="home-dialog-backdrop" onClick={onClose}><section role="dialog" aria-modal="true" aria-labelledby="home-new-task-title" className="home-dialog" onClick={(event) => event.stopPropagation()}><button className="home-dialog-close" onClick={onClose} aria-label={t("بستن")}><X size={22}/></button><h2 id="home-new-task-title">{t("تسک جدید")}</h2><form onSubmit={(event) => { event.preventDefault(); if (title.trim() && selectedProject && status) create.mutate(); }}><label htmlFor="home-task-project">{t("پروژه")}</label><select id="home-task-project" value={selectedProject} onChange={(event) => setProjectId(event.target.value)} disabled={projects.isLoading}>{projects.data?.map((project) => <option value={project.id} key={project.id}>{project.name}</option>)}</select><label htmlFor="home-task-name">{t("عنوان تسک")}</label><input id="home-task-name" autoFocus required value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t("عنوان تسک")}/>{!selectedProject || !status ? <p>{t("برای ساخت تسک ابتدا یک پروژه و کانبان آماده کنید.")}</p> : null}<button className="home-create" type="submit" disabled={!selectedProject || !status || create.isPending}><Plus size={20}/>{t("افزودن تسک")}</button></form></section></div>;
+    <div className="home-header-actions">
+      <div className="home-notifications"><NotificationCenter/></div>
+      <ThemeToggle />
+      <UserMenu />
+    </div>
+  </header>;
 }

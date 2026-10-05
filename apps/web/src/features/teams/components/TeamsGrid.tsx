@@ -1,8 +1,9 @@
 import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { motion } from "motion/react";
-import { Edit2, People, Profile2User, Trash, User } from "iconsax-reactjs";
+import { Edit2, Profile2User, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 
 interface TeamsGridProps {
   teams: TeamWithDetails[];
@@ -70,12 +71,7 @@ export const TeamsGrid = ({
 
   if (teams.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] text-center border border-dashed border-base-content/20 rounded-2xl p-6">
-        <People className="text-heledone-ink-muted mb-3" size={48} />
-        <p className="text-base-content font-medium text-lg">{t("No teams found")}</p>
-        <p className="text-sm text-heledone-ink-muted mt-1">
-          {t("Try adjusting your search query or filters.")}</p>
-      </div>
+      <CoastalEmptyState motif="coast" title={t("No teams found")} description={t("Try adjusting your search query or filters.")} />
     );
   }
 
@@ -90,7 +86,7 @@ export const TeamsGrid = ({
         <motion.div
           key={team.id}
           variants={cardVariants}
-          className="heledone-surface group flex flex-col justify-between rounded-2xl border border-base-content/10 bg-base-100/90 shadow-heledone-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-heledone-raised"
+          className="coastal-item heledone-surface group flex flex-col justify-between rounded-lg border border-base-content/10 bg-base-100/90 transition-all duration-200 hover:border-primary/30 hover:shadow-heledone-raised"
         >
           <div className="p-5 sm:p-6">
             <div className="flex justify-between items-start gap-4">

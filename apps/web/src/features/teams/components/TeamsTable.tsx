@@ -1,6 +1,7 @@
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { formatDisplayDate } from "../../../utils/date";
-import { Edit2, People, Profile2User, Trash, User } from "iconsax-reactjs";
+import { Edit2, Profile2User, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
 
 interface TeamsTableProps {
@@ -76,12 +77,7 @@ export const TeamsTable = ({
 
   if (teams.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] text-center border border-dashed border-base-content/20 rounded-2xl p-6">
-        <People className="text-heledone-ink-muted mb-3" size={48} />
-        <p className="text-base-content font-medium text-lg">{t("No teams found")}</p>
-        <p className="text-sm text-heledone-ink-muted mt-1">
-          {t("Try adjusting your search query or filters.")}</p>
-      </div>
+      <CoastalEmptyState motif="coast" title={t("No teams found")} description={t("Try adjusting your search query or filters.")} />
     );
   }
 

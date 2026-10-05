@@ -564,7 +564,7 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
           <header className="task-sheet-header">
             {/* Coastal skyline artwork backdrop */}
             <img
-              src="/images/heledone-assets/home-welcome-v2.png"
+              src="/images/heledone-assets/tasks-coastal-v1.png"
               alt=""
               aria-hidden="true"
               className="task-sheet-header-art"

@@ -1,4 +1,5 @@
 import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { CoastalArtwork } from "../../../components/CoastalEmptyState";
 import { getIntlLocale, t as translate, useTranslation, useLocale } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 /**
@@ -30,7 +31,6 @@ import {
   Clock,
   Danger,
   People,
-  Profile2User,
   Refresh2,
   TaskSquare,
   Timer1,
@@ -736,16 +736,7 @@ const TeamLeadDashboardPage = () => {
       {dashboard.managed_team_count === 0 && (
         <section className="mx-auto max-w-2xl py-6">
           <div className={`${panelClass} overflow-hidden`}>
-            {/* Decorative gradient header */}
-            <div className="relative h-28 bg-gradient-to-br from-primary/20 via-primary/8 to-transparent">
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent" />
-              <div className="absolute bottom-0 start-0 end-0 h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
-              <div className="absolute start-6 top-1/2 -translate-y-1/2">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 ring-1 ring-primary/20 backdrop-blur-sm">
-                  <Profile2User size={26} className="text-primary" />
-                </div>
-              </div>
-            </div>
+            <CoastalArtwork motif="coast" className="mx-auto mt-6" />
 
             <div className="px-6 pb-7 pt-5">
               <h2 className="text-xl font-black tracking-tight text-base-content">

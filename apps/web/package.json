@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:i18n": "node scripts/test-i18n.mjs",
+    "test:coastal": "node scripts/test-coastal.mjs",
     "test:api": "node scripts/test-api.mjs"
   },
   "dependencies": {

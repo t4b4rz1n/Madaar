@@ -7,7 +7,6 @@ import {
   Card,
   Receipt21,
   Clock,
-  DollarCircle,
   FolderOpen,
   Briefcase,
   Moneys,
@@ -15,6 +14,7 @@ import {
 import { useMyFinanceDashboard } from "../api/financeApi";
 import PageLoader from "../../../components/PageLoader";
 import { PageHeading } from "../../../components/PageHeading";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 
 const formatCurrency = (value: number, currency = "IRR") => {
   return `${value.toLocaleString(getIntlLocale())} ${currency === "IRR" ? translate("ریال") : currency}`;
@@ -144,12 +144,7 @@ export const UserFinanceDashboard = () => {
 
       {/* ── Project Selection & Details ──────────────────────────── */}
       {dashboard.projects.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-12 text-center text-heledone-ink-muted">
-          <DollarCircle size={36} className="opacity-20" />
-          <p className="text-sm">{t("No project earnings found.")}</p>
-          <p className="text-xs">
-            {t("Ask your manager to set your salary in each project.")}</p>
-        </div>
+        <CoastalEmptyState motif="boat" title={t("No project earnings found.")} description={t("Ask your manager to set your salary in each project.")} />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr] xl:grid-cols-[350px_1fr]">
           {/* Projects List sidebar */}

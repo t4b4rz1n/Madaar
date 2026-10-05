@@ -1,4 +1,5 @@
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -97,14 +98,7 @@ export const NotificationHistoryList = ({
 
   if (notifications.length === 0) {
     return (
-      <div className="bg-linear-to-br from-base-200 to-base-300 rounded-2xl border border-base-content/10 p-12 text-center">
-        <div className="text-heledone-ink-muted mb-4">
-          <NotificationIcon className="w-16 h-16 mx-auto" />
-        </div>
-        <h3 className="text-lg font-bold text-base-content mb-2">
-          {t("No Notifications")}</h3>
-        <p className="text-base-content/70">{t("Your history is empty.")}</p>
-      </div>
+      <CoastalEmptyState motif="music" title={t("No Notifications")} description={t("Your history is empty.")} />
     );
   }
 
@@ -119,7 +113,7 @@ export const NotificationHistoryList = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
               onClick={() => handleCardClick(notification)}
-              className="group relative bg-base-100 rounded-2xl border border-base-content/10 p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full cursor-pointer"
+              className="coastal-item group relative bg-base-100 rounded-lg border border-base-content/10 p-5 hover:shadow-heledone-raised transition-all duration-200 flex flex-col h-full cursor-pointer"
             >
               {!notification.seen && (
                 <span className="absolute top-5 end-5 w-2.5 h-2.5 bg-warning rounded-full ring-4 ring-warning/20 animate-pulse" />

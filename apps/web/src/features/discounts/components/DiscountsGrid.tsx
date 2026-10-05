@@ -1,5 +1,6 @@
 import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { motion } from "motion/react";
 import {
   Calendar,
@@ -98,7 +99,7 @@ export const DiscountsGrid = ({
         {t("Error loading discounts.")}</div>
     );
   if (discounts.length === 0)
-    return <div className="text-center p-10">{t("No discounts found.")}</div>;
+    return <CoastalEmptyState motif="palm" title={t("No discounts found.")} />;
 
   return (
     <>
@@ -116,7 +117,7 @@ export const DiscountsGrid = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="group bg-base-100 rounded-2xl border border-base-content/10 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
+              className="coastal-item group bg-base-100 rounded-lg border border-base-content/10 p-6 hover:shadow-heledone-raised transition-all duration-200 flex flex-col"
             >
               {/* Header: Icon + Code + Percent */}
               <div className="flex items-center gap-3 mb-4">

@@ -1,5 +1,6 @@
 import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getIntlLocale, useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -150,9 +151,7 @@ export const AdminFinanceDashboard = () => {
             <p className="text-sm">{t("Could not load reports.")}</p>
           </div>
         ) : results.length === 0 ? (
-          <div className="py-12 text-center text-sm text-heledone-ink-muted">
-            {debouncedSearch ? t("No members match your search.") : t("No financial records found.")}
-          </div>
+          <CoastalEmptyState motif="boat" title={debouncedSearch ? t("No members match your search.") : t("No financial records found.")} />
         ) : (
           <div className="space-y-4">
             <div className="overflow-x-auto">

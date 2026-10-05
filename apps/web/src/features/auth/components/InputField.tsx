@@ -1,7 +1,6 @@
 import { useTranslation } from "../../../i18n/locale";
-import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { Eye, EyeSlash } from "iconsax-reactjs";
+import { Eye, EyeOff } from "lucide-react";
 
 interface InputFieldProps<T extends Record<string, any>> {
   name: keyof T & string;
@@ -10,34 +9,9 @@ interface InputFieldProps<T extends Record<string, any>> {
   placeholder?: string;
   register: any;
   error?: string | undefined | null;
-  index?: number;
+  autoComplete?: string;
   showPasswordToggle?: boolean;
 }
-
-const fieldVariants = {
-  hidden: { opacity: 0, x: -12 },
-  visible: (i: number) => ({
-    opacity: 1,
-    x: 0,
-    transition: { delay: i * 0.06, duration: 0.36 },
-  }),
-};
-
-const iconVariants = {
-  initial: { opacity: 0, scale: 0.7, rotate: -45 },
-  animate: {
-    opacity: 1,
-    scale: 1,
-    rotate: 0,
-    transition: { duration: 0.2 },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.7,
-    rotate: 45,
-    transition: { duration: 0.2 },
-  },
-};
 
 export const InputField = <T extends Record<string, any>>({
   name,
@@ -46,102 +20,52 @@ export const InputField = <T extends Record<string, any>>({
   placeholder = "",
   register,
   error,
-  index = 0,
+  autoComplete,
   showPasswordToggle = false,
 }: InputFieldProps<T>) => {
   const t = useTranslation();
-  const [focused, setFocused] = useState(false);
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
+  const fieldAutoComplete = autoComplete ?? ({
+    username: "username",
+    email: "email",
+    first_name: "given-name",
+    last_name: "family-name",
+    password: "new-password",
+    password_confirm: "new-password",
+  } as Record<string, string>)[name];
 
   return (
-    <motion.div
-      custom={index}
-      variants={fieldVariants}
-      initial="hidden"
-      animate="visible"
-      className="mb-5"
-    >
-      <div className={`relative`}>
-        <label
-          htmlFor={name}
-          className={`pointer-events-none transform transition-all duration-200 block mb-1.5 ${
-            focused ? "text-primary font-medium" : "text-heledone-ink-muted"
-          }`}
-        >
-          {label}
-        </label>
-        <div className="relative">
-          <input
-            id={name}
-
-            {...register(name as any)}
-            type={isPassword ? (show ? "text" : "password") : type}
-            placeholder={placeholder}
-            onFocus={() => setFocused(true)}
-            onBlur={(e) => {
-              if (!e.target.value) setFocused(false);
-            }}
-            aria-invalid={!!error}
-            aria-describedby={error ? `${name}-error` : undefined}
-            className={`w-full bg-base-100 border rounded-xl ps-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 shadow-sm ${
-              // Keep room for the password toggle at the logical end.
-              showPasswordToggle && isPassword ? "pe-12" : "pe-4"
-            } ${
-              error
-                ? "border-error focus:border-error focus:ring-error/20"
-                : "border-base-300 focus:border-primary"
-            }`}
-          />
-          {showPasswordToggle && isPassword && (
-            <button
-              type="button"
-              aria-label={show ? t("پنهان کردن رمز عبور") : t("نمایش رمز عبور")}
-              onClick={() => setShow((s) => !s)}
-              // Follow the interface direction.
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-sm opacity-70 hover:opacity-100 w-8 h-8 flex items-center justify-center text-base-content"
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                {show ? (
-                  <motion.div
-                    key="slash"
-                    variants={iconVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                  >
-                    <EyeSlash size="22" className="text-primary" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="eye"
-                    variants={iconVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                  >
-                    <Eye size="22" className="text-primary" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </button>
-          )}
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {error && (
-          <motion.p
-            id={`${name}-error`}
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            className="mt-2 text-sm text-error font-medium"
+    <div className="heledone-auth-field">
+      <label htmlFor={name}>{label}</label>
+      <div className="heledone-auth-input-wrap">
+        <input
+          id={name}
+          {...register(name)}
+          type={isPassword ? (show ? "text" : "password") : type}
+          placeholder={placeholder}
+          autoComplete={fieldAutoComplete}
+          autoCapitalize={name === "username" || type === "email" || isPassword ? "none" : "words"}
+          spellCheck={name !== "username" && type !== "email" && !isPassword}
+          dir={name === "username" || type === "email" || isPassword ? "ltr" : undefined}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${name}-error` : undefined}
+          className={`heledone-auth-input ${showPasswordToggle && isPassword ? "has-password-toggle" : ""}`}
+        />
+        {showPasswordToggle && isPassword && (
+          <button
+            type="button"
+            aria-label={show ? t("پنهان کردن رمز عبور") : t("نمایش رمز عبور")}
+            title={show ? t("پنهان کردن رمز عبور") : t("نمایش رمز عبور")}
+            aria-pressed={show}
+            onClick={() => setShow((value) => !value)}
+            className="heledone-auth-password-toggle"
           >
-            {error}
-          </motion.p>
+            {show ? <EyeOff size={19} aria-hidden="true" /> : <Eye size={19} aria-hidden="true" />}
+          </button>
         )}
-      </AnimatePresence>
-    </motion.div>
+      </div>
+      {error && <p id={`${name}-error`} className="heledone-auth-field-error" role="alert">{error}</p>}
+    </div>
   );
 };

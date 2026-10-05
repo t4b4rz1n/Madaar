@@ -1,6 +1,7 @@
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { motion } from "motion/react";
-import { CloseCircle, Messages, MessageText1, ArrowRight } from "iconsax-reactjs";
+import { CloseCircle, MessageText1, ArrowRight } from "iconsax-reactjs";
 import { useNavigate } from "react-router-dom";
 import type { Ticket } from "../types";
 import { formatDate } from "../../../utils/formatDate";
@@ -50,13 +51,7 @@ export const TicketsTable = ({
 
   if (tickets.length === 0) {
     return (
-      <div className="bg-linear-to-br from-base-200 to-base-300 rounded-2xl border border-base-content/10 p-12 text-center">
-        <div className="text-heledone-ink-muted mb-4">
-          <Messages className="w-16 h-16 mx-auto text-heledone-ink-muted" />
-        </div>
-        <h3 className="text-lg font-bold text-base-content mb-2">{t("No Tickets Found")}</h3>
-        <p className="text-base-content/70">{t("No tickets match your search criteria")}</p>
-      </div>
+      <CoastalEmptyState motif="waves" title={t("No Tickets Found")} description={t("No tickets match your search criteria")} />
     );
   }
 

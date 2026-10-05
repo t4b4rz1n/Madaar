@@ -27,8 +27,11 @@
 .home-settings {display:flex;align-items:center;gap:22px;padding:9px 13px;font-size:15px;font-weight:650;border-radius:10px}
 .home-demo-toggle {font-size:10px;color:#52666c;text-align:center;margin-top:7px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .home-motto {text-align:center!important;font-size:15px;font-weight:750;color:#087f83;margin:9px 0 0}
-.home-topbar {height:65px;flex:0 0 65px;display:flex;align-items:center;gap:23px;padding:10px 26px;background:#fffdfa}
-.home-search {flex:1;display:flex;justify-content:space-between;align-items:center;background:#f0f1f2;color:#7c8b95;border-radius:12px;height:43px;padding:0 18px;font-size:14px;font-weight:650;cursor:pointer}
+.home-topbar {position:relative;z-index:40;height:65px;flex:0 0 65px;display:flex;align-items:center;gap:23px;padding:10px 26px;background:#fffdfa}
+.home-search {min-width:0;flex:1;display:flex;justify-content:space-between;align-items:center;gap:8px;background:#f0f1f2;color:#7c8b95;border-radius:12px;height:43px;padding:0 18px;font-size:14px;font-weight:650;cursor:pointer}
+.home-search span {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-search svg,.home-menu {flex-shrink:0}
+.home-header-actions {display:flex;align-items:center;gap:8px;flex-shrink:0}
 .home-create {background:#087f83;color:white;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:12px;min-height:43px;padding:0 20px;white-space:nowrap;font-size:15px;font-weight:650;cursor:pointer}
 .home-create:hover {background:#006d73}
 .home-topbar>div {flex-shrink:0}
@@ -37,8 +40,10 @@
 .reference-home {max-width:1440px;margin:auto;font-size:14px;line-height:1.7;color:#173c46}
 .reference-home h1,.reference-home h2,.reference-home h3,.reference-home p {margin:0;text-align:start}
 .reference-home h2 {font-size:20px;font-weight:850;line-height:1.5}
-.home-welcome {height:131px;border-radius:11px;overflow:hidden;background-image:linear-gradient(to left,#fffaf3 0%,rgba(255,250,243,.96) 19%,rgba(255,250,243,0) 45%),url('/images/heledone-assets/home-welcome-v2.png');background-size:cover;background-position:center 55%;display:flex;align-items:center;padding:20px 24px}
-[dir=ltr] .home-welcome {background-image:linear-gradient(to right,#fffaf3 0%,rgba(255,250,243,.96) 19%,rgba(255,250,243,0) 45%),url('/images/heledone-assets/home-welcome-v2.png')}
+.home-welcome {position:relative;isolation:isolate;min-height:160px;height:auto;border-radius:8px;overflow:hidden;background:#FFFCF8;display:flex;align-items:center;padding:20px 24px}
+.home-welcome::before {content:'';position:absolute;inset:0;z-index:-1;background-image:url('/images/heledone-assets/home-welcome-v2.png');background-size:cover;background-position:left 55%;pointer-events:none}
+[dir=ltr] .home-welcome::before {transform:scaleX(-1)}
+.home-welcome > div {max-width:52%;min-width:0}
 .home-welcome h1 {font-size:34px;font-weight:900;line-height:1.6}
 .home-welcome p {font-size:18px;font-weight:600;margin-top:3px}
 .home-stats {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:12px 0 14px}
@@ -154,3 +159,32 @@
 .home-dialog select {width:100%;background:white;border:1px solid #8da7ad;border-radius:10px;padding:10px 12px;margin:8px 0 14px;text-align:start;direction:inherit}
 .home-dialog label {display:block;font-weight:700;font-size:14px;margin-top:10px}
 .home-dialog .home-create:disabled {opacity:.45;cursor:not-allowed}
+.reference-home {container-type:inline-size}
+[data-theme=dark] .home-reference-shell,
+[data-theme=dark] .home-reference-shell .heledone-page {background:var(--color-base-200);color:var(--color-base-content)}
+[data-theme=dark] .home-topbar,
+[data-theme=dark] .home-sidebar,
+[data-theme=dark] .home-card {background:var(--color-base-100);color:var(--color-base-content);border-color:var(--color-heledone-border)}
+[data-theme=dark] .reference-home {color:var(--color-base-content)}
+[data-theme=dark] .home-search {background:var(--color-base-200);color:var(--color-heledone-ink-muted)}
+[data-theme=dark] .home-notifications>div>button {color:var(--color-base-content)!important}
+[data-theme=dark] .home-sidebar nav a.active,
+[data-theme=dark] .home-sidebar nav a:hover,
+[data-theme=dark] .home-settings:hover,
+[data-theme=dark] .home-settings.active,
+[data-theme=dark] .home-subnav a[aria-current="page"] {background:var(--color-heledone-brand-soft);color:var(--color-primary)}
+[data-theme=dark] .home-stat {border-color:var(--color-heledone-border)}
+[data-theme=dark] .home-stat.gold {background:color-mix(in srgb,var(--color-heledone-sun) 10%,var(--color-base-100))}
+[data-theme=dark] .home-stat.blue {background:color-mix(in srgb,#228ac4 10%,var(--color-base-100))}
+[data-theme=dark] .home-stat.teal {background:color-mix(in srgb,var(--color-primary) 10%,var(--color-base-100))}
+[data-theme=dark] .home-stat.coral {background:color-mix(in srgb,var(--color-heledone-coral) 10%,var(--color-base-100))}
+[data-theme=dark] .home-welcome {background:var(--color-base-100)}
+[data-theme=dark] .home-welcome::before {opacity:.22}
+.home-welcome {height:var(--heledone-header-height,160px);min-height:0;max-height:var(--heledone-header-height,160px)}
+@container (max-width:760px) {
+  .home-welcome {height:var(--heledone-header-height,160px);min-height:0;padding:68px 18px 8px}
+  .home-welcome::before {height:var(--heledone-header-strip-height,64px);background-position:left center}
+  .home-welcome > div {max-width:100%}
+  .home-welcome h1 {font-size:22px;line-height:1.3}
+  .home-welcome p {font-size:14px}
+}

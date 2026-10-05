@@ -11,6 +11,8 @@ import { KanbanBoard } from '../components/KanbanBoard';
 import { CreateBoardModal } from '../components/CreateBoardModal';
 import { useTaskStore } from '../store/useTaskStore';
 import { getBoards, createBoard } from '../api/tasksApi';
+import { BrandBeats } from '../../../components/Brand';
+import { CoastalArtwork } from '../../../components/CoastalEmptyState';
 
 const AttendancePage = lazy(() => import('../../attendance/pages/AttendancePage'));
 
@@ -72,6 +74,11 @@ export const TaskManagementPage: React.FC = () => {
 
   return (
     <div className="heledone-task-workspace flex h-[calc(100dvh-64px)] -mx-4 -my-5 flex-col bg-base-200 sm:-mx-6">
+      <header className="heledone-task-coast shrink-0">
+        <BrandBeats />
+        <h1>{t("کانبان")}</h1>
+        <CoastalArtwork motif="tasks" />
+      </header>
       {/* Top Navigation Bar */}
       <div className="heledone-task-toolbar relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-heledone-border bg-base-100 px-5 py-3 shrink-0">
         {/* Left side: Project selector + Board tabs */}

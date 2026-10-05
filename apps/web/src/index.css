@@ -211,7 +211,7 @@ body {
   background: color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
-/* A solid outline remains visible on every control and on dark surfaces. */
+/* Keep a visible focus indicator for keyboard navigation. */
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 3px;
@@ -237,11 +237,19 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 
 input::placeholder, textarea::placeholder { text-align: inherit; }
 
-input:focus-visible, textarea:focus-visible, select:focus-visible,
-.input:focus-within, .textarea:focus-within, .select:focus-within {
-  border-color: var(--color-primary);
+html[data-focus-modality="keyboard"] :is(.input, .textarea, .select):focus-within {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Override DaisyUI outlines and Tailwind focus rings without removing field borders or normal shadows. */
+html[data-focus-modality="pointer"] :is(input, textarea, select, [contenteditable]:not([contenteditable="false"])):focus,
+html[data-focus-modality="pointer"] :is(.input, .textarea, .select, [class*="focus-within:outline"], [class*="focus-within:ring-"]):focus-within,
+html[data-focus-modality="pointer"] :is([class*="focus:ring-"], [class*="focus-visible:ring-"]):focus {
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-inset-ring-shadow: 0 0 #0000 !important;
 }
 
 input::placeholder, textarea::placeholder {
@@ -367,22 +375,7 @@ h1, h2, h3 { line-height: 1.6; overflow-wrap: anywhere; }
 .heledone-lattice { background-image: url('/images/heledone-lattice.svg'); background-size: 96px 96px; }
 .heledone-sidebar { border-inline-end: 1px solid var(--color-heledone-border); box-shadow: 4px 0 24px rgb(23 60 70 / 0.025); }
 .heledone-welcome { border: 1px solid var(--color-heledone-border); border-inline-start: 4px solid #DF765B; border-radius: 1.25rem; background: var(--color-heledone-surface); padding: 1rem 1.25rem; }
-.heledone-auth { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); background: var(--color-heledone-canvas); }
-.heledone-auth-story { display: flex; flex-direction: column; justify-content: space-between; gap: 3rem; padding: clamp(2rem, 5vw, 5rem); position: relative; overflow: hidden; }
-.heledone-auth-story h2 { max-width: 12ch; font-size: clamp(2.75rem, 4.3vw, 4rem); font-weight: 850; line-height: 1.5; }
-.heledone-auth-story p { max-width: 34rem; color: var(--color-heledone-ink-muted); }
-.heledone-auth-form { display: grid; place-items: center; padding: clamp(1.5rem, 4vw, 4rem); background: var(--color-heledone-surface); border-inline-start: 1px solid var(--color-heledone-border); }
-.heledone-auth-frame { position: relative; margin-top: 2rem; max-width: 32rem; aspect-ratio: 2.2; border-radius: 3rem 3rem 1.25rem 1.25rem; border: 1px solid var(--color-heledone-border); background-color: var(--color-heledone-brand-soft); overflow: hidden; }
-.heledone-auth-frame::before { content: ''; position: absolute; width: 7rem; height: 7rem; background: #F2BA49; border-radius: 50%; top: -2rem; inset-inline-end: -1rem; }
-.heledone-auth-frame::after { content: ''; position: absolute; width: 5rem; height: 5rem; background: #DF765B; border-radius: 1rem; transform: rotate(20deg); bottom: -2rem; inset-inline-start: 1rem; }
 .heledone-wave { width: 100%; height: 28px; display: block; color: var(--color-heledone-brand); }
-.heledone-auth-mobile-brand { display: none; }
-@media (max-width: 900px) {
-  .heledone-auth { grid-template-columns: 1fr; }
-  .heledone-auth-story { display: none; }
-  .heledone-auth-form { border: 0; background: var(--color-heledone-canvas); }
-  .heledone-auth-mobile-brand { display: flex; justify-content: center; margin-bottom: 2rem; }
-}
 
 /* Tinted status/brand surfaces need darker label ink than solid action fills. */
 .text-primary { color: var(--heledone-primary-ink); }
@@ -523,8 +516,6 @@ h1, h2, h3 { line-height: 1.6; overflow-wrap: anywhere; }
 }
 .heledone-kanban-column-done { border-top: 3px solid var(--color-success); }
 .heledone-attendance > div > div:has(> button) { border-radius: 1rem; }
-.heledone-auth-frame { aspect-ratio: 1.85; border-radius: 1.25rem; box-shadow: var(--shadow-heledone-card); }
-.heledone-auth-frame::before, .heledone-auth-frame::after { display: none; }
 @media (max-width: 640px) {
   .heledone-topbar { gap: 0.5rem; }
   .heledone-global-search { padding: 0.6rem 0.75rem; font-size: 0.8125rem; }

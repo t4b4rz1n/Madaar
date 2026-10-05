@@ -440,6 +440,7 @@ const messages = {
   "رمز عبور": "Password",
   "رمز عبور خود را وارد کنید": "Enter your password",
   "خوش برگشتید": "Welcome back",
+  "Pick up where you left off with your team.": "Pick up where you left off with your team.",
   "ورود به هله‌دان": "Sign in to Heledone",
   "تازه به جمع ما می‌پیوندید؟": "New to the team?",
   "ساخت حساب": "Create an account",
@@ -1871,6 +1872,10 @@ const messages = {
   "CORE": "CORE",
   "BILLING": "BILLING",
   "hour": "hour",
-  "Projects: {count}": "Projects: {count}"
+  "Projects: {count}": "Projects: {count}",
+  "The work we move forward together.": "The work we move forward together.",
+  "Clear search": "Clear search",
+  "Clear filters": "Clear filters",
+  "{count} projects": "{count} projects"
 };
 export default messages;

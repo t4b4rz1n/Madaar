@@ -1,4 +1,5 @@
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { motion, AnimatePresence } from "motion/react";
 import { Add, Edit, Trash, CloseCircle, Category, SearchNormal1, Sort, ArrowUp2, ArrowDown2 } from "iconsax-reactjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -151,12 +152,12 @@ export default function TicketTypesListPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="bg-base-100 min-h-[calc(100vh-121px)] backdrop-blur-lg border border-base-content/10 rounded-2xl p-4 sm:p-6 flex flex-col"
+        className="heledone-page-content min-h-[calc(100vh-121px)] flex flex-col"
       >
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="heledone-page-heading flex flex-col gap-4"
         >
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2 text-base-content">
@@ -219,11 +220,7 @@ export default function TicketTypesListPage() {
               <p className="text-error">{t("There was an issue fetching the categories list. Please try again.")}</p>
             </div>
           ) : ticketTypes.length === 0 ? (
-            <div className="bg-linear-to-br from-base-200 to-base-300 rounded-2xl border border-base-content/10 p-12 text-center">
-              <Category className="w-16 h-16 mx-auto text-heledone-ink-muted" />
-              <h3 className="text-lg font-bold text-base-content mt-4">{t("No categories defined")}</h3>
-              <p className="text-base-content/70">{t("Add the first category to get started.")}</p>
-            </div>
+            <CoastalEmptyState motif="waves" title={t("No categories defined")} description={t("Add the first category to get started.")} />
           ) : (
             <div className="bg-base-100 rounded-2xl border border-base-content/10 overflow-hidden">
               <table className="w-full">

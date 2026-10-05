@@ -440,6 +440,7 @@ const messages = {
   "رمز عبور": "رمز عبور",
   "رمز عبور خود را وارد کنید": "رمز عبورت رو بنویس",
   "خوش برگشتید": "خوش برگشتی",
+  "Pick up where you left off with your team.": "بیا کارهای تیم رو از همون‌جا که بودیم ادامه بدیم.",
   "ورود به هله‌دان": "ورود به هله‌دان",
   "تازه به جمع ما می‌پیوندید؟": "تازه به جمع ما اومدی؟",
   "ساخت حساب": "ساخت حساب",
@@ -1871,6 +1872,10 @@ const messages = {
   "CORE": "سازمان و اعضا",
   "BILLING": "امور مالی",
   "hour": "ساعت",
-  "Projects: {count}": "پروژه‌ها: {count}"
+  "Projects: {count}": "پروژه‌ها: {count}",
+  "The work we move forward together.": "کارهایی که با هم جلو می‌بریم.",
+  "Clear search": "پاک کردن جست‌وجو",
+  "Clear filters": "پاک کردن فیلترها",
+  "{count} projects": "{count} پروژه"
 };
 export default messages;

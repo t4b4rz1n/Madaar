@@ -58,6 +58,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  max-height: var(--heledone-header-height, 160px);
   object-fit: cover;
   object-position: center 30%;
   opacity: 0.14;
@@ -213,7 +214,6 @@
   background: var(--color-heledone-surface);
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent), 0 2px 8px rgb(8 127 131 / 10%);
 }
 
 .task-sheet-title-input::placeholder {
@@ -282,7 +282,6 @@
 
 .task-sheet-property-control:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 
 .task-sheet-property-control > svg {
@@ -818,7 +817,6 @@
 
 .task-sheet-editor-box:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 
 .task-sheet-editor-toolbar {
@@ -910,7 +908,6 @@
 
 .task-sheet-checklist-input-group:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 
 .task-sheet-checklist-input-group input {

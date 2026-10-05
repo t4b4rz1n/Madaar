@@ -1,4 +1,5 @@
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { motion } from "motion/react";
 import {
   Building3,
@@ -104,15 +105,7 @@ export const UsersGrid = ({
 
   if (users.length === 0) {
     return (
-      <div className="bg-base-100/50 backdrop-blur-xl rounded-2xl border border-base-content/8 p-12 text-center shadow-sm">
-        <div className="text-heledone-ink-muted mb-4">
-          <UserIcon className="w-16 h-16 mx-auto" />
-        </div>
-        <h3 className="text-lg font-bold text-base-content mb-2">
-          {t("No Users Found")}</h3>
-        <p className="text-base-content/70">
-          {t("No users match your search criteria")}</p>
-      </div>
+      <CoastalEmptyState motif="coast" title={t("No Users Found")} description={t("No users match your search criteria")} />
     );
   }
 
@@ -129,7 +122,7 @@ export const UsersGrid = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="heledone-surface group relative flex flex-col justify-between rounded-2xl border border-heledone-border bg-base-100 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-heledone-raised"
+              className="coastal-item heledone-surface group relative flex flex-col justify-between rounded-lg border border-heledone-border bg-base-100 p-5 transition-all duration-200 hover:border-primary/30 hover:shadow-heledone-raised"
             >
               {/* Avatar section with status dot */}
               <div className="flex items-center gap-4 mb-5">

@@ -308,7 +308,7 @@ export const Sidebar = () => {
         </nav>
 
         <div className={`pointer-events-none relative hidden shrink-0 overflow-hidden lg:block ${sidebarCollapsed ? 'h-12' : 'h-28'}`} aria-hidden="true">
-          <img src="/images/heledone-assets/palm-sunset.png" alt="" className="absolute inset-0 h-full w-full object-cover object-center opacity-90" />
+          <img src="/images/heledone-assets/attendance-coastal-v1.png" alt="" className="absolute inset-0 h-full w-full object-cover object-left opacity-90" />
         </div>
 
         {/* Footer with Admin Settings button & Profile */}

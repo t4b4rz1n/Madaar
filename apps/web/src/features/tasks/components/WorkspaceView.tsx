@@ -1,6 +1,7 @@
 import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalArtwork, CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { projectPalette } from "../../../core/config/designTokens";
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,7 +11,6 @@ import { useTaskStore } from '../store/useTaskStore';
 import { CreateBoardModal } from './CreateBoardModal';
 import {
   Add,
-  FolderAdd,
   Element3,
   SearchNormal1,
   Sort,
@@ -148,10 +148,8 @@ export const WorkspaceView: React.FC = () => {
   if (!activeProjectId) {
     return (
       <div className="flex h-full items-center justify-center p-6">
-        <div className="w-full max-w-md rounded-3xl border border-base-content/8 bg-base-100 p-8 text-center shadow-xl">
-          <div className="mx-auto mb-5 grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <FolderAdd size={24} />
-          </div>
+        <div className="w-full max-w-md p-6 text-center">
+          <CoastalArtwork motif="coast" className="mx-auto mb-5" />
           <h2 className="text-lg font-bold text-base-content">{t("Choose a Project")}</h2>
           <p className="mt-2 text-xs leading-relaxed text-heledone-ink-muted">
             {t("Workspaces live inside projects. Select an active project from the top selector or manage your projects here.")}</p>
@@ -221,21 +219,11 @@ export const WorkspaceView: React.FC = () => {
 
       <div className="p-6 sm:p-8">
         {filteredBoards.length === 0 && searchQuery ? (
-          <div className="flex min-h-[400px] items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-base-200">
-                <SearchNormal1 size={28} className="text-heledone-ink-muted" />
-              </div>
-              <h3 className="text-lg font-bold text-base-content">{t("No boards found")}</h3>
-              <p className="mt-1 text-sm text-heledone-ink-muted">{t("Try adjusting your search query")}</p>
-            </div>
-          </div>
+          <CoastalEmptyState motif="waves" title={t("No boards found")} description={t("Try adjusting your search query")} />
         ) : filteredBoards.length === 0 ? (
           <div className="flex min-h-[400px] items-center justify-center">
             <div className="w-full max-w-md text-center">
-              <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5">
-                <Element3 size={36} className="text-primary" variant="Bold" />
-              </div>
+              <CoastalArtwork motif="boat" className="mx-auto mb-5" />
               <h3 className="text-xl font-bold text-base-content">{t("اولین کانبان را بسازید")}</h3>
               <p className="mt-2 text-sm leading-relaxed text-heledone-ink-muted">{t("Boards help you organize tasks into different workflows.")}</p>
               {canManageBoard && (

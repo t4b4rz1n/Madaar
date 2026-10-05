@@ -288,7 +288,7 @@ export const UserDashboardPage = () => {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 pb-12"
+      className="personal-coastal-page space-y-6 pb-12"
     >
       {/* ─── 1. Header Bar with Greetings & Quick Actions ─── */}
       <div className="heledone-welcome relative min-h-[138px] overflow-hidden rounded-2xl border border-[#DCE6E2] bg-[#FFF8EE] shadow-sm">
@@ -302,8 +302,10 @@ export const UserDashboardPage = () => {
           <p className="mt-0.5 text-xs text-heledone-ink-muted">
             {formatDay()}  {t("· امروز را با هم پیش می‌بریم.")}</p>
         </div>
+        </div>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+      <div className="flex flex-wrap items-center gap-2">
           {/* Check In / Out Button */}
           {isCheckedIn ? (
             <button
@@ -339,8 +341,6 @@ export const UserDashboardPage = () => {
             </span>
           </button>
         </div>
-        </div>
-      </div>
 
       {/* ─── 2. Top Metrics Grid (4 Summary Cards) ─── */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

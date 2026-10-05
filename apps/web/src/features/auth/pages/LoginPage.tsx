@@ -33,20 +33,23 @@ const LoginPage: React.FC = () => {
       name: "username",
       label: t("نام کاربری"),
       type: "text",
+      autoComplete: "username",
       placeholder: t("نام کاربری خود را وارد کنید"),
     },
     {
       name: "password",
       label: t("رمز عبور"),
       type: "password",
+      autoComplete: "current-password",
       placeholder: t("رمز عبور خود را وارد کنید"),
     },
   ];
 
   return (
-    <AuthLayout>
+    <AuthLayout illustrated>
         <AuthForm
           title={t("خوش برگشتید")}
+          description={t("Pick up where you left off with your team.")}
           fields={loginFields}
           onSubmit={handleLogin as any}
           buttonText={t("ورود به هله‌دان")}

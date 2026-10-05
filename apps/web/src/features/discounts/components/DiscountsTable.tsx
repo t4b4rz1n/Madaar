@@ -1,5 +1,6 @@
 import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { motion } from "motion/react";
 import {
   Calendar,
@@ -90,15 +91,7 @@ export const DiscountsTable = ({
 
   if (discounts.length === 0) {
     return (
-      <div className="bg-linear-to-br from-base-200 to-base-300 rounded-2xl border border-base-content/10 p-12 text-center">
-        <div className="text-heledone-ink-muted mb-4">
-          <DiscountShape className="w-16 h-16 mx-auto" />
-        </div>
-        <h3 className="text-lg font-bold text-base-content mb-2">
-          {t("No Discounts Found")}</h3>
-        <p className="text-base-content/70">
-          {t("Create a discount code to get started")}</p>
-      </div>
+      <CoastalEmptyState motif="palm" title={t("No Discounts Found")} description={t("Create a discount code to get started")} />
     );
   }
 

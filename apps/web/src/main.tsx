@@ -6,8 +6,20 @@ import { MotionConfig } from "motion/react";
 import { ErrorFallback } from "./components/ErrorFallback";
 import { queryClient } from "./core/config/queryClient";
 import "./index.css";
+import "./styles/coastal-workspace.css";
 import { applyDocumentLanguage, useLocaleStore } from "./i18n/locale";
 import { LocaleApplication } from "./core/LocaleApplication";
+
+// Text fields match :focus-visible even after a click, so track Tab separately.
+document.documentElement.dataset.focusModality = "pointer";
+document.addEventListener("pointerdown", () => {
+  document.documentElement.dataset.focusModality = "pointer";
+}, true);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Tab") {
+    document.documentElement.dataset.focusModality = "keyboard";
+  }
+}, true);
 
 async function enableMocking() {
   if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === "true") {

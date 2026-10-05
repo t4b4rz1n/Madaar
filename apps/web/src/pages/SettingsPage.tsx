@@ -6,6 +6,7 @@ import { useAuthStore } from "../features/auth/store/authStore";
 import { usePermissions } from "../features/auth/hooks/usePermissions";
 import { LanguagePicker } from "../components/LanguagePicker";
 import { PageHeading } from "../components/PageHeading";
+import { CoastalArtwork, CoastalDivider } from "../components/CoastalEmptyState";
 
 const SettingsPage: React.FC = () => {
   const t = useTranslation();
@@ -20,6 +21,8 @@ const SettingsPage: React.FC = () => {
 
       <LanguagePicker />
 
+      <CoastalDivider />
+
       {/* Grid of Settings Modules */}
       {adminItems.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -27,7 +30,7 @@ const SettingsPage: React.FC = () => {
             <Link
               key={item.link}
               to={`/${item.link}`}
-              className="group flex items-center gap-3.5 rounded-2xl border border-base-content/8 bg-base-100 p-4 shadow-xs transition-all hover:border-primary/40 hover:shadow-md"
+              className="coastal-item group flex items-center gap-3.5 rounded-lg border border-base-content/8 bg-base-100 p-4 transition-all hover:border-primary/40 hover:shadow-md"
             >
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-content">
                 {item.icon}
@@ -44,7 +47,8 @@ const SettingsPage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-base-content/10 bg-base-100 p-12 text-center">
+        <div className="py-8 text-center">
+          <CoastalArtwork motif="palm" className="mx-auto mb-5" />
           <p className="text-sm font-medium text-heledone-ink-muted">
             {t("You do not have administrative permissions configured for this workspace.")}</p>
         </div>

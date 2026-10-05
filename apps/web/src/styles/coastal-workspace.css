@@ -1,0 +1,276 @@
+/* Artwork belongs to wayfinding and empty states, never behind work data. */
+:root {
+  --heledone-header-height: 160px;
+  --heledone-header-strip-height: 64px;
+}
+
+.heledone-page {
+  --coastal-scene: url('/images/heledone-assets/dashboard-coastal-v1.png');
+  --coastal-scene-fit: cover;
+  --coastal-scene-position: left center;
+  container-type: inline-size;
+}
+.heledone-page[data-section="dashboard"] {
+  --coastal-scene: url('/images/heledone-assets/home-welcome-v2.png');
+}
+.heledone-page[data-section="organizations"] {
+  --coastal-scene: url('/images/heledone-assets/organizations-coastal-v1.png');
+}
+.heledone-page[data-section="teams"] {
+  --coastal-scene: url('/images/heledone-assets/teams-coastal-v1.png');
+}
+.heledone-page[data-section="users"] {
+  --coastal-scene: url('/images/heledone-assets/users-coastal-v1.png');
+}
+.heledone-page[data-section="roles"] {
+  --coastal-scene: url('/images/heledone-assets/roles-coastal-v1.png');
+}
+.heledone-page[data-section="profile"] {
+  --coastal-scene: url('/images/heledone-assets/profile-coastal-v1.png');
+}
+.heledone-page[data-section="settings"] {
+  --coastal-scene: url('/images/heledone-assets/settings-coastal-v1.png');
+}
+.heledone-page[data-section="attendance"] {
+  --coastal-scene: url('/images/heledone-assets/attendance-coastal-v1.png');
+}
+.heledone-page[data-section="finance"] {
+  --coastal-scene: url('/images/heledone-assets/finance-coastal-v1.png');
+}
+.heledone-page[data-section="notifications"] {
+  --coastal-scene: url('/images/heledone-assets/notifications-coastal-v1.png');
+}
+.heledone-page[data-section="tickets"] {
+  --coastal-scene: url('/images/heledone-assets/tickets-coastal-v1.png');
+}
+.heledone-page[data-section="ticket-types"] {
+  --coastal-scene: url('/images/heledone-assets/ticket-types-coastal-v1.png');
+}
+.heledone-page[data-section="discounts"] {
+  --coastal-scene: url('/images/heledone-assets/discounts-coastal-v1.png');
+}
+.heledone-page[data-section="automations"] {
+  --coastal-scene: url('/images/heledone-assets/automations-coastal-v1.png');
+}
+.heledone-page[data-section="tasks"] {
+  --coastal-scene: url('/images/heledone-assets/tasks-coastal-v1.png');
+}
+.heledone-page[data-section="standups"] {
+  --coastal-scene: url('/images/heledone-assets/standups-coastal-v1.png');
+}
+.heledone-page[data-section="projects"] {
+  --coastal-scene: url('/images/heledone-assets/projects-coastal-v1.png');
+}
+.heledone-page[data-section="admin"],
+.heledone-page[data-section="manager"],
+.heledone-page[data-section="team-lead"] {
+  --coastal-scene: url('/images/heledone-assets/leadership-coastal-v1.png');
+}
+.heledone-workspace:not(.home-reference-shell) .heledone-page {
+  background: color-mix(in srgb, var(--color-heledone-surface) 70%, var(--color-heledone-surface-muted));
+}
+.heledone-workspace .heledone-page-heading {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-heledone-border);
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--color-heledone-surface);
+}
+.heledone-workspace .heledone-page-heading[data-coastal-scene="coastal-house"] {
+  --coastal-scene: url('/images/heledone-assets/profile-coastal-v1.png');
+}
+.heledone-workspace .heledone-page-heading[data-coastal-scene="palm-sunset"] {
+  --coastal-scene: url('/images/heledone-assets/settings-coastal-v1.png');
+}
+.heledone-workspace .heledone-page-heading[data-coastal-scene="roles"] {
+  --coastal-scene: url('/images/heledone-assets/roles-coastal-v1.png');
+}
+.heledone-workspace .heledone-page-heading::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  width: 100%;
+  height: var(--heledone-header-height);
+  max-height: var(--heledone-header-height);
+  background-image: var(--coastal-scene, url('/images/heledone-assets/dashboard-coastal-v1.png'));
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  background-position: var(--coastal-scene-position, center);
+  pointer-events: none;
+}
+[dir="ltr"] .heledone-workspace .heledone-page-heading::after {
+  transform: scaleX(-1);
+}
+.heledone-workspace .heledone-page-heading::before {
+  inset: auto;
+  inset-block-end: -1px;
+  inset-inline-start: 1.5rem;
+  width: 72px;
+  height: 3px;
+  border-radius: 0;
+  background: linear-gradient(to right, #DF765B 0 33%, #F2BA49 33% 66%, #087F83 66%);
+}
+.heledone-workspace .heledone-page-heading > :first-child {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: var(--heledone-header-height);
+  min-height: 0;
+  max-height: var(--heledone-header-height);
+  flex: none;
+  padding: 12px 1.5rem;
+  padding-inline-end: calc(66% + 1.5rem);
+}
+.heledone-workspace .heledone-page-heading > :not(:first-child) {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  min-width: 0;
+  align-self: flex-start;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-heledone-border);
+  background: var(--color-base-200);
+}
+.heledone-workspace .heledone-page-heading h1 {
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.heledone-workspace .heledone-page-heading p { font-size: 0.8125rem; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.heledone-workspace .heledone-page-heading :where(button, input, select, .btn) { border-radius: 8px; }
+.heledone-workspace .heledone-heading-actions { width: 100%; }
+.heledone-workspace .heledone-page-heading .heledone-heading-actions > label { flex: 0 1 auto; }
+.heledone-workspace .heledone-page-heading :where(.select, input) { max-width: 100%; }
+.heledone-workspace .heledone-surface { border-radius: 8px; box-shadow: none; }
+.heledone-workspace .coastal-item { position: relative; border-radius: 8px; box-shadow: var(--shadow-heledone-card); }
+.heledone-workspace .coastal-item::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  border-start-start-radius: 8px;
+  border-start-end-radius: 8px;
+  background: var(--color-heledone-coral);
+  pointer-events: none;
+}
+.heledone-workspace .coastal-item:nth-child(3n + 2)::before { background: var(--color-heledone-sun); }
+.heledone-workspace .coastal-item:nth-child(3n)::before { background: var(--color-primary); }
+.heledone-coastal-artwork { display: block; width: 12rem; height: 6rem; object-fit: cover; object-position: left center; pointer-events: none; }
+.heledone-coastal-artwork[data-motif="palm"] { object-fit: contain; object-position: center; }
+.heledone-coastal-artwork[data-motif="waves"] { object-position: center; }
+.heledone-sea-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  height: 40px;
+  pointer-events: none;
+}
+.heledone-sea-divider::before,
+.heledone-sea-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-heledone-border);
+}
+.heledone-sea-divider > .heledone-coastal-artwork {
+  width: min(50%, 15rem);
+  height: 40px;
+  flex: none;
+  object-fit: cover;
+}
+.coastal-dialog-header-art { max-height: var(--heledone-header-height); }
+.heledone-coastal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+.heledone-coastal-empty > .heledone-coastal-artwork { margin-bottom: 1.25rem; }
+.heledone-coastal-empty :where(h3, p) { overflow-wrap: anywhere; }
+.heledone-coastal-empty button { max-width: 100%; white-space: normal; }
+.heledone-task-coast { position: relative; isolation: isolate; display: flex; align-items: center; gap: 0.75rem; height: var(--heledone-header-height); min-height: 0; max-height: var(--heledone-header-height); flex-shrink: 0; padding: 72px 1.25rem 0.5rem; border-bottom: 1px solid var(--color-heledone-border); background: var(--color-heledone-surface); }
+.heledone-task-coast h1 { min-width: 0; flex: 1; font-size: 1rem; font-weight: 800; overflow-wrap: anywhere; }
+.heledone-task-coast .heledone-coastal-artwork { position: absolute; inset-block-start: 0; inset-inline: 0; width: 100%; height: var(--heledone-header-strip-height); max-height: var(--heledone-header-height); margin: 0; object-fit: cover; object-position: left 60%; z-index: -1; }
+[dir="ltr"] .heledone-task-coast .heledone-coastal-artwork { transform: scaleX(-1); }
+[data-theme="dark"] .heledone-task-coast .heledone-coastal-artwork { opacity: 0.24; }
+.heledone-workspace .heledone-task-workspace .heledone-page-heading { min-height: 0; padding: 1rem; }
+.heledone-workspace .heledone-task-workspace .heledone-page-heading::after { display: none; }
+.heledone-workspace .heledone-task-workspace .heledone-page-heading > :first-child { height: auto; max-height: none; min-height: 0; padding: 0; }
+.heledone-workspace .heledone-welcome { height: var(--heledone-header-height); min-height: 0; max-height: var(--heledone-header-height); border-radius: 0; border: 0; border-bottom: 1px solid var(--color-heledone-border); box-shadow: none; padding: 0; }
+.heledone-workspace .heledone-welcome > img { object-position: left center; }
+.heledone-workspace .heledone-welcome > div { flex-direction: column; align-items: stretch; }
+.heledone-workspace .heledone-welcome > div > :first-child { margin-inline: 0; max-width: 60%; text-align: start; }
+.heledone-workspace .heledone-welcome > div > :last-child { align-self: flex-start; }
+.heledone-workspace .heledone-welcome :where(h1, p) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+[dir="ltr"] .heledone-workspace .heledone-welcome > img { transform: scaleX(-1); }
+.personal-coastal-page { container-type: inline-size; }
+.heledone-onboarding-heading { --coastal-scene: url('/images/heledone-assets/auth-coastal-v1.png'); --coastal-scene-position: left center; }
+.heledone-onboarding-heading .heledone-brand { margin-bottom: 0.25rem; }
+.heledone-onboarding-steps { flex-wrap: wrap; justify-content: center; }
+[data-theme="dark"] .heledone-workspace .heledone-page-heading::after { opacity: 0.24; }
+[data-theme="dark"] .heledone-workspace .heledone-welcome > img { opacity: 0.18; }
+
+@container (max-width: 760px) {
+  .heledone-workspace .heledone-page-heading::after { height: var(--heledone-header-strip-height); background-position: left 60%; }
+  .heledone-workspace .heledone-page-heading > :first-child { padding: 68px 1rem 8px; }
+  .heledone-workspace .heledone-page-heading h1 { font-size: 1.25rem; line-height: 1.3; }
+  .heledone-workspace .heledone-page-heading p { -webkit-line-clamp: 1; }
+  .heledone-workspace .heledone-page-heading > :first-child > span { display: none; }
+  .heledone-workspace .heledone-page-heading > :not(:first-child) { width: 100%; flex-wrap: wrap; }
+  .heledone-workspace .heledone-task-workspace .heledone-page-heading { padding: 1rem; }
+  .heledone-workspace .heledone-task-workspace .heledone-page-heading > :first-child { padding: 0; }
+  .heledone-workspace .heledone-welcome { padding-block-start: var(--heledone-header-strip-height); }
+  .heledone-workspace .heledone-welcome > img { height: var(--heledone-header-strip-height); }
+  .heledone-workspace .heledone-welcome > div { height: calc(var(--heledone-header-height) - var(--heledone-header-strip-height)); padding: 8px 1rem; }
+  .heledone-workspace .heledone-welcome > div > :first-child { max-width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .heledone-workspace .heledone-page-heading::after,
+  [dir="rtl"] .heledone-workspace .heledone-page-heading::after { width: 100%; height: var(--heledone-header-strip-height); mask-image: none; background-position: left 60%; }
+  .heledone-workspace .heledone-page-heading > :first-child { padding: 68px 1rem 8px; }
+  .heledone-workspace .heledone-page-heading > :not(:first-child) { width: 100%; flex-wrap: wrap; }
+  .heledone-workspace .heledone-page-heading h1 { font-size: 1.25rem; line-height: 1.3; }
+  .heledone-workspace .heledone-page-heading p { -webkit-line-clamp: 1; }
+  .heledone-workspace .heledone-page-heading > :first-child > span { display: none; }
+  .heledone-onboarding-heading .heledone-brand { display: none; }
+  .heledone-workspace .heledone-page-heading :where(select) { min-width: 0; }
+  .heledone-workspace .heledone-page-heading > div:not(:first-child) > label { max-width: 100%; }
+  .heledone-workspace .heledone-task-workspace .heledone-page-heading > :first-child { padding: 0; }
+  .heledone-workspace .heledone-welcome { padding-block-start: var(--heledone-header-strip-height); }
+  .heledone-workspace .heledone-welcome > img { height: var(--heledone-header-strip-height); }
+  .heledone-workspace .heledone-welcome > div { height: calc(var(--heledone-header-height) - var(--heledone-header-strip-height)); padding: 8px 1rem; }
+  .heledone-workspace .heledone-welcome > div > :first-child { max-width: 100%; }
+  .heledone-coastal-artwork { width: 10rem; height: 5rem; }
+  .heledone-task-coast .heledone-coastal-artwork { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .heledone-workspace .coastal-item { transition: none; }
+  .heledone-workspace .coastal-item:hover { transform: none; }
+}
+@media (prefers-contrast: more) {
+  .heledone-workspace .heledone-page-heading::after { display: none; }
+  .heledone-workspace .heledone-page-heading > :first-child { padding: 1rem; min-height: 0; }
+}

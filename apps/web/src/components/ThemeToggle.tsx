@@ -1,5 +1,6 @@
-import { useTranslation, useLocale } from "../i18n/locale";
+import { useTranslation } from "../i18n/locale";
 import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 
 type ThemeMode = "light" | "dark";
 
@@ -42,7 +43,7 @@ const ThemeToggle = () => {
 
   if (!isMounted) {
     return (
-      <div className="h-10 w-10 rounded-full border border-base-300 bg-base-200/80 sm:h-11 sm:w-[116px]" />
+      <div className="h-10 w-10 shrink-0 rounded-xl border border-base-300 bg-base-200/80 sm:h-11 sm:w-11" />
     );
   }
 
@@ -53,54 +54,13 @@ const ThemeToggle = () => {
       type="button"
       onClick={toggleTheme}
       aria-label={isDark ? t("نمای روشن") : t("نمای تیره")}
+      aria-pressed={isDark}
       title={isDark ? t("نمای روشن") : t("نمای تیره")}
       className="motion-interactive inline-flex h-10 w-10 items-center justify-center rounded-xl border border-base-content/10 bg-base-100/70 text-base-content/70 shadow-sm hover:border-primary/35 hover:bg-base-100 hover:text-primary sm:h-11 sm:w-11"
     >
-      {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+      {isDark ? <Sun className="h-5 w-5" aria-hidden="true" /> : <Moon className="h-5 w-5" aria-hidden="true" />}
     </button>
   );
 };
-
-type IconProps = {
-  className?: string;
-};
-
-const SunIcon = ({ className = "h-5 w-5" }: IconProps) => { useLocale(); return (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2.5" />
-    <path d="M12 19.5V22" />
-    <path d="M4.93 4.93l1.77 1.77" />
-    <path d="M17.3 17.3l1.77 1.77" />
-    <path d="M2 12h2.5" />
-    <path d="M19.5 12H22" />
-    <path d="M4.93 19.07l1.77-1.77" />
-    <path d="M17.3 6.7l1.77-1.77" />
-  </svg>
-); };
-
-const MoonIcon = ({ className = "h-5 w-5" }: IconProps) => { useLocale(); return (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M21 12.79A9 9 0 1 1 11.21 3c0 0 0 0 0 0A7 7 0 0 0 21 12.79z" />
-  </svg>
-); };
 
 export default ThemeToggle;

@@ -1,4 +1,5 @@
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { motion } from "motion/react";
 import {
   Building3,
@@ -85,15 +86,7 @@ export const UsersTable = ({
 
   if (users.length === 0) {
     return (
-      <div className="bg-base-100/70 backdrop-blur-xl rounded-2xl border border-base-content/8 p-12 text-center shadow-sm">
-        <div className="text-heledone-ink-muted mb-4">
-          <UserIcon className="w-16 h-16 mx-auto" />
-        </div>
-        <h3 className="text-lg font-bold text-base-content mb-2">
-          {t("No Users Found")}</h3>
-        <p className="text-base-content/70">
-          {t("No users match your search criteria")}</p>
-      </div>
+      <CoastalEmptyState motif="coast" title={t("No Users Found")} description={t("No users match your search criteria")} />
     );
   }
 

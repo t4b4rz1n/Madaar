@@ -1,22 +1,24 @@
 import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { t as translate, useTranslation, useLocale } from "../../../i18n/locale";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-AnimatePresence, motion } from "motion/react";
-import {
-  FilterSearch,
-  ArrowDown2,
-  Add,
+  SlidersHorizontal,
+  Plus as Add,
   Archive,
-  Edit2,
-  FolderOpen,
-  SearchNormal1,
-  TickCircle,
-  Trash,
-  CloseCircle,
-} from "iconsax-reactjs";
+  Pencil as Edit2,
+  FolderKanban,
+  Search as SearchNormal1,
+  CircleCheck as TickCircle,
+  Trash2 as Trash,
+  X as CloseCircle,
+  EllipsisVertical,
+  Users,
+  TriangleAlert,
+  ArrowUpRight,
+} from "lucide-react";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   archiveProject,
@@ -30,8 +32,9 @@ import { ProjectWizard } from "../components/wizard/ProjectWizard";
 import { useProjectWizardStore } from "../store/useProjectWizardStore";
 import { useDeleteProject } from "../hooks/useProjects";
 import { usePermissions } from "../../auth/hooks/usePermissions";
-
-
+import { BrandBeats } from "../../../components/Brand";
+import { CoastalArtwork, CoastalDivider } from "../../../components/CoastalEmptyState";
+import "../projects.css";
 
 const statusConfig: Record<
   ProjectStatus,
@@ -61,61 +64,14 @@ function StatusFilterDropdown({
   value: string;
   onChange: (value: string) => void;
 }) {
-  useLocale();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const selectedOption = statusFilterOptions.find((opt) => opt.value === value) || statusFilterOptions[0];
-
-  // Close on outside click
-  useEffect(() => {
-    const listener = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", listener);
-    return () => document.removeEventListener("mousedown", listener);
-  }, []);
-
+  const t = useTranslation();
   return (
-    <div className="relative z-20" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9.5 items-center gap-2 rounded-xl border border-base-content/10 bg-base-100 px-3.5 text-xs font-semibold text-base-content transition-all hover:border-primary/30"
-      >
-        <FilterSearch size={15} className="text-heledone-ink-muted" />
-        <span>{selectedOption.label}</span>
-        <ArrowDown2 size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="absolute end-0 top-11 min-w-[160px] rounded-xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl"
-          >
-            {statusFilterOptions.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => {
-                  onChange(opt.value);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-start text-xs transition-colors hover:bg-base-content/5 ${
-                  value === opt.value ? "bg-primary/10 font-bold text-primary" : "font-medium text-base-content"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    <label className="projects-status-filter">
+      <SlidersHorizontal size={16} aria-hidden="true" />
+      <select value={value} onChange={(event) => onChange(event.target.value)} aria-label={t("Project status")}>
+        {statusFilterOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+    </label>
   );
 }
 
@@ -161,8 +117,7 @@ const ProgressRing = ({
           r={normalizedRadius}
           cx={radius}
           cy={radius}
-          className="transition-all duration-1000 ease-in-out"
-          filter={`drop-shadow(0 0 4px ${color}80)`}
+          className="projects-progress-arc"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -190,8 +145,10 @@ function ProjectActionMenu({
   onArchive: () => void;
 }) {
   const t = useTranslation();
+  const reducedMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -206,26 +163,29 @@ function ProjectActionMenu({
   }, [open]);
 
   return (
-    <div className="relative z-20" ref={ref} onClick={(e) => e.stopPropagation()}>
+    <div className="relative z-20" ref={ref} onKeyDown={(event) => {
+      if (event.key === "Escape") { setOpen(false); triggerRef.current?.focus(); }
+    }}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="grid size-7 place-items-center rounded-lg text-heledone-ink-muted opacity-100 hover:bg-base-200 hover:text-base-content transition duration-150"
+        className="grid size-10 place-items-center rounded-lg text-heledone-ink-muted hover:bg-base-200 hover:text-base-content transition duration-150"
         aria-label={t("Actions for {value0}", { value0: project.name })}
+        title={t("Actions for {value0}", { value0: project.name })}
+        aria-expanded={open}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
-        </svg>
+        <EllipsisVertical size={18} />
       </button>
       <AnimatePresence>
         {open && (
           <>
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -4 }}
+              initial={{ opacity: 0, scale: reducedMotion ? 1 : 0.95, y: reducedMotion ? 0 : -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -4 }}
-              transition={{ duration: 0.12 }}
-              className="absolute end-0 top-8 z-50 min-w-[160px] rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-xs font-semibold shadow-2xl text-base-content"
+              exit={{ opacity: 0, scale: reducedMotion ? 1 : 0.95, y: reducedMotion ? 0 : -4 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.25 }}
+              className="projects-action-menu absolute end-0 top-11 z-50 min-w-[180px] rounded-lg border border-base-content/10 bg-base-100 p-1.5 text-xs font-semibold shadow-xl text-base-content"
             >
               <button
                 type="button"
@@ -271,7 +231,6 @@ function ProjectCard({
   onDelete,
   onComplete,
   onArchive,
-  onClick,
   canManage,
 }: {
   project: Project;
@@ -279,13 +238,13 @@ function ProjectCard({
   onDelete: () => void;
   onComplete: () => void;
   onArchive: () => void;
-  onClick: () => void;
   canManage: boolean;
 }) {
   const t = useTranslation();
+  const reducedMotion = useReducedMotion();
   const cfg = statusConfig[project.status];
   const memberCount = project.member_count ?? project.members_count ?? 0;
-  const progress = project.progress_percentage || 0;
+  const progress = Math.max(0, Math.min(100, project.progress_percentage || 0));
   const projectColor = project.color || "#087F83";
 
   // Always milestone-based — no task fallback
@@ -294,47 +253,32 @@ function ProjectCard({
 
   return (
     <motion.article
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
+      layout={!reducedMotion}
+      initial={{ opacity: 0, scale: reducedMotion ? 1 : 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.25, type: "spring", bounce: 0.2 }}
-      onClick={onClick}
-      className="heledone-project-card group relative cursor-pointer rounded-2xl border border-heledone-border bg-base-100 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-heledone-raised"
+      transition={{ duration: 0.3, type: "spring", bounce: 0 }}
+      className="heledone-project-card projects-card group relative rounded-lg border border-heledone-border p-5"
     >
-      {/* Subtle Halo effect on the right side */}
-      <div
-        className="absolute inset-x-5 top-0 h-1 rounded-b-full opacity-80 pointer-events-none"
-        style={{ backgroundColor: projectColor }}
-      />
-
-      {/* Content wrapper to stay above the halo */}
-      <div className="relative z-10">
-        <div className="flex items-start justify-between gap-3">
-          <h2  className="flex-1 min-w-0 break-words text-xl font-bold tracking-tight text-base-content">
-            {project.name}
-          </h2>
+      <div>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <span className="projects-folder" style={{ color: projectColor }}><FolderKanban size={23} aria-hidden="true" /></span>
           <div className="flex items-center gap-2">
-            <span className={`rounded-lg px-3 py-1 text-[13px] font-bold uppercase tracking-wider ${cfg.bgClass} ${cfg.textColor}`}>
-              {cfg.label}
-            </span>
-            {canManage && (
-              <ProjectActionMenu
-                project={project}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onComplete={onComplete}
-                onArchive={onArchive}
-              />
-            )}
+            <span className={`rounded-md px-2.5 py-1 text-xs font-semibold ${cfg.bgClass} ${cfg.textColor}`}>{cfg.label}</span>
+            {canManage && <ProjectActionMenu project={project} onEdit={onEdit} onDelete={onDelete} onComplete={onComplete} onArchive={onArchive} />}
           </div>
         </div>
-
-        <div className="mt-6 flex items-end justify-between">
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="min-w-0 flex-1 break-words text-lg font-bold text-base-content">
+            <Link to={`/projects/${project.id}`} className="projects-card-link">{project.name}</Link>
+          </h2>
+        </div>
+        <p className="projects-card-description mt-1 text-sm text-heledone-ink-muted">{project.description || t("No description added yet.")}</p>
+        <div className="mt-5 flex items-center justify-between gap-3 border-t border-heledone-border pt-4">
           <div>
-            <p className="text-[13px] font-bold uppercase tracking-widest text-heledone-ink-muted">
+            <p className="text-xs font-medium text-heledone-ink-muted">
               {t("Milestone Progress")}</p>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-base-content">
+              <span className="text-2xl font-bold text-base-content">
                 {formatUiNumber(completedMilestones)}
               </span>
               <span className="text-sm font-medium text-heledone-ink-muted">
@@ -350,21 +294,15 @@ function ProjectCard({
         {/* Unlinked tasks warning badge */}
         {(project.unlinked_task_count || 0) > 0 && (
           <div className="mt-3 flex items-center gap-1.5 text-[13px] font-semibold text-warning">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5zM11 10v5h2v-5h-2zm0 6v2h2v-2h-2z"/>
-            </svg>
+            <TriangleAlert size={14} className="shrink-0" aria-hidden="true" />
             <span>{(project.unlinked_task_count || 0) === 1 ? t("{count} unlinked task", { count: 1 }) : t("{count} unlinked tasks", { count: project.unlinked_task_count || 0 })}</span>
           </div>
         )}
 
         <div className="mt-4 flex items-center gap-2 text-xs text-heledone-ink-muted">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
+          <Users size={15} aria-hidden="true" />
           <span className="font-medium">{formatUiNumber(memberCount)}  {t("members")}</span>
+          <ArrowUpRight size={17} className="ms-auto text-primary rtl:-rotate-90" aria-hidden="true" />
         </div>
       </div>
     </motion.article>
@@ -373,7 +311,7 @@ function ProjectCard({
 
 export default function ProjectsPage() {
   const t = useTranslation();
-  const navigate = useNavigate();
+  const reducedMotion = useReducedMotion();
   const queryClient = useQueryClient();
   const deleteProjectMutation = useDeleteProject();
   const { hasAnyPermission } = usePermissions();
@@ -425,10 +363,6 @@ export default function ProjectsPage() {
     return list;
   }, [projectsQuery.data, statusFilter]);
 
-  const openDetailsPage = (projectId: string | number) => {
-    navigate(`/projects/${projectId}`);
-  };
-
   const openWizard = useProjectWizardStore((s) => s.open);
 
   // Auto-open wizard when redirected from org onboarding
@@ -475,27 +409,26 @@ export default function ProjectsPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: reducedMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="min-h-[calc(100vh-121px)] space-y-6 pb-10"
+      className="projects-page min-h-[calc(100vh-121px)] space-y-5 pb-10"
     >
-      {/* Top Bar: Title & Action & Search */}
-      <div className="heledone-page-heading flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
+      <header className="projects-coastal-heading">
+        <img src="/images/heledone-assets/projects-coastal-v1.png" alt="" aria-hidden="true" className="projects-coastal-art" />
+        <div className="projects-heading-copy">
+          <BrandBeats className="mb-3" />
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-base-content">
               {t("پروژه‌ها")}</h1>
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-              {formatUiNumber(projects.length)}
-            </span>
           </div>
-          <p className="mt-1 text-xs font-medium text-heledone-ink-muted">
-            {t("Select a project to access its board, tasks, and settings.")}</p>
+          <p className="mt-1 text-sm text-heledone-ink-muted">{t("The work we move forward together.")}</p>
         </div>
+      </header>
 
-        <div className="heledone-heading-actions flex flex-wrap items-center gap-3">
-          <label className="relative block w-full sm:w-64">
+        <div className="projects-toolbar flex flex-wrap items-center gap-3 border-b border-heledone-border pb-4">
+          {canCreateProject && <button type="button" onClick={handleCreateProject} className="projects-create-button inline-flex items-center gap-2 bg-primary px-4 font-bold text-primary-content"><Add size={18} /><span>{t("پروژه تازه")}</span></button>}
+          <label className="relative block w-full sm:w-72">
             <SearchNormal1
               size={15}
               className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted"
@@ -504,43 +437,34 @@ export default function ProjectsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("جست‌وجوی پروژه‌ها…")}
-              className="h-9.5 w-full rounded-xl border border-base-content/10 bg-base-100 ps-9 pe-8 text-xs font-medium text-base-content outline-none focus:border-primary/40 transition-all placeholder:text-heledone-ink-muted"
+              className="projects-search h-11 w-full rounded-lg border border-base-content/15 bg-base-100 ps-9 pe-10 text-sm text-base-content outline-none placeholder:text-heledone-ink-muted"
               aria-label={t("Search projects")}
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute end-2.5 top-1/2 -translate-y-1/2 text-heledone-ink-muted hover:text-base-content"
+                className="absolute end-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-md text-heledone-ink-muted hover:text-base-content"
+                aria-label={t("Clear search")}
+                title={t("Clear search")}
               >
                 <CloseCircle size={15} />
               </button>
             )}
           </label>
           <StatusFilterDropdown value={statusFilter} onChange={setStatusFilter} />
-          {/* دکمه New Project - فقط برای کاربران با پرمیشن */}
-          {canCreateProject && (
-            <button
-              type="button"
-              onClick={handleCreateProject}
-              className="inline-flex h-9.5 items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/90 transition-all shrink-0"
-            >
-              <Add size={16} />
-              <span>{t("پروژه تازه")}</span>
-            </button>
-          )}
+          <span className="text-xs text-heledone-ink-muted sm:ms-auto" aria-live="polite">{projectsQuery.isSuccess && t("{count} projects", { count: projects.length })}</span>
         </div>
-      </div>
 
       {/* Grid of Simple Project Cards */}
       {projectsQuery.isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-40 animate-pulse rounded-2xl bg-base-200/70" />
+            <div key={item} className="projects-skeleton h-72 animate-pulse rounded-lg bg-base-100" />
           ))}
         </div>
       ) : projectsQuery.isError ? (
-        <div className="rounded-2xl border border-error/25 bg-error/5 p-8 text-center">
+        <div className="border-y border-error/25 bg-error/5 p-8 text-center">
           <p className="font-semibold text-error">{t("Projects could not be loaded.")}</p>
           <button
             type="button"
@@ -550,24 +474,23 @@ export default function ProjectsPage() {
             {t("Try again")}</button>
         </div>
       ) : projects.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-base-content/15 bg-base-100 px-6 py-16 text-center">
-          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <FolderOpen size={28} />
-          </div>
+        <div className="projects-empty px-4 py-8 text-center">
+          <CoastalArtwork motif="palm" className="mx-auto mb-5" />
           <h2 className="text-xl font-semibold">{t("No projects found")}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-heledone-ink-muted">
             {search || statusFilter !== "all"
               ? t("No projects matching your filters")
               : t("Create your first project to get started.")}
           </p>
-          {!search && statusFilter === "all" && (
+          {!search && statusFilter === "all" && canCreateProject && (
             <button
               type="button"
               onClick={handleCreateProject}
-              className="btn btn-primary mt-6 rounded-xl"
+              className="projects-create-button mx-auto mt-5 inline-flex items-center gap-2 bg-primary px-4 font-bold text-primary-content"
             >
               <Add size={18} />  {t("Create your first project")}</button>
           )}
+          {(search || statusFilter !== "all") && <button type="button" onClick={() => { setSearch(""); setStatusFilter("all"); }} className="mt-5 inline-flex items-center gap-2 rounded-lg px-4 py-2 font-semibold text-primary hover:bg-primary/10"><CloseCircle size={16} />{t("Clear filters")}</button>}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -584,7 +507,6 @@ export default function ProjectsPage() {
                 onArchive={() =>
                   lifecycleMutation.mutate({ id: project.id, action: "archive" })
                 }
-                onClick={() => openDetailsPage(project.id)}
                 canManage={canManageProject}
               />
             ))}
@@ -593,10 +515,10 @@ export default function ProjectsPage() {
           {/* Add New Project Card */}
           {canCreateProject && (
             <motion.button
-              layout
+              layout={!reducedMotion}
               type="button"
               onClick={handleCreateProject}
-              className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-base-content/15 bg-base-100 text-heledone-ink-muted transition-all hover:border-primary/30 hover:bg-base-content/5 hover:text-primary"
+              className="projects-add-card flex min-h-64 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/30 text-primary hover:bg-primary/5"
             >
               <Add size={28} />
               <span className="text-sm font-bold">{t("پروژه تازه")}</span>
@@ -604,6 +526,8 @@ export default function ProjectsPage() {
           )}
         </div>
       )}
+
+      <CoastalDivider />
 
       <CreateEditProjectModal
         isOpen={isProjectModalOpen}

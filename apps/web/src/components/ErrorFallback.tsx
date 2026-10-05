@@ -1,5 +1,6 @@
 import { useTranslation } from "../i18n/locale";
-import { Refresh, Warning2 } from "iconsax-reactjs";
+import { RefreshCw, TriangleAlert } from "lucide-react";
+import { CoastalArtwork } from "./CoastalEmptyState";
 
 interface ErrorFallbackProps {
   error: unknown;
@@ -15,10 +16,11 @@ export const ErrorFallback = ({
   const isModuleLoadError = /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|Loading chunk .+ failed/i.test(errorMessage);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
-      <div className="max-w-md w-full bg-base-100 rounded-3xl shadow-xl p-8 border border-error/20 text-center">
+    <div className="min-h-96 flex items-center justify-center p-4">
+      <div className="max-w-md w-full p-6 text-center">
+        <CoastalArtwork motif="waves" className="mx-auto mb-4" />
         <div className="w-16 h-16 bg-error/10 text-error rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <Warning2 size={32} variant="Bold" />
+          <TriangleAlert size={32} />
         </div>
         <h2 className="text-xl font-bold text-base-content mb-2">
           {t("Something went wrong")}</h2>
@@ -33,7 +35,7 @@ export const ErrorFallback = ({
           }}
           className="btn btn-primary w-full rounded-xl gap-2"
         >
-          <Refresh size={20} />
+          <RefreshCw size={20} />
           {t("Try Again")}</button>
       </div>
     </div>

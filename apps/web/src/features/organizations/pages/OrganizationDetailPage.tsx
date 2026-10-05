@@ -169,7 +169,6 @@ export default function OrganizationDetailPage() {
 
       {/* Organization header */}
       <div className="heledone-page-heading">
-        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
           <div className="flex min-w-0 items-center gap-4">
             <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
               <People size={28} />
@@ -230,7 +229,6 @@ export default function OrganizationDetailPage() {
                 {t("Roles Management")}</button>
             )}
           </div>
-        </div>
       </div>
 
       {/* Members section */}

@@ -21,6 +21,8 @@ import {
 import { messageSchema } from "../validation";
 import type { Ticket, TicketMessage } from "../types";
 import { useAuthStore } from "../../auth/store/authStore";
+import { BrandBeats } from "../../../components/Brand";
+import { CoastalArtwork } from "../../../components/CoastalEmptyState";
 
 export default function TicketDetailsPage() {
   const t = useTranslation();
@@ -129,7 +131,13 @@ export default function TicketDetailsPage() {
   const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-5 min-h-[calc(100vh-121px)]">
+    <div className="space-y-4">
+      <header className="heledone-task-coast">
+        <BrandBeats />
+        <h1>{t("درخواست‌های پشتیبانی")}</h1>
+        <CoastalArtwork motif="tickets" />
+      </header>
+    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-5 min-h-[calc(100vh-180px)]">
 
       {/* ── Chat Thread ─────────────────────────────────────────────────────── */}
       {isLoadingTicket ? (
@@ -500,6 +508,7 @@ export default function TicketDetailsPage() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

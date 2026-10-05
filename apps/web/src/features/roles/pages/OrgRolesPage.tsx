@@ -1,8 +1,9 @@
 import { formatNumber as formatUiNumber } from "../../../i18n/locale";
 import { useTranslation } from "../../../i18n/locale";
+import { CoastalArtwork } from "../../../components/CoastalEmptyState";
 import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Setting2 } from "iconsax-reactjs";
+import { ArrowLeft, Shield } from "iconsax-reactjs";
 import { useQuery } from "@tanstack/react-query";
 import { CreateRoleModal } from "../components/CreateRoleModal";
 import { EditRoleModal } from "../components/EditRoleModal";
@@ -114,7 +115,7 @@ const OrgRolesPage = () => {
       </button>
 
       {/* Page header */}
-      <div className="heledone-page-heading flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div data-coastal-scene="roles" className="heledone-page-heading flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
             <Shield size={24} />
@@ -269,9 +270,7 @@ const OrgRolesPage = () => {
                   <tr>
                     <td colSpan={5} className="py-16 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
-                        <span className="grid size-14 place-items-center rounded-2xl bg-base-200 text-heledone-ink-muted">
-                          <Setting2 size={28} />
-                        </span>
+                        <CoastalArtwork motif="coast" />
                         <p className="text-heledone-ink-muted font-medium">
                           {t("No roles found for this organization.")}</p>
                         <button

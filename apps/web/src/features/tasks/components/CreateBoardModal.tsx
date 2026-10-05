@@ -77,10 +77,10 @@ export function CreateBoardModal({
             <div className="relative overflow-hidden border-b border-[#DCE6E2]/80 bg-gradient-to-b from-[#FFF8EE] to-base-100 px-7 pt-6 pb-5">
               {/* Panoramic coastal art overlay */}
               <img
-                src="/images/heledone-assets/home-welcome-v2.png"
+                src="/images/heledone-assets/tasks-coastal-v1.png"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-25 mix-blend-multiply"
+                className="coastal-dialog-header-art pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-25 mix-blend-multiply"
               />
               <div
                 className="pointer-events-none absolute inset-0 bg-gradient-to-t from-base-100 via-base-100/60 to-transparent"
