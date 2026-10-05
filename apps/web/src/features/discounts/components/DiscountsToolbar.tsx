@@ -1,5 +1,6 @@
+import { t as translate, useTranslation } from "../../../i18n/locale";
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   SearchNormal1,
   Sort,
@@ -21,10 +22,10 @@ type SortKey = "code" | "percent" | "expiration_date" | "created_at";
 type SortDirection = "asc" | "desc";
 
 const sortOptions: { key: SortKey; label: string }[] = [
-  { key: "code", label: "Code" },
-  { key: "percent", label: "Percent" },
-  { key: "expiration_date", label: "Expiration Date" },
-  { key: "created_at", label: "Date Created" },
+  { key: "code", get label() { return translate("Code"); } },
+  { key: "percent", get label() { return translate("Percent"); } },
+  { key: "expiration_date", get label() { return translate("Expiration Date"); } },
+  { key: "created_at", get label() { return translate("Date Created"); } },
 ];
 
 export const DiscountsToolbar = ({
@@ -32,6 +33,7 @@ export const DiscountsToolbar = ({
   onSortChange,
   onFilterChange,
 }: ToolbarProps) => {
+  const t = useTranslation();
   const [searchParams] = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("search") || "");
@@ -135,7 +137,7 @@ export const DiscountsToolbar = ({
       <div className="grow w-full">
         <InputField
           name="search"
-          placeholder="Search discount codes..."
+          placeholder={t("Search discount codes...")}
           icon={<SearchNormal1 size={18} />}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -153,7 +155,7 @@ export const DiscountsToolbar = ({
             }`}
           >
             <Filter size={18} />
-            <span className="hidden sm:inline">Filter</span>
+            <span className="hidden sm:inline">{t("Filter")}</span>
           </button>
           <AnimatePresence>
             {isFilterOpen && (
@@ -161,18 +163,17 @@ export const DiscountsToolbar = ({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="absolute top-full left-0 z-10 p-4 shadow-lg bg-base-100 rounded-box w-80 mt-2 border border-base-content/10"
+                className="absolute top-full start-0 z-10 p-4 shadow-lg bg-base-100 rounded-box w-80 mt-2 border border-base-content/10"
               >
                 <div className="flex flex-col space-y-4">
                   <label className="form-control w-full">
                     <div className="label pb-1">
                       <span className="label-text text-xs font-semibold">
-                        Filter by Code
-                      </span>
+                        {t("Filter by Code")}</span>
                     </div>
                     <InputField
                       name="codeFilter"
-                      placeholder="e.g., SUMMER"
+                      placeholder={t("e.g., SUMMER")}
                       value={codeFilter}
                       onChange={(e) => setCodeFilter(e.target.value)}
                       classNameInput="input-sm !shadow-none"
@@ -183,8 +184,7 @@ export const DiscountsToolbar = ({
                     <label className="form-control w-full">
                       <div className="label pb-1">
                         <span className="label-text text-xs font-semibold">
-                          Min Percent
-                        </span>
+                          {t("Min Percent")}</span>
                       </div>
                       <InputField
                         type="number"
@@ -198,8 +198,7 @@ export const DiscountsToolbar = ({
                     <label className="form-control w-full">
                       <div className="label pb-1">
                         <span className="label-text text-xs font-semibold">
-                          Max Percent
-                        </span>
+                          {t("Max Percent")}</span>
                       </div>
                       <InputField
                         type="number"
@@ -215,17 +214,16 @@ export const DiscountsToolbar = ({
                   <label className="form-control w-full">
                     <div className="label pb-1">
                       <span className="label-text text-xs font-semibold">
-                        Status
-                      </span>
+                        {t("وضعیت")}</span>
                     </div>
                     <select
                       className="select select-sm w-full !shadow-none"
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                     >
-                      <option value="">All</option>
-                      <option value="true">Active</option>
-                      <option value="false">Inactive</option>
+                      <option value="">{t("همه")}</option>
+                      <option value="true">{t("فعال")}</option>
+                      <option value="false">{t("Inactive")}</option>
                     </select>
                   </label>
                 </div>

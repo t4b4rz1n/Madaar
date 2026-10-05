@@ -1,5 +1,7 @@
+import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import {
   Calendar,
   Eye,
@@ -10,6 +12,7 @@ import { formatDate } from "../../../utils/formatDate";
 import { useMarkNotificationSeen } from "../hooks/useNotifications";
 import type { Notification as NotificationType } from "../types";
 import { buildNotificationLink } from "../utils/routing";
+import { formatNotificationMessage } from "../utils/messages";
 
 interface NotificationHistoryListProps {
   notifications: NotificationType[];
@@ -25,6 +28,7 @@ export const NotificationHistoryList = ({
   isError,
   viewMode,
 }: NotificationHistoryListProps) => {
+  const t = useTranslation();
   const { mutate: markSeen } = useMarkNotificationSeen();
   const navigate = useNavigate();
 
@@ -82,28 +86,19 @@ export const NotificationHistoryList = ({
   if (isError) {
     return (
       <div className="bg-linear-to-br from-error/5 to-error/10 rounded-2xl border border-error/20 p-12 text-center">
-        <div className="text-error/40 mb-4">
+        <div className="text-error mb-4">
           <NotificationIcon className="w-16 h-16 mx-auto" />
         </div>
-        <h3 className="text-lg font-bold text-error mb-2">Loading Error</h3>
-        <p className="text-error/70">
-          There was a problem loading notifications
-        </p>
+        <h3 className="text-lg font-bold text-error mb-2">{t("Loading Error")}</h3>
+        <p className="text-error">
+          {t("There was a problem loading notifications")}</p>
       </div>
     );
   }
 
   if (notifications.length === 0) {
     return (
-      <div className="bg-linear-to-br from-base-200 to-base-300 rounded-2xl border border-base-content/10 p-12 text-center">
-        <div className="text-base-content/40 mb-4">
-          <NotificationIcon className="w-16 h-16 mx-auto" />
-        </div>
-        <h3 className="text-lg font-bold text-base-content mb-2">
-          No Notifications
-        </h3>
-        <p className="text-base-content/70">Your history is empty.</p>
-      </div>
+      <CoastalEmptyState motif="music" title={t("No Notifications")} description={t("Your history is empty.")} />
     );
   }
 
@@ -118,10 +113,10 @@ export const NotificationHistoryList = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
               onClick={() => handleCardClick(notification)}
-              className="group relative bg-base-100 rounded-2xl border border-base-content/10 p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full cursor-pointer"
+              className="coastal-item group relative bg-base-100 rounded-lg border border-base-content/10 p-5 hover:shadow-heledone-raised transition-all duration-200 flex flex-col h-full cursor-pointer"
             >
               {!notification.seen && (
-                <span className="absolute top-5 right-5 w-2.5 h-2.5 bg-warning rounded-full ring-4 ring-warning/20 animate-pulse" />
+                <span className="absolute top-5 end-5 w-2.5 h-2.5 bg-warning rounded-full ring-4 ring-warning/20 animate-pulse" />
               )}
 
               <div className="flex items-center gap-3 mb-4">
@@ -135,9 +130,8 @@ export const NotificationHistoryList = ({
                 </div>
                 <div>
                   <h4 className="font-bold text-base-content text-sm">
-                    System Message
-                  </h4>
-                  <div className="flex items-center gap-1.5 text-xs text-base-content/50 mt-0.5">
+                    {t("System Message")}</h4>
+                  <div className="flex items-center gap-1.5 text-xs text-heledone-ink-muted mt-0.5">
                     <Calendar size={12} />
                     <span>{formatDate(notification.created_at)}</span>
                   </div>
@@ -146,13 +140,13 @@ export const NotificationHistoryList = ({
 
               <div className="mb-4 grow">
                 <p className="text-base-content/80 text-sm leading-relaxed line-clamp-3">
-                  {notification.text}
+                  {formatNotificationMessage(notification)}
                 </p>
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-base-content/5 mt-auto">
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-base-content/30">
-                  ID: #{notification.id.substring(0, 6)}
+                <span className="text-[13px] uppercase tracking-wider font-semibold text-heledone-ink-muted">
+                  {t("ID: #")}{notification.id.substring(0, 6)}
                 </span>
                 <div
                   className={`text-xs px-2 py-1 rounded-md font-medium ${notification.seen
@@ -160,7 +154,7 @@ export const NotificationHistoryList = ({
                       : "text-warning bg-warning/10"
                     }`}
                 >
-                  {notification.seen ? "Read" : "Unread"}
+                  {notification.seen ? t("Read") : t("Unread")}
                 </div>
               </div>
             </motion.div>
@@ -173,18 +167,14 @@ export const NotificationHistoryList = ({
             <table className="w-full">
               <thead className="bg-linear-to-r from-primary/10 to-primary/5 border-b border-base-content/10">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                    Type
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                    Message
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                    Date
-                  </th>
+                  <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                    {t("Type")}</th>
+                  <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                    {t("Message")}</th>
+                  <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                    {t("وضعیت")}</th>
+                  <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                    {t("تاریخ")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-base-content/5">
@@ -209,8 +199,7 @@ export const NotificationHistoryList = ({
                           <NotificationIcon size={20} variant="Bold" />
                         </div>
                         <span className="text-sm font-bold text-base-content">
-                          System
-                        </span>
+                          {t("System")}</span>
                       </div>
                     </td>
 
@@ -218,7 +207,7 @@ export const NotificationHistoryList = ({
                     <td className="px-6 py-4">
                       <div className="max-w-md">
                         <p className="text-sm text-base-content/80 line-clamp-1">
-                          {notif.text}
+                          {formatNotificationMessage(notif)}
                         </p>
                       </div>
                     </td>
@@ -232,18 +221,18 @@ export const NotificationHistoryList = ({
                           }`}
                       >
                         {notif.seen ? (
-                          <Eye size={14} className="mr-1.5" />
+                          <Eye size={14} className="me-1.5" />
                         ) : (
-                          <EyeSlash size={14} className="mr-1.5" />
+                          <EyeSlash size={14} className="me-1.5" />
                         )}
-                        {notif.seen ? "Read" : "Unread"}
+                        {notif.seen ? t("Read") : t("Unread")}
                       </span>
                     </td>
 
                     {/* Date Column */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-base-content/60" />
+                        <Calendar className="w-4 h-4 text-heledone-ink-muted" />
                         <span className="text-sm text-base-content/70">
                           {formatDate(notif.created_at)}
                         </span>

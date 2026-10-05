@@ -1,5 +1,7 @@
+import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { formatDisplayDate } from "../../../utils/date";
-import { Edit2, People, Profile2User, Trash, User } from "iconsax-reactjs";
+import { Edit2, Profile2User, Trash, User } from "iconsax-reactjs";
 import type { TeamWithDetails } from "../types";
 
 interface TeamsTableProps {
@@ -21,17 +23,18 @@ export const TeamsTable = ({
   onDelete,
   canManage,
 }: TeamsTableProps) => {
+  const t = useTranslation();
   if (isLoading) {
     return (
-      <div className="madaar-surface overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100/80 shadow-madaar-card">
+      <div className="heledone-surface overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100/80 shadow-heledone-card">
         <table className="table w-full">
           <thead>
             <tr>
-              <th>Team Name</th>
-              <th>Leader</th>
-              <th>Status</th>
-              <th>Created At</th>
-              {canManage && <th className="text-end">Actions</th>}
+              <th>{t("Team Name")}</th>
+              <th>{t("Leader")}</th>
+              <th>{t("وضعیت")}</th>
+              <th>{t("Created At")}</th>
+              {canManage && <th className="text-end">{t("Actions")}</th>}
             </tr>
           </thead>
           <tbody>
@@ -65,36 +68,29 @@ export const TeamsTable = ({
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-center border border-dashed border-error/30 rounded-2xl p-6 bg-error/5">
-        <p className="text-error font-medium">Failed to load teams data.</p>
-        <p className="text-xs text-base-content/60 mt-1">
-          Please check your network connection or try again later.
-        </p>
+        <p className="text-error font-medium">{t("Failed to load teams data.")}</p>
+        <p className="text-xs text-heledone-ink-muted mt-1">
+          {t("Please check your network connection or try again later.")}</p>
       </div>
     );
   }
 
   if (teams.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] text-center border border-dashed border-base-content/20 rounded-2xl p-6">
-        <People className="text-base-content/40 mb-3" size={48} />
-        <p className="text-base-content font-medium text-lg">No teams found</p>
-        <p className="text-sm text-base-content/60 mt-1">
-          Try adjusting your search query or filters.
-        </p>
-      </div>
+      <CoastalEmptyState motif="coast" title={t("No teams found")} description={t("Try adjusting your search query or filters.")} />
     );
   }
 
   return (
-    <div className="madaar-surface overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100/90 shadow-madaar-card">
+    <div className="heledone-surface overflow-x-auto rounded-2xl border border-base-content/10 bg-base-100/90 shadow-heledone-card">
       <table className="table w-full">
           <thead>
-            <tr className="border-b border-base-content/10 bg-base-200/35 text-xs uppercase tracking-wider text-base-content/55">
-              <th>Team Name</th>
-              <th>Leader</th>
-              <th>Status</th>
-              <th>Created At</th>
-              {canManage && <th className="text-end">Actions</th>}
+            <tr className="border-b border-base-content/10 bg-base-200/35 text-xs uppercase tracking-wider text-heledone-ink-muted">
+              <th>{t("Team Name")}</th>
+              <th>{t("Leader")}</th>
+              <th>{t("وضعیت")}</th>
+              <th>{t("Created At")}</th>
+              {canManage && <th className="text-end">{t("Actions")}</th>}
           </tr>
         </thead>
         <tbody>
@@ -107,7 +103,7 @@ export const TeamsTable = ({
                 <div>
                   <div className="font-bold">{team.name}</div>
                   {team.description && (
-                    <div className="text-xs text-base-content/60 line-clamp-1 max-w-xs">
+                    <div className="text-xs text-heledone-ink-muted line-clamp-1 max-w-xs">
                       {team.description}
                     </div>
                   )}
@@ -121,13 +117,13 @@ export const TeamsTable = ({
                       {(!team.leader_details.username && team.leader_details.first_name) ? team.leader_details.last_name?.[0]?.toUpperCase() || "" : ""}
                     </div>
                   ) : (
-                    <div className="w-7 h-7 rounded-full bg-base-200 text-base-content/40 flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-base-200 text-heledone-ink-muted flex items-center justify-center shrink-0">
                       <Profile2User size={14} />
                     </div>
                   )}
                   <span>
                     {team.leader_details
-                      ? team.leader_details.username || `${team.leader_details.first_name || ""} ${team.leader_details.last_name || ""}`.trim() || team.leader_details.email || "Unknown User"
+                      ? team.leader_details.username || `${team.leader_details.first_name || ""} ${team.leader_details.last_name || ""}`.trim() || team.leader_details.email || t("Unknown User")
                       : "\u2014"}
                   </span>
                 </div>
@@ -137,13 +133,13 @@ export const TeamsTable = ({
                   className={`badge badge-sm rounded-lg ${
                     team.is_active
                       ? "badge-success bg-success/10 text-success border-none"
-                      : "badge-ghost bg-base-200 text-base-content/60 border-none"
+                      : "badge-ghost bg-base-200 text-heledone-ink-muted border-none"
                   }`}
                 >
-                  {team.is_active ? "Active" : "Inactive"}
+                  {team.is_active ? t("فعال") : t("Inactive")}
                 </span>
               </td>
-              <td className="text-xs text-base-content/60">
+              <td className="text-xs text-heledone-ink-muted">
                 {formatDisplayDate(team.created_at ?? "", "yyyy-MM-dd")}
               </td>
               {canManage && (
@@ -152,27 +148,27 @@ export const TeamsTable = ({
                     <button
                       type="button"
                       onClick={() => onManageMembers?.(team)}
-                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:bg-primary/10 hover:text-primary"
-                      title="Manage Members"
+                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-heledone-ink-muted hover:bg-primary/10 hover:text-primary"
+                      title={t("Manage Members")}
                     >
                       <User size={14} />
-                      <span className="hidden sm:inline">Members</span>
+                      <span className="hidden sm:inline">{t("اعضا")}</span>
                     </button>
                     <button
                       onClick={() => onEdit(team)}
-                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:text-primary hover:bg-primary/10"
-                      title="Edit Team"
+                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-heledone-ink-muted hover:text-primary hover:bg-primary/10"
+                      title={t("Edit Team")}
                     >
                       <Edit2 size={14} />
-                      <span className="hidden sm:inline">Edit</span>
+                      <span className="hidden sm:inline">{t("ویرایش")}</span>
                     </button>
                     <button
                       onClick={() => onDelete(team)}
-                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/60 hover:text-error hover:bg-error/10"
-                      title="Delete Team"
+                      className="btn btn-ghost btn-xs gap-1 rounded-lg text-heledone-ink-muted hover:text-error hover:bg-error/10"
+                      title={t("Delete Team")}
                     >
                       <Trash size={14} />
-                      <span className="hidden sm:inline">Delete</span>
+                      <span className="hidden sm:inline">{t("حذف")}</span>
                     </button>
                   </div>
                 </td>

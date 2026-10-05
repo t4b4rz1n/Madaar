@@ -1,8 +1,8 @@
-# Madaar - Enterprise Work OS
+# هله‌دان | Heledone
 
-Madaar is not just a task manager; it is a unified, intelligent operating system for your team. From daily tasks and code commits to financial rewards, gamification, and high-level company OKRs, Madaar brings every process into precise harmony around the core of the organization.
+Heledone is not just a task manager; it is a unified, intelligent operating system for your team. From daily tasks and code commits to financial rewards, gamification, and high-level company OKRs, Heledone brings every process into precise harmony around the core of the organization.
 
-By combining agile project management, a comprehensive gamification engine, and a deep focus on mental well-being, Madaar eliminates communication friction and allows every team member to achieve their goals with maximum productivity and peace of mind.
+By combining agile project management, a comprehensive gamification engine, and a deep focus on mental well-being, Heledone eliminates communication friction and allows every team member to achieve their goals with maximum productivity and peace of mind.
 
 ## 🌟 Core Modules
 
@@ -21,7 +21,7 @@ By combining agile project management, a comprehensive gamification engine, and 
 This is a monorepo containing the following core services:
 
 ```text
-Madaar/
+Heledone/
 |-- apps/
 |   |-- api/       # Backend (Django, DRF, Celery, PostgreSQL)
 |   |-- web/       # Frontend (React, Vite, Tailwind CSS, Zustand, React Query)
@@ -62,9 +62,11 @@ docker compose up --build -d
 ### 3. Access the Application
 Once the containers are healthy, access the services locally:
 
-- **Web App (Frontend):** `http://localhost:3000`
-- **API Endpoint:** `http://localhost:3000/api/v1/`
-- **Django Admin:** `http://localhost:3000/admin/`
+- **Web App (Docker build):** `http://localhost:8080`
+- **API Endpoint:** `http://localhost:8080/api/v1/`
+- **Django Admin:** `http://localhost:8080/admin/`
+
+For frontend development, run `npm install` and `npm run web:dev` from the repository root. Vite serves the current source at `http://127.0.0.1:3000` and proxies API requests to port 8000. Docker uses port 8080 by default so its built frontend can run alongside Vite; set `WEB_PORT` to override the Docker port.
 
 *Default superuser credentials (created automatically on first boot):*
 - **Username:** `admin`

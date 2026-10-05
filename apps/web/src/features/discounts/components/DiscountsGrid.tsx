@@ -1,4 +1,7 @@
-import { motion } from "framer-motion";
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
+import { motion } from "motion/react";
 import {
   Calendar,
   DiscountShape,
@@ -29,6 +32,7 @@ export const DiscountsGrid = ({
   onEdit,
   canManage = false,
 }: DiscountsGridProps) => {
+  const t = useTranslation();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
@@ -41,10 +45,10 @@ export const DiscountsGrid = ({
     try {
       await navigator.clipboard.writeText(code);
       setCopiedCode(code);
-      toast.success("Code copied");
+      toast.success(t("Code copied"));
       setTimeout(() => setCopiedCode(null), 2000);
     } catch {
-      toast.error("Failed to copy");
+      toast.error(t("Failed to copy"));
     }
   };
 
@@ -92,11 +96,10 @@ export const DiscountsGrid = ({
   if (isError)
     return (
       <div className="text-error text-center p-10">
-        Error loading discounts.
-      </div>
+        {t("Error loading discounts.")}</div>
     );
   if (discounts.length === 0)
-    return <div className="text-center p-10">No discounts found.</div>;
+    return <CoastalEmptyState motif="palm" title={t("No discounts found.")} />;
 
   return (
     <>
@@ -114,7 +117,7 @@ export const DiscountsGrid = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="group bg-base-100 rounded-2xl border border-base-content/10 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
+              className="coastal-item group bg-base-100 rounded-lg border border-base-content/10 p-6 hover:shadow-heledone-raised transition-all duration-200 flex flex-col"
             >
               {/* Header: Icon + Code + Percent */}
               <div className="flex items-center gap-3 mb-4">
@@ -144,28 +147,26 @@ export const DiscountsGrid = ({
                     )}
                   </div>
                   <p className="text-sm font-medium text-primary">
-                    {discount.percent}% OFF
-                  </p>
+                    {formatUiNumber(discount.percent)}{t("% OFF")}</p>
                 </div>
                 <span
-                  className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase ${
+                  className={`shrink-0 px-2 py-0.5 rounded-full text-[13px] font-bold border uppercase ${
                     discount.is_active && !isExpired
                       ? "bg-success/10 text-success border-success/20"
-                      : "bg-base-200 text-base-content/40 border-base-content/10"
+                      : "bg-base-200 text-heledone-ink-muted border-base-content/10"
                   }`}
                 >
-                  {discount.is_active && !isExpired ? "Active" : "Inactive"}
+                  {discount.is_active && !isExpired ? t("فعال") : t("Inactive")}
                 </span>
               </div>
 
               {/* Body: Usage Bar (Like Email box in UsersGrid) */}
               <div className="mb-4 bg-base-200/50 p-3 rounded-xl">
                 <div className="flex justify-between items-center text-xs mb-1.5">
-                  <span className="text-base-content/60 flex items-center gap-1">
-                    <User size={12} /> Usage
-                  </span>
+                  <span className="text-heledone-ink-muted flex items-center gap-1">
+                    <User size={12} />  {t("Usage")}</span>
                   <span className="font-medium">
-                    {discount.current_usage}/{discount.max_usage}
+                    {formatUiNumber(discount.current_usage)}/{formatUiNumber(discount.max_usage)}
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-base-200 rounded-full overflow-hidden">
@@ -180,7 +181,7 @@ export const DiscountsGrid = ({
 
               {/* Footer: Date & Actions */}
               <div className="flex items-center justify-between pt-4 border-t border-base-content/10 mt-auto">
-                <div className="flex items-center gap-1.5 text-xs text-base-content/60">
+                <div className="flex items-center gap-1.5 text-xs text-heledone-ink-muted">
                   <Calendar size={14} />
                   <span>{formatDate(discount.expiration_date)}</span>
                 </div>
@@ -189,7 +190,7 @@ export const DiscountsGrid = ({
                   <div className="flex gap-2">
                     <button
                       onClick={() => onEdit(discount)}
-                      className="p-1.5 hover:bg-base-200 rounded-lg text-base-content/60 hover:text-primary transition-colors"
+                      className="p-1.5 hover:bg-base-200 rounded-lg text-heledone-ink-muted hover:text-primary transition-colors"
                     >
                       <Edit size={16} />
                     </button>
@@ -197,7 +198,7 @@ export const DiscountsGrid = ({
                       onClick={() =>
                         setDeleteModalState({ open: true, discount })
                       }
-                      className="p-1.5 hover:bg-error/10 rounded-lg text-base-content/60 hover:text-error transition-colors"
+                      className="p-1.5 hover:bg-error/10 rounded-lg text-heledone-ink-muted hover:text-error transition-colors"
                     >
                       <Trash size={16} />
                     </button>
@@ -213,8 +214,8 @@ export const DiscountsGrid = ({
         isOpen={deleteModalState.open}
         onClose={() => setDeleteModalState({ open: false, discount: null })}
         onConfirm={handleDelete}
-        title="Delete Discount"
-        message={`Are you sure you want to delete the discount code "${deleteModalState.discount?.code}"?`}
+        title={t("Delete Discount")}
+        message={t("Are you sure you want to delete the discount code \"{value0}\"?", { value0: deleteModalState.discount?.code })}
         isLoading={deleteMutation.isPending}
       />
     </>

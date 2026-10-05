@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/locale";
 import { Lock, Sms, TickCircle } from "iconsax-reactjs";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -8,6 +9,7 @@ import { useUpdateProfile, useTelegramMagicLink, useProfileQuery } from "../hook
 import type { ProfileUpdateData } from "../types";
 
 export const ProfileEditForm = () => {
+  const t = useTranslation();
   const [isWaitingForTelegram, setIsWaitingForTelegram] = useState(false);
   const user = useAuthStore((state) => state.user);
 
@@ -17,13 +19,13 @@ export const ProfileEditForm = () => {
     if (isWaitingForTelegram && !user?.telegram_connected) {
       timeoutId = setTimeout(() => {
         setIsWaitingForTelegram(false);
-        toast.info("Telegram connection timed out. Please try again.");
+        toast.info(t("Telegram connection timed out. Please try again."));
       }, 60000); // 1 minute
     }
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [isWaitingForTelegram, user?.telegram_connected]);
+  }, [isWaitingForTelegram, user?.telegram_connected, t]);
 
   // Only poll if we are waiting and the user is NOT connected yet
   const shouldPoll = isWaitingForTelegram && !user?.telegram_connected;
@@ -34,6 +36,24 @@ export const ProfileEditForm = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  const [loadingAvatar, setLoadingAvatar] = useState(false);
+  const defaultAvatars = Array.from({ length: 10 }, (_, index) => `/images/heledone-assets/avatar-${String(index + 1).padStart(2, "0")}.png`);
+
+  const selectDefaultAvatar = async (url: string) => {
+    setLoadingAvatar(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Avatar unavailable");
+      const blob = await response.blob();
+      const file = new File([blob], url.split("/").pop() || "heledone-avatar.png", { type: blob.type || "image/png" });
+      setProfileImage(file);
+      setProfileImagePreview(url);
+    } catch {
+      toast.error(t("Profile image could not be loaded."));
+    } finally {
+      setLoadingAvatar(false);
+    }
+  };
 
   const {
     control,
@@ -62,8 +82,7 @@ export const ProfileEditForm = () => {
   if (!user) {
     return (
       <div className="text-center text-error py-10">
-        Error loading profile information.
-      </div>
+        {t("Error loading profile information.")}</div>
     );
   }
 
@@ -76,12 +95,12 @@ export const ProfileEditForm = () => {
 
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("Only JPG and PNG images are supported.");
+      toast.error(t("Only JPG and PNG images are supported."));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Profile image must be smaller than 5 MB.");
+      toast.error(t("Profile image must be smaller than 5 MB."));
       return;
     }
 
@@ -92,11 +111,11 @@ export const ProfileEditForm = () => {
   const onSubmit = (data: ProfileUpdateData) => {
     if (data.password || data.password_confirm) {
       if (data.password !== data.password_confirm) {
-        toast.error("Passwords do not match.");
+        toast.error(t("Passwords do not match."));
         return;
       }
       if (!data.password || data.password.length < 8) {
-        toast.error("Password must be at least 8 characters.");
+        toast.error(t("Password must be at least 8 characters."));
         return;
       }
     }
@@ -127,7 +146,7 @@ export const ProfileEditForm = () => {
     }
 
     if (Object.keys(updateData).length === 0) {
-      toast.info("No changes to save.");
+      toast.info(t("No changes to save."));
       return;
     }
 
@@ -150,7 +169,7 @@ export const ProfileEditForm = () => {
   };
 
   const currentProfileImage =
-    profileImagePreview || user.profile_image_url || "/images/base-logo2.png";
+    profileImagePreview || user.profile_image_url || "/images/heledone-mark.svg";
 
 
 
@@ -163,18 +182,18 @@ export const ProfileEditForm = () => {
 
           {/* Profile Picture Card */}
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6 flex flex-col items-center text-center">
-            <h3 className="font-bold text-base-content self-start mb-4">Profile Photo</h3>
+            <h3 className="font-bold text-base-content self-start mb-4">{t("Profile Photo")}</h3>
 
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="group relative rounded-full focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 mb-4"
-              aria-label="Change profile image"
+              aria-label={t("Change profile image")}
             >
               <div className="avatar">
-                <div className="w-24 rounded-full bg-base-200 text-base-content/50 flex items-center justify-center overflow-hidden">
-                  {currentProfileImage !== "/images/base-logo2.png" ? (
-                    <img src={currentProfileImage} alt="Profile" className="h-full w-full object-cover" />
+                <div className="w-24 rounded-full bg-base-200 text-heledone-ink-muted flex items-center justify-center overflow-hidden">
+                  {currentProfileImage !== "/images/heledone-mark.svg" ? (
+                    <img src={currentProfileImage} alt={t("Profile")} className="h-full w-full object-cover" />
                   ) : (
                     <span className="text-3xl font-black">{user.first_name?.[0] || ""}{user.last_name?.[0] || ""}</span>
                   )}
@@ -183,49 +202,59 @@ export const ProfileEditForm = () => {
             </button>
             <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handleProfileImageChange} className="hidden" />
 
-            <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-outline rounded-lg bg-base-100 mb-4">
-              Update Photo
-            </button>
+            <div className="w-full border-t border-base-content/8 pt-4" >
+              <p className="mb-3 text-start text-xs font-bold text-heledone-ink-muted" >{t("Choose a Heledone avatar")}</p>
+              <div className="grid grid-cols-5 gap-2">
+                {defaultAvatars.map((url, index) => (
+                  <button key={url} type="button" disabled={loadingAvatar} onClick={() => void selectDefaultAvatar(url)} aria-label={t("Choose avatar {number}", { number: index + 1 })} aria-pressed={profileImagePreview === url} className={`overflow-hidden rounded-full border-2 transition hover:scale-105 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${profileImagePreview === url ? "border-primary ring-2 ring-primary/20" : "border-transparent"}`}>
+                    <img src={url} alt="" loading="lazy" className="aspect-square w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <h2 className="font-bold text-xl text-base-content">{user.first_name} {user.last_name}</h2>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-outline rounded-lg bg-base-100 mb-4">
+              {t("Update Photo")}</button>
+
+            <h2 className="w-full text-start font-bold text-xl text-base-content">{user.first_name} {user.last_name}</h2>
             {user.is_staff && (
               <span className="badge badge-success bg-success/10 text-success border-success/20 gap-1 font-bold mt-2 py-3 px-3">
-                Staff Member <TickCircle size={14} variant="Bold" />
+                {t("Staff Member")} <TickCircle size={14} variant="Bold" />
               </span>
             )}
           </div>
 
           {/* Personal Details Card */}
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6">
-            <h3 className="font-bold text-base-content mb-4">Personal Information</h3>
+            <h3 className="font-bold text-base-content mb-4">{t("Personal Information")}</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">First Name</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">{t("First Name")}</label>
                 <Controller
                   name="first_name"
                   control={control}
                   render={({ field }) => (
-                    <InputField {...field} value={field.value || ""} placeholder="First name" classNameInput="!bg-base-100 !h-10" />
+                    <InputField {...field} value={field.value || ""} placeholder={t("First name")} classNameInput="!bg-base-100 !h-10" />
                   )}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">Last Name</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">{t("Last Name")}</label>
                 <Controller
                   name="last_name"
                   control={control}
                   render={({ field }) => (
-                    <InputField {...field} value={field.value || ""} placeholder="Last name" classNameInput="!bg-base-100 !h-10" />
+                    <InputField {...field} value={field.value || ""} placeholder={t("Last name")} classNameInput="!bg-base-100 !h-10" />
                   )}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">Email Address</label>
-                <InputField name="email" value={user.email} onChange={() => {}} placeholder="Email" classNameInput="!bg-base-200/40 !border-transparent !cursor-not-allowed !text-base-content/60 !h-10" />
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">{t("Email Address")}</label>
+                <InputField name="email" value={user.email} onChange={() => {}} placeholder={t("Email")} classNameInput="!bg-base-200/40 !border-transparent !cursor-not-allowed !text-heledone-ink-muted !h-10" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">Username</label>
-                <InputField name="username" value={user.username} onChange={() => {}} placeholder="Username" classNameInput="!bg-base-200/40 !border-transparent !cursor-not-allowed !text-base-content/60 !h-10" />
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">{t("Username")}</label>
+                <InputField name="username" value={user.username} onChange={() => {}} placeholder={t("Username")} classNameInput="!bg-base-200/40 !border-transparent !cursor-not-allowed !text-heledone-ink-muted !h-10" />
               </div>
             </div>
           </div>
@@ -235,10 +264,10 @@ export const ProfileEditForm = () => {
         {/* Column 2: Security & Preferences */}
         <div className="flex flex-col gap-6">
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6">
-            <h3 className="font-bold text-base-content mb-4">Account Security</h3>
+            <h3 className="font-bold text-base-content mb-4">{t("Account Security")}</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">New Password</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">{t("New Password")}</label>
                 <Controller
                   name="password"
                   control={control}
@@ -248,7 +277,7 @@ export const ProfileEditForm = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">Confirm New Password</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">{t("Confirm New Password")}</label>
                 <Controller
                   name="password_confirm"
                   control={control}
@@ -259,7 +288,7 @@ export const ProfileEditForm = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-1">Password Strength</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-1">{t("Password Strength")}</label>
                 <div className="flex gap-1 h-1.5 mt-2">
                   <div className="flex-1 rounded-full bg-success"></div>
                   <div className="flex-1 rounded-full bg-success"></div>
@@ -268,25 +297,24 @@ export const ProfileEditForm = () => {
                 </div>
               </div>
 
-              <div className="mt-6 bg-info/10 border-l-4 border-info rounded-r-lg p-4">
+              <div className="mt-6 bg-info/10 border-s-4 border-info rounded-r-lg p-4">
                 <div className="flex gap-2">
                   <div className="text-info flex-shrink-0 mt-0.5"><Lock size={16} variant="Bold" /></div>
                   <div>
-                    <h4 className="text-sm font-bold text-base-content mb-1">Security Tip</h4>
+                    <h4 className="text-sm font-bold text-base-content mb-1">{t("Security Tip")}</h4>
                     <p className="text-xs font-medium text-base-content/70">
-                      Enable Two-Factor Authentication (2FA) for enhanced account security. Go to security settings to set up.
-                    </p>
+                      {t("Enable Two-Factor Authentication (2FA) for enhanced account security. Go to security settings to set up.")}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <div className="bg-base-100 rounded-xl border border-base-content/10 p-6">
-            <h3 className="font-bold text-base-content mb-4">Account Preferences</h3>
+            <h3 className="font-bold text-base-content mb-4">{t("Account Preferences")}</h3>
             <div className="space-y-6">
 
               <div>
-                <label className="block text-xs font-semibold text-base-content/70 mb-2">Calendar System</label>
+                <label className="block text-xs font-semibold text-base-content/70 mb-2">{t("Calendar System")}</label>
                 <Controller
                   name="calendar_preference"
                   control={control}
@@ -301,8 +329,8 @@ export const ProfileEditForm = () => {
                         });
                       }}
                     >
-                      <option value="gregorian">Gregorian Calendar</option>
-                      <option value="jalali">Jalali Calendar</option>
+                      <option value="gregorian">{t("Gregorian Calendar")}</option>
+                      <option value="jalali">{t("Jalali Calendar")}</option>
                     </select>
                   )}
                 />
@@ -310,8 +338,8 @@ export const ProfileEditForm = () => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold text-base-content">Email Notifications</h4>
-                  <p className="text-xs font-bold text-success mt-1">{watch("notify_via_email") ? "Enabled" : "Disabled"}</p>
+                  <h4 className="text-sm font-semibold text-base-content">{t("Email Notifications")}</h4>
+                  <p className="text-xs font-bold text-success mt-1">{watch("notify_via_email") ? t("Enabled") : t("Disabled")}</p>
                 </div>
                 <Controller
                   name="notify_via_email"
@@ -333,12 +361,11 @@ export const ProfileEditForm = () => {
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold text-base-content mb-2">Telegram Integration</h4>
+                <h4 className="text-sm font-semibold text-base-content mb-2">{t("Telegram Integration")}</h4>
                 <div className="flex flex-col gap-2">
                   {user.telegram_connected ? (
                     <div className="flex items-center justify-center gap-2 w-full btn btn-sm h-10 btn-outline text-success border-success/30 hover:bg-success hover:text-success-content pointer-events-none">
-                      <TickCircle size={18} variant="Bold" /> Connected
-                    </div>
+                      <TickCircle size={18} variant="Bold" />  {t("Connected")}</div>
                   ) : (
                     <button
                       type="button"
@@ -349,12 +376,12 @@ export const ProfileEditForm = () => {
                       {telegramMutation.isPending || isWaitingForTelegram ? (
                         <span className="loading loading-spinner loading-xs"></span>
                       ) : (
-                        <><Sms size={18} variant="Bold" /> Connect Telegram</>
+                        <><Sms size={18} variant="Bold" />  {t("Connect Telegram")}</>
                       )}
                     </button>
                   )}
-                  <p className="text-xs text-center text-base-content/50 font-medium">
-                    {user.telegram_connected ? "Notifications active" : "Not Connected"}
+                  <p className="text-xs text-center text-heledone-ink-muted font-medium">
+                    {user.telegram_connected ? t("Notifications active") : t("Not Connected")}
                   </p>
                 </div>
               </div>
@@ -367,28 +394,26 @@ export const ProfileEditForm = () => {
 
       {/* Save Action Bar */}
       <div className="flex items-center justify-between bg-base-100 border border-base-content/10 rounded-xl p-4 shadow-sm mt-4">
-        <div className="text-sm font-bold pl-2">
+        <div className="text-sm font-bold ps-2">
           {isDirty || profileImage ? (
             <span className="flex items-center gap-2 text-warning">
               <div className="w-2 h-2 bg-warning rounded-full"></div>
-              Unsaved changes
-            </span>
+              {t("Unsaved changes")}</span>
           ) : (
-            <span className="flex items-center gap-2 text-base-content/40">
+            <span className="flex items-center gap-2 text-heledone-ink-muted">
               <div className="w-2 h-2 bg-base-content/20 rounded-full"></div>
-              All changes saved
-            </span>
+              {t("All changes saved")}</span>
           )}
         </div>
         <button
           type="submit"
           className="btn btn-neutral rounded-xl px-6 text-xs font-bold min-h-0 h-10"
-          disabled={updateMutation.isPending || (!isDirty && !profileImage)}
+          disabled={loadingAvatar || updateMutation.isPending || (!isDirty && !profileImage)}
         >
           {updateMutation.isPending ? (
             <span className="loading loading-spinner loading-xs"></span>
           ) : (
-            "Save Changes"
+            t("Save Changes")
           )}
         </button>
       </div>

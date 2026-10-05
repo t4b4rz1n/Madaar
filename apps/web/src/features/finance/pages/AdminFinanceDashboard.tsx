@@ -1,5 +1,8 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getIntlLocale, useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import {
   SearchNormal1,
   People,
@@ -14,7 +17,7 @@ import { Pagination } from "../../../components/Pagination";
 import type { AdminFinanceReport } from "../types/financeTypes";
 
 const formatCurrency = (value: number, currency = "IRR") =>
-  `${value.toLocaleString()} ${currency}`;
+  `${value.toLocaleString(getIntlLocale())} ${currency}`;
 
 const getUserDisplayName = (r: AdminFinanceReport) => {
   const name = `${r.first_name} ${r.last_name}`.trim();
@@ -25,6 +28,7 @@ const getInitial = (r: AdminFinanceReport) =>
   (r.first_name?.[0] || r.username?.[0] || "?").toUpperCase();
 
 export const AdminFinanceDashboard = () => {
+  const t = useTranslation();
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [search, setSearch] = useState("");
@@ -62,26 +66,24 @@ export const AdminFinanceDashboard = () => {
       className="space-y-6 pb-12"
     >
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-end">
+      <div className="heledone-page-heading flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-base-content sm:text-2xl">
-            Organization Finances
-          </h1>
-          <p className="mt-0.5 text-xs text-base-content/50">
-            Payroll overview for all members in your organization.
-          </p>
+            {t("Organization Finances")}</h1>
+          <p className="mt-0.5 text-xs text-heledone-ink-muted">
+            {t("Payroll overview for all members in your organization.")}</p>
         </div>
 
         {/* Search */}
         <div className="relative w-full sm:w-64">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40">
+          <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-heledone-ink-muted">
             <SearchNormal1 size={15} />
           </div>
           <input
             id="finance-search"
             type="text"
-            className="block w-full rounded-xl border border-base-content/10 bg-base-100 py-2 pl-9 pr-3 text-sm text-base-content placeholder-base-content/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Search members..."
+            className="block w-full rounded-xl border border-base-content/10 bg-base-100 py-2 ps-9 pe-3 text-sm text-base-content placeholder-base-content/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder={t("Search members...")}
             value={search}
             onChange={handleSearchChange}
           />
@@ -92,8 +94,8 @@ export const AdminFinanceDashboard = () => {
       {!isLoading && data && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5">
-            <div className="flex items-center justify-between text-base-content/40">
-              <span className="text-[10px] font-bold uppercase tracking-wider">Total Payroll</span>
+            <div className="flex items-center justify-between text-heledone-ink-muted">
+              <span className="text-[13px] font-bold uppercase tracking-wider">{t("Total Payroll")}</span>
               <div className="rounded-lg bg-primary/10 p-1.5 text-primary">
                 <DollarCircle size={16} />
               </div>
@@ -101,31 +103,30 @@ export const AdminFinanceDashboard = () => {
             <p className="mt-3 text-2xl font-black text-base-content">
               {formatCurrency(totalIncome)}
             </p>
-            <p className="mt-1 text-[11px] text-base-content/40">
-              {data.total_results} members
-            </p>
+            <p className="mt-1 text-[13px] text-heledone-ink-muted">
+              {formatUiNumber(data.total_results)}  {t("members")}</p>
           </div>
 
           <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5">
-            <div className="flex items-center justify-between text-base-content/40">
-              <span className="text-[10px] font-bold uppercase tracking-wider">Total Paid</span>
-              <div className="rounded-lg bg-emerald-500/10 p-1.5 text-emerald-500">
+            <div className="flex items-center justify-between text-heledone-ink-muted">
+              <span className="text-[13px] font-bold uppercase tracking-wider">{t("مجموع پرداختی")}</span>
+              <div className="rounded-lg bg-success/10 p-1.5 text-success">
                 <TrendUp size={16} />
               </div>
             </div>
-            <p className="mt-3 text-2xl font-black text-emerald-600 dark:text-emerald-400">
+            <p className="mt-3 text-2xl font-black text-success dark:text-success">
               {formatCurrency(totalPaid)}
             </p>
           </div>
 
           <div className="rounded-2xl border border-base-content/8 bg-base-100 p-5">
-            <div className="flex items-center justify-between text-base-content/40">
-              <span className="text-[10px] font-bold uppercase tracking-wider">Total Owed</span>
-              <div className="rounded-lg bg-amber-500/10 p-1.5 text-amber-500">
+            <div className="flex items-center justify-between text-heledone-ink-muted">
+              <span className="text-[13px] font-bold uppercase tracking-wider">{t("Total Owed")}</span>
+              <div className="rounded-lg bg-warning/10 p-1.5 text-warning">
                 <People size={16} />
               </div>
             </div>
-            <p className="mt-3 text-2xl font-black text-amber-500">
+            <p className="mt-3 text-2xl font-black text-warning">
               {formatCurrency(totalBalance)}
             </p>
           </div>
@@ -137,8 +138,7 @@ export const AdminFinanceDashboard = () => {
         <div className="mb-5 flex items-center gap-2 border-b border-base-content/8 pb-4">
           <Briefcase size={16} className="text-primary" />
           <h2 className="text-sm font-bold text-base-content uppercase tracking-wider">
-            Member Finance Report
-          </h2>
+            {t("Member Finance Report")}</h2>
         </div>
 
         {isLoading ? (
@@ -146,25 +146,23 @@ export const AdminFinanceDashboard = () => {
             <PageLoader />
           </div>
         ) : error || !data ? (
-          <div className="flex h-32 flex-col items-center justify-center gap-2 text-base-content/50">
+          <div className="flex h-32 flex-col items-center justify-center gap-2 text-heledone-ink-muted">
             <DocumentText size={32} className="opacity-20" />
-            <p className="text-sm">Could not load reports.</p>
+            <p className="text-sm">{t("Could not load reports.")}</p>
           </div>
         ) : results.length === 0 ? (
-          <div className="py-12 text-center text-sm text-base-content/50">
-            {debouncedSearch ? "No members match your search." : "No financial records found."}
-          </div>
+          <CoastalEmptyState motif="boat" title={debouncedSearch ? t("No members match your search.") : t("No financial records found.")} />
         ) : (
           <div className="space-y-4">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-base-content/10 text-xs font-semibold text-base-content/50">
+              <table className="w-full text-start text-sm">
+                <thead className="border-b border-base-content/10 text-xs font-semibold text-heledone-ink-muted">
                   <tr>
-                    <th className="pb-3 pl-2">Member</th>
-                    <th className="pb-3 text-center">Projects</th>
-                    <th className="pb-3 text-right">Total Income</th>
-                    <th className="pb-3 text-right">Paid</th>
-                    <th className="pb-3 pr-2 text-right">Balance Owed</th>
+                    <th className="pb-3 ps-2">{t("Member")}</th>
+                    <th className="pb-3 text-center">{t("پروژه‌ها")}</th>
+                    <th className="pb-3 text-end">{t("Total Income")}</th>
+                    <th className="pb-3 text-end">{t("Paid")}</th>
+                    <th className="pb-3 pe-2 text-end">{t("Balance Owed")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-base-content/5">
@@ -173,7 +171,7 @@ export const AdminFinanceDashboard = () => {
                       key={r.user_id}
                       className="hover:bg-base-200/30 transition-colors"
                     >
-                      <td className="py-3 pl-2">
+                      <td className="py-3 ps-2">
                         <div className="flex items-center gap-3">
                           <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
                             {getInitial(r)}
@@ -182,7 +180,7 @@ export const AdminFinanceDashboard = () => {
                             <p className="font-bold text-base-content leading-tight">
                               {getUserDisplayName(r)}
                             </p>
-                            <p className="text-[10px] text-base-content/50">
+                            <p className="text-[13px] text-heledone-ink-muted">
                               @{r.username}
                             </p>
                           </div>
@@ -191,21 +189,21 @@ export const AdminFinanceDashboard = () => {
                       <td className="py-3 text-center">
                         <span className="inline-flex items-center gap-1 rounded-lg bg-base-200 px-2 py-1 text-xs font-semibold">
                           <Briefcase size={11} />
-                          {r.active_projects}
+                          {formatUiNumber(r.active_projects)}
                         </span>
                       </td>
-                      <td className="py-3 text-right font-semibold text-primary">
+                      <td className="py-3 text-end font-semibold text-primary">
                         {formatCurrency(r.total_income, r.currency)}
                       </td>
-                      <td className="py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">
+                      <td className="py-3 text-end text-success dark:text-success font-medium">
                         {formatCurrency(r.total_paid, r.currency)}
                       </td>
-                      <td className="py-3 pr-2 text-right">
+                      <td className="py-3 pe-2 text-end">
                         <span
                           className={`font-bold ${
                             r.current_balance > 0
-                              ? "text-amber-500"
-                              : "text-base-content/40"
+                              ? "text-warning"
+                              : "text-heledone-ink-muted"
                           }`}
                         >
                           {formatCurrency(r.current_balance, r.currency)}

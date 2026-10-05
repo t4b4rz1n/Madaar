@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import { Add, DiscountShape } from "iconsax-reactjs";
 import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -24,6 +25,7 @@ const itemVariants = {
 type ViewMode = "grid" | "table";
 
 const DiscountsListPage = () => {
+  const t = useTranslation();
   const canManageDiscounts = useAuthStore((state) => state.user?.is_staff === true);
   const [searchParams, setSearchParams] = useSearchParams();
   const [modalState, setModalState] = useState<{
@@ -107,17 +109,16 @@ const DiscountsListPage = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="bg-base-100 min-h-[calc(100vh-121px)] backdrop-blur-lg border border-base-content/10 rounded-2xl p-4 sm:p-6 flex flex-col shadow-sm"
+        className="heledone-page-content min-h-[calc(100vh-121px)] flex flex-col"
       >
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="heledone-page-heading flex flex-col md:flex-row md:justify-between md:items-start gap-4"
         >
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <DiscountShape size={28} /> Discount Management
-            </h1>
-            <p className="text-base-content/70 mt-1">Manage discount codes.</p>
+              <DiscountShape size={28} />  {t("Discount Management")}</h1>
+            <p className="text-base-content/70 mt-1">{t("Manage discount codes.")}</p>
           </div>
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
             <ViewSwitcher
@@ -131,7 +132,7 @@ const DiscountsListPage = () => {
                 onClick={openCreateModal}
               >
                 <Add />
-                <span>Create Discount</span>
+                <span>{t("Create Discount")}</span>
               </button>
             )}
           </div>

@@ -1,3 +1,5 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { useTranslation } from "../../../i18n/locale";
 import React, { lazy, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Add } from 'iconsax-reactjs';
@@ -9,10 +11,13 @@ import { KanbanBoard } from '../components/KanbanBoard';
 import { CreateBoardModal } from '../components/CreateBoardModal';
 import { useTaskStore } from '../store/useTaskStore';
 import { getBoards, createBoard } from '../api/tasksApi';
+import { BrandBeats } from '../../../components/Brand';
+import { CoastalArtwork } from '../../../components/CoastalEmptyState';
 
 const AttendancePage = lazy(() => import('../../attendance/pages/AttendancePage'));
 
 export const TaskManagementPage: React.FC = () => {
+  const t = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activeProjectId, activeBoardId, setActiveProject, setActiveBoard, setSelectedTaskId, viewMode, setViewMode } = useTaskStore();
 
@@ -52,7 +57,7 @@ export const TaskManagementPage: React.FC = () => {
 
   const createBoardMutation = useMutation({
     mutationFn: ({ title, backgroundColor }: { title: string; backgroundColor: string }) => {
-      if (!activeProjectId) throw new Error('No active project');
+      if (!activeProjectId) throw new Error(t("No active project"));
       return createBoard(activeProjectId, title, backgroundColor);
     },
     onSuccess: (newBoard) => {
@@ -60,17 +65,22 @@ export const TaskManagementPage: React.FC = () => {
       setActiveBoard(newBoard.id.toString());
       setViewMode('kanban');
       setIsCreateBoardOpen(false);
-      toast.success('Board created successfully!');
+      toast.success(t("کانبان ساخته شد"));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Failed to create board');
+      toast.error(translateError(error?.response?.data?.detail || t("ساخت کانبان ممکن نشد")));
     },
   });
 
   return (
-    <div className="flex h-[calc(100vh-72px)] -mx-4 -my-5 flex-col bg-base-200 sm:-mx-8 sm:-my-7">
+    <div className="heledone-task-workspace flex h-[calc(100dvh-64px)] -mx-4 -my-5 flex-col bg-base-200 sm:-mx-6">
+      <header className="heledone-task-coast shrink-0">
+        <BrandBeats />
+        <h1>{t("کانبان")}</h1>
+        <CoastalArtwork motif="tasks" />
+      </header>
       {/* Top Navigation Bar */}
-      <div className="relative z-20 flex flex-wrap items-center justify-between gap-4 border-b border-base-content/5 bg-base-100 px-5 py-2 shrink-0">
+      <div className="heledone-task-toolbar relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-heledone-border bg-base-100 px-5 py-3 shrink-0">
         {/* Left side: Project selector + Board tabs */}
         <div className="flex min-w-0 flex-1 items-center gap-4">
           <GlobalProjectSelector />
@@ -80,7 +90,7 @@ export const TaskManagementPage: React.FC = () => {
             <div className="flex items-center gap-4 overflow-x-auto px-1 custom-scrollbar self-stretch h-8">
               <div className="h-4 w-px bg-base-content/10 shrink-0" />
               {boards.map((board, idx) => {
-                const pastelFallback = ['#b39ddb', '#81d4fa', '#80cbc4', '#a5d6a7', '#ffcc80', '#f48fb1'][idx % 6];
+                const pastelFallback = ['#EAF5F2', '#C6E6E1', '#A7D4CD', '#D8E6D6', '#F7DFAD', '#F5D3C6'][idx % 6];
                 const isActive = activeBoardId === board.id.toString();
                 return (
                   <button
@@ -91,7 +101,7 @@ export const TaskManagementPage: React.FC = () => {
                     }}
                     className={`flex items-center gap-1.5 py-1 text-xs font-semibold transition-all shrink-0 hover:text-base-content relative h-full ${isActive
                       ? 'text-base-content font-bold'
-                      : 'text-base-content/40'
+                      : 'text-heledone-ink-muted'
                       }`}
                   >
                     <span
@@ -100,7 +110,7 @@ export const TaskManagementPage: React.FC = () => {
                     />
                     <span>{board.title}</span>
                     {isActive && (
-                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                      <span className="absolute bottom-0 start-0 end-0 h-0.5 bg-primary rounded-full" />
                     )}
                   </button>
                 );
@@ -108,11 +118,11 @@ export const TaskManagementPage: React.FC = () => {
               {/* Add Board Button */}
               <button
                 onClick={() => setIsCreateBoardOpen(true)}
-                className="flex items-center gap-1 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-base-content/40 transition-all hover:bg-base-200 hover:text-primary"
-                title="Create new board"
+                className="flex items-center gap-1 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-heledone-ink-muted transition-all hover:bg-base-200 hover:text-primary"
+                title={t("ساخت کانبان تازه")}
               >
                 <Add size={14} />
-                <span>Add</span>
+                <span>{t("افزودن")}</span>
               </button>
             </div>
           )}
@@ -126,7 +136,7 @@ export const TaskManagementPage: React.FC = () => {
                 className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-all hover:bg-primary/20"
               >
                 <Add size={14} />
-                <span>Create your first board</span>
+                <span>{t("اولین کانبان را بسازید")}</span>
               </button>
             </div>
           )}
@@ -139,17 +149,17 @@ export const TaskManagementPage: React.FC = () => {
               {(['kanban', 'attendance'] as const).map((mode) => {
                 const isActive = viewMode === mode;
                 const labels: Record<string, string> = {
-                  kanban: 'Board',
-                  attendance: 'Attendance',
+                  kanban: t("کانبان"),
+                  attendance: t("حضور و کارکرد"),
                 };
                 return (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => setViewMode(mode)}
-                    className={`rounded-lg px-3 py-1 text-[11px] font-bold transition-all shrink-0 ${isActive
+                    className={`rounded-lg px-3 py-1 text-[13px] font-bold transition-all shrink-0 ${isActive
                       ? 'bg-base-100 text-primary shadow-xs'
-                      : 'text-base-content/40 hover:text-base-content'
+                      : 'text-heledone-ink-muted hover:text-base-content'
                       }`}
                   >
                     <span>{labels[mode]}</span>

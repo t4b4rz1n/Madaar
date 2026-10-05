@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { motion } from "motion/react";
 import { Notification as NotificationIcon, Send } from "iconsax-reactjs";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -20,6 +21,7 @@ const itemVariants = {
 };
 
 const NotificationsPage = () => {
+  const t = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
@@ -116,19 +118,17 @@ const NotificationsPage = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="bg-base-100 min-h-[calc(100vh-121px)] backdrop-blur-lg border border-base-content/10 rounded-2xl p-4 sm:p-6 flex flex-col"
+        className="heledone-page-content min-h-[calc(100vh-121px)] flex flex-col"
       >
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="heledone-page-heading flex flex-col md:flex-row md:justify-between md:items-start gap-4"
         >
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <NotificationIcon size={28} /> Notifications
-            </h1>
+              <NotificationIcon size={28} />  {t("Notifications")}</h1>
             <p className="text-base-content/70 mt-1">
-              Send notifications and view their history.
-            </p>
+              {t("Send notifications and view their history.")}</p>
           </div>
           <div className="flex items-center gap-3">
             <ViewSwitcher
@@ -142,7 +142,7 @@ const NotificationsPage = () => {
                 onClick={openSendModal}
               >
                 <Send />
-                <span>Send New Notification</span>
+                <span>{t("Send New Notification")}</span>
               </button>
             </PermissionGuard>
           </div>

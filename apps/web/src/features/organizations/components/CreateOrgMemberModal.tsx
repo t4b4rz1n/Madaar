@@ -1,5 +1,7 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { t as translate, useTranslation } from "../../../i18n/locale";
 import { useState, useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -33,9 +35,9 @@ export interface CreateOrgMemberModalProps {
 type MemberTab = "add_existing" | "create_new";
 
 const createOrgMemberSchema = z.object({
-  username: z.string().min(1, "Username required"),
-  email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Password too short"),
+  username: z.string().min(1, translate("Username required")),
+  email: z.string().email(translate("Invalid email")),
+  password: z.string().min(6, translate("Password too short")),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
   role_id: z.string().nullable().optional(),
@@ -53,6 +55,7 @@ export const CreateOrgMemberModal = ({
   onSuccess,
   initialTab = "add_existing",
 }: CreateOrgMemberModalProps) => {
+  const t = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<MemberTab>(initialTab);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -95,15 +98,15 @@ export const CreateOrgMemberModal = ({
       queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
       queryClient.invalidateQueries({ queryKey: ["users", "unassigned"] });
       queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success("Member added successfully");
+      toast.success(t("Member added successfully"));
       handleClose();
     },
     onError: (error: any) => {
       if (error?.response?.status === 409) {
-        toast.error("User is already a member of this organization");
+        toast.error(t("User is already a member of this organization"));
         return;
       }
-      toast.error(error?.response?.data?.message || "Failed to add member");
+      toast.error(translateError(error?.response?.data?.message || "Failed to add member"));
     },
   });
 
@@ -168,11 +171,11 @@ export const CreateOrgMemberModal = ({
 
   const handleAddExistingSubmit = () => {
     if (!selectedUserId) {
-      toast.error("Please select a user");
+      toast.error(t("Please select a user"));
       return;
     }
     if (!selectedRoleId) {
-      toast.error("Please select a role");
+      toast.error(t("Please select a role"));
       return;
     }
     addExistingMutation.mutate({
@@ -244,12 +247,12 @@ export const CreateOrgMemberModal = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold tracking-tight">
-                    {activeTab === "add_existing" ? "Add Existing User" : "Create New User"}
+                    {activeTab === "add_existing" ? t("Add Existing User") : t("Create New User")}
                   </h3>
-                  <p className="text-[11px] text-primary-content/80 font-medium">
+                  <p className="text-[13px] text-primary-content/80 font-medium">
                     {activeTab === "add_existing"
-                      ? "Add an unassigned user to this organization"
-                      : "Create a new account and add to organization"}
+                      ? t("Add an unassigned user to this organization")
+                      : t("Create a new account and add to organization")}
                   </p>
                 </div>
               </div>
@@ -269,22 +272,20 @@ export const CreateOrgMemberModal = ({
                 className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition-all ${
                   activeTab === "add_existing"
                     ? "bg-primary text-primary-content shadow-xs"
-                    : "text-base-content/60 hover:text-base-content"
+                    : "text-heledone-ink-muted hover:text-base-content"
                 }`}
               >
-                <User size={14} /> Add Existing
-              </button>
+                <User size={14} />  {t("Add Existing")}</button>
               <button
                 type="button"
                 onClick={() => handleTabChange("create_new")}
                 className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition-all ${
                   activeTab === "create_new"
                     ? "bg-primary text-primary-content shadow-xs"
-                    : "text-base-content/60 hover:text-base-content"
+                    : "text-heledone-ink-muted hover:text-base-content"
                 }`}
               >
-                <AddCircle size={14} /> Create New
-              </button>
+                <AddCircle size={14} />  {t("Create New")}</button>
             </div>
 
             {/* Body */}
@@ -293,17 +294,17 @@ export const CreateOrgMemberModal = ({
                 <>
                   {/* User search dropdown */}
                   <div ref={dropdownRef} className="relative">
-                    <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                      Select User <span className="text-error">*</span>
+                    <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                      {t("Select User")} <span className="text-error">*</span>
                     </label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
+                      <div className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted">
                         <SearchNormal1 size={15} />
                       </div>
                       <input
                         type="text"
-                        dir="auto"
-                        placeholder="Search by name, username or email..."
+
+                        placeholder={t("Search by name, username or email...")}
                         value={userSearch}
                         onFocus={() => setIsUserDropdownOpen(true)}
                         onChange={(e) => {
@@ -311,15 +312,15 @@ export const CreateOrgMemberModal = ({
                           setIsUserDropdownOpen(true);
                           setSelectedUserId("");
                         }}
-                        className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 pl-9 pr-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                        className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 ps-9 pe-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
                       />
                     </div>
                     {isUserDropdownOpen && (
-                      <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in duration-100 space-y-0.5">
+                      <div className="absolute z-50 start-0 end-0 mt-1 max-h-48 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in duration-100 space-y-0.5">
                         {isLoadingUsers ? (
-                          <div className="p-3 text-center text-xs text-base-content/40">Loading users...</div>
+                          <div className="p-3 text-center text-xs text-heledone-ink-muted">{t("Loading users...")}</div>
                         ) : filteredUsers.length === 0 ? (
-                          <div className="p-3 text-center text-xs text-base-content/40">No unassigned users found</div>
+                          <div className="p-3 text-center text-xs text-heledone-ink-muted">{t("No unassigned users found")}</div>
                         ) : (
                           filteredUsers.map((u: any) => {
                             const displayName =
@@ -336,20 +337,20 @@ export const CreateOrgMemberModal = ({
                                   setUserSearch(displayName);
                                   setIsUserDropdownOpen(false);
                                 }}
-                                className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left transition-all ${
+                                className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-start transition-all ${
                                   isSelected
                                     ? "bg-primary/10 text-primary font-bold"
                                     : "hover:bg-base-200/60 text-base-content font-medium"
                                 }`}
                               >
                                 <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary text-[10px] font-bold shrink-0">
+                                  <div className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary text-[13px] font-bold shrink-0">
                                     {displayName[0]?.toUpperCase() || "U"}
                                   </div>
                                   <div className="min-w-0">
-                                    <p dir="auto" className="truncate text-xs font-bold">{displayName}</p>
+                                    <p  className="truncate text-xs font-bold">{displayName}</p>
                                     {u.email && (
-                                      <p className="truncate text-[10px] text-base-content/40">{u.email}</p>
+                                      <p className="truncate text-[13px] text-heledone-ink-muted">{u.email}</p>
                                     )}
                                   </div>
                                 </div>
@@ -364,16 +365,16 @@ export const CreateOrgMemberModal = ({
 
                   {/* Role selector */}
                   <div>
-                    <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                      <Shield size={11} className="inline mr-1" />
-                      Assign Role <span className="text-error">*</span>
+                    <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                      <Shield size={11} className="inline me-1" />
+                      {t("Assign Role")} <span className="text-error">*</span>
                     </label>
                     <select
                       value={selectedRoleId}
                       onChange={(e) => setSelectedRoleId(e.target.value)}
                       className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
                     >
-                      <option value="" disabled>Select a role</option>
+                      <option value="" disabled>{t("Select a role")}</option>
                       {roles.map((r: any) => (
                         <option key={r.id} value={String(r.id)}>{r.name}</option>
                       ))}
@@ -382,19 +383,18 @@ export const CreateOrgMemberModal = ({
 
                   {/* Salary fields */}
                   <div>
-                    <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                      <DollarCircle size={11} className="inline mr-1" />
-                      Salary (Optional)
-                    </label>
+                    <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                      <DollarCircle size={11} className="inline me-1" />
+                      {t("Salary (Optional)")}</label>
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={selectedSalaryType}
                         onChange={(e) => setSelectedSalaryType(e.target.value as "monthly" | "hourly" | "")}
                         className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
                       >
-                        <option value="">No salary</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="hourly">Hourly</option>
+                        <option value="">{t("No salary")}</option>
+                        <option value="monthly">{t("ماهانه")}</option>
+                        <option value="hourly">{t("ساعتی")}</option>
                       </select>
                       <input
                         type="number"
@@ -402,9 +402,9 @@ export const CreateOrgMemberModal = ({
                         step="0.01"
                         value={selectedSalaryAmount}
                         onChange={(e) => setSelectedSalaryAmount(e.target.value)}
-                        placeholder="Amount"
+                        placeholder={t("مبلغ")}
                         disabled={!selectedSalaryType}
-                        className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35 disabled:opacity-40"
+                        className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted disabled:opacity-40"
                       />
                     </div>
                   </div>
@@ -416,15 +416,14 @@ export const CreateOrgMemberModal = ({
                       disabled={isLoading}
                       className="h-9 px-4 rounded-xl border border-base-content/10 text-xs font-bold text-base-content/70 hover:bg-base-200 transition-all"
                     >
-                      Cancel
-                    </button>
+                      {t("انصراف")}</button>
                     <button
                       type="button"
                       onClick={handleAddExistingSubmit}
                       disabled={isLoading || !selectedUserId}
                       className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
                     >
-                      {isLoading ? "Adding…" : "Add Member"}
+                      {isLoading ? t("Adding…") : t("Add Member")}
                     </button>
                   </div>
                 </>
@@ -436,22 +435,22 @@ export const CreateOrgMemberModal = ({
                     control={control}
                     render={({ field }) => (
                       <div>
-                        <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                          Username <span className="text-error">*</span>
+                        <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                          {t("Username")} <span className="text-error">*</span>
                         </label>
                         <div className="relative">
-                          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
+                          <div className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted">
                             <User size={14} />
                           </div>
                           <input
                             {...field}
                             value={field.value ?? ""}
-                            placeholder="Enter username"
-                            className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 pl-9 pr-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                            placeholder={t("Enter username")}
+                            className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 ps-9 pe-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
                           />
                         </div>
                         {errors.username && (
-                          <p className="text-error text-[10px] mt-1 font-medium">{errors.username.message}</p>
+                          <p className="text-error text-[13px] mt-1 font-medium">{errors.username.message}</p>
                         )}
                       </div>
                     )}
@@ -463,23 +462,23 @@ export const CreateOrgMemberModal = ({
                     control={control}
                     render={({ field }) => (
                       <div>
-                        <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                          Email <span className="text-error">*</span>
+                        <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                          {t("Email")} <span className="text-error">*</span>
                         </label>
                         <div className="relative">
-                          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
+                          <div className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted">
                             <Sms size={14} />
                           </div>
                           <input
                             {...field}
                             value={field.value ?? ""}
                             type="email"
-                            placeholder="Enter email address"
-                            className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 pl-9 pr-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                            placeholder={t("Enter email address")}
+                            className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 ps-9 pe-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
                           />
                         </div>
                         {errors.email && (
-                          <p className="text-error text-[10px] mt-1 font-medium">{errors.email.message}</p>
+                          <p className="text-error text-[13px] mt-1 font-medium">{errors.email.message}</p>
                         )}
                       </div>
                     )}
@@ -491,23 +490,23 @@ export const CreateOrgMemberModal = ({
                     control={control}
                     render={({ field }) => (
                       <div>
-                        <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                          Password <span className="text-error">*</span>
+                        <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                          {t("Password")} <span className="text-error">*</span>
                         </label>
                         <div className="relative">
-                          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
+                          <div className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted">
                             <Lock size={14} />
                           </div>
                           <input
                             {...field}
                             value={field.value ?? ""}
                             type="password"
-                            placeholder="Min. 6 characters"
-                            className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 pl-9 pr-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                            placeholder={t("Min. 6 characters")}
+                            className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 ps-9 pe-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
                           />
                         </div>
                         {errors.password && (
-                          <p className="text-error text-[10px] mt-1 font-medium">{errors.password.message}</p>
+                          <p className="text-error text-[13px] mt-1 font-medium">{errors.password.message}</p>
                         )}
                       </div>
                     )}
@@ -520,18 +519,17 @@ export const CreateOrgMemberModal = ({
                       control={control}
                       render={({ field }) => (
                         <div>
-                          <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                            First name
-                          </label>
+                          <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                            {t("First name")}</label>
                           <div className="relative">
-                            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
+                            <div className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted">
                               <Profile2User size={13} />
                             </div>
                             <input
                               {...field}
                               value={field.value ?? ""}
-                              placeholder="First"
-                              className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 pl-8 pr-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                              placeholder={t("First")}
+                              className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 ps-8 pe-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
                             />
                           </div>
                         </div>
@@ -542,18 +540,17 @@ export const CreateOrgMemberModal = ({
                       control={control}
                       render={({ field }) => (
                         <div>
-                          <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                            Last name
-                          </label>
+                          <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                            {t("Last name")}</label>
                           <div className="relative">
-                            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
+                            <div className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted">
                               <Profile2User size={13} />
                             </div>
                             <input
                               {...field}
                               value={field.value ?? ""}
-                              placeholder="Last"
-                              className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 pl-8 pr-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                              placeholder={t("Last")}
+                              className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 ps-8 pe-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
                             />
                           </div>
                         </div>
@@ -563,15 +560,14 @@ export const CreateOrgMemberModal = ({
 
                   {/* Role */}
                   <div>
-                    <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                      <Shield size={11} className="inline mr-1" />
-                      Role
-                    </label>
+                    <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                      <Shield size={11} className="inline me-1" />
+                      {t("Role")}</label>
                     <select
                       {...control.register("role_id")}
                       className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
                     >
-                      <option value="" disabled>Select a role</option>
+                      <option value="" disabled>{t("Select a role")}</option>
                       {roles.map((r: any) => (
                         <option key={r.id} value={String(r.id)}>{r.name}</option>
                       ))}
@@ -580,10 +576,9 @@ export const CreateOrgMemberModal = ({
 
                   {/* Salary */}
                   <div>
-                    <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-                      <DollarCircle size={11} className="inline mr-1" />
-                      Salary (Optional)
-                    </label>
+                    <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+                      <DollarCircle size={11} className="inline me-1" />
+                      {t("Salary (Optional)")}</label>
                     <div className="grid grid-cols-2 gap-2">
                       <Controller
                         name="salary_type"
@@ -594,9 +589,9 @@ export const CreateOrgMemberModal = ({
                             onChange={(e) => field.onChange(e.target.value || null)}
                             className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all"
                           >
-                            <option value="">No salary</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="hourly">Hourly</option>
+                            <option value="">{t("No salary")}</option>
+                            <option value="monthly">{t("ماهانه")}</option>
+                            <option value="hourly">{t("ساعتی")}</option>
                           </select>
                         )}
                       />
@@ -610,8 +605,8 @@ export const CreateOrgMemberModal = ({
                             step="0.01"
                             value={field.value ?? ""}
                             onChange={(e) => field.onChange(e.target.value || null)}
-                            placeholder="Amount"
-                            className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                            placeholder={t("مبلغ")}
+                            className="h-10 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
                           />
                         )}
                       />
@@ -625,14 +620,13 @@ export const CreateOrgMemberModal = ({
                       disabled={isLoading}
                       className="h-9 px-4 rounded-xl border border-base-content/10 text-xs font-bold text-base-content/70 hover:bg-base-200 transition-all"
                     >
-                      Cancel
-                    </button>
+                      {t("انصراف")}</button>
                     <button
                       type="submit"
                       disabled={isLoading}
                       className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
                     >
-                      {isLoading ? "CreatingΓÇª" : "Create User"}
+                      {isLoading ? t("Creating…") : t("Create User")}
                     </button>
                   </div>
                 </form>

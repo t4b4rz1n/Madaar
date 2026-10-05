@@ -1,7 +1,10 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import React, { useEffect, useMemo, useState } from "react";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -62,6 +65,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
   onSaved,
   onDeleted,
 }) => {
+  const t = useTranslation();
   const targetDate = date ?? todayIso();
   const needsProjectPicker = !projectId;
   const [isDeleting, setIsDeleting] = useState(false);
@@ -163,7 +167,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
       }
     } catch (error) {
       console.error("Failed to save standup", error);
-      toast.error(S.toastSaveFailed);
+      toast.error(translateError(S.toastSaveFailed));
     }
   };
 
@@ -213,7 +217,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
               <h2 className="text-base font-bold tracking-tight">
                 {S.modalTitle}
               </h2>
-              <p className="text-[11px] text-primary-content/80 font-medium">
+              <p className="text-[13px] text-primary-content/80 font-medium">
                 {memberName ? `${memberName} · ` : ""}
                 {dateLabel}
               </p>
@@ -221,7 +225,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
           </div>
           <div className="flex items-center gap-2">
             {readOnly && (
-              <span className="rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+              <span className="rounded-md bg-white/20 px-2 py-0.5 text-[13px] font-bold uppercase text-white">
                 {S.viewOnlyBadge}
               </span>
             )}
@@ -243,7 +247,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
         >
           {needsProjectPicker && (
             <div>
-              <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+              <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
                 {S.projectLabel} <span className="text-error">*</span>
               </label>
               <select
@@ -263,7 +267,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                 ))}
               </select>
               {errors.projectId && (
-                <p className="mt-1 text-[11px] text-error font-medium">
+                <p className="mt-1 text-[13px] text-error font-medium">
                   {errors.projectId.message}
                 </p>
               )}
@@ -278,8 +282,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                   <span>{S.hoursWorkedToday.replace(" *", "")}</span>
                 </div>
                 <p className="text-sm font-extrabold text-base-content ms-6">
-                  {initial?.hoursWorked || 0} Hours
-                </p>
+                  {initial?.hoursWorked || 0}  {t("Hours")}</p>
               </div>
 
               {initial?.todayWork && (
@@ -289,7 +292,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                     <span>{S.whatDidYouDoToday.replace(" *", "")}</span>
                   </div>
                   <p
-                    dir="auto"
+
                     className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6"
                   >
                     {initial.todayWork}
@@ -298,13 +301,13 @@ export const StandupModal: React.FC<StandupModalProps> = ({
               )}
 
               {initial?.blockers && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-                  <div className="flex items-center gap-2 text-amber-600 font-bold mb-1">
+                <div className="rounded-xl border border-warning/20 bg-warning/5 p-3">
+                  <div className="flex items-center gap-2 text-warning font-bold mb-1">
                     <Danger size={15} />
                     <span>{S.blockers}</span>
                   </div>
                   <p
-                    dir="auto"
+
                     className="text-xs text-base-content/80 leading-relaxed whitespace-pre-wrap ms-6"
                   >
                     {initial.blockers}
@@ -316,7 +319,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
             <>
               {!hideHours && (
                 <div>
-                  <div className="flex items-center justify-between font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                  <div className="flex items-center justify-between font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
                     <span>{S.hoursWorkedToday}</span>
                   </div>
 
@@ -327,10 +330,9 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                         key={h}
                         type="button"
                         onClick={() => setValue("hoursWorked", String(h))}
-                        className="flex-1 rounded-lg py-1 text-[10px] font-bold bg-base-200/50 text-base-content/60 hover:bg-primary/15 hover:text-primary transition-all border border-transparent hover:border-primary/20"
+                        className="flex-1 rounded-lg py-1 text-[13px] font-bold bg-base-200/50 text-heledone-ink-muted hover:bg-primary/15 hover:text-primary transition-all border border-transparent hover:border-primary/20"
                       >
-                        {h} Hours
-                      </button>
+                        {formatUiNumber(h)}  {t("Hours")}</button>
                     ))}
                   </div>
 
@@ -340,7 +342,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                     min="0"
                     max="24"
                     inputMode="decimal"
-                    placeholder="e.g. 8.0"
+                    placeholder={t("e.g. 8.0")}
                     disabled={readOnly}
                     autoFocus
                     className={`w-full h-9.5 rounded-xl border bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 transition-all ${
@@ -350,15 +352,15 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                     }`}
                     {...register("hoursWorked", {
                       required: S.hoursRequired,
-                      min: { value: 0, message: "Hours cannot be negative" },
+                      min: { value: 0, message: t("Hours cannot be negative") },
                       max: {
                         value: 24,
-                        message: "Hours cannot exceed 24 per day",
+                        message: t("Hours cannot exceed 24 per day"),
                       },
                     })}
                   />
                   {errors.hoursWorked && (
-                    <p className="mt-1 text-[11px] text-error font-medium">
+                    <p className="mt-1 text-[13px] text-error font-medium">
                       {errors.hoursWorked.message}
                     </p>
                   )}
@@ -366,36 +368,36 @@ export const StandupModal: React.FC<StandupModalProps> = ({
               )}
 
               <div>
-                <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
                   {S.whatDidYouDoToday} <span className="text-error">*</span>
                 </label>
                 <textarea
                   rows={3}
-                  dir="auto"
+
                   placeholder={S.whatDidYouDoTodayPlaceholder}
                   disabled={readOnly}
-                  className={`w-full rounded-xl border bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-base-content/35 ${
+                  className={`w-full rounded-xl border bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-heledone-ink-muted ${
                     errors.todayWork ? "border-error" : "border-base-content/10"
                   }`}
                   {...register("todayWork", { required: S.todayWorkRequired })}
                 />
                 {errors.todayWork && (
-                  <p className="mt-1 text-[11px] text-error font-medium">
+                  <p className="mt-1 text-[13px] text-error font-medium">
                     {errors.todayWork.message}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
+                <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
                   {S.blockers}
                 </label>
                 <textarea
                   rows={2}
-                  dir="auto"
+
                   placeholder={S.blockersPlaceholder}
                   disabled={readOnly}
-                  className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-base-content/35"
+                  className="w-full rounded-xl border border-base-content/10 bg-base-200/50 p-3 font-medium text-base-content outline-none focus:border-primary/40 transition-all resize-none placeholder:text-heledone-ink-muted"
                   {...register("blockers")}
                 />
               </div>
@@ -412,10 +414,10 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                       type="button"
                       onClick={() => setConfirmDelete(true)}
                       disabled={isDeleting || isSubmitting}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-600 transition"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-error hover:text-error transition"
                     >
                       <Trash size={14} />
-                      <span>Delete</span>
+                      <span>{t("حذف")}</span>
                     </button>
                   ) : (
                     <span />
@@ -435,7 +437,7 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                       className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5"
                     >
                       {isSubmitting ? (
-                        <span>Saving...</span>
+                        <span>{t("در حال ذخیره…")}</span>
                       ) : (
                         <span>{S.save}</span>
                       )}
@@ -443,10 +445,9 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl">
-                  <span className="text-xs font-bold text-red-600 dark:text-red-400">
-                    Delete this standup?
-                  </span>
+                <div className="flex items-center justify-between gap-3 bg-error/10 border border-error/20 p-2.5 rounded-xl">
+                  <span className="text-xs font-bold text-error dark:text-error">
+                    {t("Delete this standup?")}</span>
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -459,23 +460,22 @@ export const StandupModal: React.FC<StandupModalProps> = ({
                           onDeleted?.();
                           onClose();
                         } catch {
-                          toast.error(S.toastDeleteFailed);
+                          toast.error(translateError(S.toastDeleteFailed));
                           setConfirmDelete(false);
                         } finally {
                           setIsDeleting(false);
                         }
                       }}
-                      className="h-7 px-3 rounded-lg bg-red-500 text-xs font-bold text-white shadow-xs hover:bg-red-600 transition-all"
+                      className="h-7 px-3 rounded-lg bg-error text-xs font-bold text-error-content shadow-xs hover:bg-error transition-all"
                     >
-                      {isDeleting ? "Deleting..." : "Yes, Delete"}
+                      {isDeleting ? t("Deleting...") : t("Yes, Delete")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(false)}
                       className="h-7 px-2.5 rounded-lg border border-base-content/10 text-xs font-bold text-base-content/70 hover:bg-base-200 transition-all"
                     >
-                      Cancel
-                    </button>
+                      {t("انصراف")}</button>
                   </div>
                 </div>
               )}

@@ -1,5 +1,7 @@
-import { motion } from "framer-motion";
-import { CloseCircle, Messages, MessageText1, ArrowRight } from "iconsax-reactjs";
+import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
+import { motion } from "motion/react";
+import { CloseCircle, MessageText1, ArrowRight } from "iconsax-reactjs";
 import { useNavigate } from "react-router-dom";
 import type { Ticket } from "../types";
 import { formatDate } from "../../../utils/formatDate";
@@ -18,6 +20,7 @@ export const TicketsTable = ({
   isLoading,
   isError,
 }: TicketsTableProps) => {
+  const t = useTranslation();
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -37,24 +40,18 @@ export const TicketsTable = ({
   if (isError) {
     return (
       <div className="bg-linear-to-br from-error/5 to-error/10 rounded-2xl border border-error/20 p-12 text-center">
-        <div className="text-error/40 mb-4">
+        <div className="text-error mb-4">
           <CloseCircle className="w-16 h-16 mx-auto" />
         </div>
-        <h3 className="text-lg font-bold text-error mb-2">Loading Error</h3>
-        <p className="text-error/70">There was a problem loading tickets</p>
+        <h3 className="text-lg font-bold text-error mb-2">{t("Loading Error")}</h3>
+        <p className="text-error">{t("There was a problem loading tickets")}</p>
       </div>
     );
   }
 
   if (tickets.length === 0) {
     return (
-      <div className="bg-linear-to-br from-base-200 to-base-300 rounded-2xl border border-base-content/10 p-12 text-center">
-        <div className="text-base-content/40 mb-4">
-          <Messages className="w-16 h-16 mx-auto text-base-content/40" />
-        </div>
-        <h3 className="text-lg font-bold text-base-content mb-2">No Tickets Found</h3>
-        <p className="text-base-content/70">No tickets match your search criteria</p>
-      </div>
+      <CoastalEmptyState motif="waves" title={t("No Tickets Found")} description={t("No tickets match your search criteria")} />
     );
   }
 
@@ -66,24 +63,18 @@ export const TicketsTable = ({
         <table className="w-full">
           <thead className="bg-linear-to-r from-primary/10 to-primary/5 border-b border-base-content/10">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                Subject
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                Category
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                Priority
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                Status
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                User
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-bold text-base-content whitespace-nowrap">
-                Created At
-              </th>
+              <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                {t("Subject")}</th>
+              <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                {t("Category")}</th>
+              <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                {t("اولویت")}</th>
+              <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                {t("وضعیت")}</th>
+              <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                {t("User")}</th>
+              <th className="px-6 py-4 text-start text-sm font-bold text-base-content whitespace-nowrap">
+                {t("Created At")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-base-content/5">
@@ -139,7 +130,7 @@ export const TicketsTable = ({
                       ? "bg-info/10 text-info border-info/20"
                       : ticket.status === "answered"
                         ? "bg-success/10 text-success border-success/20"
-                        : "bg-base-content/10 text-base-content/60 border-base-content/10"
+                        : "bg-base-content/10 text-heledone-ink-muted border-base-content/10"
                       }`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${ticket.status === "open" ? "bg-info animate-pulse" :
@@ -159,7 +150,7 @@ export const TicketsTable = ({
                 {/* Created At */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-xs text-base-content/50">
+                    <span className="text-xs text-heledone-ink-muted">
                       {formatDate(ticket.created_at)}
                     </span>
                     <span className="opacity-0 group-hover:opacity-100 transition-opacity text-primary shrink-0">

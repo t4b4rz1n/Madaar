@@ -1,5 +1,6 @@
+import { useTranslation } from "../../../i18n/locale";
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CloseCircle, Messages2, Tag, Flag, TickCircle, Add } from "iconsax-reactjs";
@@ -25,6 +26,7 @@ export const CreateTicketModal = ({
   isOpen,
   onClose,
 }: CreateTicketModalProps) => {
+  const t = useTranslation();
   const {
     control,
     handleSubmit,
@@ -65,9 +67,9 @@ export const CreateTicketModal = ({
   const isLoading = createMutation.isPending;
 
   const priorityOptions = [
-    { value: "low", label: "Low", color: "text-success", bg: "bg-success/10 border-success/20 hover:bg-success/20" },
-    { value: "medium", label: "Medium", color: "text-warning", bg: "bg-warning/10 border-warning/20 hover:bg-warning/20" },
-    { value: "high", label: "High", color: "text-error", bg: "bg-error/10 border-error/20 hover:bg-error/20" },
+    { value: "low", label: t("کم"), color: "text-success", bg: "bg-success/10 border-success/20 hover:bg-success/20" },
+    { value: "medium", label: t("متوسط"), color: "text-warning", bg: "bg-warning/10 border-warning/20 hover:bg-warning/20" },
+    { value: "high", label: t("بالا"), color: "text-error", bg: "bg-error/10 border-error/20 hover:bg-error/20" },
   ];
 
   const modalContent = (
@@ -95,11 +97,9 @@ export const CreateTicketModal = ({
                   </div>
                   <div>
                     <h3 className="font-bold text-2xl text-base-content">
-                      Open Support Ticket
-                    </h3>
+                      {t("Open Support Ticket")}</h3>
                     <p className="text-base-content/70 text-sm">
-                      Create a new support ticket to help users with their requests.
-                    </p>
+                      {t("Create a new support ticket to help users with their requests.")}</p>
                   </div>
                 </div>
                 <button
@@ -107,7 +107,7 @@ export const CreateTicketModal = ({
                   className="p-2 hover:bg-base-content/10 rounded-lg transition-colors"
                   disabled={isLoading}
                 >
-                  <CloseCircle className="w-6 h-6 text-base-content/60" />
+                  <CloseCircle className="w-6 h-6 text-heledone-ink-muted" />
                 </button>
               </div>
             </div>
@@ -121,14 +121,13 @@ export const CreateTicketModal = ({
                 render={({ field }) => (
                   <div className="form-control w-full">
                     <div className="label pb-1.5">
-                      <span className="label-text text-xs font-semibold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5">
+                      <span className="label-text text-xs font-semibold uppercase tracking-wider text-heledone-ink-muted flex items-center gap-1.5">
                         <Tag size={14} />
-                        Subject
-                      </span>
+                        {t("Subject")}</span>
                     </div>
                     <InputField
                       {...field}
-                      placeholder="Enter ticket subject"
+                      placeholder={t("Enter ticket subject")}
                       classNameInput={`!shadow-none focus:border-primary ${errors.title ? "border-error" : "border-base-300"}`}
                     />
                     {errors.title && (
@@ -147,15 +146,14 @@ export const CreateTicketModal = ({
                 render={({ field }) => (
                   <div className="form-control w-full">
                     <div className="label pb-1.5">
-                      <span className="label-text text-xs font-semibold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5">
+                      <span className="label-text text-xs font-semibold uppercase tracking-wider text-heledone-ink-muted flex items-center gap-1.5">
                         <Messages2 size={14} />
-                        Description
-                      </span>
+                        {t("توضیح")}</span>
                     </div>
                     <textarea
                       {...field}
                       rows={4}
-                      placeholder="Describe your issue or request"
+                      placeholder={t("Describe your issue or request")}
                       className={`textarea textarea-bordered w-full resize-none !shadow-none focus:border-primary ${errors.text ? "border-error" : "border-base-300"}`}
                     />
                     {errors.text && (
@@ -173,17 +171,16 @@ export const CreateTicketModal = ({
                   render={({ field }) => (
                     <div className="form-control w-full">
                       <div className="label pb-1.5">
-                        <span className="label-text text-xs font-semibold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5">
+                        <span className="label-text text-xs font-semibold uppercase tracking-wider text-heledone-ink-muted flex items-center gap-1.5">
                           <Tag size={14} />
-                          Category
-                        </span>
+                          {t("Category")}</span>
                       </div>
                       <select
                         value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value)}
                         className="select select-bordered w-full !shadow-none border-base-300"
                       >
-                        <option value="">Select Category</option>
+                        <option value="">{t("Select Category")}</option>
                         {ticketTypesResponse?.results?.map((type) => (
                           <option key={type.id} value={type.id}>
                             {type.name}
@@ -204,10 +201,9 @@ export const CreateTicketModal = ({
                   render={({ field }) => (
                     <div className="form-control w-full">
                       <div className="label pb-1.5">
-                        <span className="label-text text-xs font-semibold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5">
+                        <span className="label-text text-xs font-semibold uppercase tracking-wider text-heledone-ink-muted flex items-center gap-1.5">
                           <Flag size={14} />
-                          Priority
-                        </span>
+                          {t("اولویت")}</span>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         {priorityOptions.map((opt) => (
@@ -218,7 +214,7 @@ export const CreateTicketModal = ({
                             className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 ${
                               field.value === opt.value
                                 ? opt.bg + " " + opt.color
-                                : "bg-base-200 border-base-content/10 text-base-content/60 hover:bg-base-300"
+                                : "bg-base-200 border-base-content/10 text-heledone-ink-muted hover:bg-base-300"
                             }`}
                           >
                             {field.value === opt.value && <TickCircle size={14} className={opt.color} variant="Bold" />}
@@ -242,8 +238,7 @@ export const CreateTicketModal = ({
                   className="btn btn-ghost rounded-xl"
                   disabled={isLoading}
                 >
-                  Cancel
-                </button>
+                  {t("انصراف")}</button>
                 <button
                   type="button"
                   onClick={onSubmit}
@@ -253,13 +248,11 @@ export const CreateTicketModal = ({
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="loading loading-spinner loading-sm"></span>
-                      Saving...
-                    </span>
+                      {t("در حال ذخیره…")}</span>
                   ) : (
                     <>
                       <Add size={18} />
-                      Submit Ticket
-                    </>
+                      {t("Submit Ticket")}</>
                   )}
                 </button>
               </div>

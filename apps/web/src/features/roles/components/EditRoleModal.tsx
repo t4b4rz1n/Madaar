@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/locale";
 // @apps/web/src/features/roles/components/EditRoleModal.tsx
 import React from "react";
 import { useUpdateRole } from "../hooks/useRoles";
@@ -15,13 +16,14 @@ export const EditRoleModal: React.FC<EditRoleModalProps> = ({
   role,
   onClose,
 }) => {
+  const t = useTranslation();
   const { mutate: updateRole, isPending } = useUpdateRole();
 
   return (
     <RoleFormModal
       isOpen={isOpen}
-      title={role ? `Edit Role "${role.name}"` : "Edit Role"}
-      submitLabel="Update Changes"
+      title={role ? t("Edit Role \"{value0}\"", { value0: role.name }) : t("Edit Role")}
+      submitLabel={t("Update Changes")}
       initialRole={role}
       isPending={isPending}
       onClose={onClose}

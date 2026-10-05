@@ -1,3 +1,5 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { t } from "../../../i18n/locale";
 import {
   useMutation,
   useQuery,
@@ -53,7 +55,7 @@ export const useMarkNotificationSeen = () => {
       ]);
     },
     onError: () => {
-      toast.error("Failed to mark notification as read.");
+      toast.error(t("Failed to mark notification as read."));
     },
   });
 };
@@ -70,7 +72,7 @@ export const useMarkAllNotificationsSeen = () => {
       ]);
     },
     onError: () => {
-      toast.error("Failed to mark all notifications as read.");
+      toast.error(t("Failed to mark all notifications as read."));
     },
   });
 };
@@ -82,14 +84,10 @@ export const useSendNotification = () => {
     mutationFn: sendNotification,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["notification-history"] });
-      toast.success("Notification sent successfully.");
+      toast.success(t("Notification sent successfully."));
     },
     onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to send notification.";
-      toast.error(errorMessage);
+      toast.error(translateError(error, "Failed to send notification."));
     },
   });
 };

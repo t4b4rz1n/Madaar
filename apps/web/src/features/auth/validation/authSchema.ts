@@ -1,8 +1,9 @@
+import { t } from "../../../i18n/locale";
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
+  username: z.string().min(1, { error: () => t("نام کاربری را وارد کنید") }),
+  password: z.string().min(1, { error: () => t("رمز عبور را وارد کنید") }),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
@@ -14,17 +15,17 @@ export const registerSchema = z
     username: z
       .string()
       .trim()
-      .min(3, "Username must be at least 3 characters")
-      .regex(/^[\w/-]+$/, "Use only letters, numbers, -, / or _"),
-    email: z.string().trim().email("Enter a valid email address"),
+      .min(3, { error: () => t("نام کاربری باید حداقل ۳ نویسه باشد") })
+      .regex(/^[\w/-]+$/, { error: () => t("از حروف لاتین، عدد و نشانه‌های - / _ استفاده کنید") }),
+    email: z.string().trim().email({ error: () => t("ایمیل معتبر وارد کنید") }),
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Must contain at least one uppercase letter"),
-    password_confirm: z.string().min(1, "Please confirm your password"),
+      .min(8, { error: () => t("رمز عبور باید حداقل ۸ نویسه باشد") })
+      .regex(/[A-Z]/, { error: () => t("رمز عبور باید حداقل یک حرف بزرگ لاتین داشته باشد") }),
+    password_confirm: z.string().min(1, { error: () => t("رمز عبور را دوباره وارد کنید") }),
   })
   .refine((data) => data.password === data.password_confirm, {
-    message: "Passwords do not match",
+    error: () => t("دو رمز عبور یکسان نیستند"),
     path: ["password_confirm"],
   });
 

@@ -1,184 +1,167 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" { themes: false; }
 
-/* Madaar design system — phase zero */
+/* Heledone: warm surfaces, independent brand and workflow colors. */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @plugin "daisyui/theme" {
   name: "light";
   default: true;
   color-scheme: "light";
-
-  /* Backgrounds */
-  --color-base-100: #ffffff;
-  --color-base-200: #f6f7f9;
-  --color-base-300: #e9edf2;
-  --color-base-content: #182230;
-
-  /* Brand Colors */
-  --color-primary: #0a84ff;
-  --color-primary-content: #ffffff;
-  --color-secondary: #5e6ad2;
-  --color-secondary-content: #ffffff;
-  --color-accent: #14b8a6;
-  --color-accent-content: #ffffff;
-  --color-neutral: #273142;
-  --color-neutral-content: #ffffff;
-
-  /* Functional Colors */
-  --color-info: #0a84ff;
-  --color-info-content: #ffffff;
-  --color-success: #34c759;
-  --color-success-content: #ffffff;
-  --color-warning: #ff9f0a;
-  --color-warning-content: #111111;
-  --color-error: #ff453a;
-  --color-error-content: #ffffff;
-
-  /* Shape Settings */
+  --color-base-100: #FFFFFF;
+  --color-base-200: #FFF8EE;
+  --color-base-300: #DCE6E2;
+  --color-base-content: #173C46;
+  --color-primary: #087F83;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #006D73;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #F2BA49;
+  --color-accent-content: #173C46;
+  --color-neutral: #173C46;
+  --color-neutral-content: #FFFFFF;
+  --color-info: #087F83;
+  --color-info-content: #FFFFFF;
+  --color-success: #24734D;
+  --color-success-content: #FFFFFF;
+  --color-warning: #8A5700;
+  --color-warning-content: #FFFFFF;
+  --color-error: #B3343B;
+  --color-error-content: #FFFFFF;
   --radius-selector: 0.625rem;
   --radius-field: 0.75rem;
-  --radius-box: 1rem;
+  --radius-box: 1.25rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
-/* Dark mode keeps the same hierarchy with darker surfaces, not pure black. */
+/* Dark surfaces use a separately checked palette; bright actions use dark ink. */
 @plugin "daisyui/theme" {
   name: "dark";
-  prefersdark: true;
   color-scheme: "dark";
-
-  /* Backgrounds */
-  --color-base-100: #1c2028;
-  --color-base-200: #151922;
-  --color-base-300: #0f131a;
-  --color-base-content: #f5f7fa;
-
-  /* Brand Colors */
-  --color-primary: #64b5ff;
-  --color-primary-content: #ffffff;
-  --color-secondary: #a9b0ff;
-  --color-secondary-content: #082f49;
-  --color-accent: #63d7c8;
-  --color-accent-content: #052e16;
-  --color-neutral: #0f131a;
-  --color-neutral-content: #e2e8f0;
-
-  /* Functional Colors */
-  --color-info: #64b5ff;
-  --color-info-content: #082f49;
-  --color-success: #63d483;
-  --color-success-content: #052e16;
-  --color-warning: #ffb340;
-  --color-warning-content: #111827;
-  --color-error: #ff6961;
-  --color-error-content: #450a0a;
-
-  /* Shape Settings */
+  --color-base-100: #18343B;
+  --color-base-200: #10282F;
+  --color-base-300: #3D5960;
+  --color-base-content: #FFF8EE;
+  --color-primary: #75D4CF;
+  --color-primary-content: #10282F;
+  --color-secondary: #9CDED5;
+  --color-secondary-content: #10282F;
+  --color-accent: #F2BA49;
+  --color-accent-content: #10282F;
+  --color-neutral: #10282F;
+  --color-neutral-content: #FFF8EE;
+  --color-info: #75D4CF;
+  --color-info-content: #10282F;
+  --color-success: #89D4AA;
+  --color-success-content: #10282F;
+  --color-warning: #F2C46A;
+  --color-warning-content: #10282F;
+  --color-error: #FFA4A9;
+  --color-error-content: #10282F;
   --radius-selector: 0.625rem;
   --radius-field: 0.75rem;
-  --radius-box: 1rem;
+  --radius-box: 1.25rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
-/* 🎨 CUSTOM UTILITY COLORS
-   These are specific colors found hardcoded in component files
-   (AuthLayout, Platforms, ContactCards) added here for reusability.
-*/
 @theme {
-  /* Color */
-  --color-madaar-canvas: #f6f7f9;
-  --color-madaar-surface: #ffffff;
-  --color-madaar-surface-muted: #eef1f5;
-  --color-madaar-ink: #182230;
-  --color-madaar-ink-muted: #687385;
-  --color-madaar-border: #e1e6ed;
-  --color-madaar-brand: #0a84ff;
-  --color-madaar-brand-soft: #e8f3ff;
-
-  /* Spacing — 4px base scale */
-  --spacing-madaar-1: 0.25rem;
-  --spacing-madaar-2: 0.5rem;
-  --spacing-madaar-3: 0.75rem;
-  --spacing-madaar-4: 1rem;
-  --spacing-madaar-5: 1.25rem;
-  --spacing-madaar-6: 1.5rem;
-  --spacing-madaar-8: 2rem;
-  --spacing-madaar-10: 2.5rem;
-  --spacing-madaar-12: 3rem;
-  --spacing-madaar-16: 4rem;
-
-  /* Radius */
-  --radius-madaar-sm: 0.625rem;
-  --radius-madaar-md: 0.875rem;
-  --radius-madaar-lg: 1.25rem;
-  --radius-madaar-xl: 1.5rem;
-  --radius-madaar-pill: 9999px;
-
-  /* Shadows */
-  --shadow-madaar-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px rgb(15 23 42 / 0.04);
-  --shadow-madaar-raised: 0 8px 28px rgb(15 23 42 / 0.08);
-  --shadow-madaar-floating: 0 16px 48px rgb(15 23 42 / 0.14);
-
-  /* Typography */
-  --font-madaar-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
-
-  /* Social Media Brand Colors (found in platforms.tsx) */
-  --color-telegram-bg: #d6eef9;
-  --color-telegram-text: #34aadf;
-
-  --color-whatsapp-bg: #e9fbf0;
-  --color-whatsapp-text: #00d95f;
-  --color-whatsapp-badge: #00d95f33;
-
-  --color-instagram-bg: #e4405f33;
-  --color-instagram-text: #e4405f;
-
-  --color-eitaa-bg: #fae4cc;
-  --color-eitaa-text: #e77600;
-
-  --color-rubika-bg: #f1e9f2;
-  --color-rubika-text: #4d3884;
-
-  /* Specific UI Elements */
-  --color-border-subtle: #e2e2e2;
-
-  /* Auth Page Gradients (found in AuthLayout.tsx) */
-  --color-auth-grad-1-start: #dff6ff;
-  --color-auth-grad-1-end: #f0fbff;
-  --color-auth-grad-2-start: #eaf7ff;
-  --color-auth-grad-2-end: #f7fbff;
+  --color-heledone-canvas: #FFF8EE;
+  --color-heledone-surface: #FFFFFF;
+  --color-heledone-surface-muted: #F3F5EF;
+  --color-heledone-ink: #173C46;
+  --color-heledone-ink-muted: #52666C;
+  --color-heledone-border: #DCE6E2;
+  --color-heledone-brand: #087F83;
+  --color-heledone-brand-soft: #EAF5F2;
+  --color-heledone-coral: #DF765B;
+  --color-heledone-sun: #F2BA49;
+  --color-heledone-todo: #52666C;
+  --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+  --font-heledone-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.7;
+  --text-sm: 0.90625rem;
+  --text-sm--line-height: 1.7;
+  --text-base--line-height: 1.75;
+  --leading-tight: 1.6;
+  --leading-snug: 1.6;
+  --leading-normal: 1.75;
+  --leading-relaxed: 1.75;
+  --tracking-tight: 0em;
+  --tracking-wide: 0em;
+  --tracking-wider: 0em;
+  --tracking-widest: 0em;
+  --spacing-heledone-1: 0.25rem;
+  --spacing-heledone-2: 0.5rem;
+  --spacing-heledone-3: 0.75rem;
+  --spacing-heledone-4: 1rem;
+  --spacing-heledone-5: 1.25rem;
+  --spacing-heledone-6: 1.5rem;
+  --spacing-heledone-8: 2rem;
+  --spacing-heledone-10: 2.5rem;
+  --spacing-heledone-12: 3rem;
+  --spacing-heledone-16: 4rem;
+  --radius-heledone-sm: 0.625rem;
+  --radius-heledone-md: 0.875rem;
+  --radius-heledone-lg: 1.25rem;
+  --radius-heledone-xl: 1.5rem;
+  --radius-heledone-pill: 9999px;
+  --shadow-heledone-card: 0 2px 3px rgb(23 60 70 / 0.025), 0 6px 20px rgb(23 60 70 / 0.035);
+  --shadow-heledone-raised: 0 8px 28px rgb(23 60 70 / 0.08);
+  --shadow-heledone-floating: 0 16px 48px rgb(23 60 70 / 0.16);
 }
 
-/* Runtime tokens for components and motion */
 :root {
-  --madaar-font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
-  --madaar-duration-fast: 120ms;
-  --madaar-duration-standard: 180ms;
-  --madaar-duration-slow: 280ms;
-  --madaar-ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --madaar-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
-  --madaar-focus-ring: 0 0 0 3px rgb(10 132 255 / 0.28);
-  --madaar-sidebar-width: 14.5rem;
-  --madaar-sidebar-collapsed-width: 4.25rem;
+  --heledone-font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+  --heledone-duration-fast: 120ms;
+  --heledone-duration-standard: 180ms;
+  --heledone-duration-slow: 280ms;
+  --heledone-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --heledone-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  --heledone-focus-ring: 0 0 0 3px #087F83;
+  --heledone-sidebar-width: 15.5rem;
+  --heledone-sidebar-collapsed-width: 4.5rem;
+  --heledone-primary-hover: #006D73;
+  --heledone-primary-ink: #005B60;
+  --heledone-secondary-ink: #005B60;
+  --heledone-success-ink: #1C603F;
+  --heledone-warning-ink: #744800;
+  --heledone-error-ink: #982B31;
+  --heledone-control-border: #778C8F;
 }
 
 [data-theme="dark"] {
-  --color-madaar-canvas: #151922;
-  --color-madaar-surface: #1c2028;
-  --color-madaar-surface-muted: #252b35;
-  --color-madaar-ink: #f5f7fa;
-  --color-madaar-ink-muted: #a5adba;
-  --color-madaar-border: #343b47;
-  --color-madaar-brand: #64b5ff;
-  --color-madaar-brand-soft: #1d3850;
-  --madaar-focus-ring: 0 0 0 3px rgb(100 181 255 / 0.34);
+  --color-heledone-canvas: #10282F;
+  --color-heledone-surface: #18343B;
+  --color-heledone-surface-muted: #203F45;
+  --color-heledone-ink: #FFF8EE;
+  --color-heledone-ink-muted: #B2C5C5;
+  --color-heledone-border: #3D5960;
+  --color-heledone-brand: #75D4CF;
+  --color-heledone-brand-soft: #20474A;
+  --color-heledone-todo: #B2C5C5;
+  --heledone-focus-ring: 0 0 0 3px #75D4CF;
+  --heledone-primary-hover: #9CDED5;
+  --heledone-primary-ink: #75D4CF;
+  --heledone-secondary-ink: #9CDED5;
+  --heledone-success-ink: #89D4AA;
+  --heledone-warning-ink: #F2C46A;
+  --heledone-error-ink: #FFA4A9;
+  --heledone-control-border: #90A8AC;
 }
 
 select option {
@@ -197,7 +180,7 @@ select option:active {
 *,
 *::after,
 *::before {
-  font-family: var(--madaar-font-sans);
+  font-family: var(--heledone-font-sans);
 }
 
 html,
@@ -213,8 +196,11 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-madaar-canvas);
-  color: var(--color-madaar-ink);
+  background: var(--color-heledone-canvas);
+  color: var(--color-heledone-ink);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.75;
   text-rendering: optimizeLegibility;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
@@ -225,104 +211,103 @@ body {
   background: color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
-/* ─── Global Focus State System ─── */
-:focus {
-  outline: none;
-}
-
+/* Keep a visible focus indicator for keyboard navigation. */
 :focus-visible {
-  outline: none;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
-/* Form controls (inputs, textareas, selects) */
-input,
-textarea,
-select,
-.input,
-.textarea,
-.select {
-  font: inherit;
-  transition: border-color var(--madaar-duration-fast) var(--madaar-ease-standard),
-              box-shadow var(--madaar-duration-fast) var(--madaar-ease-standard);
+input, textarea, select, .input, .textarea, .select {
+  font-family: inherit;
+  border-color: var(--heledone-control-border);
+  transition: border-color var(--heledone-duration-fast), box-shadow var(--heledone-duration-fast);
 }
 
-/* Auto Direction Detection (Persian -> Right / RTL, English -> Left / LTR) */
-input[type="text"],
-input[type="search"],
-input:not([type]),
-textarea,
-.input,
-.textarea {
-  unicode-bidi: plaintext;
+:where(h1, h2, h3, h4, h5, h6, p, label, legend, th, td) {
   text-align: start;
 }
 
-input:focus,
-textarea:focus,
-select:focus,
-.input:focus,
-.textarea:focus,
-.select:focus,
-.input:focus-within,
-.textarea:focus-within,
-.select:focus-within {
-  outline: none !important;
-  outline-offset: 0 !important;
-  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent) !important;
+:where(h1, h2, h3, h4, h5, h6) { align-self: stretch; }
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]), textarea, select {
+  direction: inherit;
+  unicode-bidi: isolate;
+  text-align: start;
 }
 
-/* Frameless inputs (e.g. title inputs with bg-transparent or outline-none) */
-input.bg-transparent:focus,
-textarea.bg-transparent:focus,
-input.outline-none:focus,
-textarea.outline-none:focus {
-  border-color: transparent !important;
-  box-shadow: none !important;
+input::placeholder, textarea::placeholder { text-align: inherit; }
+
+html[data-focus-modality="keyboard"] :is(.input, .textarea, .select):focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
-/* Interactive elements (buttons, links) */
-button:focus-visible,
-a:focus-visible,
-[role="button"]:focus-visible {
+/* Override DaisyUI outlines and Tailwind focus rings without removing field borders or normal shadows. */
+html[data-focus-modality="pointer"] :is(input, textarea, select, [contenteditable]:not([contenteditable="false"])):focus,
+html[data-focus-modality="pointer"] :is(.input, .textarea, .select, [class*="focus-within:outline"], [class*="focus-within:ring-"]):focus-within,
+html[data-focus-modality="pointer"] :is([class*="focus:ring-"], [class*="focus-visible:ring-"]):focus {
   outline: none !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 28%, transparent) !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-inset-ring-shadow: 0 0 #0000 !important;
 }
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-heledone-ink-muted);
+  opacity: 1;
+}
+
+.btn-primary:hover, button.bg-primary:hover, a.bg-primary:hover {
+  background-color: var(--heledone-primary-hover);
+  border-color: var(--heledone-primary-hover);
+}
+
+button:disabled, .btn:disabled {
+  background: var(--color-heledone-surface-muted);
+  color: var(--color-heledone-ink-muted);
+  border-color: var(--color-heledone-border);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+table { font-size: 0.90625rem; font-variant-numeric: tabular-nums; }
+th { color: var(--color-heledone-ink-muted); font-weight: 600; }
+td { line-height: 1.7; }
+h1, h2, h3 { line-height: 1.6; overflow-wrap: anywhere; }
 
 /* Opt-in motion prevents global transitions from fighting drag, scroll and focus. */
 .motion-interactive {
   touch-action: manipulation;
   transition:
-    color var(--madaar-duration-fast) var(--madaar-ease-standard),
-    background-color var(--madaar-duration-fast) var(--madaar-ease-standard),
-    border-color var(--madaar-duration-fast) var(--madaar-ease-standard),
-    box-shadow var(--madaar-duration-standard) var(--madaar-ease-standard),
-    transform var(--madaar-duration-standard) var(--madaar-ease-emphasized);
+    color var(--heledone-duration-fast) var(--heledone-ease-standard),
+    background-color var(--heledone-duration-fast) var(--heledone-ease-standard),
+    border-color var(--heledone-duration-fast) var(--heledone-ease-standard),
+    box-shadow var(--heledone-duration-standard) var(--heledone-ease-standard),
+    transform var(--heledone-duration-standard) var(--heledone-ease-emphasized);
 }
 
 .motion-interactive:active {
   transform: scale(0.985);
-  transition-duration: var(--madaar-duration-fast);
+  transition-duration: var(--heledone-duration-fast);
 }
 
 .motion-surface {
   transition:
-    background-color var(--madaar-duration-standard) var(--madaar-ease-standard),
-    border-color var(--madaar-duration-standard) var(--madaar-ease-standard),
-    box-shadow var(--madaar-duration-standard) var(--madaar-ease-standard);
+    background-color var(--heledone-duration-standard) var(--heledone-ease-standard),
+    border-color var(--heledone-duration-standard) var(--heledone-ease-standard),
+    box-shadow var(--heledone-duration-standard) var(--heledone-ease-standard);
 }
 
-.madaar-surface {
-  background: var(--color-madaar-surface);
-  border: 1px solid var(--color-madaar-border);
-  border-radius: var(--radius-madaar-lg);
-  box-shadow: var(--shadow-madaar-card);
-  contain: layout paint;
+.heledone-surface {
+  background: var(--color-heledone-surface);
+  border: 1px solid var(--color-heledone-border);
+  border-radius: var(--radius-heledone-lg);
+  box-shadow: var(--shadow-heledone-card);
 }
 
-.madaar-glass {
-  background: color-mix(in srgb, var(--color-madaar-surface) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-madaar-border) 76%, transparent);
+.heledone-glass {
+  background: color-mix(in srgb, var(--color-heledone-surface) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-heledone-border) 76%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
 }
@@ -344,8 +329,8 @@ a:focus-visible,
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .madaar-glass {
-    background: var(--color-madaar-surface);
+  .heledone-glass {
+    background: var(--color-heledone-surface);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -353,8 +338,8 @@ a:focus-visible,
 
 @media (prefers-contrast: more) {
 
-  .madaar-glass,
-  .madaar-surface {
+  .heledone-glass,
+  .heledone-surface {
     border-color: var(--color-base-content);
   }
 }
@@ -376,4 +361,173 @@ a:focus-visible,
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--color-base-content) 28%, transparent);
+}
+
+/* Brand motifs: three beats, a dot-and-line rhythm, and a soft lattice frame. */
+.heledone-brand { display: inline-flex; align-items: center; gap: 0.7rem; }
+.heledone-brand-name { font-size: 1.5rem; font-weight: 850; line-height: 1.5; color: var(--color-heledone-ink); }
+.heledone-brand-latin { font-size: 0.8125rem; color: var(--color-heledone-ink-muted); letter-spacing: 0.035em; }
+.heledone-beats { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.heledone-beats > span { width: 9px; border-radius: 8px; background: #087F83; height: 22px; transform: rotate(-18deg); }
+.heledone-beats > span:nth-child(2) { height: 32px; background: #DF765B; }
+.heledone-beats > span:nth-child(3) { height: 18px; background: #F2BA49; }
+.heledone-rhythm { background-image: url('/images/heledone-rhythm.svg'); background-repeat: repeat-x; background-size: 96px 12px; height: 12px; }
+.heledone-lattice { background-image: url('/images/heledone-lattice.svg'); background-size: 96px 96px; }
+.heledone-sidebar { border-inline-end: 1px solid var(--color-heledone-border); box-shadow: 4px 0 24px rgb(23 60 70 / 0.025); }
+.heledone-welcome { border: 1px solid var(--color-heledone-border); border-inline-start: 4px solid #DF765B; border-radius: 1.25rem; background: var(--color-heledone-surface); padding: 1rem 1.25rem; }
+.heledone-wave { width: 100%; height: 28px; display: block; color: var(--color-heledone-brand); }
+
+/* Tinted status/brand surfaces need darker label ink than solid action fills. */
+.text-primary { color: var(--heledone-primary-ink); }
+.text-secondary { color: var(--heledone-secondary-ink); }
+.text-success { color: var(--heledone-success-ink); }
+.text-warning { color: var(--heledone-warning-ink); }
+.text-error { color: var(--heledone-error-ink); }
+
+/* Feedback follows the same surface/status separation as the working UI. */
+:root [data-sonner-toaster][data-sonner-theme] {
+  --normal-bg: var(--color-heledone-surface);
+  --normal-border: var(--color-heledone-border);
+  --normal-text: var(--color-heledone-ink);
+  --success-bg: color-mix(in srgb, var(--color-success) 10%, var(--color-heledone-surface));
+  --success-border: color-mix(in srgb, var(--color-success) 25%, var(--color-heledone-border));
+  --success-text: var(--heledone-success-ink);
+  --info-bg: color-mix(in srgb, var(--color-primary) 10%, var(--color-heledone-surface));
+  --info-border: color-mix(in srgb, var(--color-primary) 25%, var(--color-heledone-border));
+  --info-text: var(--heledone-primary-ink);
+  --warning-bg: color-mix(in srgb, var(--color-warning) 10%, var(--color-heledone-surface));
+  --warning-border: color-mix(in srgb, var(--color-warning) 25%, var(--color-heledone-border));
+  --warning-text: var(--heledone-warning-ink);
+  --error-bg: color-mix(in srgb, var(--color-error) 10%, var(--color-heledone-surface));
+  --error-border: color-mix(in srgb, var(--color-error) 25%, var(--color-heledone-border));
+  --error-text: var(--heledone-error-ink);
+}
+
+/* Shared workspace composition: warm canvas, quiet white cards, brand in headings. */
+.heledone-topbar {
+  background: var(--color-heledone-canvas);
+  border-bottom: 1px solid var(--color-heledone-border);
+}
+.heledone-global-search {
+  background: color-mix(in srgb, var(--color-heledone-ink-muted) 7%, var(--color-heledone-surface));
+  border: 1px solid transparent;
+  max-width: 46rem;
+}
+.heledone-global-search:hover { border-color: var(--color-primary); }
+.heledone-topbar nav { margin-inline-end: 1rem; }
+.heledone-sidebar { background: var(--color-heledone-canvas); }
+.heledone-sidebar {
+  visibility: hidden;
+  transform: translateX(-100%);
+  transition: transform 300ms ease, visibility 300ms;
+}
+[dir="rtl"] .heledone-sidebar { transform: translateX(100%); }
+.heledone-sidebar[data-open="true"] { visibility: visible; transform: translateX(0); }
+@media (min-width: 1024px) {
+  .heledone-sidebar, [dir="rtl"] .heledone-sidebar {
+    position: relative;
+    visibility: visible;
+    transform: none;
+  }
+}
+.heledone-sidebar nav a { min-height: 3rem; }
+.heledone-sidebar a[aria-current="page"] {
+  background: var(--color-heledone-brand-soft);
+  color: var(--heledone-primary-ink);
+}
+.heledone-page { scroll-padding-top: 1.5rem; }
+.heledone-page > :not(.heledone-task-workspace) { max-width: 1480px; margin-inline: auto; }
+.heledone-page-heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  min-height: 110px;
+  border: 1px solid var(--color-heledone-border);
+  border-radius: 1rem;
+  background: var(--color-heledone-surface);
+  box-shadow: var(--shadow-heledone-card);
+  padding: 1.25rem 1.5rem;
+  isolation: isolate;
+  z-index: 10;
+}
+.heledone-page-heading::before {
+  content: '';
+  position: absolute;
+  inset-block: 1rem;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 6px;
+  background: linear-gradient(#DF765B 0 33%, #F2BA49 33% 66%, #087F83 66%);
+}
+.heledone-page-heading h1 { font-size: clamp(1.5rem, 2vw, 1.875rem); font-weight: 800; line-height: 1.6; overflow-wrap: anywhere; }
+.heledone-page-heading p { font-size: 0.90625rem; line-height: 1.75; }
+.heledone-heading-beats { transform: scale(0.7); transform-origin: center; }
+.heledone-page-heading-illustrated { min-height: 135px; }
+.heledone-heading-art {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 34%;
+  height: 100%;
+  object-fit: cover;
+  border-start-end-radius: 1rem;
+  border-end-end-radius: 1rem;
+  opacity: 0.75;
+  mask-image: linear-gradient(to right, transparent, black 45%);
+  z-index: -1;
+}
+[dir="rtl"] .heledone-heading-art { mask-image: linear-gradient(to left, transparent, black 45%); }
+.heledone-page-heading-illustrated > div:first-child { max-width: 70%; }
+.heledone-heading-actions { min-width: 0; }
+.heledone-page-heading .heledone-heading-actions > label { flex: 1 1 12rem; }
+.heledone-page-content > :not(.heledone-page-heading) { min-width: 0; }
+.heledone-workspace :where(.btn) { box-shadow: none; font-weight: 700; border-radius: 0.75rem; }
+.heledone-workspace :where(.btn-primary) { box-shadow: 0 3px 8px rgb(8 127 131 / 0.13); }
+.heledone-workspace :where(.btn-primary:hover:not(:disabled)) { background: var(--heledone-primary-hover); }
+.heledone-page :where(section, article, div)[class*="bg-base-100"][class*="rounded"]:not([class*="absolute"]):not([class*="border-error"]):not([class*="border-success"]):not(.heledone-page-heading) {
+  border-color: var(--color-heledone-border);
+}
+.heledone-page :where(section, article)[class*="bg-base-100"][class*="rounded"] { box-shadow: var(--shadow-heledone-card); }
+.heledone-project-card { box-shadow: var(--shadow-heledone-card); }
+.heledone-project-card:hover { box-shadow: var(--shadow-heledone-raised); }
+.heledone-project-card:focus-within { z-index: 20; }
+.heledone-workspace :where(table) { background: var(--color-heledone-surface); font-size: 0.90625rem; }
+.heledone-workspace :where(thead) { background: var(--color-heledone-brand-soft); color: var(--color-heledone-ink); }
+.heledone-workspace :where(th) { font-weight: 750; font-size: 0.875rem; padding-block: 1rem; }
+.heledone-workspace :where(td) { border-color: var(--color-heledone-border); padding-block: 1rem; }
+.heledone-workspace :where(tbody tr:hover) { background: color-mix(in srgb, var(--color-heledone-brand-soft) 65%, var(--color-heledone-surface)); }
+.heledone-workspace :where(.modal-box) {
+  border: 1px solid var(--color-heledone-border);
+  background: var(--color-heledone-surface);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-heledone-floating);
+}
+.heledone-workspace :where(.input, .select, .textarea) { background: var(--color-heledone-surface); border-radius: 0.75rem; }
+.heledone-workspace :where(.badge) { border-radius: 999px; }
+.heledone-task-toolbar { border-inline-start: 3px solid var(--color-primary); }
+.heledone-kanban-column {
+  padding: 0.875rem 0.625rem;
+  border: 1px solid var(--color-heledone-border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--color-heledone-brand-soft) 55%, var(--color-heledone-canvas));
+}
+.heledone-kanban-column-done { border-top: 3px solid var(--color-success); }
+.heledone-attendance > div > div:has(> button) { border-radius: 1rem; }
+@media (max-width: 640px) {
+  .heledone-topbar { gap: 0.5rem; }
+  .heledone-global-search { padding: 0.6rem 0.75rem; font-size: 0.8125rem; }
+  .heledone-page-heading { padding: 1rem; min-height: 100px; gap: 1rem; align-items: stretch; }
+  .heledone-page-heading > div { width: 100%; min-width: 0; }
+  .heledone-page-heading-illustrated > div:first-child { max-width: 100%; }
+  .heledone-heading-art { width: 45%; opacity: 0.14; }
+  .heledone-page-heading .heledone-heading-actions { gap: 0.5rem; }
+  .heledone-page-heading .heledone-heading-actions > label { flex-basis: 100%; }
+  .heledone-task-toolbar > div:first-child { flex-basis: 100%; }
+}
+@media (prefers-contrast: more) {
+  .heledone-page-heading, .heledone-global-search { border-color: var(--color-heledone-ink); }
+  .heledone-heading-art { display: none; }
 }

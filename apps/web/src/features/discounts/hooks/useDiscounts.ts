@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/locale";
 import {
   useMutation,
   useQuery,
@@ -32,11 +33,11 @@ export const useCreateDiscount = () => {
   return useMutation({
     mutationFn: (data: DiscountFormData) => createDiscount(data),
     onSuccess: () => {
-      toast.success("Discount created successfully");
+      toast.success(t("Discount created successfully"));
       void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, "Failed to create discount"));
+      toast.error(getErrorMessage(error, t("Failed to create discount")));
     },
   });
 };
@@ -48,11 +49,11 @@ export const useUpdateDiscount = () => {
     mutationFn: ({ id, data }: { id: string; data: DiscountFormData }) =>
       updateDiscount(id, data),
     onSuccess: () => {
-      toast.success("Discount updated successfully");
+      toast.success(t("Discount updated successfully"));
       void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, "Failed to update discount"));
+      toast.error(getErrorMessage(error, t("Failed to update discount")));
     },
   });
 };
@@ -63,11 +64,11 @@ export const useDeleteDiscount = () => {
   return useMutation({
     mutationFn: (id: string) => deleteDiscount(id),
     onSuccess: () => {
-      toast.success("Discount deleted successfully");
+      toast.success(t("Discount deleted successfully"));
       void queryClient.invalidateQueries({ queryKey: ["discounts"] });
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, "Failed to delete discount"));
+      toast.error(getErrorMessage(error, t("Failed to delete discount")));
     },
   });
 };

@@ -1,5 +1,7 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { useTranslation } from "../../../i18n/locale";
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -51,6 +53,7 @@ export const SendNotificationModal = ({
   isOpen,
   onClose,
 }: SendNotificationModalProps) => {
+  const t = useTranslation();
   const {
     control,
     handleSubmit,
@@ -114,19 +117,18 @@ export const SendNotificationModal = ({
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-base-content">
-                      Send New Notification
-                    </h3>
-                    <p className="text-base-content/60 text-sm mt-0.5">
-                      Broadcast a message to users
-                    </p>
+                      {t("Send New Notification")}</h3>
+                    <p className="text-heledone-ink-muted text-sm mt-0.5">
+                      {t("Broadcast a message to users")}</p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
+                  aria-label={t("Close notification")}
                   className="p-2 hover:bg-base-content/5 rounded-lg transition-colors"
                   disabled={isLoading}
                 >
-                  <CloseCircle size={22} className="text-base-content/60" />
+                  <CloseCircle size={22} className="text-heledone-ink-muted" />
                 </button>
               </div>
             </div>
@@ -143,9 +145,8 @@ export const SendNotificationModal = ({
                       </div>
                       <div>
                         <span className="text-sm font-semibold text-base-content">
-                          Message
-                        </span>
-                        <span className="text-error ml-1">*</span>
+                          {t("Message")}</span>
+                        <span className="text-error ms-1">*</span>
                       </div>
                     </div>
                   </label>
@@ -157,13 +158,13 @@ export const SendNotificationModal = ({
                       <div className="relative">
                         <textarea
                           {...field}
-                          placeholder="Write an engaging notification message..."
+                          placeholder={t("Write an engaging notification message...")}
                           className={`textarea w-full h-32 resize-none rounded-xl text-sm transition-all duration-200 bg-base-100 focus:outline-none ${
                             errors.text
                               ? "border-2 border-error focus:border-error"
                               : "border border-base-content/20 focus:border-primary focus:ring-2 focus:ring-primary/10"
                           }`}
-                          maxLength={500}
+                          maxLength={255}
                         />
                         <div className="flex items-center justify-between mt-2">
                           {errors.text ? (
@@ -176,18 +177,17 @@ export const SendNotificationModal = ({
                               {errors.text.message}
                             </motion.span>
                           ) : (
-                            <span className="text-xs text-base-content/50">
-                              Write a clear and concise message
-                            </span>
+                            <span className="text-xs text-heledone-ink-muted">
+                              {t("Write a clear and concise message")}</span>
                           )}
                           <span
                             className={`text-xs ${
-                              (textValue?.length || 0) > 450
+                              (textValue?.length || 0) > 230
                                 ? "text-warning"
-                                : "text-base-content/50"
+                                : "text-heledone-ink-muted"
                             }`}
                           >
-                            {textValue?.length || 0}/500
+                            {formatUiNumber(textValue?.length || 0)}/{formatUiNumber(255)}
                           </span>
                         </div>
                       </div>
@@ -204,11 +204,9 @@ export const SendNotificationModal = ({
                       </div>
                       <div>
                         <span className="text-sm font-semibold text-base-content">
-                          Link
-                        </span>
-                        <span className="text-base-content/50 text-xs ml-2">
-                          (Optional)
-                        </span>
+                          {t("Link")}</span>
+                        <span className="text-heledone-ink-muted text-xs ms-2">
+                          {t("(Optional)")}</span>
                       </div>
                     </div>
                   </label>
@@ -238,9 +236,8 @@ export const SendNotificationModal = ({
                             {errors.link.message}
                           </motion.span>
                         ) : (
-                          <span className="text-xs text-base-content/50 mt-2 block">
-                            Add a URL for users to visit (optional)
-                          </span>
+                          <span className="text-xs text-heledone-ink-muted mt-2 block">
+                            {t("Add a URL for users to visit (optional)")}</span>
                         )}
                       </div>
                     )}
@@ -255,13 +252,9 @@ export const SendNotificationModal = ({
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-semibold text-base-content mb-1">
-                        Broadcast Notification
-                      </h4>
+                        {t("Broadcast Notification")}</h4>
                       <p className="text-xs text-base-content/70 leading-relaxed">
-                        This notification will be sent to all users. Make sure
-                        your message is clear and the link (if provided) is
-                        correct.
-                      </p>
+                        {t("This notification will be sent to all users. Make sure your message is clear and the link (if provided) is correct.")}</p>
                     </div>
                   </div>
                 </div>
@@ -270,17 +263,15 @@ export const SendNotificationModal = ({
 
             {/* Footer */}
             <div className="px-6 py-4 border-t border-base-content/10 bg-base-200/30">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-sm">
                   {isValid ? (
                     <span className="flex items-center gap-2 text-success font-medium">
                       <TickCircle className="w-4 h-4" />
-                      Ready to send
-                    </span>
+                      {t("Ready to send")}</span>
                   ) : (
-                    <span className="text-base-content/60">
-                      Fill in the required fields
-                    </span>
+                    <span className="text-heledone-ink-muted">
+                      {t("Fill in the required fields")}</span>
                   )}
                 </div>
                 <div className="flex gap-3">
@@ -290,8 +281,7 @@ export const SendNotificationModal = ({
                     className="btn btn-ghost rounded-xl px-5"
                     disabled={isLoading}
                   >
-                    Cancel
-                  </button>
+                    {t("انصراف")}</button>
                   <button
                     type="submit"
                     onClick={onSubmit}
@@ -301,13 +291,11 @@ export const SendNotificationModal = ({
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <span className="loading loading-spinner loading-sm"></span>
-                        Sending...
-                      </span>
+                        {t("Sending...")}</span>
                     ) : (
                       <span className="flex items-center gap-2">
                         <Send className="w-4 h-4" />
-                        Send Notification
-                      </span>
+                        {t("Send Notification")}</span>
                     )}
                   </button>
                 </div>

@@ -1,3 +1,5 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getIntlLocale, t as translate, useTranslation } from "../../../i18n/locale";
 import {
   ArrowLeft2,
   ArrowRight2,
@@ -10,7 +12,7 @@ import {
   SearchZoomIn,
   SearchZoomOut,
 } from "iconsax-reactjs";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   useEffect,
   useMemo,
@@ -84,7 +86,7 @@ const statusClasses: Record<Project["status"], string> = {
     "bg-warning/20 text-warning border border-warning/30 backdrop-blur-sm",
   completed: "bg-info/20 text-info border border-info/30 backdrop-blur-sm",
   archived:
-    "bg-base-content/10 text-base-content/60 border border-base-content/15",
+    "bg-base-content/10 text-heledone-ink-muted border border-base-content/15",
 };
 
 const overflowStatusClasses: Record<
@@ -118,9 +120,9 @@ const overflowStatusClasses: Record<
   archived: {
     ring: "border-base-content/35",
     button:
-      "border-base-content/25 bg-base-content/8 text-base-content/60 hover:border-base-content/45 hover:bg-base-content/12",
+      "border-base-content/25 bg-base-content/8 text-heledone-ink-muted hover:border-base-content/45 hover:bg-base-content/12",
     chip:
-      "border-base-content/30 bg-base-content/8 text-base-content/60",
+      "border-base-content/30 bg-base-content/8 text-heledone-ink-muted",
   },
 };
 
@@ -154,14 +156,14 @@ const sunStyles: Record<
   },
   archived: {
     surface:
-      "border-base-content/15 bg-base-200/50 text-base-content/55 backdrop-blur-md",
+      "border-base-content/15 bg-base-200/50 text-heledone-ink-muted backdrop-blur-md",
     glow: "bg-base-content/8 shadow-[0_0_35px_color-mix(in_srgb,var(--color-base-content)_12%,transparent)]",
     inner: "border-base-content/10 bg-base-100/30",
   },
 };
 
 const milestoneStatusClasses: Record<Milestone["status"], string> = {
-  pending: "bg-base-300 text-base-content/60",
+  pending: "bg-base-300 text-heledone-ink-muted",
   in_progress: "bg-info/15 text-info",
   completed: "bg-success/15 text-success",
   cancelled: "bg-error/15 text-error",
@@ -171,11 +173,11 @@ const statusLegendItems: Array<{
   status: Project["status"];
   label: string;
 }> = [
-  { status: "draft", label: "Draft" },
-  { status: "active", label: "Active" },
-  { status: "on_hold", label: "On hold" },
-  { status: "completed", label: "Completed" },
-  { status: "archived", label: "Archived" },
+  { status: "draft", get label() { return translate("Draft"); } },
+  { status: "active", get label() { return translate("فعال"); } },
+  { status: "on_hold", get label() { return translate("On hold"); } },
+  { status: "completed", get label() { return translate("Completed"); } },
+  { status: "archived", get label() { return translate("Archived"); } },
 ];
 
 const clampZoom = (value: number) =>
@@ -207,10 +209,10 @@ const getInitials = (name: string) =>
     .join("") || "M";
 
 const formatDeadline = (deadline?: string | null) => {
-  if (!deadline) return "No deadline";
+  if (!deadline) return translate("No deadline");
   const date = new Date(deadline);
-  if (Number.isNaN(date.getTime())) return "No deadline";
-  return new Intl.DateTimeFormat(undefined, {
+  if (Number.isNaN(date.getTime())) return translate("No deadline");
+  return new Intl.DateTimeFormat(getIntlLocale(), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -227,6 +229,7 @@ function OrbitControls({
   onRotateLeft,
   onRotateRight,
 }: OrbitControlsProps) {
+  const t = useTranslation();
   const buttonClassName =
     "grid size-9 shrink-0 place-items-center rounded-lg text-base-content/70 transition duration-150 hover:bg-base-200 hover:text-base-content active:scale-95";
 
@@ -237,11 +240,11 @@ function OrbitControls({
         onClick={onTogglePlaying}
         className={
           showPlayLabel
-            ? "inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold text-base-content/70 transition duration-150 hover:bg-base-200 hover:text-base-content active:scale-95"
+            ? "inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-bold text-base-content/70 transition duration-150 hover:bg-base-200 hover:text-base-content active:scale-95"
             : buttonClassName
         }
         aria-label={
-          isPlaying ? "Pause orbit animation" : "Play orbit animation"
+          isPlaying ? t("Pause orbit animation") : t("Play orbit animation")
         }
       >
         {isPlaying ? (
@@ -249,13 +252,13 @@ function OrbitControls({
         ) : (
           <Play size={15} variant="Bold" />
         )}
-        {showPlayLabel && <span>{isPlaying ? "Pause" : "Play"}</span>}
+        {showPlayLabel && <span>{isPlaying ? t("Pause") : t("Play")}</span>}
       </button>
       <button
         type="button"
         onClick={onZoomOut}
         className={buttonClassName}
-        aria-label="Zoom out"
+        aria-label={t("Zoom out")}
       >
         <SearchZoomOut size={16} />
       </button>
@@ -263,7 +266,7 @@ function OrbitControls({
         type="button"
         onClick={onZoomIn}
         className={buttonClassName}
-        aria-label="Zoom in"
+        aria-label={t("Zoom in")}
       >
         <SearchZoomIn size={16} />
       </button>
@@ -271,7 +274,7 @@ function OrbitControls({
         type="button"
         onClick={onReset}
         className={buttonClassName}
-        aria-label="Reset orbit view"
+        aria-label={t("Reset orbit view")}
       >
         <Refresh2 size={16} />
       </button>
@@ -280,7 +283,7 @@ function OrbitControls({
           type="button"
           onClick={onRotateLeft}
           className={buttonClassName}
-          aria-label="Rotate orbit left"
+          aria-label={t("Rotate orbit left")}
         >
           <ArrowLeft2 size={15} />
         </button>
@@ -288,7 +291,7 @@ function OrbitControls({
           type="button"
           onClick={onRotateRight}
           className={buttonClassName}
-          aria-label="Rotate orbit right"
+          aria-label={t("Rotate orbit right")}
         >
           <ArrowRight2 size={15} />
         </button>
@@ -304,6 +307,7 @@ function MemberDetails({
   member: ProjectMember;
   onClose: () => void;
 }) {
+  const t = useTranslation();
   const name = getMemberName(member);
   const role =
     (member as ProjectMember & { role?: string }).role?.trim() || "Team Member";
@@ -319,12 +323,12 @@ function MemberDetails({
   );
 
   return (
-    <div className="relative p-5" dir="auto">
+    <div className="relative p-5" >
       <button
         type="button"
         onClick={onClose}
-        className="absolute end-3 top-3 grid size-9 place-items-center rounded-xl text-base-content/45 transition hover:bg-base-200 hover:text-base-content"
-        aria-label="Close member details"
+        className="absolute end-3 top-3 grid size-9 place-items-center rounded-xl text-heledone-ink-muted transition hover:bg-base-200 hover:text-base-content"
+        aria-label={t("Close member details")}
       >
         <CloseCircle size={19} />
       </button>
@@ -343,11 +347,11 @@ function MemberDetails({
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-base-content">{name}</p>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex rounded-full bg-secondary/12 px-2 py-0.5 text-[10px] font-bold text-secondary">
+            <span className="inline-flex rounded-full bg-secondary/12 px-2 py-0.5 text-[13px] font-bold text-secondary">
               {role}
             </span>
             {member.specialty?.trim() && (
-              <span className="inline-flex rounded-full border border-base-content/10 bg-base-200/70 px-2 py-0.5 text-[10px] font-semibold text-base-content/60">
+              <span className="inline-flex rounded-full border border-base-content/10 bg-base-200/70 px-2 py-0.5 text-[13px] font-semibold text-heledone-ink-muted">
                 {member.specialty}
               </span>
             )}
@@ -357,10 +361,9 @@ function MemberDetails({
       <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
         <div className="rounded-xl bg-base-200/65 p-3 sm:col-span-2">
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-[10px] font-semibold text-base-content/45">
-              Allocation
-            </dt>
-            <dd className="font-bold text-base-content">{allocation}%</dd>
+            <dt className="text-[13px] font-semibold text-heledone-ink-muted">
+              {t("Allocation")}</dt>
+            <dd className="font-bold text-base-content">{formatUiNumber(allocation)}%</dd>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-base-300">
             <div
@@ -370,36 +373,33 @@ function MemberDetails({
           </div>
         </div>
         <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">
-            Team
-          </dt>
+          <dt className="text-[13px] font-semibold text-heledone-ink-muted">
+            {t("تیم")}</dt>
           <dd className="mt-1 truncate font-bold text-base-content">
-            {member.team?.name || "Independent"}
+            {member.team?.name || t("Independent")}
           </dd>
         </div>
         <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">
-            Status
-          </dt>
+          <dt className="text-[13px] font-semibold text-heledone-ink-muted">
+            {t("وضعیت")}</dt>
           <dd className="mt-1 flex items-center gap-1.5 font-bold text-base-content">
             <span
               className={`size-2 rounded-full ${member.is_active ? "bg-success" : "bg-base-content/25"}`}
             />
-            {member.is_active ? "Active" : "Inactive"}
+            {member.is_active ? t("فعال") : t("Inactive")}
           </dd>
         </div>
         {currentMilestone?.title && (
           <div className="rounded-xl bg-base-200/65 p-3 sm:col-span-2">
-            <dt className="text-[10px] font-semibold text-base-content/45">
-              Current milestone
-            </dt>
+            <dt className="text-[13px] font-semibold text-heledone-ink-muted">
+              {t("Current milestone")}</dt>
             <dd className="mt-1 flex min-w-0 items-center justify-between gap-2">
               <span className="truncate font-bold text-base-content">
                 {currentMilestone.title}
               </span>
               {currentMilestone.status && (
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold capitalize ${
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[13px] font-bold capitalize ${
                     milestoneStatusClasses[currentMilestone.status] ??
                     milestoneStatusClasses.pending
                   }`}
@@ -424,13 +424,14 @@ function ClusterDetails({
   onClose: () => void;
   onSelectMember: (member: ProjectMember) => void;
 }) {
+  const t = useTranslation();
   return (
-    <div className="relative p-5" dir="auto">
+    <div className="relative p-5" >
       <button
         type="button"
         onClick={onClose}
-        className="absolute end-3 top-3 grid size-9 place-items-center rounded-xl text-base-content/45 transition hover:bg-base-200 hover:text-base-content"
-        aria-label="Close remaining members"
+        className="absolute end-3 top-3 grid size-9 place-items-center rounded-xl text-heledone-ink-muted transition hover:bg-base-200 hover:text-base-content"
+        aria-label={t("Close remaining members")}
       >
         <CloseCircle size={19} />
       </button>
@@ -438,9 +439,9 @@ function ClusterDetails({
         <p className="truncate text-sm font-bold text-base-content">
           {cluster.label}
         </p>
-        <p className="mt-1 text-xs font-medium text-base-content/55">
-          {cluster.members.length} more{" "}
-          {cluster.members.length === 1 ? "member" : "members"}
+        <p className="mt-1 text-xs font-medium text-heledone-ink-muted">
+          {formatUiNumber(cluster.members.length)}  {t("more")}{" "}
+          {cluster.members.length === 1 ? t("member") : t("members")}
         </p>
       </div>
       <div className="mt-4 grid gap-2">
@@ -455,7 +456,7 @@ function ClusterDetails({
               onClick={() => onSelectMember(member)}
               className="flex min-w-0 items-center gap-3 rounded-xl border border-base-content/8 bg-base-200/55 p-2.5 text-start transition hover:border-secondary/30 hover:bg-base-200 active:scale-[0.99]"
             >
-              <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary text-[10px] font-black text-secondary-content">
+              <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary text-[13px] font-black text-secondary-content">
                 {member.user?.avatar ? (
                   <img
                     src={member.user.avatar}
@@ -472,7 +473,7 @@ function ClusterDetails({
                 <span className="block truncate text-xs font-bold text-base-content">
                   {name}
                 </span>
-                <span className="mt-0.5 block truncate text-[10px] font-medium text-base-content/55">
+                <span className="mt-0.5 block truncate text-[13px] font-medium text-heledone-ink-muted">
                   {role}
                 </span>
               </span>
@@ -493,23 +494,23 @@ function OverflowDetails({
   mode: "teams" | "milestones";
   onClose: () => void;
 }) {
+  const t = useTranslation();
   return (
-    <div className="relative p-5" dir="auto">
+    <div className="relative p-5" >
       <button
         type="button"
         onClick={onClose}
-        className="absolute end-3 top-3 grid size-9 place-items-center rounded-xl text-base-content/45 transition hover:bg-base-200 hover:text-base-content"
-        aria-label="Close overflow milestones"
+        className="absolute end-3 top-3 grid size-9 place-items-center rounded-xl text-heledone-ink-muted transition hover:bg-base-200 hover:text-base-content"
+        aria-label={t("Close overflow milestones")}
       >
         <CloseCircle size={19} />
       </button>
       <div className="pe-10">
         <p className="text-sm font-bold text-base-content">
-          Remaining {mode === "teams" ? "teams" : "milestones"}
+          {t("Remaining")} {mode === "teams" ? t("teams") : t("milestones")}
         </p>
-        <p className="mt-1 text-xs font-medium text-base-content/55">
-          These labels share the dashed overflow ring.
-        </p>
+        <p className="mt-1 text-xs font-medium text-heledone-ink-muted">
+          {t("These labels share the dashed overflow ring.")}</p>
       </div>
       <ul className="mt-4 grid gap-2">
         {labels.map((item) => (
@@ -522,7 +523,7 @@ function OverflowDetails({
             </span>
             {item.status && (
               <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold capitalize ${
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[13px] font-bold capitalize ${
                   milestoneStatusClasses[item.status] ??
                   milestoneStatusClasses.pending
                 }`}
@@ -550,13 +551,14 @@ function ProjectDetails({
   statusLabel: string;
   onClose: () => void;
 }) {
+  const t = useTranslation();
   return (
-    <div className="relative p-5" dir="auto">
+    <div className="relative p-5" >
       <button
         type="button"
         onClick={onClose}
-        className="absolute end-3 top-3 grid size-10 place-items-center rounded-xl text-base-content/45 transition hover:bg-base-200 hover:text-base-content active:scale-95"
-        aria-label="Close project details"
+        className="absolute end-3 top-3 grid size-10 place-items-center rounded-xl text-heledone-ink-muted transition hover:bg-base-200 hover:text-base-content active:scale-95"
+        aria-label={t("Close project details")}
       >
         <CloseCircle size={20} />
       </button>
@@ -566,7 +568,7 @@ function ProjectDetails({
           {project.name}
         </p>
         <span
-          className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${statusClasses[project.status] ?? statusClasses.draft}`}
+          className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[13px] font-black uppercase tracking-wide ${statusClasses[project.status] ?? statusClasses.draft}`}
         >
           {statusLabel}
         </span>
@@ -574,13 +576,12 @@ function ProjectDetails({
 
       <div className="mt-5 rounded-2xl bg-base-200/65 p-4">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-base-content/55">
-            Project progress
-          </span>
+          <span className="font-semibold text-heledone-ink-muted">
+            {t("Project progress")}</span>
           <span
             className={`font-black ${progress === 100 ? "text-success" : "text-primary"}`}
           >
-            {progress}%
+            {formatUiNumber(progress)}%
           </span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-base-300">
@@ -593,29 +594,26 @@ function ProjectDetails({
 
       <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
         <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">
-            Deadline
-          </dt>
+          <dt className="text-[13px] font-semibold text-heledone-ink-muted">
+            {t("Deadline")}</dt>
           <dd className="mt-1 font-bold text-base-content">
             {formatDeadline(project.deadline)}
           </dd>
         </div>
         <div className="rounded-xl bg-base-200/65 p-3">
-          <dt className="text-[10px] font-semibold text-base-content/45">
-            Team size
-          </dt>
+          <dt className="text-[13px] font-semibold text-heledone-ink-muted">
+            {t("Team size")}</dt>
           <dd className="mt-1 font-bold text-base-content">
-            {memberCount} {memberCount === 1 ? "member" : "members"}
+            {formatUiNumber(memberCount)} {memberCount === 1 ? t("member") : t("members")}
           </dd>
         </div>
       </dl>
 
       <div className="mt-3 rounded-xl bg-base-200/65 p-3">
-        <p className="text-[10px] font-semibold text-base-content/45">
-          Description
-        </p>
+        <p className="text-[13px] font-semibold text-heledone-ink-muted">
+          {t("توضیح")}</p>
         <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-base-content/75">
-          {project.description || "No description provided."}
+          {project.description || t("No description provided.")}
         </p>
       </div>
     </div>
@@ -635,6 +633,7 @@ export function OrbitView({
   filter: controlledFilter,
   onFilterChange,
 }: OrbitViewProps) {
+  const t = useTranslation();
   const reduceMotion = useReducedMotion();
   const [localIsPlaying, setLocalIsPlaying] = useState(true);
   const [localZoom, setLocalZoom] = useState(1);
@@ -721,11 +720,11 @@ export function OrbitView({
         label: team,
       }));
     }
-    return ["Inner orbit", "Core team", "Outer orbit"].map((label, index) => ({
+    return [t("Inner orbit"), t("Core team"), t("Outer orbit")].map((label, index) => ({
       id: `fallback-${index}`,
       label,
     }));
-  }, [milestones, teamNames]);
+  }, [milestones, teamNames, t]);
 
   const overflowLabels = useMemo(
     () => (allRingLabels.length > 4 ? allRingLabels.slice(3) : []),
@@ -743,7 +742,7 @@ export function OrbitView({
             ...visibleLabels,
             {
               id: "overflow",
-              label: `+${allRingLabels.length - 3} More ${ringMode === "milestones" ? "Milestones" : "Teams"}`,
+              label: t("+{value0} More {value1}", { value0: allRingLabels.length - 3, value1: ringMode === "milestones" ? "Milestones" : t("تیم‌ها") }),
               isOverflow: true,
             },
           ]
@@ -761,7 +760,7 @@ export function OrbitView({
           ? 72
           : 48 + (index * 36) / (count - 1) + (item.isOverflow ? 9 : 0),
     }));
-  }, [allRingLabels, ringMode]);
+  }, [allRingLabels, ringMode, t]);
 
   const memberMatchesFilter = (member: ProjectMember) => {
     if (filter === "all") return true;
@@ -905,25 +904,25 @@ export function OrbitView({
       <div className="absolute end-3 top-3 z-30 md:end-4 md:top-4">
         <label className="flex h-10 items-center gap-1.5 rounded-xl border border-base-content/10 bg-base-100/80 px-2 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-base-100/70 sm:h-11 sm:gap-2 sm:px-2.5">
           <People size={15} className="shrink-0 text-secondary" />
-          <span className="sr-only">Filter orbit nodes</span>
+          <span className="sr-only">{t("Filter orbit nodes")}</span>
           <select
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            className="select h-8 min-h-0 max-w-32 border-0 bg-transparent px-1 text-[10px] font-bold shadow-none focus:outline-none sm:max-w-36 sm:text-[11px]"
+            className="select h-8 min-h-0 max-w-32 border-0 bg-transparent px-1 text-[13px] font-bold shadow-none focus:outline-none sm:max-w-36 sm:text-[13px]"
           >
-            <option value="all">All members</option>
+            <option value="all">{t("All members")}</option>
             {teamNames.map((team) => (
               <option key={`team:${team}`} value={`team:${team}`}>
-                Team: {team}
+                {t("Team:")} {team}
               </option>
             ))}
             {roleNames.map((role) => (
               <option key={`role:${role}`} value={`role:${role}`}>
-                Role: {role}
+                {t("Role:")} {role}
               </option>
             ))}
-            <option value="status:active">Status: Active</option>
-            <option value="status:inactive">Status: Inactive</option>
+            <option value="status:active">{t("Status: Active")}</option>
+            <option value="status:inactive">{t("Status: Inactive")}</option>
           </select>
         </label>
       </div>
@@ -951,7 +950,7 @@ export function OrbitView({
           event.preventDefault();
           updateZoom((value) => value - event.deltaY * 0.002);
         }}
-        aria-label="Interactive project orbit. Drag to rotate and pinch to zoom."
+        aria-label={t("Interactive project orbit. Drag to rotate and pinch to zoom.")}
       >
         <motion.div
           className="absolute inset-0 m-auto aspect-square w-[88%] max-w-[560px] sm:w-[82%] md:w-[76%]"
@@ -976,7 +975,7 @@ export function OrbitView({
                 {ring.isOverflow ? (
                   <button
                     type="button"
-                    className={`pointer-events-auto absolute start-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-bold shadow-md backdrop-blur-md transition active:scale-95 sm:text-xs rtl:translate-x-1/2 ${overflowStatusStyle.button}`}
+                    className={`pointer-events-auto absolute start-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border px-2.5 py-1 text-[13px] font-bold shadow-md backdrop-blur-md transition active:scale-95 sm:text-xs rtl:translate-x-1/2 ${overflowStatusStyle.button}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       setSelectedMember(null);
@@ -985,22 +984,22 @@ export function OrbitView({
                       setIsOverflowOpen(true);
                     }}
                     data-orbit-node
-                    aria-label={`Show ${overflowLabels.length} overflow milestones`}
+                    aria-label={t("Show {value0} overflow milestones", { value0: overflowLabels.length })}
                   >
                     {ring.label}
                   </button>
                 ) : (
-                  <span className="absolute start-1/2 top-0 inline-flex max-w-[calc(100%_-_1rem)] -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-base-content/10 bg-base-100/80 px-2 py-0.5 text-xs font-medium text-base-content/70 backdrop-blur-xs dark:bg-base-300/60 dark:text-base-content/50 [[data-theme=dark]_&]:bg-base-300/60 [[data-theme=dark]_&]:text-base-content/50 rtl:translate-x-1/2">
+                  <span className="absolute start-1/2 top-0 inline-flex max-w-[calc(100%_-_1rem)] -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-base-content/10 bg-base-100/80 px-2 py-0.5 text-xs font-medium text-base-content/70 backdrop-blur-xs dark:bg-base-300/60 dark:text-heledone-ink-muted [[data-theme=dark]_&]:bg-base-300/60 [[data-theme=dark]_&]:text-heledone-ink-muted rtl:translate-x-1/2">
                     <span className="truncate">{ring.label}</span>
                     {ringMode === "milestones" && ring.status && (
                       <span
-                        className={`shrink-0 rounded px-1 text-[10px] font-bold ${
+                        className={`shrink-0 rounded px-1 text-[13px] font-bold ${
                           milestoneStatusClasses[ring.status] ??
                           milestoneStatusClasses.pending
                         }`}
                       >
                         {ring.status === "completed"
-                          ? "Done"
+                          ? t("انجام‌شده")
                           : `${ring.progress ?? 0}%`}
                       </span>
                     )}
@@ -1081,12 +1080,12 @@ export function OrbitView({
                                   event.stopPropagation();
                                   handleMemberSelect(member);
                                 }}
-                                className={`relative grid size-9 min-h-8 min-w-8 place-items-center rounded-2xl border border-base-content/20 bg-base-100/40 text-[10px] font-black text-base-content shadow-lg backdrop-blur-md transition duration-200 hover:scale-110 hover:border-primary/50 hover:bg-base-100/60 md:size-10 ${
+                                className={`relative grid size-9 min-h-8 min-w-8 place-items-center rounded-2xl border border-base-content/20 bg-base-100/40 text-[13px] font-black text-base-content shadow-lg backdrop-blur-md transition duration-200 hover:scale-110 hover:border-primary/50 hover:bg-base-100/60 md:size-10 ${
                                   isFilterActive && isMatchingFilter
                                     ? "ring-2 ring-primary/45 ring-offset-2 ring-offset-base-100/60"
                                     : ""
                                 }`}
-                                aria-label={`Open details for ${name}`}
+                                aria-label={t("Open details for {value0}", { value0: name })}
                               >
                                 {member.user?.avatar ? (
                                   <img
@@ -1107,19 +1106,19 @@ export function OrbitView({
                                   }`}
                                 />
                               </button>
-                              <span className="pointer-events-none absolute start-1/2 top-[calc(100%+0.25rem)] max-w-24 -translate-x-1/2 truncate rounded-full border border-secondary/20 bg-base-100/90 px-1.5 py-0.5 text-[10px] font-bold text-secondary shadow-sm backdrop-blur-sm md:hidden rtl:translate-x-1/2">
+                              <span className="pointer-events-none absolute start-1/2 top-[calc(100%+0.25rem)] max-w-24 -translate-x-1/2 truncate rounded-full border border-secondary/20 bg-base-100/90 px-1.5 py-0.5 text-[13px] font-bold text-secondary shadow-sm backdrop-blur-sm md:hidden rtl:translate-x-1/2">
                                 {role}
                               </span>
                               <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] start-1/2 z-50 hidden w-max max-w-44 -translate-x-1/2 rounded-xl border border-base-content/10 bg-base-100/95 px-3 py-2 text-center shadow-xl backdrop-blur-xl group-hover:block group-focus-within:block rtl:translate-x-1/2">
                                 <p
-                                  dir="auto"
-                                  className="max-w-36 truncate text-[11px] font-bold text-base-content"
+
+                                  className="max-w-36 truncate text-[13px] font-bold text-base-content"
                                 >
                                   {name}
                                 </p>
                                 <p
-                                  dir="auto"
-                                  className="mt-0.5 max-w-36 truncate text-[9px] font-semibold text-secondary"
+
+                                  className="mt-0.5 max-w-36 truncate text-[13px] font-semibold text-secondary"
                                 >
                                   {role}
                                 </p>
@@ -1183,21 +1182,19 @@ export function OrbitView({
                                         : remainingMembers,
                                     });
                                   }}
-                                  className={`grid size-9 min-h-8 min-w-8 place-items-center rounded-2xl border-2 border-secondary/35 bg-base-100 text-[10px] font-black text-secondary shadow-[0_8px_25px_color-mix(in_srgb,var(--color-secondary)_22%,transparent)] transition duration-200 hover:scale-110 hover:border-secondary hover:bg-secondary hover:text-secondary-content active:scale-95 md:size-10 ${
+                                  className={`grid size-9 min-h-8 min-w-8 place-items-center rounded-2xl border-2 border-secondary/35 bg-base-100 text-[13px] font-black text-secondary shadow-[0_8px_25px_color-mix(in_srgb,var(--color-secondary)_22%,transparent)] transition duration-200 hover:scale-110 hover:border-secondary hover:bg-secondary hover:text-secondary-content active:scale-95 md:size-10 ${
                                     isFilterActive && isMatchingFilter
                                       ? "ring-2 ring-primary/45 ring-offset-2 ring-offset-base-100/60"
                                       : ""
                                   }`}
-                                  aria-label={`Show ${
-                                    isFilterActive
+                                  aria-label={t("Show {value0} more members in {value1}", { value0: isFilterActive
                                       ? matchingClusterMembers.length
-                                      : remainingMembers.length
-                                  } more members in ${ring.label}`}
+                                      : remainingMembers.length, value1: ring.label })}
                                 >
                                   +
-                                  {isFilterActive
+                                  {formatUiNumber(isFilterActive
                                     ? matchingClusterMembers.length
-                                    : remainingMembers.length}
+                                    : remainingMembers.length)}
                                 </button>
                               </div>
                             </div>
@@ -1232,11 +1229,11 @@ export function OrbitView({
                 }}
                 className={`pointer-events-auto relative grid size-full place-items-center rounded-full border p-2 text-center shadow-lg transition active:scale-95 sm:hidden ${sunStyle.surface}`}
                 data-orbit-node
-                aria-label={`Open details for ${project.name}`}
+                aria-label={t("Open details for {value0}", { value0: project.name })}
               >
                 <span
-                  dir="auto"
-                  className="line-clamp-2 max-w-[80%] text-[9px] font-black leading-tight"
+
+                  className="line-clamp-2 max-w-[80%] text-[13px] font-black leading-tight"
                 >
                   {project.name}
                 </span>
@@ -1258,8 +1255,8 @@ export function OrbitView({
                 >
                   <div className="min-w-0">
                     <p
-                      dir="auto"
-                      className="line-clamp-2 text-[10px] font-black leading-tight md:text-xs"
+
+                      className="line-clamp-2 text-[13px] font-black leading-tight md:text-xs"
                     >
                       {project.name}
                     </p>
@@ -1269,16 +1266,16 @@ export function OrbitView({
                         background: `conic-gradient(currentColor ${progress * 3.6}deg, color-mix(in srgb, currentColor 18%, transparent) 0deg)`,
                       }}
                     >
-                      <div className="grid size-7 place-items-center rounded-full bg-base-100 text-[9px] font-black text-base-content md:size-8 md:text-[10px]">
-                        {progress}%
+                      <div className="grid size-7 place-items-center rounded-full bg-base-100 text-[13px] font-black text-base-content md:size-8 md:text-[13px]">
+                        {formatUiNumber(progress)}%
                       </div>
                     </div>
                     <span
-                      className={`mt-1 inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[7px] font-black uppercase leading-none tracking-wide md:text-[8px] ${statusClasses[project.status] ?? statusClasses.draft}`}
+                      className={`mt-1 inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[13px] font-black uppercase leading-none tracking-wide md:text-[13px] ${statusClasses[project.status] ?? statusClasses.draft}`}
                     >
                       {statusLabel}
                     </span>
-                    <p className="mt-1 flex max-w-full items-center justify-center gap-1 truncate text-[7px] font-bold leading-none opacity-80 md:text-[9px]">
+                    <p className="mt-1 flex max-w-full items-center justify-center gap-1 truncate text-[13px] font-bold leading-none opacity-80 md:text-[13px]">
                       <Calendar1 size={8} className="shrink-0" />{" "}
                       <span className="truncate">
                         {formatDeadline(project.deadline)}
@@ -1293,7 +1290,7 @@ export function OrbitView({
       </div>
 
       <div className="pointer-events-none absolute bottom-3 end-3 z-40 sm:bottom-4 sm:end-4">
-        <div className="pointer-events-auto relative" dir="auto">
+        <div className="pointer-events-auto relative" >
           <AnimatePresence>
             {isLegendOpen && (
               <motion.div
@@ -1302,7 +1299,7 @@ export function OrbitView({
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                 className="pointer-events-auto absolute bottom-[calc(100%+0.5rem)] end-0 z-40 max-h-[calc(100vh-6rem)] w-64 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100/95 p-3 shadow-xl backdrop-blur-md supports-[backdrop-filter]:bg-base-100/90"
                 role="region"
-                aria-label="Orbit filters and guide"
+                aria-label={t("Orbit filters and guide")}
               >
                 {filter !== "all" ? (
                   <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/10 px-2.5 py-2">
@@ -1311,36 +1308,31 @@ export function OrbitView({
                         className="size-1.5 shrink-0 rounded-full bg-primary"
                         aria-hidden="true"
                       />
-                      <p className="truncate text-[10px] font-bold text-primary">
-                        Filter active
-                      </p>
+                      <p className="truncate text-[13px] font-bold text-primary">
+                        {t("Filter active")}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFilter("all")}
-                      className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-[9px] font-bold text-primary-content transition hover:bg-primary/90 active:scale-95"
+                      className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-[13px] font-bold text-primary-content transition hover:bg-primary/90 active:scale-95"
                     >
-                      Clear Filter
-                    </button>
+                      {t("Clear Filter")}</button>
                   </div>
                 ) : (
-                  <p className="rounded-xl bg-base-200/70 px-2.5 py-2 text-[9px] leading-relaxed text-base-content/55">
-                    Click a team or status to highlight matching nodes.
-                  </p>
+                  <p className="rounded-xl bg-base-200/70 px-2.5 py-2 text-[13px] leading-relaxed text-heledone-ink-muted">
+                    {t("Click a team or status to highlight matching nodes.")}</p>
                 )}
 
                 <section className="mt-3" aria-labelledby="orbit-filter-heading">
                   <p
                     id="orbit-filter-heading"
-                    className="text-[10px] font-bold uppercase tracking-wider text-base-content/50"
+                    className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted"
                   >
-                    Filters
-                  </p>
+                    {t("Filters")}</p>
 
                   <div className="mt-2.5">
-                    <p className="text-[9px] font-semibold text-base-content/60">
-                      Teams
-                    </p>
+                    <p className="text-[13px] font-semibold text-heledone-ink-muted">
+                      {t("تیم‌ها")}</p>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {teamNames.map((team) => {
                         const teamFilter = `team:${team}`;
@@ -1349,10 +1341,10 @@ export function OrbitView({
                             key={teamFilter}
                             type="button"
                             onClick={() => toggleFilter(teamFilter)}
-                            className={`max-w-full truncate rounded-full px-2.5 py-1 text-[9px] font-semibold transition active:scale-95 ${
+                            className={`max-w-full truncate rounded-full px-2.5 py-1 text-[13px] font-semibold transition active:scale-95 ${
                               filter === teamFilter
                                 ? "bg-primary text-primary-content ring-1 ring-primary"
-                                : "bg-base-200 text-base-content/65 hover:bg-primary/10 hover:text-primary"
+                                : "bg-base-200 text-heledone-ink-muted hover:bg-primary/10 hover:text-primary"
                             }`}
                             aria-pressed={filter === teamFilter}
                           >
@@ -1364,34 +1356,31 @@ export function OrbitView({
                   </div>
 
                   <div className="mt-2.5">
-                    <p className="text-[9px] font-semibold text-base-content/60">
-                      Member status
-                    </p>
+                    <p className="text-[13px] font-semibold text-heledone-ink-muted">
+                      {t("Member status")}</p>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       <button
                         type="button"
                         onClick={() => toggleFilter("status:active")}
-                        className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold transition active:scale-95 ${
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-[13px] font-bold transition active:scale-95 ${
                           filter === "status:active"
                             ? "border-primary bg-primary text-primary-content ring-1 ring-primary"
                             : "border-success/20 bg-base-200 text-success hover:border-success/40"
                         }`}
                         aria-pressed={filter === "status:active"}
                       >
-                        Active
-                      </button>
+                        {t("فعال")}</button>
                       <button
                         type="button"
                         onClick={() => toggleFilter("status:inactive")}
-                        className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold transition active:scale-95 ${
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-[13px] font-bold transition active:scale-95 ${
                           filter === "status:inactive"
                             ? "border-primary bg-primary text-primary-content ring-1 ring-primary"
-                            : "border-base-content/15 bg-base-200 text-base-content/60 hover:border-base-content/30"
+                            : "border-base-content/15 bg-base-200 text-heledone-ink-muted hover:border-base-content/30"
                         }`}
                         aria-pressed={filter === "status:inactive"}
                       >
-                        Inactive
-                      </button>
+                        {t("Inactive")}</button>
                     </div>
                   </div>
                 </section>
@@ -1401,20 +1390,18 @@ export function OrbitView({
                 <section aria-labelledby="orbit-guide-heading">
                   <p
                     id="orbit-guide-heading"
-                    className="text-[10px] font-bold uppercase tracking-wider text-base-content/50"
+                    className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted"
                   >
-                    Guide &amp; Statuses
-                  </p>
+                    {t("Guide & Statuses")}</p>
 
                   <div className="mt-2.5">
-                    <p className="text-[9px] font-semibold text-base-content/60">
-                      Project status
-                    </p>
+                    <p className="text-[13px] font-semibold text-heledone-ink-muted">
+                      {t("Project status")}</p>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {statusLegendItems.map((item) => (
                         <span
                           key={item.status}
-                          className={`pointer-events-none inline-flex cursor-default rounded-full px-2 py-0.5 text-[9px] font-bold opacity-80 ${statusClasses[item.status] ?? statusClasses.draft}`}
+                          className={`pointer-events-none inline-flex cursor-default rounded-full px-2 py-0.5 text-[13px] font-bold opacity-80 ${statusClasses[item.status] ?? statusClasses.draft}`}
                         >
                           {item.label}
                         </span>
@@ -1423,13 +1410,12 @@ export function OrbitView({
                   </div>
 
                   <div className="mt-3">
-                    <p className="text-[9px] font-semibold text-base-content/60">
-                      Orbit layers
-                    </p>
-                    <p className="mt-1 text-[10px] leading-relaxed text-base-content/65">
-                      Each ring represents a {ringMode === "teams" ? "team" : "milestone"}.
+                    <p className="text-[13px] font-semibold text-heledone-ink-muted">
+                      {t("Orbit layers")}</p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-heledone-ink-muted">
+                      {ringMode === "teams" ? t("Each ring represents a team.") : t("Each ring represents a milestone.")}
                       {overflowLabels.length > 0 &&
-                        " The dashed outer ring groups all remaining labels."}
+                        t("The dashed outer ring groups all remaining labels.")}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {rings.map((ring) => {
@@ -1437,7 +1423,7 @@ export function OrbitView({
                           return (
                             <span
                               key={`legend-${ring.id}`}
-                              className={`pointer-events-none max-w-full cursor-default truncate rounded-full border border-dashed px-2 py-0.5 text-[9px] font-semibold opacity-80 ${overflowStatusStyle.chip}`}
+                              className={`pointer-events-none max-w-full cursor-default truncate rounded-full border border-dashed px-2 py-0.5 text-[13px] font-semibold opacity-80 ${overflowStatusStyle.chip}`}
                             >
                               {ring.label}
                             </span>
@@ -1446,7 +1432,7 @@ export function OrbitView({
                         return (
                           <span
                             key={`legend-${ring.id}`}
-                            className="pointer-events-none max-w-full cursor-default truncate rounded-full bg-base-200/80 px-2 py-0.5 text-[9px] font-semibold text-base-content/60 opacity-80"
+                            className="pointer-events-none max-w-full cursor-default truncate rounded-full bg-base-200/80 px-2 py-0.5 text-[13px] font-semibold text-heledone-ink-muted opacity-80"
                           >
                             {ring.label}
                           </span>
@@ -1464,8 +1450,8 @@ export function OrbitView({
               event.stopPropagation();
               setIsLegendOpen((open) => !open);
             }}
-            className="pointer-events-auto relative z-40 grid size-10 place-items-center rounded-2xl border border-base-content/10 bg-base-100/90 text-base-content/65 shadow-xl backdrop-blur-md transition hover:bg-base-100 hover:text-base-content active:scale-95"
-            aria-label="Toggle legend"
+            className="pointer-events-auto relative z-40 grid size-10 place-items-center rounded-2xl border border-base-content/10 bg-base-100/90 text-heledone-ink-muted shadow-xl backdrop-blur-md transition hover:bg-base-100 hover:text-base-content active:scale-95"
+            aria-label={t("Toggle legend")}
             aria-expanded={isLegendOpen}
           >
             <Calendar1 size={18} variant={isLegendOpen ? "Bold" : "Linear"} />
@@ -1474,9 +1460,8 @@ export function OrbitView({
       </div>
 
       {filter !== "all" && matchingMemberCount === 0 && (
-        <div className="pointer-events-none absolute inset-x-4 bottom-5 z-20 mx-auto max-w-sm rounded-xl border border-base-content/8 bg-base-100/85 px-4 py-3 text-center text-xs font-semibold text-base-content/50 backdrop-blur-xl">
-          No members match this filter.
-        </div>
+        <div className="pointer-events-none absolute inset-x-4 bottom-5 z-20 mx-auto max-w-sm rounded-xl border border-base-content/8 bg-base-100/85 px-4 py-3 text-center text-xs font-semibold text-heledone-ink-muted backdrop-blur-xl">
+          {t("No members match this filter.")}</div>
       )}
 
       <AnimatePresence>
@@ -1489,12 +1474,12 @@ export function OrbitView({
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-neutral/35 backdrop-blur-[2px] sm:hidden"
               onClick={() => setIsProjectModalOpen(false)}
-              aria-label="Close project details"
+              aria-label={t("Close project details")}
             />
             <motion.aside
               role="dialog"
               aria-modal="true"
-              aria-label={`${project.name} project details`}
+              aria-label={t("{value0} project details", { value0: project.name })}
               initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28 }}
               animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28 }}
@@ -1524,7 +1509,7 @@ export function OrbitView({
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-neutral/35 backdrop-blur-[2px] md:hidden"
               onClick={closePanels}
-              aria-label="Close orbit details"
+              aria-label={t("Close orbit details")}
             />
             <motion.aside
               initial={{ opacity: 0, y: 24, scale: 0.98 }}

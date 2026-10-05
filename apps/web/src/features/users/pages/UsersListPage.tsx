@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import { Add } from "iconsax-reactjs";
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -31,6 +32,7 @@ const itemVariants = {
 };
 
 export default function UsersListPage() {
+  const t = useTranslation();
   const { hasAnyPermission } = usePermissions();
 
   const canManageUsers = hasAnyPermission(["org.manage_members", "org.manage_settings"]);
@@ -154,17 +156,17 @@ export default function UsersListPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="madaar-glass shadow-madaar-card min-h-[calc(100vh-121px)] rounded-2xl p-5 sm:p-8 flex flex-col"
+        className="heledone-page-content min-h-[calc(100vh-121px)] flex flex-col"
       >
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="heledone-page-heading flex flex-col md:flex-row md:justify-between md:items-start gap-4"
         >
           <div>
-            <span className="text-[11px] font-semibold tracking-wider text-primary uppercase">DIRECTORY</span>
-            <h1 className="text-2xl font-bold tracking-tight text-base-content">Team &amp; Access Directory</h1>
-            <p className="text-xs text-base-content/60 mt-1">Manage users, organizational assignments, and permission roles across workspaces.</p>
+            <span className="text-[13px] font-semibold tracking-wider text-primary uppercase">{t("DIRECTORY")}</span>
+            <h1 className="text-2xl font-bold tracking-tight text-base-content">{t("Team & Access Directory")}</h1>
+            <p className="text-xs text-heledone-ink-muted mt-1">{t("Manage users, organizational assignments, and permission roles across workspaces.")}</p>
           </div>
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
             <ViewSwitcher
@@ -178,7 +180,7 @@ export default function UsersListPage() {
                 className="btn btn-primary btn-sm md:btn-md rounded-xl gap-2 font-medium shadow-sm hover:shadow-md transition-transform duration-100 active:scale-95"
               >
                 <Add size={20} />
-                <span>Create User</span>
+                <span>{t("Create User")}</span>
               </button>
             )}
           </div>

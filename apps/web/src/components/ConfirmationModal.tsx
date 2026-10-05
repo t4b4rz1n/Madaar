@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import { Trash } from "iconsax-reactjs";
 import { createPortal } from "react-dom";
 
@@ -26,6 +27,7 @@ export const ConfirmationModal = ({
   message,
   isLoading = false,
 }: ModalProps) => {
+  const t = useTranslation();
   const modalContent = (
     <AnimatePresence>
       {isOpen && (
@@ -59,8 +61,7 @@ export const ConfirmationModal = ({
                   className="btn btn-ghost rounded-xl"
                   disabled={isLoading}
                 >
-                  Cancel
-                </button>
+                  {t("انصراف")}</button>
                 <button
                   type="button"
                   onClick={onConfirm}
@@ -70,7 +71,7 @@ export const ConfirmationModal = ({
                   {isLoading ? (
                     <span className="loading loading-spinner loading-sm"></span>
                   ) : (
-                    "Delete"
+                    t("حذف")
                   )}
                 </button>
               </div>

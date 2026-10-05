@@ -1,3 +1,4 @@
+import { t } from "../../i18n/locale";
 import {
   DiscountShape,
   Notification,
@@ -40,7 +41,7 @@ export type DrawerItem = {
 export const drawerItems: DrawerItem[] = [
   // Primary Workspace Navigation (Main Sidebar)
   {
-    title: "Today & Focus",
+    get title() { return t("امروز و تمرکز"); },
     link: "dashboard",
     section: "Workspace",
     icon: <Calendar variant="Outline" />,
@@ -48,7 +49,7 @@ export const drawerItems: DrawerItem[] = [
     isPrimary: true,
   },
   {
-    title: "Tasks & Boards",
+    get title() { return t("تسک‌ها و کانبان"); },
     link: "tasks",
     section: "Workspace",
     icon: <TaskSquare variant="Outline" />,
@@ -56,7 +57,7 @@ export const drawerItems: DrawerItem[] = [
     isPrimary: true,
   },
   {
-    title: "Projects",
+    get title() { return t("پروژه‌ها"); },
     link: "projects",
     section: "Workspace",
     icon: <Briefcase variant="Outline" />,
@@ -64,7 +65,7 @@ export const drawerItems: DrawerItem[] = [
     isPrimary: true,
   },
   {
-    title: "Daily Standups",
+    get title() { return t("گزارش روزانه"); },
     link: "standups",
     section: "Workspace",
     icon: <NoteText variant="Outline" />,
@@ -72,7 +73,7 @@ export const drawerItems: DrawerItem[] = [
     isPrimary: true,
   },
   {
-    title: "Time & Attendance",
+    get title() { return t("کارکرد و حضور"); },
     link: "attendance",
     section: "Workspace",
     icon: <Timer1 variant="Outline" />,
@@ -80,7 +81,7 @@ export const drawerItems: DrawerItem[] = [
     isPrimary: true,
   },
   {
-    title: "Manager Overview",
+    get title() { return t("نمای مدیریت"); },
     link: "manager",
     section: "Workspace",
     icon: <Chart21 variant="Outline" />,
@@ -92,7 +93,7 @@ export const drawerItems: DrawerItem[] = [
     isPrimary: true,
   },
   {
-    title: "Team Overview",
+    get title() { return t("نمای تیم"); },
     link: "team-lead",
     section: "Workspace",
     icon: <ChartSquare variant="Outline" />,
@@ -100,7 +101,7 @@ export const drawerItems: DrawerItem[] = [
     isPrimary: true,
   },
   {
-    title: "My Finances",
+    get title() { return t("حقوق و گزارش مالی"); },
     link: "/finance/my-reports",
     section: "Workspace",
     icon: <WalletMoney variant="Outline" />,
@@ -110,42 +111,42 @@ export const drawerItems: DrawerItem[] = [
 
   // Admin & Settings Navigation (Settings Modal & Command Menu)
   {
-    title: "Organizations",
+    get title() { return t("سازمان‌ها"); },
     link: "organizations",
     section: "AdminSettings",
     icon: <Profile2User variant="Outline" />,
     permissions: ["org.manage_settings", "org.manage_members", "org.manage_roles"],
   },
   {
-    title: "Users Management",
+    get title() { return t("مدیریت اعضا"); },
     link: "users",
     section: "AdminSettings",
     icon: <People variant="Outline" />,
     permissions: ["user.view", "org.manage_members", "org.manage_roles"],
   },
   {
-    title: "Teams Management",
+    get title() { return t("مدیریت تیم‌ها"); },
     link: "teams",
     section: "AdminSettings",
     icon: <TeamsIcon variant="Outline" />,
     permissions: ["user.view", "org.manage_members", "org.manage_roles"],
   },
   {
-    title: "Roles & Permissions",
+    get title() { return t("نقش‌ها و دسترسی‌ها"); },
     link: "roles",
     section: "AdminSettings",
     icon: <ShieldSecurity size="20" />,
     permissions: ["org.manage_roles", "role.view"],
   },
   {
-    title: "Automations",
+    get title() { return t("خودکارسازی"); },
     link: "automations",
     section: "AdminSettings",
     icon: <Flash variant="Outline" />,
     permissions: ["org.manage_settings", "automation.manage"],
   },
   {
-    title: "Discounts",
+    get title() { return t("تخفیف‌ها"); },
     link: "discounts",
     section: "AdminSettings",
     icon: <DiscountShape variant="Outline" />,
@@ -155,14 +156,14 @@ export const drawerItems: DrawerItem[] = [
 
   // Support & System
   {
-    title: "Notifications",
+    get title() { return t("اعلان‌ها"); },
     link: "notifications",
     section: "AdminSettings",
     icon: <Notification variant="Outline" />,
     permissions: ["notification.view", "org.manage_settings"],
   },
   {
-    title: "Tickets",
+    get title() { return t("درخواست‌های پشتیبانی"); },
     link: "tickets",
     section: "Support",
     icon: <Ticket variant="Outline" />,
@@ -172,7 +173,7 @@ export const drawerItems: DrawerItem[] = [
 
   // Account
   {
-    title: "Profile Settings",
+    get title() { return t("تنظیمات حساب"); },
     link: "profile",
     section: "Account",
     icon: <User variant="Outline" />,

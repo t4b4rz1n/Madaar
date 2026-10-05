@@ -18,6 +18,7 @@ class TaskSummarySerializer(serializers.Serializer):
     due_date = serializers.DateTimeField(allow_null=True)
     status_name = serializers.CharField(allow_null=True)
     status_code = serializers.CharField(allow_null=True, required=False)
+    board_id = serializers.UUIDField(allow_null=True, required=False)
     project_name = serializers.CharField(allow_null=True)
     project_id = serializers.UUIDField(allow_null=True)
 

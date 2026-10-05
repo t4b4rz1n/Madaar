@@ -1,3 +1,5 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { t } from "../../../i18n/locale";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -39,7 +41,7 @@ export const useCreateRole = () => {
       queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Role created successfully");
+      toast.success(t("Role created successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -47,7 +49,7 @@ export const useCreateRole = () => {
         error?.response?.data?.detail ||
         error?.message ||
         "Failed to create role";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -64,7 +66,7 @@ export const useUpdateRole = () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: PERMISSIONS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["current-user-profile"] });
-      toast.success("Role updated successfully");
+      toast.success(t("Role updated successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -72,7 +74,7 @@ export const useUpdateRole = () => {
         error?.response?.data?.detail ||
         error?.message ||
         "Failed to update role";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -86,7 +88,7 @@ export const useDeleteRole = () => {
       queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Role deleted successfully");
+      toast.success(t("Role deleted successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -94,7 +96,7 @@ export const useDeleteRole = () => {
         error?.response?.data?.detail ||
         error?.message ||
         "Failed to delete role";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };

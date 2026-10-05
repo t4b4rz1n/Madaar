@@ -1,6 +1,8 @@
+import { t as translate, useTranslation } from "../../../i18n/locale";
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { AuthLayout } from "../components/AuthLayout";
 import { AuthForm } from "../components/AuthForm";
 import { useRegister } from "../hooks/useAuth";
 import {
@@ -9,44 +11,44 @@ import {
 } from "../validation/authSchema";
 
 const registerFields = [
-  { name: "first_name", label: "First name", placeholder: "Enter your first name" },
-  { name: "last_name", label: "Last name", placeholder: "Enter your last name" },
-  { name: "username", label: "Username", placeholder: "Choose a username" },
-  { name: "email", label: "Email", type: "email", placeholder: "you@example.com" },
-  { name: "password", label: "Password", type: "password", placeholder: "At least 8 characters" },
-  { name: "password_confirm", label: "Confirm password", type: "password", placeholder: "Enter your password again" },
+  { name: "first_name", get label() { return translate("نام"); }, get placeholder() { return translate("نام خود را وارد کنید"); } },
+  { name: "last_name", get label() { return translate("نام خانوادگی"); }, get placeholder() { return translate("نام خانوادگی خود را وارد کنید"); } },
+  { name: "username", get label() { return translate("نام کاربری"); }, get placeholder() { return translate("یک نام کاربری انتخاب کنید"); } },
+  { name: "email", get label() { return translate("ایمیل"); }, type: "email", placeholder: "you@example.com" },
+  { name: "password", get label() { return translate("رمز عبور"); }, type: "password", get placeholder() { return translate("حداقل ۸ نویسه"); } },
+  { name: "password_confirm", get label() { return translate("تکرار رمز عبور"); }, type: "password", get placeholder() { return translate("رمز عبور را دوباره وارد کنید"); } },
 ];
 
 const RegisterPage: React.FC = () => {
+  const t = useTranslation();
   const { mutate: registerUser, isPending } = useRegister();
   const {
     register,
+    trigger,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<RegisterFormData>({ resolver: zodResolver(registerSchema) });
 
+  React.useEffect(() => {
+    if (isSubmitted) void trigger();
+  }, [t, isSubmitted, trigger]);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-10 font-sans relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -right-32 -bottom-32 h-96 w-96 rounded-full bg-secondary/10 blur-3xl" />
-      </div>
-      <div className="relative w-full max-w-xl bg-base-100 rounded-3xl shadow-xl p-6 sm:p-10 border border-base-300">
+    <AuthLayout>
         <AuthForm
-          title="Create your account"
+          title={t("شروع یک همکاری تازه")}
           fields={registerFields}
           onSubmit={registerUser as any}
-          buttonText="Create account"
-          footerText="Already have an account?"
+          buttonText={t("ساخت حساب")}
+          footerText={t("قبلاً حساب ساخته‌اید؟")}
           footerLink="/login"
-          footerLinkText="Sign in"
+          footerLinkText={t("ورود به حساب")}
           isLoading={isPending}
           register={register as any}
           handleSubmit={(fn) => handleSubmit(fn as any) as any}
           errors={errors}
         />
-      </div>
-    </div>
+    </AuthLayout>
   );
 };
 

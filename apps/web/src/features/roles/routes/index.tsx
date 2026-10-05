@@ -1,7 +1,9 @@
+import { lazy } from "react";
 import { Navigate } from "react-router-dom";
 import type { RouteObject } from "react-router-dom";
 import { PermissionGuard } from "../../auth/components/PermissionGuard";
-import RolesListPage from "../pages/RolesListPage";
+
+const RolesListPage = lazy(() => import("../pages/RolesListPage"));
 
 export const rolesRoutes: RouteObject[] = [
   {

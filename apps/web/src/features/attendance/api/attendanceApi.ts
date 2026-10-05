@@ -43,14 +43,9 @@ export const getTodayAttendance = async (): Promise<Attendance | null> => {
     );
     return (res as any).data ?? res;
   } catch (error: any) {
-    // axiosClient transforms 404 responses to plain objects: { detail, message, status }
-    // The original AxiosError is lost, so we must check multiple shapes
-    const is404 =
-      error?.response?.status === 404 ||
-      error?.detail === "Not checked in today." ||
-      error?.message === "Not checked in today." ||
-      error?.status === false;
-    if (is404) return null;
+    const body = error?.response?.data;
+    const detail = body?.data?.detail ?? body?.detail ?? body?.message;
+    if (error?.response?.status === 404 && detail === "Not checked in today.") return null;
     throw error;
   }
 };

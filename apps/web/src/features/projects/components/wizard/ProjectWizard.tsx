@@ -1,6 +1,9 @@
+import { formatNumber as formatUiNumber } from "../../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../../core/utils/errorHandler";
+import { t as translate, useTranslation } from "../../../../i18n/locale";
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
@@ -20,12 +23,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTaskStore } from '../../../tasks/store/useTaskStore';
 
 const STEPS = [
-  { number: 1, label: 'Basics', sublabel: 'Project info' },
-  { number: 2, label: 'Users', sublabel: 'Add members' },
-  { number: 3, label: 'Board', sublabel: 'Choose template' },
+  { number: 1, get label() { return translate("Basics"); }, get sublabel() { return translate("Project info"); } },
+  { number: 2, get label() { return translate("Users"); }, get sublabel() { return translate("Add members"); } },
+  { number: 3, get label() { return translate("کانبان"); }, get sublabel() { return translate("Choose template"); } },
 ];
 
 export const ProjectWizard: React.FC = () => {
+  const t = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { isOpen, close, reset,
@@ -74,7 +78,7 @@ export const ProjectWizard: React.FC = () => {
 
       await Promise.all(statusPromises);
 
-      toast.success(`"${projectName}" created!`);
+      toast.success(t("\"{value0}\" created!", { value0: projectName }));
       reset();
       close();
 
@@ -94,7 +98,7 @@ export const ProjectWizard: React.FC = () => {
       // Navigate cleanly (no query params needed)
       navigate('/tasks');
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Failed to create project');
+      toast.error(translateError(err?.response?.data?.detail || 'Failed to create project'));
     } finally {
       setIsSubmitting(false);
     }
@@ -130,9 +134,9 @@ export const ProjectWizard: React.FC = () => {
           >
             {/* ─── Left sidebar: stepper ─── */}
             <div
-              className="hidden md:flex flex-col w-52 flex-shrink-0 p-6 rounded-l-2xl"
+              className="hidden md:flex flex-col w-52 flex-shrink-0 p-6 rounded-s-2xl"
               style={{
-                background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 60%, #1e1b4b 100%)',
+                background: 'linear-gradient(160deg, #173C46 0%, #006D73 100%)',
               }}
             >
               {/* Logo area */}
@@ -142,8 +146,8 @@ export const ProjectWizard: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                 </div>
-                <h3 className="text-white font-bold text-sm">New Project</h3>
-                <p className="text-white/50 text-xs mt-0.5">Wizard setup</p>
+                <h3 className="text-white font-bold text-sm">{t("پروژه تازه")}</h3>
+                <p className="text-white/80 text-xs mt-0.5">{t("Wizard setup")}</p>
               </div>
 
               {/* Steps */}
@@ -159,10 +163,10 @@ export const ProjectWizard: React.FC = () => {
                           <div
                             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 ${
                               done
-                                ? 'bg-white text-indigo-900'
+                                ? 'bg-white text-secondary'
                                 : active
-                                ? 'bg-indigo-400 text-white ring-2 ring-white/30 ring-offset-1 ring-offset-transparent'
-                                : 'bg-white/10 text-white/40'
+                                ? 'bg-heledone-sun text-neutral ring-2 ring-white/30 ring-offset-1 ring-offset-transparent'
+                                : 'bg-white/10 text-white/80'
                             }`}
                           >
                             {done ? (
@@ -170,7 +174,7 @@ export const ProjectWizard: React.FC = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
-                              step.number
+                              formatUiNumber(step.number)
                             )}
                           </div>
                           {idx < STEPS.length - 1 && (
@@ -185,10 +189,10 @@ export const ProjectWizard: React.FC = () => {
                         </div>
                         {/* Text */}
                         <div className="pt-0.5">
-                          <p className={`text-sm font-semibold leading-tight ${active ? 'text-white' : done ? 'text-white/70' : 'text-white/30'}`}>
+                          <p className={`text-sm font-semibold leading-tight ${active ? 'text-white' : done ? 'text-white/70' : 'text-white/80'}`}>
                             {step.label}
                           </p>
-                          <p className={`text-xs mt-0.5 ${active ? 'text-white/60' : 'text-white/20'}`}>
+                          <p className={`text-xs mt-0.5 ${active ? 'text-white/85' : 'text-white/85'}`}>
                             {step.sublabel}
                           </p>
                         </div>
@@ -200,24 +204,23 @@ export const ProjectWizard: React.FC = () => {
 
               {/* Bottom hint */}
               <div className="mt-auto pt-6">
-                <p className="text-white/25 text-[11px] leading-relaxed">
-                  You can always edit project settings later from the project page.
-                </p>
+                <p className="text-white/85 text-[13px] leading-relaxed">
+                  {t("You can always edit project settings later from the project page.")}</p>
               </div>
             </div>
 
             {/* ─── Right panel: content ─── */}
-            <div className="flex-1 bg-base-100 rounded-r-2xl md:rounded-l-none rounded-l-2xl flex flex-col overflow-hidden">
+            <div className="flex-1 bg-base-100 rounded-e-2xl md:rounded-l-none rounded-s-2xl flex flex-col overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-base-300">
                 <div>
                   <h2 className="font-bold text-base-content text-base">
-                    {currentStep === 1 && 'Project Details'}
-                    {currentStep === 2 && 'Add Users'}
-                    {currentStep === 3 && 'Board Template'}
+                    {currentStep === 1 && t("Project Details")}
+                    {currentStep === 2 && t("افزودن هم‌تیمی‌ها")}
+                    {currentStep === 3 && t("Board Template")}
                   </h2>
-                  <p className="text-xs text-base-content/50 mt-0.5">
-                    Step {currentStep} of {STEPS.length}
+                  <p className="text-xs text-heledone-ink-muted mt-0.5">
+                    {t("Step")} {formatUiNumber(currentStep)}  {t("of")} {formatUiNumber(STEPS.length)}
                   </p>
                 </div>
                 <button

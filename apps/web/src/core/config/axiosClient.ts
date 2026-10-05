@@ -4,10 +4,12 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { useAuthStore } from "../../features/auth/store/authStore";
+import { useLocaleStore } from "../../i18n/locale";
+import { API_TIMEOUT, getApiUrl } from "../api/config";
 
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
-  timeout: 15000,
+  baseURL: getApiUrl(),
+  timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -32,12 +34,10 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-const getApiUrl = (): string =>
-  (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, "");
-
 // Request interceptor: reads access token directly from Zustand memory state
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    config.headers.set("Accept-Language", useLocaleStore.getState().locale);
     const token = useAuthStore.getState().access;
     if (token) {
       config.headers.set("Authorization", `Bearer ${token}`);
@@ -96,6 +96,8 @@ axiosClient.interceptors.response.use(
             const responseData = res.data?.data || res.data;
             const newAccess = responseData?.access;
             const newRefresh = responseData?.refresh || refreshToken;
+
+            if (!newAccess) throw new Error("Token refresh returned no access token");
 
             if (newAccess) {
               useAuthStore.getState().setTokens({

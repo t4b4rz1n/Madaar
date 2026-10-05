@@ -1,3 +1,7 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { formatDisplayDate } from "../../../utils/date";
+import { useTranslation, getIntlLocale } from "../../../i18n/locale";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -21,7 +25,7 @@ import { STANDUP_STRINGS as S } from '../constants/standupStrings';
 import { StandupModal } from './StandupModal';
 import type { StandupGridData, StandupGridEntry, StandupGridMember } from '../types';
 
-const PASTEL_COLORS = ['#b39ddb', '#9fa8da', '#81d4fa', '#80cbc4', '#a5d6a7', '#ffcc80', '#f48fb1', '#ce93d8'];
+const PASTEL_COLORS = ['#EAF5F2', '#A7D4CD', '#C6E6E1', '#A7D4CD', '#D8E6D6', '#F7DFAD', '#F5D3C6', '#F5D3C6'];
 
 const pad2 = (value: number): string => String(value).padStart(2, '0');
 
@@ -88,6 +92,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
   title = S.gridTitle,
   forceSelfView = false,
 }) => {
+  const t = useTranslation();
   const queryClient = useQueryClient();
   const currentUserId = useAuthStore((state) => state.user?.id);
   const calendarPref = useAuthStore((state) => state.user?.calendar_preference) || 'gregorian';
@@ -441,11 +446,11 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
       const parsedHours = Number((draft ?? '').trim());
       if ((draft ?? '') !== '' && !Number.isFinite(parsedHours)) return;
       if (parsedHours > 24) {
-        toast.error('Hours worked cannot exceed 24 hours per day.');
+        toast.error(t("Hours worked cannot exceed 24 hours per day."));
         return;
       }
       if (parsedHours < 0) {
-        toast.error('Hours worked cannot be negative.');
+        toast.error(t("Hours worked cannot be negative."));
         return;
       }
 
@@ -467,7 +472,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
         invalidateMatrix();
       } catch (error) {
         console.error('Failed to quick-save standup hours', error);
-        toast.error(S.toastSaveFailed);
+        toast.error(translateError(S.toastSaveFailed));
       } finally {
         setSavingCellKeys((prev) => {
           const next = new Set(prev);
@@ -476,15 +481,16 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
         });
       }
     },
-    [dayIso, cellIndex, hourDrafts, savingCellKeys, savedHours, handleOpenCell, invalidateMatrix],
+    [dayIso, cellIndex, hourDrafts, savingCellKeys, savedHours, handleOpenCell, invalidateMatrix, t],
   );
 
+  const intlLocale = getIntlLocale();
   const monthLabel = useMemo(() => {
     if (calendarPref === 'jalali') {
-      return DoranDate.fromJalali(cursor.year, cursor.month, 1).format('MMMM YYYY');
+      return formatDisplayDate(DoranDate.fromJalali(cursor.year, cursor.month, 1).toDate(), "MMMM yyyy", "jalali", intlLocale);
     }
-    return format(new Date(cursor.year, cursor.month - 1, 1), 'MMMM yyyy');
-  }, [cursor.year, cursor.month, calendarPref]);
+    return formatDisplayDate(new Date(cursor.year, cursor.month - 1, 1), "MMMM yyyy", "gregorian", intlLocale);
+  }, [cursor.year, cursor.month, calendarPref, intlLocale]);
 
   const isLoading =
     projectsQuery.isLoading ||
@@ -530,14 +536,14 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                   setFocusedCellKey(null);
                 }
               }}
-              className="h-7 w-full rounded-lg bg-primary/10 text-center text-[12px] font-bold text-primary placeholder:text-base-content/30 focus:border-primary/50 focus:bg-primary/15 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none p-0 transition-all"
+              className="h-7 w-full rounded-lg bg-primary/10 text-center text-[13px] font-bold text-primary placeholder:text-heledone-ink-muted focus:border-primary/50 focus:bg-primary/15 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none p-0 transition-all"
             />
           ) : (
             <div
               tabIndex={0}
               onFocus={() => setFocusedCellKey(key)}
               onClick={() => setFocusedCellKey(key)}
-              className="flex h-7 w-full cursor-text items-center justify-center rounded-lg bg-transparent text-center text-[12px] font-bold text-primary transition-all hover:bg-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              className="flex h-7 w-full cursor-text items-center justify-center rounded-lg bg-transparent text-center text-[13px] font-bold text-primary transition-all hover:bg-primary/10 focus:outline-none focus:ring-1 focus:ring-primary/50"
             >
               {value ? formatDecimalHours(value) : '-'}
             </div>
@@ -545,11 +551,11 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
         ) : (
           <span
             title={value ? formatDecimalHours(value) : undefined}
-            className={`text-[12px] font-bold ${value
+            className={`text-[13px] font-bold ${value
                 ? isSelfView || isOwnRow(row)
                   ? 'text-primary font-black'
                   : 'text-base-content/75'
-                : 'text-base-content/20'
+                : 'text-heledone-ink-muted'
               }`}
           >
             {value ? formatDecimalHours(value) : '-'}
@@ -557,7 +563,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
         )}
         {showGreenCheck && (
           <span
-            className="absolute -top-0.5 -end-0.5 z-10 flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xs"
+            className="absolute -top-0.5 -end-0.5 z-10 flex h-3 w-3 items-center justify-center rounded-full bg-success text-success-content shadow-xs"
             title={S.legendCompleted}
           >
             <Check size={8} variant="Bold" />
@@ -565,7 +571,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
         )}
         {showOrangeDot && !showGreenCheck && (
           <span
-            className="absolute -top-0.5 -end-0.5 z-10 h-2 w-2 rounded-full bg-amber-500 shadow-xs"
+            className="absolute -top-0.5 -end-0.5 z-10 h-2 w-2 rounded-full bg-warning shadow-xs"
             title={isDirty ? S.legendUnsaved : S.legendIncomplete}
           />
         )}
@@ -581,14 +587,14 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
         </div>
       ) : (!selectedProjectId && !isSelfView) || (isSelfView && rows.length === 0) ? (
         <div className="rounded-2xl border border-dashed border-base-content/15 bg-base-100 p-12 text-center">
-          <NoteText size={40} className="mx-auto mb-3 text-base-content/25" />
+          <NoteText size={40} className="mx-auto mb-3 text-heledone-ink-muted" />
           <h3 className="text-base font-bold text-base-content">{S.noProjectsTitle}</h3>
-          <p className="mt-1 text-xs text-base-content/50">{S.noProjectsHint}</p>
+          <p className="mt-1 text-xs text-heledone-ink-muted">{S.noProjectsHint}</p>
         </div>
       ) : (
         <div className="rounded-2xl border border-base-content/8 bg-base-100 shadow-sm">
           {!canWrite && (
-            <div className="border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+            <div className="border-b border-warning/20 bg-warning/10 px-4 py-2 text-xs font-medium text-warning dark:text-warning">
               {S.viewerNotice}
             </div>
           )}
@@ -599,10 +605,10 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
               <button
                 type="button"
                 onClick={() => shiftMonth(-1)}
-                aria-label="Previous month"
-                className="flex size-8 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-base-content/60 hover:bg-base-200 hover:text-base-content transition-all"
+                aria-label={t("Previous month")}
+                className="flex size-8 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-heledone-ink-muted hover:bg-base-200 hover:text-base-content transition-all"
               >
-                <ArrowLeft2 size={16} />
+                <ArrowLeft2 className="rtl:rotate-180" size={16} />
               </button>
 
               <div className="flex items-center gap-2 px-1">
@@ -613,10 +619,10 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
               <button
                 type="button"
                 onClick={() => shiftMonth(1)}
-                aria-label="Next month"
-                className="flex size-8 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-base-content/60 hover:bg-base-200 hover:text-base-content transition-all"
+                aria-label={t("Next month")}
+                className="flex size-8 items-center justify-center rounded-xl border border-base-content/10 bg-base-100 text-heledone-ink-muted hover:bg-base-200 hover:text-base-content transition-all"
               >
-                <ArrowRight2 size={16} />
+                <ArrowRight2 className="rtl:rotate-180" size={16} />
               </button>
             </div>
 
@@ -644,27 +650,27 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                   />
                   {selectedProject?.prefix && (
                     <span
-                      className="rounded-md px-1.5 py-0.5 text-[10px] font-extrabold text-white shrink-0"
-                      style={{ background: selectedProjectColor }}
+                      className="rounded-md px-1.5 py-0.5 text-[13px] font-extrabold text-base-content bg-base-200 border border-heledone-border shrink-0"
+                      style={{ borderInlineStart: `3px solid ${selectedProjectColor}` }}
                     >
                       {selectedProject.prefix}
                     </span>
                   )}
-                  <span dir="auto" className="truncate max-w-[150px] text-xs font-bold">
-                    {selectedProject?.name || 'Select Project'}
+                  <span  className="truncate max-w-[150px] text-xs font-bold">
+                    {selectedProject?.name || t("انتخاب پروژه")}
                   </span>
                   <ArrowDown2
                     size={14}
-                    className={`shrink-0 text-base-content/50 transition-transform duration-200 ${isProjDropdownOpen ? 'rotate-180 text-primary' : ''
+                    className={`shrink-0 text-heledone-ink-muted transition-transform duration-200 ${isProjDropdownOpen ? 'rotate-180 text-primary' : ''
                       }`}
                   />
                 </button>
 
                 {isProjDropdownOpen && (
-                  <div className="absolute right-0 mt-1.5 w-64 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in duration-100 z-[101]">
-                    <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-base-content/40 border-b border-base-content/8 mb-1">
+                  <div className="absolute end-0 mt-1.5 w-64 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in duration-100 z-[101]">
+                    <div className="flex items-center gap-2 px-3 py-2 text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted border-b border-base-content/8 mb-1">
                       <Folder size={13} className="text-primary" />
-                      <span>Select Project</span>
+                      <span>{t("انتخاب پروژه")}</span>
                     </div>
 
                     <div className="max-h-60 overflow-y-auto space-y-0.5 custom-scrollbar">
@@ -680,7 +686,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                               setSelectedProjectId(String(p.id));
                               setIsProjDropdownOpen(false);
                             }}
-                            className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left transition-all ${isSelected
+                            className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-start transition-all ${isSelected
                                 ? 'bg-primary/10 text-primary font-bold'
                                 : 'text-base-content/80 hover:bg-base-200/60 hover:text-base-content font-medium'
                               }`}
@@ -692,13 +698,13 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                               />
                               {p.prefix && (
                                 <span
-                                  className="rounded-md px-1.5 py-0.5 text-[9px] font-extrabold text-white shrink-0"
-                                  style={{ background: color }}
+                                  className="rounded-md px-1.5 py-0.5 text-[13px] font-extrabold text-base-content bg-base-200 border border-heledone-border shrink-0"
+                                  style={{ borderInlineStart: `3px solid ${color}` }}
                                 >
                                   {p.prefix}
                                 </span>
                               )}
-                              <span dir="auto" className="truncate text-xs">{p.name}</span>
+                              <span  className="truncate text-xs">{p.name}</span>
                             </div>
 
                             {isSelected && <TickCircle size={15} className="shrink-0 text-primary" />}
@@ -719,13 +725,13 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                 <tr>
                   <th
                     style={{ width: memberColWidth, minWidth: memberColWidth, maxWidth: memberColWidth }}
-                    className="relative sticky start-0 z-20 border-b border-base-content/8 bg-base-100 px-3 py-2.5 text-start text-[10px] font-bold uppercase tracking-wider text-base-content/50"
+                    className="relative sticky start-0 z-20 border-b border-base-content/8 bg-base-100 px-3 py-2.5 text-start text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted"
                   >
                     {isSelfView ? S.projectLabel : S.memberColumnLabel}
                     <span
                       role="separator"
                       aria-orientation="vertical"
-                      aria-label="Resize column"
+                      aria-label={t("Resize column")}
                       onMouseDown={handleResizeStart}
                       className="absolute end-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent transition-colors hover:bg-primary/40 active:bg-primary/60"
                     />
@@ -735,12 +741,12 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                     return (
                       <th
                         key={day}
-                        className={`border-b border-base-content/8 px-1 py-2 text-center text-[11px] font-bold transition-all ${isToday
+                        className={`border-b border-base-content/8 px-1 py-2 text-center text-[13px] font-bold transition-all ${isToday
                             ? 'bg-primary/10 text-primary border-b-primary/40'
-                            : 'bg-base-200/20 text-base-content/50'
+                            : 'bg-base-200/20 text-heledone-ink-muted'
                           }`}
                       >
-                        {day}
+                        {formatUiNumber(day)}
                       </th>
                     );
                   })}
@@ -749,7 +755,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
               <tbody>
                 {rows.map((row) => {
                   const isCurrent = isOwnRow(row);
-                  const rowColor = row.color || '#6366f1';
+                  const rowColor = row.color || '#087F83';
 
                   return (
                     <tr key={row.id} className="group">
@@ -765,9 +771,9 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                             />
                           ) : (
                             <div
-                              className={`grid size-7 place-items-center rounded-lg text-[10px] font-bold shrink-0 ${isCurrent
+                              className={`grid size-7 place-items-center rounded-lg text-[13px] font-bold shrink-0 ${isCurrent
                                   ? 'bg-primary text-primary-content'
-                                  : 'bg-base-200 text-base-content/60'
+                                  : 'bg-base-200 text-heledone-ink-muted'
                                 }`}
                             >
                               {row.label[0]?.toUpperCase() || 'U'}
@@ -775,14 +781,14 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                           )}
                           <div className="min-w-0">
                             <p
-                              dir="auto"
+
                               className={`truncate text-xs font-bold ${isCurrent ? 'text-primary' : 'text-base-content'
                                 }`}
                               title={row.label}
                             >
                               {row.label}
                             </p>
-                            <div className="flex items-center gap-1.5 text-[10px] text-base-content/40">
+                            <div className="flex items-center gap-1.5 text-[13px] text-heledone-ink-muted">
                               <span>{formatDecimalHours(row.total)}</span>
                               {row.sublabel && (
                                 <>
@@ -845,7 +851,7 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
                   <tr>
                     <td colSpan={days.length + 1} className="py-12 text-center">
                       <h3 className="text-sm font-bold text-base-content">{S.emptyGridTitle}</h3>
-                      <p className="mt-1 text-xs text-base-content/50">{S.emptyGridHint}</p>
+                      <p className="mt-1 text-xs text-heledone-ink-muted">{S.emptyGridHint}</p>
                     </td>
                   </tr>
                 )}
@@ -855,19 +861,19 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
 
           {/* Footer Legend */}
           <div className="flex flex-col justify-between gap-2 rounded-b-2xl border-t border-base-content/8 px-4 py-3 bg-base-200/20 md:flex-row md:items-center text-xs">
-            <div className="flex flex-wrap items-center gap-4 text-base-content/60">
+            <div className="flex flex-wrap items-center gap-4 text-heledone-ink-muted">
               <span className="flex items-center gap-1.5">
-                <span className="flex size-3 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <span className="flex size-3 items-center justify-center rounded-full bg-success text-success-content">
                   <Check size={8} variant="Bold" />
                 </span>
-                <span className="text-[11px] font-medium">{S.legendCompleted}</span>
+                <span className="text-[13px] font-medium">{S.legendCompleted}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-amber-500" />
-                <span className="text-[11px] font-medium">{S.legendUnsaved}</span>
+                <span className="size-2 rounded-full bg-warning" />
+                <span className="text-[13px] font-medium">{S.legendUnsaved}</span>
               </span>
             </div>
-            <span className="text-[11px] text-base-content/40">{S.hintRightClick}</span>
+            <span className="text-[13px] text-heledone-ink-muted">{S.hintRightClick}</span>
           </div>
         </div>
       )}

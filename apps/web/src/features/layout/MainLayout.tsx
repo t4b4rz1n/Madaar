@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../i18n/locale";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
@@ -7,17 +8,16 @@ import { useAuthStore } from "../auth/store/authStore";
 import { usePermissions } from "../auth/hooks/usePermissions";
 import { getProfileRequest } from "../auth/api/authApi";
 import { CommandMenu } from "./CommandMenu";
-import { drawerItems, getVisibleDrawerItems } from "./DrawerItems";
-import type { Breadcrumb } from "./Header";
-import { Header } from "./Header";
-import { Sidebar } from "./Sidebar";
-import { useLayoutStore } from "./store/layoutStore";
+import { getVisibleDrawerItems } from "./DrawerItems";
+import { HomeHeader, HomeSidebar } from "../dashboard/components/HomeShell";
 import { getOrganizations } from "../organizations/api/organizationsApi";
 import { OnboardingWizard } from "../onboarding/components/OnboardingWizard";
 import PageLoader from "../../components/PageLoader";
+import ContentLoader from "../../components/ContentLoader";
+import TopProgressBar from "../../components/TopProgressBar";
 
 export const MainLayout = () => {
-  const setSidebarOpen = useLayoutStore((state) => state.setSidebarOpen);
+  const t = useTranslation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -56,37 +56,6 @@ export const MainLayout = () => {
     [hasAllPermissions, hasAnyPermission, user],
   );
 
-  const breadcrumbs = useMemo(() => {
-    const pathSegments = pathname.split("/").filter((i) => i);
-    const crumbs: Breadcrumb[] = [{ title: "Today", path: "/" }];
-
-    if (pathSegments.length === 0 || pathSegments[0] === "dashboard") {
-      return crumbs;
-    }
-
-    const firstSegment = pathSegments[0];
-    const matchingItem = drawerItems.find((item) => item.link === firstSegment);
-
-    // If visiting /settings or any admin sub-page, inject "Workspace Settings" into breadcrumbs
-    if (firstSegment === "settings") {
-      crumbs.push({ title: "Workspace Settings", path: "/settings" });
-    } else if (matchingItem && !matchingItem.isPrimary) {
-      crumbs.push({ title: "Workspace Settings", path: "/settings" });
-      crumbs.push({ title: matchingItem.title, path: `/${firstSegment}` });
-    } else if (matchingItem) {
-      crumbs.push({ title: matchingItem.title, path: `/${firstSegment}` });
-    } else {
-      crumbs.push({ title: firstSegment, path: `/${firstSegment}` });
-    }
-
-    // Add remaining nested segments if any (e.g. details pages)
-    if (pathSegments.length > 1) {
-      crumbs.push({ title: "Details", path: pathname });
-    }
-
-    return crumbs;
-  }, [pathname]);
-
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -108,7 +77,7 @@ export const MainLayout = () => {
     // 2. If loading and NO local storage flag exists, show loader
     // (If a flag DOES exist, we skip the loader to prevent flashing on hard reload)
     if (isLoadingOrgs && !onboardingAlreadyDone && !rawOnboardingDone) {
-      return <PageLoader />;
+      return <PageLoader fullScreen />;
     }
 
     // 3. Has orgs → mark as done so we never check again
@@ -118,25 +87,23 @@ export const MainLayout = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-base-200 font-sans text-base-content">
+    <div className={`${pathname === "/dashboard" ? "home-reference-shell " : ""}heledone-workspace flex h-screen overflow-hidden bg-base-200 font-sans text-base-content`}>
+      <TopProgressBar />
       <a
         href="#main-content"
         className="fixed start-4 top-3 z-[200] -translate-y-24 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-content shadow-lg transition-transform focus:translate-y-0"
       >
-        Skip to main content
-      </a>
-      <Sidebar />
+        {t("رفتن به محتوای اصلی")}</a>
+      <HomeSidebar />
 
       <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Header
-          onMenuClick={() => setSidebarOpen(true)}
-          onCommandMenuClick={() => setCommandMenuOpen(true)}
-          breadcrumbs={breadcrumbs}
-        />
+        <HomeHeader onSearch={() => setCommandMenuOpen(true)} />
 
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 outline-none sm:px-8 sm:py-7">
+        <main id="main-content" data-section={pathname.split('/')[1] || 'dashboard'} tabIndex={-1} className="heledone-page flex-1 overflow-x-hidden overflow-y-auto bg-base-200 px-4 py-5 outline-none sm:px-6 sm:py-5">
           <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <Outlet />
+            <Suspense fallback={<ContentLoader />}>
+              <Outlet />
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>
@@ -150,4 +117,3 @@ export const MainLayout = () => {
     </div>
   );
 };
-

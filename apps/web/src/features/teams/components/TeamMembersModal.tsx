@@ -1,5 +1,7 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { useTranslation } from "../../../i18n/locale";
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import {
@@ -32,6 +34,7 @@ interface TeamMembersModalProps {
 }
 
 export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProps) => {
+  const t = useTranslation();
   const { data: members, isLoading, isError } = useTeamMembers(team?.id);
   const addMember = useAddTeamMember();
   const removeMember = useRemoveTeamMember();
@@ -103,7 +106,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
         >
           <motion.div
             variants={modalVariants}
-            className="madaar-surface relative m-0 flex max-h-[min(90vh,44rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-base-content/10 bg-base-100/95 shadow-madaar-floating backdrop-blur-xl sm:m-4"
+            className="heledone-surface relative m-0 flex max-h-[min(90vh,44rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-base-content/10 bg-base-100/95 shadow-heledone-floating backdrop-blur-xl sm:m-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -115,18 +118,17 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xl font-bold text-base-content sm:text-2xl">
-                      Manage Members
-                    </h3>
-                    <p className="truncate text-sm text-base-content/60">
-                      Members of <span className="font-semibold text-base-content/80">{team.name}</span>
+                      {t("Manage Members")}</h3>
+                    <p className="truncate text-sm text-heledone-ink-muted">
+                      {t("Members of")} <span className="font-semibold text-base-content/80">{team.name}</span>
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="btn btn-ghost btn-square btn-sm shrink-0 rounded-xl text-base-content/50 transition-colors hover:bg-base-content/10 hover:text-base-content"
-                  aria-label="Close members modal"
+                  className="btn btn-ghost btn-square btn-sm shrink-0 rounded-xl text-heledone-ink-muted transition-colors hover:bg-base-content/10 hover:text-base-content"
+                  aria-label={t("Close members modal")}
                 >
                   <X size={20} strokeWidth={2.25} />
                 </button>
@@ -153,20 +155,18 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                 </div>
               ) : isError ? (
                 <div className="flex flex-col items-center justify-center min-h-[200px] text-center border border-dashed border-error/30 rounded-2xl p-6 bg-error/5">
-                  <p className="text-error font-medium">Failed to load members.</p>
-                  <p className="text-xs text-base-content/60 mt-1">
-                    Please check your network connection or try again later.
-                  </p>
+                  <p className="text-error font-medium">{t("Failed to load members.")}</p>
+                  <p className="text-xs text-heledone-ink-muted mt-1">
+                    {t("Please check your network connection or try again later.")}</p>
                 </div>
               ) : members && members.length === 0 ? (
                 <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-base-content/15 bg-base-200/20 p-6 text-center">
-                  <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-base-content/5 text-base-content/35">
+                  <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-base-content/5 text-heledone-ink-muted">
                     <People size={26} />
                   </div>
-                  <p className="text-base font-semibold text-base-content/70">No members found</p>
-                  <p className="text-sm text-base-content/60 mt-1">
-                    Add team members using the form below.
-                  </p>
+                  <p className="text-base font-semibold text-base-content/70">{t("No members found")}</p>
+                  <p className="text-sm text-heledone-ink-muted mt-1">
+                    {t("Add team members using the form below.")}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -193,16 +193,15 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm text-base-content truncate">
                             {member.user_details
-                              ? member.user_details.username || `${member.user_details.first_name || ""} ${member.user_details.last_name || ""}`.trim() || member.user_details.email || "Unknown User"
-                              : "Unknown User"}
+                              ? member.user_details.username || `${member.user_details.first_name || ""} ${member.user_details.last_name || ""}`.trim() || member.user_details.email || t("Unknown User")
+                              : t("Unknown User")}
                           </p>
                           {String(member.user) === String(team?.lead_id) && (
-                            <span className="badge badge-primary badge-sm badge-outline text-[10px] h-5 px-1.5 font-semibold">
-                              Leader
-                            </span>
+                            <span className="badge badge-primary badge-sm badge-outline text-[13px] h-5 px-1.5 font-semibold">
+                              {t("Leader")}</span>
                           )}
                         </div>
-                        <p className="text-xs text-base-content/50 truncate">
+                        <p className="text-xs text-heledone-ink-muted truncate">
                           {member.user_details?.email || ""}
                         </p>
                       </div>
@@ -210,11 +209,11 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                       <button
                         type="button"
                         onClick={() => setRemovingMember(member)}
-                        className="btn btn-ghost btn-sm min-h-9 shrink-0 gap-1.5 rounded-xl px-2.5 text-base-content/50 transition-colors hover:border-error/15 hover:bg-error/10 hover:text-error sm:px-3"
-                        title="Remove member"
+                        className="btn btn-ghost btn-sm min-h-9 shrink-0 gap-1.5 rounded-xl px-2.5 text-heledone-ink-muted transition-colors hover:border-error/15 hover:bg-error/10 hover:text-error sm:px-3"
+                        title={t("Remove member")}
                       >
                         <UserMinus size={16} />
-                        <span className="hidden sm:inline">Remove</span>
+                        <span className="hidden sm:inline">{t("Remove")}</span>
                       </button>
                     </div>
                   ))}
@@ -226,16 +225,15 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                 <div className="mt-6 border-t border-base-content/10 pt-5 sm:pt-6">
                   <h4 className="font-semibold text-sm text-base-content mb-4 flex items-center gap-2">
                     <Add size={16} className="text-primary" />
-                    Add New Member
-                  </h4>
+                    {t("Add New Member")}</h4>
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <div className="relative flex-1">
                       <select
                         value={selectedUserId}
                         onChange={(e) => setSelectedUserId(e.target.value)}
-                        className="select select-bordered w-full rounded-xl border-base-content/10 bg-base-200/30 pl-10 transition-colors hover:border-base-content/20"
+                        className="select select-bordered w-full rounded-xl border-base-content/10 bg-base-200/30 ps-10 transition-colors hover:border-base-content/20"
                       >
-                        <option value="">Select a user...</option>
+                        <option value="">{t("Select a user...")}</option>
                         {availableUsers.map((user) => (
                           <option key={user.id} value={String(user.id)}>
                             {user.first_name} {user.last_name} ({user.username})
@@ -243,11 +241,10 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                         ))}
                         {availableUsers.length === 0 && users.length > 0 && (
                           <option value="" disabled>
-                            All users are already members
-                          </option>
+                            {t("All users are already members")}</option>
                         )}
                       </select>
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">
+                      <div className="absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted pointer-events-none">
                         <Profile2User size={18} />
                       </div>
                     </div>
@@ -263,8 +260,7 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
                       ) : (
                         <>
                           <Add size={16} />
-                          Add Member
-                        </>
+                          {t("Add Member")}</>
                       )}
                     </button>
                   </div>
@@ -274,8 +270,8 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
 
             {/* Footer */}
             <div className="flex-shrink-0 border-t border-base-content/10 bg-base-200/30 p-5 sm:p-6">
-              <span className="text-xs text-base-content/50">
-                {memberCount} member{memberCount !== 1 ? "s" : ""}
+              <span className="text-xs text-heledone-ink-muted">
+                {formatUiNumber(memberCount)}  {t("member")}{memberCount !== 1 ? "s" : ""}
               </span>
             </div>
           </motion.div>
@@ -291,8 +287,8 @@ export const TeamMembersModal = ({ team, isOpen, onClose }: TeamMembersModalProp
         isOpen={removingMember !== null}
         onClose={() => setRemovingMember(null)}
         onConfirm={handleRemoveConfirm}
-        title="Remove Member"
-        message={`Are you sure you want to remove this member from the team?`}
+        title={t("Remove Member")}
+        message={t("Are you sure you want to remove this member from the team?")}
         isLoading={removeMember.isPending}
       />
     </>

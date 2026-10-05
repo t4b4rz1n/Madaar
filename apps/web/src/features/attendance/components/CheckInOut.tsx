@@ -1,3 +1,5 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +25,7 @@ const formatSeconds = (seconds: number) => {
 };
 
 export const CheckInOut: React.FC = () => {
+  const t = useTranslation();
   const queryClient = useQueryClient();
   const { activeOrganizationId } = useAttendanceStore();
 
@@ -101,11 +104,11 @@ export const CheckInOut: React.FC = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(["today-attendance"], data);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
-      toast.success("Timer started (Checked in)");
+      toast.success(t("Timer started (Checked in)"));
     },
     onError: (error: MutationError) =>
       toast.error(
-        error?.detail || error?.message || "Could not complete action.",
+        translateError(error?.detail || error?.message || "Could not complete action."),
       ),
   });
 
@@ -114,11 +117,11 @@ export const CheckInOut: React.FC = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(["today-attendance"], data);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
-      toast.success("Timer stopped (Checked out)");
+      toast.success(t("Timer stopped (Checked out)"));
     },
     onError: (error: MutationError) =>
       toast.error(
-        error?.detail || error?.message || "Could not complete action.",
+        translateError(error?.detail || error?.message || "Could not complete action."),
       ),
   });
 
@@ -126,29 +129,26 @@ export const CheckInOut: React.FC = () => {
     return <div className="h-32 animate-pulse rounded-[26px] bg-base-100" />;
 
   return (
-    <section className="madaar-surface rounded-[26px] border border-base-content/10 bg-base-100 p-5 sm:p-6">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+    <section className="heledone-surface rounded-[26px] border border-base-content/10 bg-base-100 p-5 sm:p-6">
+      <div className="flex flex-col gap-5">
         <div className="flex items-start gap-3">
-          <div className="grid size-11 place-items-center rounded-2xl bg-success/10 text-success">
+          <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-success/10 text-success">
             <Timer1 size={23} />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-success">
-              Attendance
-            </p>
+            <p className="text-xs font-bold uppercase  text-success">
+              {t("حضور و کارکرد")}</p>
             <h2 className="mt-1 text-lg font-semibold">
               {formatDisplayDate(new Date(), "EEEE, d MMMM yyyy")}
             </h2>
-            <p className="mt-1 text-xs text-base-content/50">
-              Record your working time. You can pause and resume.
-            </p>
+            <p className="mt-1 text-xs text-heledone-ink-muted">
+              {t("Record your working time. You can pause and resume.")}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <div className="flex flex-col items-start">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-base-content/40">
-              Total Time
-            </p>
+            <p className="text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+              {t("Total Time")}</p>
             <p className="mt-1 text-2xl font-bold tracking-tight text-base-content">
               {formatSeconds(timer)}
             </p>
@@ -161,23 +161,21 @@ export const CheckInOut: React.FC = () => {
                 resolvedOrgId
                   ? checkInMutation.mutate(resolvedOrgId)
                   : toast.warning(
-                      "Please select or join an active organization first",
+                      t("Please select or join an active organization first"),
                     )
               }
               disabled={checkInMutation.isPending}
-              className="btn btn-success text-white px-6 rounded-xl font-bold h-11 min-h-[44px] gap-2 shadow-sm shadow-success/20 hover:shadow-md hover:shadow-success/30 transition-all"
+              className="btn btn-success text-success-content px-6 rounded-xl font-bold h-11 min-h-[44px] gap-2 shadow-sm shadow-success/20 hover:shadow-md hover:shadow-success/30 transition-all"
             >
-              <Login size={16} /> Check in
-            </button>
+              <Login size={16} />  {t("Check in")}</button>
           ) : (
             <button
               type="button"
               onClick={() => checkOutMutation.mutate()}
               disabled={checkOutMutation.isPending}
-              className="btn btn-error text-white px-6 rounded-xl font-bold h-11 min-h-[44px] gap-2 shadow-sm shadow-error/20 hover:shadow-md hover:shadow-error/30 transition-all"
+              className="btn btn-error text-error-content px-6 rounded-xl font-bold h-11 min-h-[44px] gap-2 shadow-sm shadow-error/20 hover:shadow-md hover:shadow-error/30 transition-all"
             >
-              <Logout size={16} /> Check out
-            </button>
+              <Logout size={16} />  {t("Check out")}</button>
           )}
         </div>
       </div>

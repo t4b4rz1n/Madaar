@@ -1,6 +1,9 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { useTranslation } from "../../../i18n/locale";
+import { CoastalArtwork } from "../../../components/CoastalEmptyState";
 import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Setting2 } from "iconsax-reactjs";
+import { ArrowLeft, Shield } from "iconsax-reactjs";
 import { useQuery } from "@tanstack/react-query";
 import { CreateRoleModal } from "../components/CreateRoleModal";
 import { EditRoleModal } from "../components/EditRoleModal";
@@ -9,6 +12,7 @@ import { getOrganizationDetails } from "../../organizations/api/organizationsApi
 import type { Role } from "../types";
 
 const OrgRolesPage = () => {
+  const t = useTranslation();
   const { orgId } = useParams<{ orgId: string }>();
   const navigate = useNavigate();
 
@@ -35,9 +39,9 @@ const OrgRolesPage = () => {
   const roles: Role[] = data?.results ?? [];
 
   const deleteTitle = useMemo(() => {
-    if (!roleToDelete) return "Delete Role";
-    return `Delete role «${roleToDelete.name}»`;
-  }, [roleToDelete]);
+    if (!roleToDelete) return t("Delete Role");
+    return t("Delete role «{value0}»", { value0: roleToDelete.name });
+  }, [roleToDelete, t]);
 
   const handleDeleteClick = (roleId: string) => {
     const found = roles.find((r) => r.id === roleId) ?? null;
@@ -92,7 +96,7 @@ const OrgRolesPage = () => {
     return (
       <div className="p-4 sm:p-6">
         <div className="alert alert-error shadow-md border border-error/20">
-          <span>Failed to load roles. Please try again.</span>
+          <span>{t("Failed to load roles. Please try again.")}</span>
         </div>
       </div>
     );
@@ -104,25 +108,24 @@ const OrgRolesPage = () => {
       <button
         type="button"
         onClick={() => navigate(`/organizations/${orgId}`)}
-        className="btn btn-ghost btn-sm rounded-lg gap-2 ps-0 text-base-content/60 hover:bg-base-200 hover:text-base-content"
+        className="btn btn-ghost btn-sm rounded-lg gap-2 ps-0 text-heledone-ink-muted hover:bg-base-200 hover:text-base-content"
       >
         <ArrowLeft size={16} />
-        Back to {organization?.name ?? "organization"}
+        {t("Back to")} {organization?.name ?? t("Organization")}
       </button>
 
       {/* Page header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div data-coastal-scene="roles" className="heledone-page-heading flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
             <Shield size={24} />
           </span>
           <div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Roles Management
-            </h1>
+              {t("Roles Management")}</h1>
             {organization && (
-              <p className="mt-0.5 text-sm text-base-content/55">
-                Managing roles for{" "}
+              <p className="mt-0.5 text-sm text-heledone-ink-muted">
+                {t("Managing roles for")}{" "}
                 <span className="font-semibold text-base-content/75">
                   {organization.name}
                 </span>
@@ -150,8 +153,7 @@ const OrgRolesPage = () => {
               d="M12 4.5v15m7.5-7.5h-15"
             />
           </svg>
-          Create Role
-        </button>
+          {t("Create Role")}</button>
       </div>
 
       {/* Modals */}
@@ -175,19 +177,15 @@ const OrgRolesPage = () => {
             <table className="table table-zebra w-full">
               <thead>
                 <tr className="border-b border-base-300 bg-base-200/50 text-base-content/80">
-                  <th className="py-4 pl-6 text-sm font-semibold">Role Name</th>
+                  <th className="py-4 ps-6 text-sm font-semibold">{t("Role Name")}</th>
                   <th className="hidden md:table-cell py-4 text-sm font-semibold">
-                    Description
-                  </th>
+                    {t("توضیح")}</th>
                   <th className="py-4 text-sm font-semibold text-center">
-                    Permissions
-                  </th>
+                    {t("Permissions")}</th>
                   <th className="py-4 text-sm font-semibold text-center">
-                    Status
-                  </th>
-                  <th className="py-4 pr-6 text-sm font-semibold text-end">
-                    Actions
-                  </th>
+                    {t("وضعیت")}</th>
+                  <th className="py-4 pe-6 text-sm font-semibold text-end">
+                    {t("Actions")}</th>
                 </tr>
               </thead>
 
@@ -202,7 +200,7 @@ const OrgRolesPage = () => {
                         key={role.id}
                         className="hover:bg-base-200/30 transition-colors duration-150"
                       >
-                        <td className="py-4 pl-6">
+                        <td className="py-4 ps-6">
                           <div className="font-semibold text-base-content text-[15px]">
                             {role.name}
                           </div>
@@ -228,47 +226,41 @@ const OrgRolesPage = () => {
                         <td className="py-4 text-center">
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                            {role.permissions?.length ?? 0} Keys
-                          </div>
+                            {formatUiNumber(role.permissions?.length ?? 0)}  {t("Keys")}</div>
                         </td>
 
                         <td className="py-4 text-center">
                           <div className="flex flex-wrap items-center justify-center gap-2">
                             {role.is_protected ? (
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/20 bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning">
-                                Protected
-                              </span>
+                                {t("Protected")}</span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
-                                Active
-                              </span>
+                                {t("فعال")}</span>
                             )}
                             {role.member_count !== undefined && (
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-base-300 bg-base-200 px-2.5 py-1 text-xs font-semibold text-base-content/60">
-                                {role.member_count} members
-                              </span>
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-base-300 bg-base-200 px-2.5 py-1 text-xs font-semibold text-heledone-ink-muted">
+                                {formatUiNumber(role.member_count)}  {t("members")}</span>
                             )}
                           </div>
                         </td>
 
-                        <td className="py-4 pr-6 text-end">
+                        <td className="py-4 pe-6 text-end">
                           <div className="inline-flex gap-1">
                             <button
                               type="button"
                               className="btn btn-sm btn-ghost text-base-content/70 hover:bg-base-200 hover:text-base-content transition-all"
                               onClick={() => handleEditClick(role.id)}
                             >
-                              Edit
-                            </button>
+                              {t("ویرایش")}</button>
                             <button
                               type="button"
                               className="btn btn-sm btn-ghost text-error/80 hover:bg-error/10 hover:text-error transition-all"
                               onClick={() => handleDeleteClick(role.id)}
                               disabled={role.is_protected}
-                              title={role.is_protected ? "Protected roles cannot be deleted" : undefined}
+                              title={role.is_protected ? t("Protected roles cannot be deleted") : undefined}
                             >
-                              Delete
-                            </button>
+                              {t("حذف")}</button>
                           </div>
                         </td>
                       </tr>
@@ -278,19 +270,15 @@ const OrgRolesPage = () => {
                   <tr>
                     <td colSpan={5} className="py-16 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
-                        <span className="grid size-14 place-items-center rounded-2xl bg-base-200 text-base-content/30">
-                          <Setting2 size={28} />
-                        </span>
-                        <p className="text-base-content/50 font-medium">
-                          No roles found for this organization.
-                        </p>
+                        <CoastalArtwork motif="coast" />
+                        <p className="text-heledone-ink-muted font-medium">
+                          {t("No roles found for this organization.")}</p>
                         <button
                           type="button"
                           className="btn btn-primary btn-sm rounded-xl"
                           onClick={() => setIsCreateOpen(true)}
                         >
-                          Create first role
-                        </button>
+                          {t("Create first role")}</button>
                       </div>
                     </td>
                   </tr>
@@ -310,16 +298,14 @@ const OrgRolesPage = () => {
             </h3>
 
             <p className="py-4 text-base-content/70">
-              Are you sure? This action cannot be undone.
-            </p>
+              {t("Are you sure? This action cannot be undone.")}</p>
 
             {roleToDelete && (
               <div className="alert alert-warning shadow-md border border-warning/20 rounded-2xl mt-2">
                 <span>
-                  Role{" "}
+                  {t("Role")}{" "}
                   <span className="font-semibold">{roleToDelete.name}</span>{" "}
-                  will be deleted.
-                </span>
+                  {t("will be deleted.")}</span>
               </div>
             )}
 
@@ -336,8 +322,7 @@ const OrgRolesPage = () => {
                 onClick={closeDeleteModal}
                 disabled={isDeleting}
               >
-                Cancel
-              </button>
+                {t("انصراف")}</button>
 
               <button
                 type="button"
@@ -348,10 +333,9 @@ const OrgRolesPage = () => {
                 {isDeleting ? (
                   <>
                     <span className="loading loading-spinner loading-xs" />
-                    Deleting...
-                  </>
+                    {t("Deleting...")}</>
                 ) : (
-                  "Delete"
+                  t("حذف")
                 )}
               </button>
             </div>

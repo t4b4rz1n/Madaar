@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/locale";
 import React from "react";
 import { useCreateRole } from "../hooks/useRoles";
 import { RoleFormModal } from "./RoleFormModal";
@@ -17,13 +18,14 @@ export const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
   organizationId,
   organizationName,
 }) => {
+  const t = useTranslation();
   const { mutate: createRole, isPending } = useCreateRole();
 
   return (
     <RoleFormModal
       isOpen={isOpen}
-      title="Create New Role"
-      submitLabel="Save Role"
+      title={t("Create New Role")}
+      submitLabel={t("Save Role")}
       isPending={isPending}
       onClose={onClose}
       lockedOrganizationId={organizationId}

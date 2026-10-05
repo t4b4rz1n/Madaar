@@ -1,3 +1,7 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { useTranslation } from "../../../i18n/locale";
+import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import { formatDisplayDate } from "../../../utils/date";
 import { createPortal } from "react-dom";
 import { useEffect, useState, useRef } from "react";
@@ -34,10 +38,10 @@ interface TaskCardProps {
 
 
 const priorityLeftBorder: Record<Task["priority"], string> = {
-  low:      "#e2e8f0",
-  medium:   "#93c5fd",
-  high:     "#fde047",
-  critical: "#fca5a5",
+  low:      "#DCE6E2",
+  medium:   "#A7D4CD",
+  high:     "#F2BA49",
+  critical: "#EBC0AF",
 };
 
 
@@ -55,6 +59,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   activeTimer,
   onDueDateClick,
 }) => {
+  const t = useTranslation();
   const currentUser = useAuthStore((state) => state.user);
   const { hasPermission, isStaff } = usePermissions();
 
@@ -93,10 +98,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Task deleted");
+      toast.success(t("تسک حذف شد"));
     },
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || "Could not delete task."),
+      toast.error(translateError(error.response?.data?.detail || "Could not delete task.")),
   });
 
   const updateMutation = useMutation({
@@ -107,7 +112,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       queryClient.invalidateQueries({ queryKey: ["taskActivities", task.id] });
     },
     onError: (error: any) =>
-      toast.error(error.response?.data?.detail || "Could not update task."),
+      toast.error(translateError(error.response?.data?.detail || "Could not update task.")),
   });
 
   const storeProjectId = useTaskStore((state) => state.activeProjectId);
@@ -181,16 +186,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         onClick={onClick}
         className={`group relative cursor-pointer rounded-2xl border bg-base-100 p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
           isOverdue
-            ? "border-red-500/30"
+            ? "border-error/30"
             : task.is_blocked
-            ? "border-amber-500/30"
+            ? "border-error/30"
             : "border-base-content/8 hover:border-base-content/20"
-        } ${isActuallyDone ? "opacity-60" : ""}`}
+        } ${isActuallyDone ? "border-success/20" : ""}`}
         style={{
-          borderLeftWidth: "3px",
-          borderLeftColor: priorityLeftBorder[task.priority],
+          borderInlineStartWidth: "3px",
+          borderInlineStartColor: priorityLeftBorder[task.priority],
         }}
-        aria-label={`Open task ${task.key}: ${task.title}`}
+        aria-label={t("Open task {value0}: {value1}", { value0: task.key, value1: task.title })}
       >
         {/* Loading overlay */}
         {(updateMutation.isPending || deleteMutation.isPending) && (
@@ -207,42 +212,47 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             e.stopPropagation();
             setIsMenuOpen(true);
           }}
-          className="absolute top-2 right-2 z-10 grid size-6 place-items-center rounded-lg text-base-content/35 opacity-0 group-hover:opacity-100 hover:bg-base-200 hover:text-base-content transition duration-150"
-          aria-label={`Actions for ${task.title}`}
+          className="absolute top-2 end-2 z-10 grid size-6 place-items-center rounded-lg text-heledone-ink-muted opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-base-200 hover:text-base-content transition duration-150"
+          aria-label={t("Actions for {value0}", { value0: task.title })}
         >
           <More size={14} />
         </button>
 
-        {/* ─── Title & Checkbox (Inline with dir="auto") ─── */}
-        <div className="flex items-start gap-2 pr-4" dir="auto">
+        {/* ─── Title & Checkbox (Inline with ) ─── */}
+        <div className="flex items-start gap-2 pe-4">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               (onToggleDone || onMarkDone)?.(task.id);
             }}
-            className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded transition ${
+            className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded transition ${
               isActuallyDone
-                ? "bg-emerald-500 text-white"
-                : "border border-base-content/25 hover:border-emerald-500 hover:bg-emerald-500/10"
+                ? "bg-success text-success-content"
+                : "border border-heledone-ink-muted hover:border-success hover:bg-success/10"
             }`}
-            title={isActuallyDone ? "Mark incomplete" : "Mark done"}
+            title={isActuallyDone ? t("بازگشت به انجام") : t("ثبت انجام‌شدن")}
           >
             {isActuallyDone && <TickCircle size={11} variant="Bold" />}
           </button>
 
           <div className="min-w-0 flex-1">
             <h3
-              dir="auto"
-              className={`text-[12.5px] font-semibold leading-snug tracking-tight ${
+
+              className={`text-sm font-semibold leading-relaxed tracking-tight ${
                 isActuallyDone
-                  ? "text-base-content/35 line-through"
+                  ? "text-heledone-ink-muted line-through"
                   : "text-base-content"
               }`}
             >
               {task.title}
             </h3>
           </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="rounded-full px-2.5 py-0.5 font-medium" style={{ color: getWorkflowAppearance(task.status_detail).ink, background: `color-mix(in srgb, ${getWorkflowAppearance(task.status_detail).color} 10%, transparent)` }}>{getWorkflowAppearance(task.status_detail).label}</span>
+          {task.is_blocked && <span className="rounded-full bg-error/10 px-2.5 py-0.5 font-semibold text-error">{t("مسدود · نیاز به رفع مانع")}</span>}
         </div>
 
         {/* ─── Footer: Assignee Avatar, Metadata & Timer ─── */}
@@ -265,15 +275,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               }`}
               title={
                 task.assignee_detail
-                  ? `Assigned to ${task.assignee_detail.first_name || task.assignee_detail.username}`
+                  ? t("Assigned to {value0}", { value0: task.assignee_detail.first_name || task.assignee_detail.username })
                   : canEditTask
-                  ? "Assign member"
-                  : "Unassigned"
+                  ? t("Assign member")
+                  : t("بدون مسئول")
               }
             >
 
               <div className="relative shrink-0">
-                <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shadow-xs">
+                <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[13px] font-bold text-primary shadow-xs">
                   {task.assignee_detail?.avatar_url || task.assignee_detail?.avatar ? (
                     <img
                       src={
@@ -284,12 +294,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       className="size-6 rounded-full object-cover"
                     />
                   ) : (
-                    initials || <Profile2User size={12} className="text-base-content/45" />
+                    initials || <Profile2User size={12} className="text-heledone-ink-muted" />
                   )}
                 </span>
 
                 {task.project && (
-                  <div className="absolute -bottom-1 -right-1 z-10">
+                  <div className="absolute -bottom-1 -end-1 z-10">
                     <LiveActivityIndicator
                       projectId={task.project.toString()}
                       taskId={task.id}
@@ -301,23 +311,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             {/* ─── Task Metadata (Due Date, Checklist & Milestone) ─── */}
             {(task.due_date || (task.checklist_stats && task.checklist_stats.total > 0) || task.milestone_detail) && (
-              <div className="flex flex-wrap items-center gap-2.5 text-[10px] font-medium text-base-content/40">
+              <div className="flex flex-wrap items-center gap-2.5 text-[13px] font-medium text-heledone-ink-muted">
                 {task.due_date && (
-                  <div className={`flex items-center gap-1 ${isOverdue && !isActuallyDone ? 'text-red-500 font-bold bg-red-500/10 px-1.5 py-0.5 rounded-md -ml-1' : ''}`} title="Due date">
+                  <div className={`flex items-center gap-1 ${isOverdue && !isActuallyDone ? 'text-error font-bold bg-error/10 px-1.5 py-0.5 rounded-md -ms-1' : ''}`} title={t("سررسید")}>
                     <Calendar1 size={13} variant={isOverdue && !isActuallyDone ? "Bold" : "Linear"} />
                     <span>{formatDisplayDate(task.due_date, "MMM d")}</span>
                   </div>
                 )}
                 {task.milestone_detail && (
-                  <div className="flex items-center gap-1 max-w-[100px]" title="Milestone">
+                  <div className="flex items-center gap-1 max-w-[100px]" title={t("Milestone")}>
                     <Flag size={13} className="shrink-0" />
                     <span className="truncate">{task.milestone_detail.title}</span>
                   </div>
                 )}
                 {task.checklist_stats && task.checklist_stats.total > 0 && (
-                  <div className={`flex items-center gap-1 ${task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? 'text-emerald-500 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded-md -ml-1' : ''}`} title="Checklist items">
+                  <div className={`flex items-center gap-1 ${task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? 'text-success font-bold bg-success/10 px-1.5 py-0.5 rounded-md -ms-1' : ''}`} title={t("Checklist items")}>
                     <TaskSquare size={13} variant={task.checklist_stats.done === task.checklist_stats.total && !isActuallyDone ? "Bold" : "Linear"} />
-                    <span>{task.checklist_stats.done}/{task.checklist_stats.total}</span>
+                    <span>{formatUiNumber(task.checklist_stats.done)}/{formatUiNumber(task.checklist_stats.total)}</span>
                   </div>
                 )}
               </div>
@@ -325,9 +335,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
 
           {/* Timer controls (visible always if running, or on hover if not running) */}
-          <div className={`flex items-center gap-1.5 shrink-0 transition-opacity duration-150 ${timerIsRunning ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+          <div className={`flex items-center gap-1.5 shrink-0 transition-opacity duration-150 ${timerIsRunning ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 focus-visible:opacity-100"}`}>
             {timerIsRunning && (
-              <span className="font-mono text-[10px] font-bold tabular-nums text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+              <span className="font-mono text-[13px] font-bold tabular-nums text-success bg-success/10 px-1.5 py-0.5 rounded-md">
                 {formattedElapsed}
               </span>
             )}
@@ -340,10 +350,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               }}
               className={`grid size-6.5 place-items-center rounded-lg transition ${
                 timerIsRunning
-                  ? "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                  : "bg-base-200/80 text-base-content/45 hover:bg-primary/10 hover:text-primary"
+                  ? "bg-error/10 text-error hover:bg-error/20"
+                  : "bg-base-200/80 text-heledone-ink-muted hover:bg-primary/10 hover:text-primary"
               }`}
-              title={timerIsRunning ? "Stop timer" : "Start timer"}
+              title={timerIsRunning ? t("توقف زمان‌سنج") : t("شروع زمان‌سنج")}
             >
               {timerIsRunning ? <Stop size={13} /> : <Play size={13} />}
             </button>
@@ -358,7 +368,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <>
             <div className="fixed inset-0 z-40" onClick={closeMenu} />
             <div
-              className="fixed z-50 w-48 max-h-60 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[12px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+              className="fixed z-50 w-48 max-h-60 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[13px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
               style={{
                 top: assigneeTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
                   ? assigneeTriggerRef.current.getBoundingClientRect().top - 4
@@ -370,14 +380,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-2 py-1 text-[10px] font-bold text-base-content/40 uppercase tracking-wider">
-                Assign to
-              </div>
+              <div className="px-2 py-1 text-[13px] font-bold text-heledone-ink-muted uppercase tracking-wider">
+                {t("Assign to")}</div>
 
               {/* Unassigned Option */}
               <button
                 type="button"
-                className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition ${
+                className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-start transition ${
                   !task.assignee ? "bg-primary/10 text-primary font-bold" : "hover:bg-base-200"
                 }`}
                 onClick={() => {
@@ -385,8 +394,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   closeMenu();
                 }}
               >
-                <Profile2User size={14} className="text-base-content/40" />
-                <span>Unassigned</span>
+                <Profile2User size={14} className="text-heledone-ink-muted" />
+                <span>{t("بدون مسئول")}</span>
               </button>
 
               {/* Users List */}
@@ -396,7 +405,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   <button
                     type="button"
                     key={user.id}
-                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition ${
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-start transition ${
                       isSelected
                         ? "bg-primary/10 text-primary font-bold"
                         : "hover:bg-base-200"
@@ -406,17 +415,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       closeMenu();
                     }}
                   >
-                    <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] font-bold text-primary shrink-0">
+                    <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[13px] font-bold text-primary shrink-0">
                       {(user.first_name?.[0] || user.full_name?.[0] || user.username?.[0] || user.email?.[0] || "?").toUpperCase()}
                     </span>
                     <span className="truncate flex items-center gap-1">
                       <span>
                         {user.first_name || user.last_name
                           ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
-                          : user.full_name || user.username || user.email || "Unknown Member"}
+                          : user.full_name || user.username || user.email || t("Unknown Member")}
                       </span>
                       {user.username && (
-                        <span className="text-[9px] text-base-content/40 font-normal">
+                        <span className="text-[13px] text-heledone-ink-muted font-normal">
                           (@{user.username})
                         </span>
                       )}
@@ -426,9 +435,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               })}
 
               {users.length === 0 && (
-                <div className="px-2 py-2 text-[11px] text-base-content/40">
-                  No members found
-                </div>
+                <div className="px-2 py-2 text-[13px] text-heledone-ink-muted">
+                  {t("No members found")}</div>
               )}
             </div>
           </>,
@@ -442,7 +450,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <>
             <div className="fixed inset-0 z-40" onClick={closeMenu} />
             <div
-              className="fixed z-50 w-52 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[12px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+              className="fixed z-50 w-52 rounded-2xl border border-base-content/10 bg-base-100 p-1.5 text-[13px] font-semibold text-base-content shadow-2xl animate-in fade-in zoom-in-95 duration-100"
               style={{
                 top: menuTriggerRef.current.getBoundingClientRect().bottom + 250 > window.innerHeight
                   ? menuTriggerRef.current.getBoundingClientRect().top - 4
@@ -459,10 +467,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowMembersMenu(false)}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-base-content/50 hover:bg-base-200"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-heledone-ink-muted hover:bg-base-200"
                   >
-                    <CloseCircle size={15} /> Back
-                  </button>
+                    <CloseCircle size={15} />  {t("بازگشت")}</button>
                   <button
                     type="button"
                     className="flex w-full items-center gap-2 rounded-xl px-3 py-2 hover:bg-base-200"
@@ -471,25 +478,24 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       closeMenu();
                     }}
                   >
-                    <Profile2User size={15} /> Unassigned
-                  </button>
+                    <Profile2User size={15} />  {t("بدون مسئول")}</button>
                   {users.map((user: any) => (
                     <button
                       type="button"
                       key={user.id}
-                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-start hover:bg-base-200"
                       onClick={() => {
                         updateMutation.mutate({ assignee: user.id });
                         closeMenu();
                       }}
                     >
-                      <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[9px] text-primary">
+                      <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-[13px] text-primary">
                         {(user.first_name?.[0] || user.full_name?.[0] || user.username?.[0] || user.email?.[0] || "?").toUpperCase()}
                       </span>
                       <span className="truncate">
                         {user.first_name || user.last_name
                           ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
-                          : user.full_name || user.username || user.email || "Unknown Member"}
+                          : user.full_name || user.username || user.email || t("Unknown Member")}
                       </span>
                     </button>
                   ))}
@@ -498,34 +504,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 <>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-start hover:bg-base-200"
                     onClick={() => {
                       closeMenu();
                       onClick();
                     }}
                   >
-                    <TaskSquare size={15} className="text-primary" /> Open task sheet
-                  </button>
+                    <TaskSquare size={15} className="text-primary" />  {t("Open task sheet")}</button>
 
                   {canEditTask && (
                     <>
                       <button
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-start hover:bg-base-200"
                         onClick={() => setShowMembersMenu(true)}
                       >
-                        <Profile2User size={15} className="text-base-content/50" /> Change assignee
-                      </button>
+                        <Profile2User size={15} className="text-heledone-ink-muted" />  {t("Change assignee")}</button>
                       <button
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-base-200"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-start hover:bg-base-200"
                         onClick={() => {
                           closeMenu();
                           onDueDateClick?.();
                         }}
                       >
-                        <Calendar1 size={15} className="text-base-content/50" />
-                        <span className="flex-1">Due date</span>
+                        <Calendar1 size={15} className="text-heledone-ink-muted" />
+                        <span className="flex-1">{t("سررسید")}</span>
                       </button>
                     </>
                   )}
@@ -535,14 +539,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       <div className="my-1 h-px bg-base-content/8" />
                       <button
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-red-500 hover:bg-red-50"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-start text-error hover:bg-error"
                         onClick={() => {
                           closeMenu();
                           setIsDeleteModalOpen(true);
                         }}
                       >
-                        <Trash size={15} /> Delete task
-                      </button>
+                        <Trash size={15} />  {t("Delete task")}</button>
                     </>
                   )}
                 </>
@@ -560,8 +563,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           setIsDeleteModalOpen(false);
           deleteMutation.mutate();
         }}
-        title="Delete task?"
-        message={`This will remove "${task.title}" from the workspace.`}
+        title={t("Delete task?")}
+        message={t("This will remove \"{value0}\" from the workspace.", { value0: task.title })}
       />
     </>
   );

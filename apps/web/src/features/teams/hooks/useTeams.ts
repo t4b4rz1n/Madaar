@@ -1,3 +1,5 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { t } from "../../../i18n/locale";
 import {
   keepPreviousData,
   useMutation,
@@ -34,7 +36,7 @@ export const useCreateTeam = () => {
         queryKey: ["teams"],
       });
 
-      toast.success("Team created successfully");
+      toast.success(t("Team created successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -42,7 +44,7 @@ export const useCreateTeam = () => {
         error.message ||
         "Failed to create team";
 
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -58,7 +60,7 @@ export const useUpdateTeam = () => {
         queryKey: ["teams"],
       });
 
-      toast.success("Team updated successfully");
+      toast.success(t("Team updated successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -66,7 +68,7 @@ export const useUpdateTeam = () => {
         error.message ||
         "Failed to update team";
 
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -81,7 +83,7 @@ export const useDeleteTeam = () => {
         queryKey: ["teams"],
       });
 
-      toast.success("Team deleted successfully");
+      toast.success(t("Team deleted successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
@@ -89,7 +91,7 @@ export const useDeleteTeam = () => {
         error.message ||
         "Failed to delete team";
 
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -118,14 +120,14 @@ export const useAddTeamMember = () => {
         queryClient.invalidateQueries({ queryKey: ["teams"] }),
         queryClient.invalidateQueries({ queryKey: ["organizations"] }),
       ]);
-      toast.success("Member added successfully");
+      toast.success(t("Member added successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
         error?.response?.data?.message ||
         error.message ||
         "Failed to add member";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -143,13 +145,13 @@ export const useRemoveTeamMember = () => {
         queryClient.invalidateQueries({ queryKey: ["teams"] }),
         queryClient.invalidateQueries({ queryKey: ["organizations"] }),
       ]);
-      toast.success("Member removed successfully");
+      toast.success(t("Member removed successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
         error?.response?.data?.message || error?.response?.data?.detail || error?.message ||
         "Failed to remove member";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };
@@ -167,14 +169,14 @@ export const useUpdateTeamMemberRole = () => {
         queryClient.invalidateQueries({ queryKey: ["teams"] }),
         queryClient.invalidateQueries({ queryKey: ["organizations"] }),
       ]);
-      toast.success("Member role updated successfully");
+      toast.success(t("Member role updated successfully"));
     },
     onError: (error: any) => {
       const errorMessage =
         error?.response?.data?.message ||
         error.message ||
         "Failed to update member role";
-      toast.error(errorMessage);
+      toast.error(translateError(errorMessage));
     },
   });
 };

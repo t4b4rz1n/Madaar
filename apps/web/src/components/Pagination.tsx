@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { formatNumber, useTranslation } from "../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import { ArrowDown2, ArrowLeft2, ArrowRight2 } from "iconsax-reactjs";
 import { useMemo } from "react";
 
@@ -21,6 +22,7 @@ export const Pagination = ({
   onPageChange,
   onPageSizeChange,
 }: PaginationProps) => {
+  const t = useTranslation();
   const [startItem, endItem] = useMemo(() => {
     const start = (currentPage - 1) * pageSize + 1;
     const end = Math.min(currentPage * pageSize, totalCount);
@@ -39,8 +41,7 @@ export const Pagination = ({
           className="btn btn-ghost rounded-full text-sm"
           whileTap={{ scale: 0.95 }}
         >
-          Show {pageSize} items
-          <ArrowDown2 size={16} className="text-base-content/50" />
+          {t("Show")} {formatNumber(pageSize)}  {t("items")}<ArrowDown2 size={16} className="text-heledone-ink-muted" />
         </motion.button>
         <ul
           tabIndex={0}
@@ -48,13 +49,13 @@ export const Pagination = ({
         >
           {pageSizes.map((size) => (
             <li
-              key={size}
+              key={formatNumber(size)}
               onClick={() => {
                 onPageSizeChange(size);
                 (document.activeElement as HTMLElement)?.blur();
               }}
             >
-              <a className={pageSize === size ? "active" : ""}>{size}</a>
+              <a className={pageSize === size ? "active" : ""}>{formatNumber(size)}</a>
             </li>
           ))}
         </ul>
@@ -66,16 +67,16 @@ export const Pagination = ({
           disabled={currentPage === 1}
           className="btn btn-ghost btn-circle disabled:opacity-40"
           whileTap={{ scale: 0.9 }}
-          aria-label="Previous Page"
+          aria-label={t("Previous Page")}
         >
-          <ArrowLeft2 size={18} />
+          <ArrowLeft2 className="rtl:rotate-180" size={18} />
         </motion.button>
 
         <div className="font-bold text-base-content/80 text-sm px-2 flex gap-2">
-          <p>Page</p>
-          <span>{currentPage}</span>
-          <p>of</p>
-          {totalPages}
+          <p>{t("Page")}</p>
+          <span>{formatNumber(currentPage)}</span>
+          <p>{t("of")}</p>
+          {formatNumber(totalPages)}
         </div>
 
         <motion.button
@@ -83,9 +84,9 @@ export const Pagination = ({
           disabled={currentPage === totalPages}
           className="btn btn-ghost btn-circle disabled:opacity-40"
           whileTap={{ scale: 0.9 }}
-          aria-label="Next Page"
+          aria-label={t("Next Page")}
         >
-          <ArrowRight2 size={18} />
+          <ArrowRight2 className="rtl:rotate-180" size={18} />
         </motion.button>
       </div>
 
@@ -98,8 +99,7 @@ export const Pagination = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {startItem}-{endItem} of {totalCount} results
-          </motion.span>
+            {formatNumber(startItem)}-{formatNumber(endItem)}  {t("of")} {formatNumber(totalCount)}  {t("results")}</motion.span>
         </AnimatePresence>
       </div>
     </div>

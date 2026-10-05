@@ -1,3 +1,4 @@
+import { getApiUrl } from "../core/api/config";
 import { http, HttpResponse } from "msw";
 import { db, mockProfile, mockRoles, mockUsers } from "./db";
 import type { UserFormData, UserUpdateData } from "../features/users/types";
@@ -5,7 +6,7 @@ import type { DiscountFormData } from "../features/discounts/types";
 import type { NotificationFormData } from "../features/notifications/types";
 // import type { ProfileUpdateData } from "../features/profile/types";
 import type { Ticket, TicketFormData } from "../features/tickets/types";
-import { getApiUrl } from "../core/api/config";
+import { workspaceHandlers } from "./workspaceHandlers";
 import type { TeamFormData } from "../features/teams/types";
 import type { EmployeeDashboard } from "../features/dashboard/types";
 import type { ManagerDashboard, ManagerMemberDetail } from "../features/dashboard/types";
@@ -50,6 +51,7 @@ const createPaginatedResponse = <T>(
 };
 
 export const handlers = [
+  ...workspaceHandlers,
 
   http.get(`${apiUrl}/reports/employee/dashboard/`, () => {
     const dashboard: EmployeeDashboard = {
@@ -61,7 +63,7 @@ export const handlers = [
           due_date: new Date().toISOString(),
           status_name: "In progress",
           status_code: "doing",
-          project_name: "Madaar Web",
+          project_name: "Heledone Web",
           project_id: "project-1",
         },
         {
@@ -71,7 +73,7 @@ export const handlers = [
           due_date: null,
           status_name: "Todo",
           status_code: "todo",
-          project_name: "Madaar Web",
+          project_name: "Heledone Web",
           project_id: "project-1",
         },
       ],
@@ -84,7 +86,7 @@ export const handlers = [
           due_date: null,
           status_name: "Blocked",
           status_code: "blocked",
-          project_name: "Madaar Web",
+          project_name: "Heledone Web",
           project_id: "project-1",
         },
       ],
@@ -93,7 +95,7 @@ export const handlers = [
       active_projects: [
         {
           project_id: "project-1",
-          project_name: "Madaar Web",
+          project_name: "Heledone Web",
           project_status: "active",
           project_deadline: null,
           allocation_percentage: 80,
@@ -127,7 +129,7 @@ export const handlers = [
       ],
       members_attendance: [],
       project_summary: [
-        { id: "project-1", name: "Madaar Web", status: "active", budget: "24000", budget_currency: "USD", deadline: new Date(Date.now() + 12 * 86400000).toISOString(), active_member_count: 4, total_tasks: 24, done_tasks: 15, total_time_seconds: 194400 },
+        { id: "project-1", name: "Heledone Web", status: "active", budget: "24000", budget_currency: "USD", deadline: new Date(Date.now() + 12 * 86400000).toISOString(), active_member_count: 4, total_tasks: 24, done_tasks: 15, total_time_seconds: 194400 },
         { id: "project-2", name: "Mobile launch", status: "active", budget: "18000", budget_currency: "USD", deadline: new Date(Date.now() - 2 * 86400000).toISOString(), active_member_count: 3, total_tasks: 14, done_tasks: 4, total_time_seconds: 108000 },
       ],
     };
@@ -1037,9 +1039,9 @@ export const handlers = [
       status: true,
       data: {
         license_distribution: [
-          { name: "Free", value: 450, color: "#a855f7" },
-          { name: "Pro", value: 320, color: "#3b82f6" },
-          { name: "Enterprise", value: 120, color: "#10b981" },
+          { name: "Free", value: 450, color: "#8A5700" },
+          { name: "Pro", value: 320, color: "#087F83" },
+          { name: "Enterprise", value: 120, color: "#24734D" },
         ],
       },
     });
@@ -1460,7 +1462,7 @@ export const handlers = [
   // ==========================================
 
   // --- Projects Core API ---
-  http.get("*/api/v1/projects/", ({ request }) => {
+  http.get(`${apiUrl}/projects/`, ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
     const pageSize = Number(url.searchParams.get("page_size")) || 10;
@@ -1476,7 +1478,7 @@ export const handlers = [
     return HttpResponse.json(response);
   }),
 
-  http.get("*/api/v1/projects/:id/", ({ params }) => {
+  http.get(`${apiUrl}/projects/:id/`, ({ params }) => {
     const { id } = params;
     const project = db.projects.getById(id as string);
     if (!project) {
@@ -1492,7 +1494,7 @@ export const handlers = [
     });
   }),
 
-  http.post("*/api/v1/projects/", async ({ request }) => {
+  http.post(`${apiUrl}/projects/`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     const newProject = db.projects.create(body);
     return HttpResponse.json(
@@ -1505,7 +1507,7 @@ export const handlers = [
     );
   }),
 
-  http.put("*/api/v1/projects/:id/", async ({ request, params }) => {
+  http.put(`${apiUrl}/projects/:id/`, async ({ request, params }) => {
     const { id } = params;
     const body = (await request.json()) as Record<string, unknown>;
     const updated = db.projects.update(id as string, body);
@@ -1522,7 +1524,7 @@ export const handlers = [
     });
   }),
 
-  http.patch("*/api/v1/projects/:id/", async ({ request, params }) => {
+  http.patch(`${apiUrl}/projects/:id/`, async ({ request, params }) => {
     const { id } = params;
     const body = (await request.json()) as Record<string, unknown>;
     const updated = db.projects.update(id as string, body);
@@ -1539,7 +1541,7 @@ export const handlers = [
     });
   }),
 
-  http.delete("*/api/v1/projects/:id/", ({ params }) => {
+  http.delete(`${apiUrl}/projects/:id/`, ({ params }) => {
     const { id } = params;
     const success = db.projects.delete(id as string);
     if (!success) {
@@ -1555,7 +1557,7 @@ export const handlers = [
     });
   }),
 
-  http.post("*/api/v1/projects/:id/archive/", ({ params }) => {
+  http.post(`${apiUrl}/projects/:id/archive/`, ({ params }) => {
     const { id } = params;
     const archived = db.projects.archive(id as string);
     if (!archived) {
@@ -1571,7 +1573,7 @@ export const handlers = [
     });
   }),
 
-  http.post("*/api/v1/projects/:id/complete/", ({ params }) => {
+  http.post(`${apiUrl}/projects/:id/complete/`, ({ params }) => {
     const { id } = params;
     const completed = db.projects.complete(id as string);
     if (!completed) {
@@ -1588,7 +1590,7 @@ export const handlers = [
   }),
 
   // --- Project Members API ---
-  http.get("*/api/v1/projects/:project_pk/members/", ({ params }) => {
+  http.get(`${apiUrl}/projects/:project_pk/members/`, ({ params }) => {
     const { project_pk } = params;
     const members = db.projects.members.getAll(project_pk as string);
     return HttpResponse.json({
@@ -1599,7 +1601,7 @@ export const handlers = [
   }),
 
   http.post(
-    "*/api/v1/projects/:project_pk/members/",
+    `${apiUrl}/projects/:project_pk/members/`,
     async ({ request, params }) => {
       const { project_pk } = params;
       const body = (await request.json()) as Record<string, unknown>;
@@ -1612,7 +1614,7 @@ export const handlers = [
   ),
 
   // --- Project Milestones API ---
-  http.get("*/api/v1/projects/:project_pk/milestones/", ({ params }) => {
+  http.get(`${apiUrl}/projects/:project_pk/milestones/`, ({ params }) => {
     const { project_pk } = params;
     const milestones = db.projects.milestones.getAll(project_pk as string);
     return HttpResponse.json({
@@ -1623,7 +1625,7 @@ export const handlers = [
   }),
 
   http.post(
-    "*/api/v1/projects/:project_pk/milestones/",
+    `${apiUrl}/projects/:project_pk/milestones/`,
     async ({ request, params }) => {
       const { project_pk } = params;
       const body = (await request.json()) as Record<string, unknown>;
@@ -1639,7 +1641,7 @@ export const handlers = [
   ),
 
   // --- Project Activities API ---
-  http.get("*/api/v1/projects/:project_pk/activities/", ({ params }) => {
+  http.get(`${apiUrl}/projects/:project_pk/activities/`, ({ params }) => {
     const { project_pk } = params;
     const activities = db.projects.activities.getAll(project_pk as string);
     return HttpResponse.json({

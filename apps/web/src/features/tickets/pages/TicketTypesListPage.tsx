@@ -1,4 +1,6 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "../../../i18n/locale";
+import { CoastalEmptyState } from "../../../components/CoastalEmptyState";
+import { motion, AnimatePresence } from "motion/react";
 import { Add, Edit, Trash, CloseCircle, Category, SearchNormal1, Sort, ArrowUp2, ArrowDown2 } from "iconsax-reactjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -29,6 +31,7 @@ const itemVariants = {
 };
 
 export default function TicketTypesListPage() {
+  const t = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Create/Edit/Delete modals state
@@ -149,27 +152,25 @@ export default function TicketTypesListPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="bg-base-100 min-h-[calc(100vh-121px)] backdrop-blur-lg border border-base-content/10 rounded-2xl p-4 sm:p-6 flex flex-col"
+        className="heledone-page-content min-h-[calc(100vh-121px)] flex flex-col"
       >
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col md:flex-row md:justify-between md:items-start gap-4"
+          className="heledone-page-heading flex flex-col gap-4"
         >
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2 text-base-content">
-              <Category size={28} /> Ticket Categories
-            </h1>
+              <Category size={28} />  {t("Ticket Categories")}</h1>
             <p className="text-base-content/70 mt-1">
-              Manage ticket types and departments.
-            </p>
+              {t("Manage ticket types and departments.")}</p>
           </div>
           <button
             onClick={() => setModalState({ open: true, ticketType: null, name: "" })}
             className="btn btn-primary rounded-xl gap-2 self-start md:self-auto"
           >
             <Add size={20} />
-            <span>Create Category</span>
+            <span>{t("Create Category")}</span>
           </button>
         </motion.div>
 
@@ -179,7 +180,7 @@ export default function TicketTypesListPage() {
             <div className="grow w-full">
               <InputField
                 name="search"
-                placeholder="Search categories..."
+                placeholder={t("Search categories...")}
                 icon={<SearchNormal1 size={18} />}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -191,8 +192,7 @@ export default function TicketTypesListPage() {
                 <button tabIndex={0} className="btn btn-ghost rounded-xl hover:bg-primary/10 hover:text-primary border-none flex-nowrap h-[42px] min-h-[42px] px-3">
                   <Sort size={18} />
                   <span className="font-semibold mx-1 whitespace-nowrap text-sm">
-                    Category Name
-                  </span>
+                    {t("Category Name")}</span>
                 </button>
               </div>
               <button
@@ -216,29 +216,22 @@ export default function TicketTypesListPage() {
           ) : isError ? (
             <div className="bg-linear-to-br from-error/5 to-error/10 rounded-2xl border border-error/20 p-12 text-center">
               <CloseCircle className="w-16 h-16 mx-auto text-error" />
-              <h3 className="text-lg font-bold text-error mt-4">Error Loading Data</h3>
-              <p className="text-error/70">There was an issue fetching the categories list. Please try again.</p>
+              <h3 className="text-lg font-bold text-error mt-4">{t("Error Loading Data")}</h3>
+              <p className="text-error">{t("There was an issue fetching the categories list. Please try again.")}</p>
             </div>
           ) : ticketTypes.length === 0 ? (
-            <div className="bg-linear-to-br from-base-200 to-base-300 rounded-2xl border border-base-content/10 p-12 text-center">
-              <Category className="w-16 h-16 mx-auto text-base-content/40" />
-              <h3 className="text-lg font-bold text-base-content mt-4">No categories defined</h3>
-              <p className="text-base-content/70">Add the first category to get started.</p>
-            </div>
+            <CoastalEmptyState motif="waves" title={t("No categories defined")} description={t("Add the first category to get started.")} />
           ) : (
             <div className="bg-base-100 rounded-2xl border border-base-content/10 overflow-hidden">
               <table className="w-full">
                 <thead className="bg-linear-to-r from-primary/10 to-primary/5 border-b border-base-content/10">
                   <tr>
                     <th className="px-6 py-4 text-start text-sm font-bold text-base-content">
-                      Category Name
-                    </th>
+                      {t("Category Name")}</th>
                     <th className="px-6 py-4 text-start text-sm font-bold text-base-content">
-                      Created At
-                    </th>
+                      {t("Created At")}</th>
                     <th className="px-6 py-4 text-start text-sm font-bold text-base-content">
-                      Actions
-                    </th>
+                      {t("Actions")}</th>
                   </tr>
                 </thead>
 
@@ -254,22 +247,22 @@ export default function TicketTypesListPage() {
                       <td className="px-6 py-4 text-sm font-bold text-base-content">
                         {item.name}
                       </td>
-                      <td className="px-6 py-4 text-xs text-base-content/65">
+                      <td className="px-6 py-4 text-xs text-heledone-ink-muted">
                         {formatDate(item.created_at)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
                             onClick={() => setModalState({ open: true, ticketType: item, name: item.name })}
-                            className="p-1.5 hover:bg-primary/10 text-base-content/60 hover:text-primary rounded-lg"
-                            title="Edit"
+                            className="p-1.5 hover:bg-primary/10 text-heledone-ink-muted hover:text-primary rounded-lg"
+                            title={t("ویرایش")}
                           >
                             <Edit size={16} />
                           </button>
                           <button
                             onClick={() => setDeleteModalState({ open: true, ticketType: item })}
-                            className="p-1.5 hover:bg-error/10 text-base-content/60 hover:text-error rounded-lg"
-                            title="Delete"
+                            className="p-1.5 hover:bg-error/10 text-heledone-ink-muted hover:text-error rounded-lg"
+                            title={t("حذف")}
                           >
                             <Trash size={16} />
                           </button>
@@ -308,7 +301,7 @@ export default function TicketTypesListPage() {
             >
               <div className="p-6 border-b border-base-content/10 flex justify-between items-center">
                 <h3 className="font-bold text-xl text-base-content">
-                  {modalState.ticketType ? "Edit Category" : "Add Category"}
+                  {modalState.ticketType ? t("Edit Category") : t("Add Category")}
                 </h3>
                 <button
                   onClick={() => setModalState({ open: false, ticketType: null, name: "" })}
@@ -321,7 +314,7 @@ export default function TicketTypesListPage() {
               <div className="p-6">
                 <div className="form-control w-full">
                   <div className="label mb-1.5">
-                    <span className="label-text font-semibold">Category Name</span>
+                    <span className="label-text font-semibold">{t("Category Name")}</span>
                   </div>
                   <InputField
                     name="name"
@@ -329,7 +322,7 @@ export default function TicketTypesListPage() {
                     onChange={(e) =>
                       setModalState((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    placeholder="Category name..."
+                    placeholder={t("Category name...")}
                   />
                 </div>
               </div>
@@ -340,14 +333,13 @@ export default function TicketTypesListPage() {
                   className="btn btn-ghost rounded-xl"
                   disabled={isSaving}
                 >
-                  Cancel
-                </button>
+                  {t("انصراف")}</button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving || modalState.name.trim() === ""}
                   className="btn btn-primary rounded-xl px-6"
                 >
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving ? t("در حال ذخیره…") : t("ذخیره")}
                 </button>
               </div>
             </motion.div>
@@ -359,8 +351,8 @@ export default function TicketTypesListPage() {
         isOpen={deleteModalState.open}
         onClose={() => setDeleteModalState({ open: false, ticketType: null })}
         onConfirm={handleDelete}
-        title="Delete Category"
-        message={`Are you sure you want to delete the category "${deleteModalState.ticketType?.name}"?`}
+        title={t("Delete Category")}
+        message={t("Are you sure you want to delete the category \"{value0}\"?", { value0: deleteModalState.ticketType?.name })}
         isLoading={deleteMutation.isPending}
       />
     </>

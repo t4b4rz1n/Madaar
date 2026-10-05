@@ -46,7 +46,7 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD-SHELL", "/usr/bin/mc ready local"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -106,7 +106,7 @@ services:
         VITE_API_TIMEOUT: "30000"
     container_name: madar_web
     ports:
-      - "3000:80"
+      - "${WEB_PORT:-8080}:80"
     depends_on:
       - api
     restart: unless-stopped

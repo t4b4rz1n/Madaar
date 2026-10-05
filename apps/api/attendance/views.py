@@ -305,7 +305,10 @@ class TimeOffRequestViewSet(viewsets.ModelViewSet):
             ]
             qs = qs.filter(Q(user=user) | Q(organization_id__in=admin_org_ids)).distinct()
 
-        # Optional filters
+        # Optional filters are applied after the user/organization visibility scope.
+        requested_user = self.request.query_params.get("user")
+        if requested_user:
+            qs = qs.filter(user_id=requested_user)
         status_filter = self.request.query_params.get("status")
         if status_filter:
             qs = qs.filter(status=status_filter)

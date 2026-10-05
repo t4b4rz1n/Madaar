@@ -1,3 +1,5 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { useTranslation } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +17,7 @@ interface RejectModalProps {
 }
 
 const RejectModal: React.FC<RejectModalProps> = ({ requestId, onConfirm, onClose }) => {
+  const t = useTranslation();
   const [note, setNote] = useState('');
 
   if (requestId === null) return null;
@@ -39,13 +42,13 @@ const RejectModal: React.FC<RejectModalProps> = ({ requestId, onConfirm, onClose
               <CloseCircle size={20} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-base-content">Reject Request</h3>
-              <p className="mt-0.5 text-xs text-base-content/45">Provide a reason for rejection</p>
+              <h3 className="text-base font-semibold text-base-content">{t("Reject Request")}</h3>
+              <p className="mt-0.5 text-xs text-heledone-ink-muted">{t("Provide a reason for rejection")}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="grid size-8 place-items-center rounded-lg text-base-content/40 transition-colors hover:bg-base-200 hover:text-base-content"
+            className="grid size-8 place-items-center rounded-lg text-heledone-ink-muted transition-colors hover:bg-base-200 hover:text-base-content"
           >
             <CloseSquare size={18} />
           </button>
@@ -53,16 +56,16 @@ const RejectModal: React.FC<RejectModalProps> = ({ requestId, onConfirm, onClose
 
         {/* Body */}
         <div className="p-5">
-          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-            Rejection Reason <span className="text-base-content/40 normal-case font-normal tracking-normal">(optional)</span>
+          <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted">
+            {t("Rejection Reason")} <span className="text-heledone-ink-muted normal-case font-normal tracking-normal">{t("(optional)")}</span>
           </label>
           <textarea
             autoFocus
             rows={3}
             value={note}
             onChange={e => setNote(e.target.value)}
-            placeholder="e.g. Overlaps with another team member's leave..."
-            className="w-full resize-none rounded-xl border border-base-content/10 bg-base-200/50 p-3 text-sm font-medium text-base-content outline-none transition-all placeholder:text-base-content/30 focus:border-error/40 focus:bg-base-100"
+            placeholder={t("e.g. Overlaps with another team member's leave...")}
+            className="w-full resize-none rounded-xl border border-base-content/10 bg-base-200/50 p-3 text-sm font-medium text-base-content outline-none transition-all placeholder:text-heledone-ink-muted focus:border-error/40 focus:bg-base-100"
           />
         </div>
 
@@ -70,17 +73,15 @@ const RejectModal: React.FC<RejectModalProps> = ({ requestId, onConfirm, onClose
         <div className="flex justify-end gap-2 border-t border-base-content/10 p-4">
           <button
             onClick={onClose}
-            className="rounded-xl border border-base-content/10 px-4 py-2 text-sm font-semibold text-base-content/60 transition-colors hover:bg-base-200"
+            className="rounded-xl border border-base-content/10 px-4 py-2 text-sm font-semibold text-heledone-ink-muted transition-colors hover:bg-base-200"
           >
-            Cancel
-          </button>
+            {t("انصراف")}</button>
           <button
             onClick={handleSubmit}
-            className="flex items-center gap-2 rounded-xl bg-error px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="flex items-center gap-2 rounded-xl bg-error px-4 py-2 text-sm font-semibold text-error-content transition-opacity hover:opacity-90"
           >
             <CloseCircle size={16} />
-            Reject Request
-          </button>
+            {t("Reject Request")}</button>
         </div>
       </div>
     </div>
@@ -95,6 +96,7 @@ interface CancelModalProps {
 }
 
 const CancelModal: React.FC<CancelModalProps> = ({ requestId, onConfirm, onClose }) => {
+  const t = useTranslation();
   if (requestId === null) return null;
 
   const handleConfirm = () => {
@@ -116,13 +118,13 @@ const CancelModal: React.FC<CancelModalProps> = ({ requestId, onConfirm, onClose
               <Trash size={20} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-base-content">Cancel Request</h3>
-              <p className="mt-0.5 text-xs text-base-content/45">This action cannot be undone</p>
+              <h3 className="text-base font-semibold text-base-content">{t("Cancel Request")}</h3>
+              <p className="mt-0.5 text-xs text-heledone-ink-muted">{t("This action cannot be undone")}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="grid size-8 place-items-center rounded-lg text-base-content/40 transition-colors hover:bg-base-200 hover:text-base-content"
+            className="grid size-8 place-items-center rounded-lg text-heledone-ink-muted transition-colors hover:bg-base-200 hover:text-base-content"
           >
             <CloseSquare size={18} />
           </button>
@@ -130,26 +132,23 @@ const CancelModal: React.FC<CancelModalProps> = ({ requestId, onConfirm, onClose
 
         {/* Body */}
         <div className="p-5">
-          <p className="text-sm text-base-content/60">
-            Are you sure you want to cancel this time off request?
-          </p>
+          <p className="text-sm text-heledone-ink-muted">
+            {t("Are you sure you want to cancel this time off request?")}</p>
         </div>
 
         {/* Footer */}
         <div className="flex justify-end gap-2 border-t border-base-content/10 p-4">
           <button
             onClick={onClose}
-            className="rounded-xl border border-base-content/10 px-4 py-2 text-sm font-semibold text-base-content/60 transition-colors hover:bg-base-200"
+            className="rounded-xl border border-base-content/10 px-4 py-2 text-sm font-semibold text-heledone-ink-muted transition-colors hover:bg-base-200"
           >
-            Keep Request
-          </button>
+            {t("Keep Request")}</button>
           <button
             onClick={handleConfirm}
-            className="flex items-center gap-2 rounded-xl bg-warning px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="flex items-center gap-2 rounded-xl bg-warning px-4 py-2 text-sm font-semibold text-warning-content transition-opacity hover:opacity-90"
           >
             <Trash size={16} />
-            Yes, Cancel
-          </button>
+            {t("Yes, Cancel")}</button>
         </div>
       </div>
     </div>
@@ -158,6 +157,7 @@ const CancelModal: React.FC<CancelModalProps> = ({ requestId, onConfirm, onClose
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManager = false }) => {
+  const t = useTranslation();
   const queryClient = useQueryClient();
   const { activeOrganizationId } = useAttendanceStore();
 
@@ -174,11 +174,11 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     mutationFn: (id: string | number) => approveTimeOffRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
-      toast.success('Request approved');
+      toast.success(t("Request approved"));
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not approve the request.';
-      toast.error(msg);
+      toast.error(translateError(msg));
     },
   });
 
@@ -186,11 +186,11 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     mutationFn: ({ id, note }: { id: string | number, note: string }) => rejectTimeOffRequest(id, note),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
-      toast.success('Request rejected');
+      toast.success(t("Request rejected"));
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not reject the request.';
-      toast.error(msg);
+      toast.error(translateError(msg));
     },
   });
 
@@ -198,11 +198,11 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
     mutationFn: (id: string | number) => cancelTimeOffRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeOffRequests'] });
-      toast.success('Request cancelled');
+      toast.success(t("Request cancelled"));
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Could not cancel the request.';
-      toast.error(msg);
+      toast.error(translateError(msg));
     },
   });
 
@@ -215,7 +215,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
   };
 
   if (!activeOrganizationId) {
-    return <div className="madaar-surface rounded-2xl border border-dashed border-base-content/15 bg-base-100 p-8 text-center text-sm text-base-content/50">Please select an organization to view requests.</div>;
+    return <div className="heledone-surface rounded-2xl border border-dashed border-base-content/15 bg-base-100 p-8 text-center text-sm text-heledone-ink-muted">{t("Please select an organization to view requests.")}</div>;
   }
 
   return (
@@ -234,11 +234,11 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
         onClose={() => setCancelTarget(null)}
       />
 
-      <div className="madaar-surface overflow-hidden">
+      <div className="heledone-surface overflow-hidden">
         <div className="flex items-center justify-between border-b border-base-content/10 p-5">
           <div className="flex items-center gap-3">
             <div className="grid size-10 place-items-center rounded-xl bg-secondary/10 text-secondary"><DocumentText size={20} /></div>
-            <div><h2 className="text-base font-semibold text-base-content">Time off requests</h2><p className="mt-1 text-xs text-base-content/45">Review leave status and approvals.</p></div>
+            <div><h2 className="text-base font-semibold text-base-content">{t("Time off requests")}</h2><p className="mt-1 text-xs text-heledone-ink-muted">{t("Review leave status and approvals.")}</p></div>
           </div>
         </div>
 
@@ -248,19 +248,19 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
               {[...Array(3)].map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-base-200/70" />)}
             </div>
           ) : requests.length === 0 ? (
-            <div className="py-10 text-center text-base-content/40">
-              <DocumentText size={40} className="mx-auto mb-3 text-base-content/20" />
-              <p>No requests found.</p>
+            <div className="py-10 text-center text-heledone-ink-muted">
+              <DocumentText size={40} className="mx-auto mb-3 text-heledone-ink-muted" />
+              <p>{t("No requests found.")}</p>
             </div>
           ) : (
             <table className="w-full text-start text-sm text-base-content/70">
-              <thead className="border-b border-base-content/10 bg-base-200 text-xs uppercase text-base-content/50">
+              <thead className="border-b border-base-content/10 bg-base-200 text-xs uppercase text-heledone-ink-muted">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">User</th>
-                  <th className="px-6 py-4 font-semibold">Type</th>
-                  <th className="px-6 py-4 font-semibold">Duration</th>
-                  <th className="px-6 py-4 font-semibold">Status</th>
-                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                  <th className="px-6 py-4 font-semibold">{t("User")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("Type")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("Duration")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("وضعیت")}</th>
+                  <th className="px-6 py-4 font-semibold text-end">{t("Actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-base-content/10">
@@ -277,10 +277,10 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                     <td className="px-6 py-4 capitalize font-medium">{req.request_type}</td>
                     <td className="px-6 py-4">
                       <div className="text-base-content/90">{formatDisplayDate(new Date(req.start_datetime), 'MMM d, HH:mm')}</div>
-                      <div className="text-xs text-base-content/40">to {formatDisplayDate(new Date(req.end_datetime), 'MMM d, HH:mm')}</div>
+                      <div className="text-xs text-heledone-ink-muted">{t("to")} {formatDisplayDate(new Date(req.end_datetime), 'MMM d, HH:mm')}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-[11px] uppercase tracking-wider font-bold rounded-full border ${getStatusColor(req.status)}`}>
+                      <span className={`px-3 py-1 text-[13px] uppercase tracking-wider font-bold rounded-full border ${getStatusColor(req.status)}`}>
                         {req.status}
                       </span>
                     </td>
@@ -291,7 +291,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                             type="button"
                             onClick={() => approveMutation.mutate(req.id)}
                             className="rounded-lg p-2 text-success transition-colors hover:bg-success/10"
-                            title="Approve"
+                            title={t("Approve")}
                           >
                             <TickCircle size={20} />
                           </button>
@@ -299,7 +299,7 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                             type="button"
                             onClick={() => setRejectTarget(req.id)}
                             className="rounded-lg p-2 text-error transition-colors hover:bg-error/10"
-                            title="Reject"
+                            title={t("Reject")}
                           >
                             <CloseCircle size={20} />
                           </button>
@@ -309,8 +309,8 @@ export const TimeOffRequestList: React.FC<{ isManager?: boolean }> = ({ isManage
                         <button
                           type="button"
                           onClick={() => setCancelTarget(req.id)}
-                          className="rounded-lg p-2 text-base-content/35 transition-colors hover:bg-error/10 hover:text-error"
-                          title="Cancel"
+                          className="rounded-lg p-2 text-heledone-ink-muted transition-colors hover:bg-error/10 hover:text-error"
+                          title={t("انصراف")}
                         >
                           <Trash size={20} />
                         </button>

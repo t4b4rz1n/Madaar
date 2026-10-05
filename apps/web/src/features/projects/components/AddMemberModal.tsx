@@ -1,3 +1,6 @@
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { useTranslation } from "../../../i18n/locale";
 import React, { useState, useRef, useEffect } from "react";
 import {
   CloseCircle,
@@ -29,6 +32,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   projectId,
   orgId,
 }) => {
+  const t = useTranslation();
   const queryClient = useQueryClient();
   const addMemberMutation = useAddProjectMember(projectId);
   const [memberType, setMemberType] = useState<"user" | "team">("user");
@@ -102,11 +106,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
     e.preventDefault();
 
     if (memberType === "user" && !selectedUserId) {
-      toast.error("Please select a user from the dropdown.");
+      toast.error(t("Please select a user from the dropdown."));
       return;
     }
     if (memberType === "team" && !selectedTeamId) {
-      toast.error("Please select a team squad from the dropdown.");
+      toast.error(t("Please select a team squad from the dropdown."));
       return;
     }
 
@@ -125,8 +129,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       onSuccess: () => {
         toast.success(
           memberType === "user"
-            ? "User added to project successfully"
-            : "Team added to project successfully"
+            ? t("User added to project successfully")
+            : t("Team added to project successfully")
         );
         queryClient.invalidateQueries({ queryKey: ["projects"] });
         onClose();
@@ -138,7 +142,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       },
       onError: (err: any) => {
         const responseData = err?.response?.data || err?.data || err;
-        let errorMsg = "Could not add member to project.";
+        let errorMsg = t("Could not add member to project.");
         if (typeof responseData === "object" && responseData !== null) {
           errorMsg =
             responseData.message ||
@@ -148,7 +152,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             responseData.non_field_errors?.[0] ||
             errorMsg;
         }
-        toast.error(String(errorMsg));
+        toast.error(translateError(String(errorMsg)));
       },
     });
   };
@@ -170,11 +174,9 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold tracking-tight">
-                Add Project Member
-              </h3>
-              <p className="text-[11px] text-primary-content/80 font-medium">
-                Search and assign users or team squads
-              </p>
+                {t("Add Project Member")}</h3>
+              <p className="text-[13px] text-primary-content/80 font-medium">
+                {t("Search and assign users or team squads")}</p>
             </div>
           </div>
 
@@ -197,42 +199,40 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition-all ${
                 memberType === "user"
                   ? "bg-primary text-primary-content shadow-xs"
-                  : "text-base-content/60 hover:text-base-content"
+                  : "text-heledone-ink-muted hover:text-base-content"
               }`}
             >
-              <User size={14} /> Individual User
-            </button>
+              <User size={14} />  {t("Individual User")}</button>
             <button
               type="button"
               onClick={() => handleTypeChange("team")}
               className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition-all ${
                 memberType === "team"
                   ? "bg-primary text-primary-content shadow-xs"
-                  : "text-base-content/60 hover:text-base-content"
+                  : "text-heledone-ink-muted hover:text-base-content"
               }`}
             >
-              <People size={14} /> Team Squad
-            </button>
+              <People size={14} />  {t("Team Squad")}</button>
           </div>
 
           {/* Searchable Select Combobox */}
           <div ref={dropdownRef} className="relative">
-            <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-              {memberType === "user" ? "Search User" : "Search Team Squad"}{" "}
+            <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+              {memberType === "user" ? t("Search User") : t("Search Team Squad")}{" "}
               <span className="text-error">*</span>
             </label>
 
             <div className="relative">
-              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
+              <div className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-heledone-ink-muted">
                 <SearchNormal1 size={15} />
               </div>
               <input
                 type="text"
-                dir="auto"
+
                 placeholder={
                   memberType === "user"
-                    ? "Type user name, username, or email..."
-                    : "Type team squad name..."
+                    ? t("Type user name, username, or email...")
+                    : t("Type team squad name...")
                 }
                 value={searchQuery}
                 onFocus={() => setIsDropdownOpen(true)}
@@ -242,12 +242,12 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   if (memberType === "user") setSelectedUserId("");
                   else setSelectedTeamId("");
                 }}
-                className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 pl-9 pr-9 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+                className="w-full h-10 rounded-xl border border-base-content/10 bg-base-200/50 ps-9 pe-9 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
               />
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen((prev) => !prev)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-base-content/40 hover:text-base-content"
+                className="absolute end-2.5 top-1/2 -translate-y-1/2 p-1 text-heledone-ink-muted hover:text-base-content"
               >
                 <ArrowDown2
                   size={14}
@@ -260,16 +260,14 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
             {/* Dropdown Options Container */}
             {isDropdownOpen && (
-              <div className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in duration-100 space-y-0.5">
+              <div className="absolute z-50 start-0 end-0 mt-1 max-h-52 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-100 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in duration-100 space-y-0.5">
                 {memberType === "user" ? (
                   isLoadingUsers ? (
-                    <div className="p-3 text-center text-xs text-base-content/40">
-                      Loading users...
-                    </div>
+                    <div className="p-3 text-center text-xs text-heledone-ink-muted">
+                      {t("Loading users...")}</div>
                   ) : filteredUsers.length === 0 ? (
-                    <div className="p-3 text-center text-xs text-base-content/40">
-                      No matching users found
-                    </div>
+                    <div className="p-3 text-center text-xs text-heledone-ink-muted">
+                      {t("No matching users found")}</div>
                   ) : (
                     <>
                     {filteredUsers.map((u: any) => {
@@ -288,22 +286,22 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                             setSearchQuery(displayName);
                             setIsDropdownOpen(false);
                           }}
-                          className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left transition-all ${
+                          className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-start transition-all ${
                             isSelected
                               ? "bg-primary/10 text-primary font-bold"
                               : "hover:bg-base-200/60 text-base-content font-medium"
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary text-[10px] font-bold shrink-0">
+                            <div className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary text-[13px] font-bold shrink-0">
                               {displayName[0]?.toUpperCase() || "U"}
                             </div>
                             <div className="min-w-0">
-                              <p dir="auto" className="truncate text-xs font-bold">
+                              <p  className="truncate text-xs font-bold">
                                 {displayName}
                               </p>
                               {u.email && (
-                                <p className="truncate text-[10px] text-base-content/40">
+                                <p className="truncate text-[13px] text-heledone-ink-muted">
                                   {u.email}
                                 </p>
                               )}
@@ -323,24 +321,22 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                           setIsDropdownOpen(false);
                           setIsCreateUserOpen(true);
                         }}
-                        className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all border-t border-base-content/8 mt-1 pt-2 text-primary hover:bg-primary/8 font-bold"
+                        className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-start transition-all border-t border-base-content/8 mt-1 pt-2 text-primary hover:bg-primary/8 font-bold"
                       >
                         <div className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary shrink-0">
                           <AddSquare size={15} />
                         </div>
-                        <span className="text-xs">Create New User</span>
+                        <span className="text-xs">{t("Create New User")}</span>
                       </button>
                     )}
                     </>
                   )
                 ) : isLoadingTeams ? (
-                  <div className="p-3 text-center text-xs text-base-content/40">
-                    Loading teams...
-                  </div>
+                  <div className="p-3 text-center text-xs text-heledone-ink-muted">
+                    {t("Loading teams...")}</div>
                 ) : filteredTeams.length === 0 ? (
-                  <div className="p-3 text-center text-xs text-base-content/40">
-                    No matching teams found
-                  </div>
+                  <div className="p-3 text-center text-xs text-heledone-ink-muted">
+                    {t("No matching teams found")}</div>
                 ) : (
                   filteredTeams.map((t: any) => {
                     const isSelected = selectedTeamId === String(t.id);
@@ -353,17 +349,17 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                           setSearchQuery(t.name);
                           setIsDropdownOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left transition-all ${
+                        className={`w-full flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-start transition-all ${
                           isSelected
                             ? "bg-primary/10 text-primary font-bold"
                             : "hover:bg-base-200/60 text-base-content font-medium"
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="grid size-7 place-items-center rounded-lg bg-blue-500/15 text-blue-600 text-[10px] font-bold shrink-0">
+                          <div className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary text-[13px] font-bold shrink-0">
                             <People size={14} />
                           </div>
-                          <span dir="auto" className="truncate text-xs font-bold">
+                          <span  className="truncate text-xs font-bold">
                             {t.name}
                           </span>
                         </div>
@@ -379,23 +375,22 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
           </div>
 
           <div>
-            <label className="block font-bold text-base-content/60 mb-1 uppercase tracking-wider text-[11px]">
-              Role / Specialty
-            </label>
+            <label className="block font-bold text-heledone-ink-muted mb-1 uppercase tracking-wider text-[13px]">
+              {t("Role / Specialty")}</label>
             <input
               type="text"
-              placeholder="e.g. Lead Engineer, UI Designer"
+              placeholder={t("e.g. Lead Engineer, UI Designer")}
               value={specialty}
               onChange={(e) => setSpecialty(e.target.value)}
-              className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-base-content/35"
+              className="w-full h-9.5 rounded-xl border border-base-content/10 bg-base-200/50 px-3 font-semibold text-base-content outline-none focus:border-primary/40 focus:bg-base-100 transition-all placeholder:text-heledone-ink-muted"
             />
           </div>
 
           <div>
-            <div className="flex items-center justify-between font-bold text-base-content/60 mb-1.5 uppercase tracking-wider text-[11px]">
-              <span>Capacity Allocation</span>
-              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-                {allocation}%
+            <div className="flex items-center justify-between font-bold text-heledone-ink-muted mb-1.5 uppercase tracking-wider text-[13px]">
+              <span>{t("Capacity Allocation")}</span>
+              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[13px] font-bold text-primary">
+                {formatUiNumber(allocation)}%
               </span>
             </div>
 
@@ -406,13 +401,13 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   key={val}
                   type="button"
                   onClick={() => setAllocation(val)}
-                  className={`flex-1 rounded-lg py-1 text-[10px] font-bold transition-all ${
+                  className={`flex-1 rounded-lg py-1 text-[13px] font-bold transition-all ${
                     allocation === val
                       ? "bg-primary/15 text-primary border border-primary/30"
-                      : "bg-base-200/50 text-base-content/50 hover:bg-base-200 border border-transparent"
+                      : "bg-base-200/50 text-heledone-ink-muted hover:bg-base-200 border border-transparent"
                   }`}
                 >
-                  {val}%
+                  {formatUiNumber(val)}%
                 </button>
               ))}
             </div>
@@ -435,17 +430,16 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               disabled={addMemberMutation.isPending}
               className="h-9 px-4 rounded-xl border border-base-content/10 text-xs font-bold text-base-content/70 hover:bg-base-200 transition-all"
             >
-              Cancel
-            </button>
+              {t("انصراف")}</button>
             <button
               type="submit"
               disabled={addMemberMutation.isPending}
               className="h-9 px-5 rounded-xl bg-primary text-xs font-bold text-primary-content shadow-md shadow-primary/15 hover:bg-primary/95 transition-all inline-flex items-center gap-1.5"
             >
               {addMemberMutation.isPending ? (
-                <span>Adding...</span>
+                <span>{t("Adding...")}</span>
               ) : (
-                <span>Add Member</span>
+                <span>{t("Add Member")}</span>
               )}
             </button>
           </div>
@@ -467,20 +461,20 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               { user_id: newUserId, allocation_percentage: 100 },
               {
                 onSuccess: () => {
-                  toast.success("New user created and added to project");
+                  toast.success(t("New user created and added to project"));
                   queryClient.invalidateQueries({ queryKey: ["users-list"] });
                   queryClient.invalidateQueries({ queryKey: ["projects"] });
                   onClose();
                 },
                 onError: () => {
-                  toast.warning("User created but could not be added to project automatically");
+                  toast.warning(t("User created but could not be added to project automatically"));
                   queryClient.invalidateQueries({ queryKey: ["users-list"] });
                 },
               }
             );
           } else {
             queryClient.invalidateQueries({ queryKey: ["users-list"] });
-            toast.success("User created. You can now select them from the list.");
+            toast.success(t("User created. You can now select them from the list."));
           }
         }}
       />

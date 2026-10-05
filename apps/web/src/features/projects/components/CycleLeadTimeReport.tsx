@@ -1,3 +1,5 @@
+import { useTranslation, useLocale } from "../../../i18n/locale";
+import { getWorkflowAppearance } from "../../../core/config/designTokens";
 import { formatDisplayDate } from "../../../utils/date";
 import { CustomDatePicker } from "../../../components/CustomDatePicker";
 import { useEffect, useState } from "react";
@@ -27,6 +29,7 @@ export default function CycleLeadTimeReport({
   params,
   compactMode = false,
 }: CycleLeadTimeReportProps) {
+  const t = useTranslation();
   const [data, setData] = useState<CycleLeadTimeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +50,9 @@ export default function CycleLeadTimeReport({
       tz: params?.tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     })
       .then(setData)
-      .catch(() => setError("Error loading Cycle Time data"))
+      .catch(() => setError(t("Error loading Cycle Time data")))
       .finally(() => setLoading(false));
-  }, [projectId, start, end, params]);
+  }, [projectId, start, end, params, t]);
 
   if (loading) return <Skeleton />;
   if (error) return <ErrorState message={error} />;
@@ -66,13 +69,14 @@ export default function CycleLeadTimeReport({
 
   const formatHours = (h: number | null) => {
     if (h === null) return "—";
-    if (h < 1) return `${Math.round(h * 60)} min`;
-    if (h < 24) return `${h.toFixed(1)} hrs`;
-    return `${(h / 24).toFixed(1)} days`;
+    if (h < 1) return t("{minutes} minutes", { minutes: Math.round(h * 60) });
+    if (h < 24) return t("{hours} hours", { hours: Number(h.toFixed(1)) });
+    return t("{value0} days", { value0: Number((h / 24).toFixed(1)) });
   };
 
   const barData = data.by_status.map((s) => ({
-    name: s.status_code,
+    name: getWorkflowAppearance({ code: s.status_code }).label,
+    color: getWorkflowAppearance({ code: s.status_code }).color,
     hours: s.avg_hours_in_status ?? 0,
   }));
 
@@ -90,21 +94,21 @@ export default function CycleLeadTimeReport({
         }}
       >
         <KpiCard
-          label="Avg Lead Time"
+          label={t("Avg Lead Time")}
           value={formatHours(data.avg_lead_time_hours)}
           sub={`P50: ${formatHours(data.p50_lead_time_hours)} | P95: ${formatHours(data.p95_lead_time_hours)}`}
           color="var(--color-primary)"
           id="kpi-lead-time"
         />
         <KpiCard
-          label="Avg Cycle Time"
+          label={t("Avg Cycle Time")}
           value={formatHours(data.avg_cycle_time_hours)}
           sub={`P50: ${formatHours(data.p50_cycle_time_hours)} | P95: ${formatHours(data.p95_cycle_time_hours)}`}
           color="var(--color-success)"
           id="kpi-cycle-time"
         />
         <KpiCard
-          label="Tasks Analyzed"
+          label={t("Tasks Analyzed")}
           value={String(data.task_count)}
           sub={`${formatDisplayDate(start, "yyyy-MM-dd")} to ${formatDisplayDate(end, "yyyy-MM-dd")}`}
           color="var(--color-warning)"
@@ -115,9 +119,8 @@ export default function CycleLeadTimeReport({
       {/* Time per status bar chart */}
       {barData.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h4 style={{ margin: "0 0 12px", fontSize: 13, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)", fontWeight: 600 }}>
-            Avg time per status
-          </h4>
+          <h4 style={{ margin: "0 0 12px", fontSize: 13, color: "var(--color-heledone-ink-muted)", fontWeight: 600 }}>
+            {t("Avg time per status")}</h4>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart
               data={barData}
@@ -130,11 +133,11 @@ export default function CycleLeadTimeReport({
               />
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
+                tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}
-                tickFormatter={(v) => `${v}h`}
+                tick={{ fontSize: 13, fill: "var(--color-heledone-ink-muted)" }}
+                tickFormatter={(value) => t("{hours} hours", { hours: Number(value) })}
                 width={40}
               />
               <Tooltip
@@ -143,18 +146,18 @@ export default function CycleLeadTimeReport({
                   background: "var(--color-base-100)",
                   border: "1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent)",
                   borderRadius: 8,
-                  fontSize: 12,
+                  fontSize: 13,
                 }}
                 formatter={(value: any) => {
                   const hours = typeof value === "number" ? value : null;
-                  return [formatHours(hours), "Avg time in status"] as any;
+                  return [formatHours(hours), t("Avg time in status")] as any;
                 }}
               />
               <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
-                {barData.map((_, i) => (
+                {barData.map((entry, i) => (
                   <Cell
                     key={i}
-                    fill={STATUS_BAR_COLORS[i % STATUS_BAR_COLORS.length]}
+                    fill={entry.color}
                   />
                 ))}
               </Bar>
@@ -166,29 +169,28 @@ export default function CycleLeadTimeReport({
       {/* Tasks table */}
       {!compactMode && data.tasks.length > 0 && (
         <div>
-          <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)", fontWeight: 600 }}>
-            Completed Tasks
-          </h4>
+          <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "var(--color-heledone-ink-muted)", fontWeight: 600 }}>
+            {t("Completed Tasks")}</h4>
           <div style={{ overflowX: "auto" }}>
             <table
               id="cycle-time-tasks-table"
               style={{
                 width: "100%",
                 borderCollapse: "collapse",
-                fontSize: 12,
+                fontSize: 13,
                 color: "var(--color-base-content)",
               }}
             >
               <thead>
                 <tr style={{ borderBottom: "1px solid color-mix(in srgb, var(--color-base-content) 8%, transparent)" }}>
-                  {["Task Title", "Lead Time", "Cycle Time", "Done At"].map(
+                  {[t("Task Title"), t("Lead Time"), t("Cycle Time"), t("Done At")].map(
                     (h) => (
                       <th
                         key={h}
                         style={{
                           padding: "8px 12px",
-                          textAlign: "right",
-                          color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)",
+                          textAlign: "start",
+                          color: "var(--color-heledone-ink-muted)",
                           fontWeight: 600,
                           whiteSpace: "nowrap",
                         }}
@@ -223,7 +225,7 @@ export default function CycleLeadTimeReport({
                     <td style={{ padding: "8px 12px", color: "var(--color-success)" }}>
                       {formatHours(t.cycle_time_hours)}
                     </td>
-                    <td style={{ padding: "8px 12px", color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>
+                    <td style={{ padding: "8px 12px", color: "var(--color-heledone-ink-muted)" }}>
                       {formatDisplayDate(t.done_at, "yyyy-MM-dd")}
                     </td>
                   </tr>
@@ -239,7 +241,6 @@ export default function CycleLeadTimeReport({
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-const STATUS_BAR_COLORS = ["var(--color-primary)", "var(--color-warning)", "var(--color-success)", "var(--color-info)", "var(--color-error)", "var(--color-secondary)"];
 
 function SectionHeader({
   start,
@@ -252,6 +253,7 @@ function SectionHeader({
   setStart: (s: string) => void;
   setEnd: (s: string) => void;
 }) {
+  const t = useTranslation();
   return (
     <div
       style={{
@@ -265,11 +267,9 @@ function SectionHeader({
     >
       <div>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--color-base-content)" }}>
-          Cycle Time & Lead Time
-        </h3>
-        <p style={{ margin: "4px 0 0", fontSize: 12, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)" }}>
-          Average task lifecycle from creation to Done
-        </p>
+          {t("Cycle Time & Lead Time")}</h3>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--color-heledone-ink-muted)" }}>
+          {t("Average task lifecycle from creation to Done")}</p>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <CustomDatePicker
@@ -300,6 +300,7 @@ function KpiCard({
   color: string;
   id: string;
 }) {
+  useLocale();
   return (
     <div
       id={id}
@@ -310,11 +311,11 @@ function KpiCard({
         padding: "14px 16px",
       }}
     >
-      <div style={{ fontSize: 11, color: "color-mix(in srgb, var(--color-base-content) 60%, transparent)", marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 13, color: "var(--color-heledone-ink-muted)", marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1.2 }}>
         {value}
       </div>
-      <div style={{ fontSize: 10, color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)", marginTop: 6 }}>{sub}</div>
+      <div style={{ fontSize: 13, color: "var(--color-heledone-ink-muted)", marginTop: 6 }}>{sub}</div>
     </div>
   );
 }
@@ -328,6 +329,7 @@ const containerStyle: React.CSSProperties = {
 
 
 function Skeleton() {
+  useLocale();
   return (
     <div style={{ ...containerStyle, height: 360, opacity: 0.5 }}>
       <div
@@ -342,6 +344,7 @@ function Skeleton() {
 }
 
 function ErrorState({ message }: { message: string }) {
+  useLocale();
   return (
     <div
       style={{
@@ -360,6 +363,7 @@ function ErrorState({ message }: { message: string }) {
 }
 
 function EmptyState() {
+  const t = useTranslation();
   return (
     <div
       style={{
@@ -367,11 +371,10 @@ function EmptyState() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "color-mix(in srgb, var(--color-base-content) 50%, transparent)",
+        color: "var(--color-heledone-ink-muted)",
         fontSize: 14,
       }}
     >
-      No tasks completed in this period yet.
-    </div>
+      {t("No tasks completed in this period yet.")}</div>
   );
 }

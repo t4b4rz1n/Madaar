@@ -16,6 +16,7 @@ class Notification(BaseModel):
         verbose_name=_("User"),
     )
     text = models.CharField(_("Text"), max_length=255)
+    message_data = models.JSONField(default=dict, blank=True)
     link = models.URLField(_("Link"), max_length=255, blank=True, null=True)
     seen = models.BooleanField(_("Seen"), default=False, db_index=True)
 

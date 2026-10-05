@@ -14,6 +14,33 @@ from panel.Notification.models import Notification
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+_IN_APP_MESSAGE_FIELDS = {
+    "project_created": ("creator_name", "project_name"),
+    "project_member_removed": ("remover_name", "project_name"),
+    "project_over_budget": ("project_name",),
+    "milestone_approaching": ("milestone_title", "project_name"),
+    "milestone_completed": ("milestone_title", "project_name"),
+    "task_assigned": ("task_title", "assigner"),
+    "task_needs_review": ("task_title", "assignee"),
+    "task_completed": ("task_title",),
+    "task_deadline_approaching": ("task_title",),
+    "user_mentioned": ("author", "task_title"),
+    "task_commented": ("author", "task_title"),
+    "standup_submitted": ("user_name",),
+    "leave_requested": ("user_name", "leave_type"),
+    "leave_resolved": ("status",),
+    "timer_started": ("user_name", "task_title"),
+    "organization_created": ("org_name", "owner_name"),
+    "project_actually_created": ("project_name", "org_name", "creator_name"),
+    "project_budget_set": ("project_name", "budget", "org_name"),
+    "member_added_to_project": ("project_name", "member_name", "org_name"),
+    "member_added_to_org": ("org_name", "member_name", "role"),
+    "you_added_to_org": ("org_name", "role"),
+    "board_created": ("board_name", "project_name"),
+    "milestone_created": ("milestone_title", "project_name"),
+    "task_created": ("task_title", "project_name"),
+}
+
 
 def _get_event_link(event_type: str, payload: dict) -> str:
     """Generate a relevant frontend link based on event type and payload."""
@@ -179,6 +206,14 @@ def process_rules_for_event(event_type: str, payload: dict):
             Notification(
                 user=user,
                 text=clean_text[:255],
+                message_data={
+                    "event": event_type,
+                    "values": {
+                        key: str(payload[key])
+                        for key in _IN_APP_MESSAGE_FIELDS.get(event_type, ())
+                        if payload.get(key) is not None
+                    },
+                },
                 link=_get_event_link(event_type, payload),
             )
         )

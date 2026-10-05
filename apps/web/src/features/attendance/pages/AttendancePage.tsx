@@ -1,3 +1,4 @@
+import { t as translate, useTranslation } from "../../../i18n/locale";
 import { useSearchParams } from "react-router-dom";
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -21,13 +22,14 @@ import { usePermissions } from '../../auth/hooks/usePermissions';
 type AttendanceTab = 'overview' | 'timesheet' | 'timeoff' | 'team';
 
 const tabs: { id: AttendanceTab; label: string; helper: string; icon: typeof Timer1 }[] = [
-  { id: 'overview', label: 'Overview', helper: 'Track today', icon: Timer1 },
-  { id: 'timesheet', label: 'My timesheet', helper: 'Review logged time', icon: Clock },
-  { id: 'timeoff', label: 'Time off', helper: 'Requests & holidays', icon: DocumentText },
-  { id: 'team', label: 'Team timesheet', helper: 'See team workload', icon: People },
+  { id: 'overview', get label() { return translate("نمای کلی"); }, get helper() { return translate("Track today"); }, icon: Timer1 },
+  { id: 'timesheet', get label() { return translate("My timesheet"); }, get helper() { return translate("Review logged time"); }, icon: Clock },
+  { id: 'timeoff', get label() { return translate("Time off"); }, get helper() { return translate("Requests & holidays"); }, icon: DocumentText },
+  { id: 'team', get label() { return translate("Team timesheet"); }, get helper() { return translate("See team workload"); }, icon: People },
 ];
 
 export const AttendancePage: React.FC = () => {
+  const t = useTranslation();
   const { activeOrganizationId, setActiveOrganization } = useAttendanceStore();
   const { activeProjectId, activeBoardId, setActiveProject, setActiveBoard } = useTaskStore();
   const [searchParams] = useSearchParams();
@@ -103,27 +105,24 @@ export const AttendancePage: React.FC = () => {
   const activeTabMeta = visibleTabs.find((tab) => tab.id === activeTab) || visibleTabs[0];
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-base-100 text-base-content custom-scrollbar">
-      <div className="mx-auto w-full max-w-[1480px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <div className="heledone-attendance flex h-full flex-col overflow-y-auto bg-base-200 text-base-content custom-scrollbar">
+      <div className="mx-auto w-full max-w-[1480px]">
         {/* Top Header */}
-        <header className="mb-5 flex flex-col justify-between gap-4 border-b border-base-content/8 pb-4 sm:flex-row sm:items-center">
+        <header className="heledone-page-heading mb-5 flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
-                Time &amp; Attendance
-              </h1>
+                {t("Time & Attendance")}</h1>
             </div>
-            <p className="mt-1 text-xs font-medium text-base-content/50">
-              Track work hours, manage timesheets and time off requests.
-            </p>
+            <p className="mt-1 text-xs font-medium text-heledone-ink-muted">
+              {t("Track work hours, manage timesheets and time off requests.")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
 
             {/* ── Project selector ── */}
             <label className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-wider">
-                Project
-              </span>
+              <span className="text-[13px] font-bold text-heledone-ink-muted uppercase tracking-wider">
+                {t("پروژه")}</span>
               <select
                 value={activeProjectId || ''}
                 onChange={(e) => {
@@ -132,7 +131,7 @@ export const AttendancePage: React.FC = () => {
                 disabled={isLoadingProjects}
                 className="h-8.5 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-semibold text-base-content outline-none focus:border-primary/40 disabled:opacity-50"
               >
-                <option value="" disabled>Select project</option>
+                <option value="" disabled>{t("Select project")}</option>
                 {projects.map((p) => (
                   <option key={p.id} value={String(p.id)}>{p.name}</option>
                 ))}
@@ -141,16 +140,15 @@ export const AttendancePage: React.FC = () => {
 
             {/* ── Board selector ── */}
             <label className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-wider">
-                Board
-              </span>
+              <span className="text-[13px] font-bold text-heledone-ink-muted uppercase tracking-wider">
+                {t("کانبان")}</span>
               <select
                 value={activeBoardId || ''}
                 onChange={(e) => setActiveBoard(e.target.value || null)}
                 disabled={!activeProjectId || isLoadingBoards}
                 className="h-8.5 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-semibold text-base-content outline-none focus:border-primary/40 disabled:opacity-50"
               >
-                <option value="" disabled>Select board</option>
+                <option value="" disabled>{t("Select board")}</option>
                 {boards.map((b) => (
                   <option key={b.id} value={String(b.id)}>{b.title}</option>
                 ))}
@@ -160,23 +158,22 @@ export const AttendancePage: React.FC = () => {
             {/* ── Org selector (only if multiple orgs) ── */}
             {organizations.length > 1 ? (
               <label className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-wider">
-                  Org
-                </span>
+                <span className="text-[13px] font-bold text-heledone-ink-muted uppercase tracking-wider">
+                  {t("Org")}</span>
                 <select
                   value={activeOrganizationId || ''}
                   onChange={(event) => setActiveOrganization(event.target.value)}
                   className="h-8.5 rounded-xl border border-base-content/10 bg-base-100 px-3 text-xs font-semibold text-base-content outline-none focus:border-primary/40"
                 >
-                  <option value="" disabled>Select org</option>
+                  <option value="" disabled>{t("Select org")}</option>
                   {organizations.map((org) => (
                     <option key={org.id} value={org.id}>{org.name}</option>
                   ))}
                 </select>
               </label>
             ) : (
-              <span className="rounded-xl border border-base-content/10 bg-base-100 px-3 py-1.5 text-xs font-semibold text-base-content/55">
-                {organizations[0]?.name || 'Your organization'}
+              <span className="rounded-xl border border-base-content/10 bg-base-100 px-3 py-1.5 text-xs font-semibold text-heledone-ink-muted">
+                {organizations[0]?.name || t("Your organization")}
               </span>
             )}
           </div>
@@ -185,7 +182,7 @@ export const AttendancePage: React.FC = () => {
         {/* Minimal Tab Navigation */}
         <nav
           role="tablist"
-          aria-label="Time and attendance sections"
+          aria-label={t("Time and attendance sections")}
           className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-base-content/8 bg-base-100 p-1"
         >
           {visibleTabs.map(({ id, label, icon: Icon }) => {
@@ -199,10 +196,10 @@ export const AttendancePage: React.FC = () => {
                 aria-selected={isActive}
                 aria-controls={`attendance-panel-${id}`}
                 onClick={() => setActiveTab(id)}
-                className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
+                className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
                   isActive
                     ? 'bg-primary text-primary-content shadow-xs'
-                    : 'text-base-content/55 hover:bg-base-200 hover:text-base-content'
+                    : 'text-heledone-ink-muted hover:bg-base-200 hover:text-base-content'
                 }`}
               >
                 <Icon size={15} />
@@ -218,7 +215,7 @@ export const AttendancePage: React.FC = () => {
           aria-labelledby={`attendance-tab-${activeTab}`}
           className="min-h-0"
         >
-          <div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{activeTabMeta.label}</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-base-content">{activeTabMeta.helper}</h2></div><span className="hidden text-xs font-medium text-base-content/35 sm:block">All times are shown in your local timezone</span></div>
+          <div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-[13px] font-bold uppercase  text-primary">{activeTabMeta.label}</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-base-content">{activeTabMeta.helper}</h2></div><span className="hidden text-xs font-medium text-heledone-ink-muted sm:block">{t("All times are shown in your local timezone")}</span></div>
 
           {activeTab === 'overview' && <div className="space-y-5"><div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]"><LiveTimer tasks={tasks} /><CheckInOut /></div><div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]"><TimesheetTable /><ManualTimeLogForm tasks={tasks} /></div></div>}
 

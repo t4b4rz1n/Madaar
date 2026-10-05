@@ -1,4 +1,6 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { formatNumber as formatUiNumber } from "../../../i18n/locale";
+import { useTranslation } from "../../../i18n/locale";
+import { AnimatePresence, motion } from "motion/react";
 import { Add } from "iconsax-reactjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -35,6 +37,7 @@ const itemVariants = {
 };
 
 export default function TeamsListPage() {
+  const t = useTranslation();
   const { hasAnyPermission } = usePermissions();
 
   const canManageTeams = hasAnyPermission(["org.manage_members", "org.manage_settings"]);
@@ -213,18 +216,17 @@ export default function TeamsListPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="madaar-surface min-h-[calc(100vh-121px)] rounded-[24px] border border-base-content/10 bg-base-100/85 p-4 shadow-madaar-card backdrop-blur-xl sm:p-6"
+        className="heledone-page-content min-h-[calc(100vh-121px)]"
       >
         {/* Header */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center"
+          className="heledone-page-heading flex flex-col justify-between gap-5 lg:flex-row lg:items-center"
         >
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-base-content sm:text-3xl">
-                Teams
-              </h1>
+                {t("تیم‌ها")}</h1>
               {currentOrgName && (
                 <span className="rounded-full bg-primary/5 border border-primary/20 px-3 py-0.5 text-xs font-semibold text-primary flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
@@ -232,12 +234,11 @@ export default function TeamsListPage() {
                 </span>
               )}
               <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-                {totalResults}
+                {formatUiNumber(totalResults)}
               </span>
             </div>
-            <p className="mt-1 text-xs font-medium text-base-content/50">
-              Manage and structure organizational teams.
-            </p>
+            <p className="mt-1 text-xs font-medium text-heledone-ink-muted">
+              {t("Manage and structure organizational teams.")}</p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
             <ViewSwitcher
@@ -252,7 +253,7 @@ export default function TeamsListPage() {
                 className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-content shadow-md shadow-primary/15 transition hover:bg-primary/90 sm:h-9"
               >
                 <Add size={16} />
-                <span>New Team</span>
+                <span>{t("New Team")}</span>
               </button>
             )}
           </div>
@@ -334,8 +335,8 @@ export default function TeamsListPage() {
         isOpen={deleteModalState.open}
         onClose={() => setDeleteModalState({ open: false, team: null })}
         onConfirm={handleDeleteConfirm}
-        title="Delete Team"
-        message={`Are you sure you want to delete the team "${deleteModalState.team?.name}"? This action cannot be undone.`}
+        title={t("Delete Team")}
+        message={t("Are you sure you want to delete the team \"{value0}\"? This action cannot be undone.", { value0: deleteModalState.team?.name })}
         isLoading={deleteTeam.isPending}
       />
     </>

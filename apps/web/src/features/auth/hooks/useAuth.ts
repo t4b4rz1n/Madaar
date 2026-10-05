@@ -1,3 +1,5 @@
+import { getErrorMessage as translateError } from "../../../core/utils/errorHandler";
+import { t } from "../../../i18n/locale";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -20,12 +22,12 @@ export const useLogin = () => {
           access: data.access,
           user: data.user,
         });
-        toast.success("Welcome back!");
+        toast.success(t("خوش برگشتید؛ روز خوبی در پیش باشد!"));
         navigate("/", { replace: true });
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(translateError(error.message));
     },
   });
 };
@@ -37,11 +39,11 @@ export const useRegister = () => {
     mutationFn: (registerData: RegisterFormData) =>
       registerRequest(registerData),
     onSuccess: () => {
-      toast.success("Your account was created. You can now sign in.");
+      toast.success(t("حساب شما ساخته شد؛ اکنون وارد شوید."));
       navigate("/login", { replace: true });
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(translateError(error.message));
     },
   });
 };
@@ -57,7 +59,7 @@ export const useLogout = () => {
       module.useTaskStore.getState().reset();
     });
     queryClient.clear();
-    toast.info("You have been logged out.");
+    toast.info(t("از حساب خارج شدید."));
     navigate("/login");
   };
 };
