@@ -1,6 +1,6 @@
 FROM node:20-alpine AS builder
 
-ARG VITE_API_BASE_URL="http://localhost:8000"
+ARG VITE_API_BASE_URL="https://api.heledone.com/api/v1"
 ARG VITE_API_VERSION="v1"
 ARG VITE_API_TIMEOUT="30000"
 

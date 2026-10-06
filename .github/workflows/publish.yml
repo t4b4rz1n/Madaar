@@ -86,7 +86,7 @@ jobs:
           if [ "${{ github.ref_name }}" = "develop" ]; then
             echo "api_base_url=/api/v1" >> $GITHUB_OUTPUT
           else
-            echo "api_base_url=/api/v1" >> $GITHUB_OUTPUT
+            echo "api_base_url=https://api.heledone.com/api/v1" >> $GITHUB_OUTPUT
           fi
 
       - name: Extract Docker metadata
