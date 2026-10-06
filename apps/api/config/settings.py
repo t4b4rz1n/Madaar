@@ -14,6 +14,7 @@ env = environ.Env(
     SANDBOX=(bool, True),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     ALLOWED_CORS=(list, ["http://localhost:3000"]),
+    CORS_ALLOW_CREDENTIALS=(bool, False),
     CSRF_TRUSTED_ORIGINS=(list, ["http://localhost"]),
     SECURE_SSL_REDIRECT=(bool, False),
     SESSION_COOKIE_SECURE=(bool, False),
@@ -202,6 +203,7 @@ if DEBUG:
     ]
 else:
     CORS_ALLOWED_ORIGINS = env("ALLOWED_CORS")
+    CORS_ALLOW_CREDENTIALS = env("CORS_ALLOW_CREDENTIALS")
     CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
 # --- Static and Media Files (with MinIO/S3) ---
@@ -328,8 +330,8 @@ SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
     "SERVERS": [
         {
-            "url": "http://localhost:8000",
-            "description": "Development",
+            "url": env("API_PUBLIC_URL", default="/"),
+            "description": "Current API server",
         },
     ],
 }
@@ -424,6 +426,9 @@ CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=DEBUG)
 
 # --- Production Security ---
 SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
+# Enable only behind a trusted proxy that sanitizes X-Forwarded-Proto.
+if env.bool("TRUST_PROXY_PROTO", default=False):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE")
 SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", default=365 * 24 * 60 * 60)
 CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE")
