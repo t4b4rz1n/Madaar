@@ -157,10 +157,13 @@ class InAppNotificationLocalizationTests(APITestCase):
         )
         notification = Notification.objects.get(user=self.user)
         self.assertLessEqual(len(notification.text), 255)
-        self.assertEqual(notification.message_data, {
-            "event": "task_created",
-            "values": {"task_title": title, "project_name": "Launch"},
-        })
+        self.assertEqual(
+            notification.message_data,
+            {
+                "event": "task_created",
+                "values": {"task_title": title, "project_name": "Launch"},
+            },
+        )
         for language in ("fa", "en"):
             response = self.client.get(
                 f"/api/v1/dashboard/notifications/{notification.id}/",
@@ -171,8 +174,8 @@ class InAppNotificationLocalizationTests(APITestCase):
             self.assertEqual(body["message_data"], notification.message_data)
 
     def test_broadcasts_and_existing_records_have_no_event_data(self):
-        from panel.Notification.models import Notification
         from dashboard.Notification.serializers import NotificationSerializer
+        from panel.Notification.models import Notification
 
         notification = Notification.objects.create(user=self.user, text="Team lunch at noon")
         body = NotificationSerializer(notification).data

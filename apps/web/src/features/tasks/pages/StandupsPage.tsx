@@ -11,22 +11,10 @@ export const StandupsPage = () => {
       animate={{ opacity: 1, y: 0 }}
       className="mx-auto max-w-[1200px] space-y-4 pb-8"
     >
-      {/* Coastal header image */}
-      <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "180px" }}>
-        <img
-          src="/images/heledone-assets/standups-coastal-v1.png"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          aria-hidden="true"
-        />
-        <div className="absolute inset-0 bg-gradient-to-l from-black/50 to-transparent" />
-        <div className="absolute inset-0 flex flex-col items-end justify-end gap-1 p-6">
-          <h1 className="text-xl font-bold text-white sm:text-2xl" dir="rtl">
-            {t("گزارشات کاربران")}
-          </h1>
-          <p className="text-sm text-white/75" dir="rtl">
-            {t("پیشرفت روزانه، تسک‌ها و موانع تیم را رصد کنید.")}
-          </p>
+      <div className="heledone-page-heading flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-base-content">{t("گزارش روزانه")}</h1>
+          <p className="text-xs text-heledone-ink-muted mt-1">{t("مشاهده و بررسی گزارش‌های روزانه اعضای سازمان")}</p>
         </div>
       </div>
 

@@ -495,7 +495,8 @@ class TimeOffRequestTests(AttendanceBaseTestCase):
 
     def test_list_user_filter_keeps_personal_visibility(self):
         TimeOffRequest.objects.create(
-            user=self.lead, organization=self.org,
+            user=self.lead,
+            organization=self.org,
             request_type=TimeOffRequest.Type.VACATION,
             start_datetime=timezone.now() + timedelta(days=1),
             end_datetime=timezone.now() + timedelta(days=2),

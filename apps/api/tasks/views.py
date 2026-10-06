@@ -146,7 +146,6 @@ class BoardViewSet(viewsets.ModelViewSet):
             serializer = ProjectActivitySerializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
-
         return Response(
             ProjectActivitySerializer(logs, many=True, context={"request": request}).data
         )
@@ -183,8 +182,12 @@ class TaskStatusViewSet(viewsets.ModelViewSet):
         order = serializer.validated_data.get("order")
         category = serializer.validated_data.get("category")
         status_obj = TaskStatusService.create_status(
-            board=board, code=code, name=name, order=order,
-            category=category, actor=self.request.user
+            board=board,
+            code=code,
+            name=name,
+            order=order,
+            category=category,
+            actor=self.request.user,
         )
         serializer.instance = status_obj
 
@@ -450,8 +453,6 @@ class TaskViewSet(viewsets.ModelViewSet):
         if page is not None:
             serializer = ProjectActivitySerializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
-
-
 
         return Response(
             ProjectActivitySerializer(logs, many=True, context={"request": request}).data

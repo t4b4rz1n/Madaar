@@ -101,20 +101,53 @@ class ProjectService:
             ),
         )
 
-
     @classmethod
     def get_accessible_queryset(cls, user) -> QuerySet[Project]:
-        """Return projects accessible by the given user."""
+        """
+        Return projects accessible by the given user.
+
+        Users can see projects if they are:
+        - Staff/Superuser (all projects), OR
+        - Organization owner (all org projects), OR
+        - Organization admin with manage permissions (all org projects), OR
+        - Project owner, OR
+        - Active project member
+        """
         qs = cls.get_base_queryset()
-        if not user.is_staff:
-            qs = qs.filter(
-                Q(
-                    organization__memberships__user=user,
-                    organization__memberships__is_deleted=False,
-                )
-                | Q(members__user=user, members__is_deleted=False)
-                | Q(owner=user)
-            ).distinct()
+
+        if user.is_staff or user.is_superuser:
+            return qs
+
+        from organizations.models import Organization, OrganizationMembership
+        from organizations.services import PermissionService
+
+        # Organizations where user is owner
+        owned_org_ids = Organization.objects.filter(owner=user, is_deleted=False).values_list(
+            "id", flat=True
+        )
+
+        # Organizations where user has admin/manage permissions
+        admin_org_ids = []
+        memberships = OrganizationMembership.objects.filter(
+            user=user, is_deleted=False
+        ).select_related("organization")
+
+        for membership in memberships:
+            if PermissionService.has_permission(
+                user, "org.manage_settings", membership.organization_id
+            ) or PermissionService.has_permission(
+                user, "project.manage", membership.organization_id
+            ):
+                admin_org_ids.append(membership.organization_id)
+
+        privileged_org_ids = list(owned_org_ids) + admin_org_ids
+
+        qs = qs.filter(
+            Q(organization_id__in=privileged_org_ids)
+            | Q(owner=user)
+            | Q(members__user=user, members__is_deleted=False)
+        ).distinct()
+
         return qs
 
     @staticmethod

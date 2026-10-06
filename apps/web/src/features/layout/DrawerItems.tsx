@@ -111,13 +111,6 @@ export const drawerItems: DrawerItem[] = [
 
   // Admin & Settings Navigation (Settings Modal & Command Menu)
   {
-    get title() { return t("گزارشات کاربران"); },
-    link: "standups",
-    section: "AdminSettings",
-    icon: <NoteText variant="Outline" />,
-    permissions: ["org.manage_settings", "report.view"],
-  },
-  {
     get title() { return t("سازمان‌ها"); },
     link: "organizations",
     section: "AdminSettings",
@@ -168,6 +161,13 @@ export const drawerItems: DrawerItem[] = [
     section: "AdminSettings",
     icon: <Notification variant="Outline" />,
     permissions: ["notification.view", "org.manage_settings"],
+  },
+  {
+    get title() { return t("گزارش روزانه"); },
+    link: "standups",
+    section: "AdminSettings",
+    icon: <NoteText variant="Outline" />,
+    permissions: ["org.manage_settings", "report.view"],
   },
   {
     get title() { return t("درخواست‌های پشتیبانی"); },

@@ -333,6 +333,7 @@ class TaskStatusTransitionSignalTestCase(APITestCase):
         self.assertEqual(last.from_status_code, "todo")
         self.assertEqual(last.to_status_code, "doing")
 
+
 class EmployeeDashboardBoardRoutingTestCase(APITestCase):
     """Dashboard task links must carry the board needed by the task workspace."""
 
@@ -344,8 +345,11 @@ class EmployeeDashboardBoardRoutingTestCase(APITestCase):
         board = BoardService.create_board(title="Home board", project=project, created_by=cls.user)
         todo = TaskStatus.objects.get(board=board, code="todo")
         cls.task = Task.objects.create(
-            title="Open me from home", project=project, status=todo,
-            assignee=cls.user, reporter=cls.user,
+            title="Open me from home",
+            project=project,
+            status=todo,
+            assignee=cls.user,
+            reporter=cls.user,
             due_date=timezone.now() + datetime.timedelta(days=1),
         )
         cls.board = board
@@ -354,5 +358,7 @@ class EmployeeDashboardBoardRoutingTestCase(APITestCase):
         self.client.force_authenticate(user=self.user)
         response = self.client.get(reverse("reports:employee-dashboard"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        task = next(item for item in response.data["upcoming_tasks"] if item["id"] == str(self.task.id))
+        task = next(
+            item for item in response.data["upcoming_tasks"] if item["id"] == str(self.task.id)
+        )
         self.assertEqual(task["board_id"], str(self.board.id))

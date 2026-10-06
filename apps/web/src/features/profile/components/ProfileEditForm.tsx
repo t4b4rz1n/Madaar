@@ -69,7 +69,7 @@ export const ProfileEditForm = () => {
       password_confirm: "",
       notify_via_email: user?.notify_via_email ?? true,
       notify_via_telegram: user?.notify_via_telegram ?? false,
-      calendar_preference: user?.calendar_preference || "gregorian",
+      calendar_preference: user?.calendar_preference || "jalali",
     },
   });
 
@@ -321,7 +321,7 @@ export const ProfileEditForm = () => {
                   render={({ field }) => (
                     <select
                       className="select select-bordered select-sm h-10 w-full bg-base-100"
-                      value={field.value || "gregorian"}
+                      value={field.value || "jalali"}
                       onChange={(e) => {
                         field.onChange(e);
                         updateMutation.mutate({ calendar_preference: e.target.value as "gregorian" | "jalali" }, {

@@ -3,6 +3,7 @@ import { getErrorMessage as translateError } from "../../../core/utils/errorHand
 import { t as translate, useTranslation, formatRelativeTime } from "../../../i18n/locale";
 import { formatDisplayDate } from "../../../utils/date";
 import { getWorkflowAppearance } from "../../../core/config/designTokens";
+import { getHeledoneAvatar } from "../../../utils/avatarUtils";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -86,14 +87,6 @@ const formatTime = (seconds?: number) => {
 
 const formatRelativeDate = formatRelativeTime;
 
-export const getHeledoneAvatar = (id?: string | number, name?: string) => {
-  const seed = (String(id || "") + String(name || ""))
-    .split("")
-    .reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const index = (seed % 10) + 1;
-  return `/images/heledone-assets/avatar-${String(index).padStart(2, "0")}.png`;
-};
-
 const getDueDateMeta = (isoString?: string | null) => {
   if (!isoString) return null;
   const target = new Date(isoString);
@@ -147,10 +140,10 @@ const getDueDateMeta = (isoString?: string | null) => {
 };
 
 const priorityConfig: Record<Task["priority"], { label: string; color: string }> = {
-  low:      { get label() { return translate("اولویت کم"); },      color: "var(--color-heledone-todo)" },
-  medium:   { get label() { return translate("اولویت متوسط"); },   color: "var(--color-primary)" },
-  high:     { get label() { return translate("اولویت بالا"); },     color: "var(--color-heledone-sun)" },
-  critical: { get label() { return translate("اولویت فوری"); },    color: "var(--color-heledone-coral)" },
+  low: { get label() { return translate("اولویت کم"); }, color: "var(--color-heledone-todo)" },
+  medium: { get label() { return translate("اولویت متوسط"); }, color: "var(--color-primary)" },
+  high: { get label() { return translate("اولویت بالا"); }, color: "var(--color-heledone-sun)" },
+  critical: { get label() { return translate("اولویت فوری"); }, color: "var(--color-heledone-coral)" },
 };
 
 export const TaskSheet: React.FC<TaskSheetProps> = ({
@@ -210,9 +203,9 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
   const taskId = task?.id;
   const timerBelongsToTask = Boolean(
     activeTimer &&
-      task &&
-      (activeTimer.task?.toString() ??
-        (activeTimer as { task_id?: string | number }).task_id?.toString()) === task.id.toString()
+    task &&
+    (activeTimer.task?.toString() ??
+      (activeTimer as { task_id?: string | number }).task_id?.toString()) === task.id.toString()
   );
   const timerIsRunning = Boolean(task && (task.is_active_timer_running || timerBelongsToTask));
 
@@ -275,8 +268,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
       toast.error(
         translateError(
           error.response?.data?.detail ||
-            error.response?.data?.error ||
-            "Failed to log manual time"
+          error.response?.data?.error ||
+          "Failed to log manual time"
         )
       ),
   });
@@ -733,9 +726,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                             save({ priority: item.key });
                             setIsPriorityOpen(false);
                           }}
-                          className={`task-sheet-dropdown-item ${
-                            priority === item.key ? "is-active" : ""
-                          }`}
+                          className={`task-sheet-dropdown-item ${priority === item.key ? "is-active" : ""
+                            }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <span
@@ -836,9 +828,8 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                           if (!m.user) return false;
                           if (!assigneeSearch.trim()) return true;
                           const q = assigneeSearch.toLowerCase();
-                          const name = `${m.user.first_name || ""} ${m.user.last_name || ""} ${
-                            m.user.username || ""
-                          }`.toLowerCase();
+                          const name = `${m.user.first_name || ""} ${m.user.last_name || ""} ${m.user.username || ""
+                            }`.toLowerCase();
                           return name.includes(q);
                         })
                         .map((m) => {
@@ -1267,11 +1258,10 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
               <button
                 type="button"
                 onClick={() => blockerMutation.mutate(!task.is_blocked)}
-                className={`task-sheet-blocker-btn ${
-                  task.is_blocked
-                    ? "bg-error/15 text-error border border-error/30 shadow-xs"
-                    : "bg-base-200/80 text-heledone-ink-muted hover:text-error hover:bg-error/10 border border-base-content/10"
-                }`}
+                className={`task-sheet-blocker-btn ${task.is_blocked
+                  ? "bg-error/15 text-error border border-error/30 shadow-xs"
+                  : "bg-base-200/80 text-heledone-ink-muted hover:text-error hover:bg-error/10 border border-base-content/10"
+                  }`}
               >
                 <Danger size={15} />
                 <span>{task.is_blocked ? t("مسدود · رفع مانع") : t("ثبت مانع")}</span>
@@ -1542,20 +1532,18 @@ export const TaskSheet: React.FC<TaskSheetProps> = ({
                                 completed: !item.is_completed,
                               })
                             }
-                            className={`grid size-5 shrink-0 place-items-center rounded-lg border transition ${
-                              item.is_completed
-                                ? "border-success bg-success text-white shadow-2xs"
-                                : "border-base-content/25 text-transparent hover:border-primary"
-                            }`}
+                            className={`grid size-5 shrink-0 place-items-center rounded-lg border transition ${item.is_completed
+                              ? "border-success bg-success text-white shadow-2xs"
+                              : "border-base-content/25 text-transparent hover:border-primary"
+                              }`}
                           >
                             {item.is_completed && <TickCircle size={14} variant="Bold" />}
                           </button>
                           <span
-                            className={`text-xs break-words font-medium ${
-                              item.is_completed
-                                ? "text-heledone-ink-muted line-through"
-                                : "text-base-content"
-                            }`}
+                            className={`text-xs break-words font-medium ${item.is_completed
+                              ? "text-heledone-ink-muted line-through"
+                              : "text-base-content"
+                              }`}
                           >
                             {item.description}
                           </span>

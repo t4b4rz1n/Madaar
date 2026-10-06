@@ -2,7 +2,7 @@ import os
 
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 from accounts.models import User
@@ -15,12 +15,16 @@ org = Organization.objects.first()
 # Make sure we have a role
 role, _ = Role.objects.get_or_create(name="TestRole", organization=org)
 
+
 class DummyRequest:
     def __init__(self, user):
         self.user = user
 
+
 request = DummyRequest(user)
-serializer = UserUpdateSerializer(user, data={"role_id": str(role.id)}, partial=True, context={'request': request})
+serializer = UserUpdateSerializer(
+    user, data={"role_id": str(role.id)}, partial=True, context={"request": request}
+)
 if serializer.is_valid():
     serializer.save()
     print("Saved!")
@@ -33,5 +37,5 @@ print("Role ID in DB:", mem.dynamic_roles.first().id if mem and mem.dynamic_role
 
 from panel.User.serializers import UserListSerializer
 
-res = UserListSerializer(user, context={'request': request}).data
+res = UserListSerializer(user, context={"request": request}).data
 print("Role ID in API Response:", res.get("role_id"))

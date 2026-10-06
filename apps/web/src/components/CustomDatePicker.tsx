@@ -104,7 +104,7 @@ export const CustomDatePicker = ({
   const [jalaliSelected, setJalaliSelected] = useState<JDoranDate | null>(null);
   const [jalaliPending, setJalaliPending] = useState<JDoranDate | null>(null);
 
-  const preference = useAuthStore((state) => state.user?.calendar_preference) || "gregorian";
+  const preference = useAuthStore((state) => state.user?.calendar_preference) || "jalali";
   const isJalali = preference === "jalali";
 
   // Sync value → internal state

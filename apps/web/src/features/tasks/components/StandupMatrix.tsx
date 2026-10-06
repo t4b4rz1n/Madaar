@@ -95,10 +95,10 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
   const t = useTranslation();
   const queryClient = useQueryClient();
   const currentUserId = useAuthStore((state) => state.user?.id);
-  const calendarPref = useAuthStore((state) => state.user?.calendar_preference) || 'gregorian';
+  const calendarPref = useAuthStore((state) => state.user?.calendar_preference) || 'jalali';
 
   const now = new Date();
-  const initialPref = useAuthStore.getState().user?.calendar_preference || 'gregorian';
+  const initialPref = useAuthStore.getState().user?.calendar_preference || 'jalali';
   const initialCursor = initialPref === 'jalali'
     ? { year: DoranDate.fromGregorian(now).year, month: DoranDate.fromGregorian(now).month }
     : { year: now.getFullYear(), month: now.getMonth() + 1 };
