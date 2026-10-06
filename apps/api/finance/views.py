@@ -16,20 +16,28 @@ def _get_user_org(request):
 
     user = request.user
     memberships = OrganizationMembership.objects.filter(
-        user=user, is_deleted=False, organization__is_deleted=False,
+        user=user,
+        is_deleted=False,
+        organization__is_deleted=False,
     ).select_related("organization")
-    organization_id = request.query_params.get("organization_id") or request.headers.get("X-Organization-Id")
+    organization_id = request.query_params.get("organization_id") or request.headers.get(
+        "X-Organization-Id"
+    )
     if organization_id:
         membership = memberships.filter(organization_id=organization_id).first()
     else:
         active_project = ProjectMember.objects.filter(
-            user=user, is_active=True, is_deleted=False,
+            user=user,
+            is_active=True,
+            is_deleted=False,
             project__organization_id=OuterRef("organization_id"),
             project__is_deleted=False,
         )
-        membership = memberships.annotate(has_project=Exists(active_project)).order_by(
-            "-has_project", "created_at"
-        ).first()
+        membership = (
+            memberships.annotate(has_project=Exists(active_project))
+            .order_by("-has_project", "created_at")
+            .first()
+        )
     return user, membership.organization if membership else None
 
 

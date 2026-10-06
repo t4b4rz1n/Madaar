@@ -17,6 +17,7 @@ import ApiService from "../../../core/api/apiService";
 import type { EmployeeTaskSummary } from "../types";
 import type { ProjectMember } from "../../projects/types";
 import { CoastalDivider } from "../../../components/CoastalEmptyState";
+import { StandupMatrix } from "../../tasks/components/StandupMatrix";
 import "../home.css";
 
 const asset = "/images/heledone-assets/";
@@ -81,6 +82,9 @@ export const UserDashboardPage = () => {
     <div className="home-bottom"><section className="home-card home-news"><div className="home-card-heading"><h2>{t("خبرهای تیم")}</h2><Link to="/notifications" aria-label={t("مشاهده اعلان‌ها")}><ChevronLeft size={21}/></Link></div>{news.data?.slice(0, 2).map((item, index) => { const formatted = formatNews(item); return <Link to={item.link?.startsWith("/") ? buildNotificationLink(item.link) : "/notifications"} className="home-news-row" key={item.id}><div className="home-news-author"><small>{formatRelativeTime(item.created_at)}</small><img className="home-avatar" src={user?.profile_image_url || user?.avatar_url || avatar(index + 1)} alt=""/></div><div className="home-news-text"><h3>{formatted.heading}</h3>{formatted.detail && <p>{formatted.detail}</p>}</div><span className={`home-news-icon ${index === 0 ? "gold" : "coral"}`}>{index === 0 ? <Hand size={27}/> : <Megaphone size={27}/>}</span></Link>; })}{!news.data?.length && <p className="home-empty">{news.isLoading ? t("در حال بارگذاری...") : t("خبری برای نمایش وجود ندارد")}</p>}</section>
     <section className="home-card home-projects"><div className="home-card-heading"><h2>{t("پروژه‌های من")}</h2><Link to="/projects" aria-label={t("مشاهده پروژه‌ها")}><ChevronLeft size={21}/></Link></div>{projects.map((project, index) => <Link to={`/projects/${project.id}`} className="home-project-row" key={project.id}><MoreVertical size={19}/><div className="home-avatar-stack">{(projectMembers.data?.[index] ?? []).filter((member: ProjectMember) => member.user).slice(0, 3).map((member: ProjectMember, avatarIndex: number) => <img key={member.id} className="home-avatar" src={member.user?.avatar || avatar(avatarIndex + 2)} alt={member.user?.full_name || member.user?.username || t("عضو تیم")}/>)}</div><div className="home-project-detail"><strong>{project.name}</strong><div className="home-project-meter"><span>{formatNumber(project.progress_percentage ?? 0)}{t("٪")}</span><progress max={100} value={project.progress_percentage ?? 0} aria-label={t("پیشرفت پروژه {title}", { title: project.name })}/></div></div><span className={`home-project-icon ${index === 0 ? "blue" : "gold"}`}>{index === 0 ? <Monitor size={24}/> : <BadgeCheck size={25}/>}</span></Link>)}{!projects.length && <p className="home-empty">{projectQuery.isLoading ? t("در حال بارگذاری...") : t("پروژه‌ای برای نمایش وجود ندارد")}</p>}</section></div>
     <CoastalDivider />
+    <div className="home-standup-matrix" style={{ marginTop: "24px" }}>
+      <StandupMatrix forceSelfView={true} />
+    </div>
   </div>;
 };
 export default UserDashboardPage;

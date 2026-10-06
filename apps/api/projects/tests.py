@@ -328,7 +328,7 @@ class ProjectAPITests(APITestCase):
     def test_non_owner_cannot_delete_project(self):
         self.client.force_authenticate(user=self.member_user)
         response = self.client.delete(f"/api/v1/projects/{self.project.id}/")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     # -- Soft-delete exclusion tests ---------------------------------------
 
@@ -436,3 +436,42 @@ class ProjectAPITests(APITestCase):
         )
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["title"], "Upcoming")
+
+    def test_org_member_cannot_see_projects_they_are_not_member_of(self):
+        """
+        Test that organization members can only see projects they are explicitly
+        members of, not all projects in the organization.
+        """
+        self.client.force_authenticate(user=self.member_user)
+
+        # member_user is an org member but NOT a member of self.project
+        # They should NOT see self.project in their list
+        response = self.client.get("/api/v1/projects/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
+
+        # member_user should not see "Madaar Core" project since they're not a member
+        project_names = [p["name"] for p in results]
+        self.assertNotIn("Madaar Core", project_names)
+
+        # Now add member_user as a project member
+        ProjectMemberService.add(
+            project=self.project,
+            actor=self.admin,
+            validated_data={"user": self.member_user, "allocation_percentage": 100},
+        )
+
+        # Now they should see it
+        response2 = self.client.get("/api/v1/projects/")
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        results2 = (
+            response2.data.get("results", response2.data)
+            if isinstance(response2.data, dict)
+            else response2.data
+        )
+        project_names2 = [p["name"] for p in results2]
+        self.assertIn("Madaar Core", project_names2)

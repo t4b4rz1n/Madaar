@@ -235,6 +235,7 @@ class UpdateOrgMemberSalarySerializer(serializers.Serializer):
             raise serializers.ValidationError("Provide at least salary_type or salary_amount.")
         return attrs
 
+
 class InviteOrgMemberSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     username = serializers.CharField(max_length=150, required=True)

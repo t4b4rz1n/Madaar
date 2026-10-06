@@ -20,7 +20,14 @@ class BoardService:
 
     @staticmethod
     @transaction.atomic
-    def create_board(title, project, created_by, description=None, background_color=None, create_default_statuses=True):
+    def create_board(
+        title,
+        project,
+        created_by,
+        description=None,
+        background_color=None,
+        create_default_statuses=True,
+    ):
         # Lock existing boards to prevent race condition
         existing_boards = list(Board.objects.filter(project=project).select_for_update())
         max_order = len(existing_boards)
@@ -523,9 +530,15 @@ class TaskService:
             category = new_status.category if new_status.category else ""
             code = new_status.code.lower() if new_status.code else ""
 
-            is_doing = category == TaskStatus.Category.IN_PROGRESS or (category == TaskStatus.Category.TODO and code == "doing")
-            is_review = category == TaskStatus.Category.REVIEW or (category == TaskStatus.Category.TODO and code == "review")
-            is_done = category == TaskStatus.Category.DONE or (category == TaskStatus.Category.TODO and code == "done")
+            is_doing = category == TaskStatus.Category.IN_PROGRESS or (
+                category == TaskStatus.Category.TODO and code == "doing"
+            )
+            is_review = category == TaskStatus.Category.REVIEW or (
+                category == TaskStatus.Category.TODO and code == "review"
+            )
+            is_done = category == TaskStatus.Category.DONE or (
+                category == TaskStatus.Category.TODO and code == "done"
+            )
 
             if is_doing:
                 try:

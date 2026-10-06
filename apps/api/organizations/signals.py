@@ -218,17 +218,13 @@ def sync_team_member_to_projects(sender, instance, created, **kwargs):
 
         # Find active projects where this team is a member
         team_projects = ProjectMember.objects.filter(
-            team=instance.team,
-            user__isnull=True,
-            is_deleted=False
+            team=instance.team, user__isnull=True, is_deleted=False
         ).select_related("project")
 
         for pm in team_projects:
             # Check if user is already an active member of this project
             is_active_member = ProjectMember.objects.filter(
-                project=pm.project,
-                user=instance.user,
-                is_deleted=False
+                project=pm.project, user=instance.user, is_deleted=False
             ).exists()
 
             if not is_active_member:

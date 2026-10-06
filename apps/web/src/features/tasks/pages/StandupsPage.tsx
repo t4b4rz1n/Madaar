@@ -1,7 +1,7 @@
 import { useTranslation } from "../../../i18n/locale";
 import { motion } from "motion/react";
 import { StandupMatrix } from "../components/StandupMatrix";
-import { PageHeading } from "../../../components/PageHeading";
+import { CoastalDivider } from "../../../components/CoastalEmptyState";
 
 export const StandupsPage = () => {
   const t = useTranslation();
@@ -9,9 +9,16 @@ export const StandupsPage = () => {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4 pb-8 max-w-full"
+      className="mx-auto max-w-[1200px] space-y-4 pb-8"
     >
-      <PageHeading title={t("Daily Standups")} description={t("Monitor your team's daily progress, tasks, and blockers.")} />
+      <div className="heledone-page-heading flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-base-content">{t("گزارش روزانه")}</h1>
+          <p className="text-xs text-heledone-ink-muted mt-1">{t("مشاهده و بررسی گزارش‌های روزانه اعضای سازمان")}</p>
+        </div>
+      </div>
+
+      <CoastalDivider />
 
       <div className="min-w-0">
         <StandupMatrix title={t("Standups Overview")} />

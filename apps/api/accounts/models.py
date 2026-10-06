@@ -50,7 +50,7 @@ class User(AbstractUser, BaseModel):
     calendar_preference = models.CharField(
         max_length=20,
         choices=CALENDAR_CHOICES,
-        default="gregorian",
+        default="jalali",
         help_text="User's preferred calendar system",
     )
 
