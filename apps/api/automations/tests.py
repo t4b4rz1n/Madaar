@@ -157,10 +157,13 @@ class InAppNotificationLocalizationTests(APITestCase):
         )
         notification = Notification.objects.get(user=self.user)
         self.assertLessEqual(len(notification.text), 255)
-        self.assertEqual(notification.message_data, {
-            "event": "task_created",
-            "values": {"task_title": title, "project_name": "Launch"},
-        })
+        self.assertEqual(
+            notification.message_data,
+            {
+                "event": "task_created",
+                "values": {"task_title": title, "project_name": "Launch"},
+            },
+        )
         for language in ("fa", "en"):
             response = self.client.get(
                 f"/api/v1/dashboard/notifications/{notification.id}/",

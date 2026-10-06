@@ -163,6 +163,13 @@ export const drawerItems: DrawerItem[] = [
     permissions: ["notification.view", "org.manage_settings"],
   },
   {
+    get title() { return t("گزارش روزانه"); },
+    link: "standups",
+    section: "AdminSettings",
+    icon: <NoteText variant="Outline" />,
+    permissions: ["org.manage_settings", "report.view"],
+  },
+  {
     get title() { return t("درخواست‌های پشتیبانی"); },
     link: "tickets",
     section: "Support",

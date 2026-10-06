@@ -367,6 +367,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     def invite_member(self, request, pk=None):
         organization = self.get_object()
         from .serializers import InviteOrgMemberSerializer
+
         serializer = InviteOrgMemberSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -378,6 +379,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         role_id = serializer.validated_data.get("role_id", OrganizationMembership.Role.ADMIN)
 
         from django.contrib.auth import get_user_model
+
         User = get_user_model()
 
         # Check if user exists
@@ -396,7 +398,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 email=email,
                 first_name=first_name,
                 last_name=last_name,
-                password=password
+                password=password,
             )
             # User was created successfully
 
@@ -405,6 +407,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         legacy_role = None
         if role_id:
             import uuid as _uuid
+
             is_uuid = True
             try:
                 _uuid.UUID(str(role_id))
@@ -465,8 +468,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        response_serializer = OrganizationMemberSerializer(
-            membership, context={"request": request}
-        )
+        response_serializer = OrganizationMemberSerializer(membership, context={"request": request})
         status_code = status.HTTP_201_CREATED if created_mem else status.HTTP_200_OK
         return Response(response_serializer.data, status=status_code)

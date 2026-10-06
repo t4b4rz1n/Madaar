@@ -10,9 +10,13 @@ from projects.models import Project, ProjectMember
 
 class FinanceOrganizationSelectionTests(TestCase):
     def test_prefers_org_with_project_but_respects_requested_membership(self):
-        user = get_user_model().objects.create_user(username="finance-org-user", email="finance@example.com", password="password")
+        user = get_user_model().objects.create_user(
+            username="finance-org-user", email="finance@example.com", password="password"
+        )
         empty_org = Organization.objects.create(name="Empty", slug="finance-empty", owner=user)
-        project_org = Organization.objects.create(name="Project", slug="finance-project", owner=user)
+        project_org = Organization.objects.create(
+            name="Project", slug="finance-project", owner=user
+        )
         outsider_org = Organization.objects.create(name="Outsider", slug="finance-outsider")
         for organization in (empty_org, project_org):
             OrganizationMembership.objects.get_or_create(user=user, organization=organization)

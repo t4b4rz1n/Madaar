@@ -5,7 +5,7 @@ import { getIntlLocale } from "../i18n/locale";
 export const formatDisplayDate = (
   date: Date | string,
   pattern = "yyyy-MM-dd",
-  calendar = useAuthStore.getState().user?.calendar_preference || "gregorian",
+  calendar = useAuthStore.getState().user?.calendar_preference || "jalali",
   locale = getIntlLocale(),
 ): string => {
   if (!date) return "";
