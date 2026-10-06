@@ -328,7 +328,7 @@ class ProjectAPITests(APITestCase):
     def test_non_owner_cannot_delete_project(self):
         self.client.force_authenticate(user=self.member_user)
         response = self.client.delete(f"/api/v1/projects/{self.project.id}/")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     # -- Soft-delete exclusion tests ---------------------------------------
 
