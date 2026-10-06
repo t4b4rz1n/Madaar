@@ -111,6 +111,13 @@ export const drawerItems: DrawerItem[] = [
 
   // Admin & Settings Navigation (Settings Modal & Command Menu)
   {
+    get title() { return t("گزارشات کاربران"); },
+    link: "standups",
+    section: "AdminSettings",
+    icon: <NoteText variant="Outline" />,
+    permissions: ["org.manage_settings", "report.view"],
+  },
+  {
     get title() { return t("سازمان‌ها"); },
     link: "organizations",
     section: "AdminSettings",

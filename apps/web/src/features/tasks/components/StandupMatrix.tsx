@@ -719,13 +719,13 @@ export const StandupMatrix: React.FC<StandupMatrixProps> = ({
           </div>
 
           {/* Matrix Table — horizontal scroll stays, the scrollbar itself is hidden */}
-          <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className={`overflow-x-auto ${rows.length > 5 ? 'overflow-y-auto max-h-[320px] [scrollbar-width:thin]' : 'overflow-y-visible'}`}>
             <table className="w-full min-w-max border-separate border-spacing-0 table-fixed">
-              <thead>
+              <thead className="sticky top-0 z-10">
                 <tr>
                   <th
                     style={{ width: memberColWidth, minWidth: memberColWidth, maxWidth: memberColWidth }}
-                    className="relative sticky start-0 z-20 border-b border-base-content/8 bg-base-100 px-3 py-2.5 text-start text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted"
+                    className="relative sticky start-0 z-30 border-b border-base-content/8 bg-base-100 px-3 py-2.5 text-start text-[13px] font-bold uppercase tracking-wider text-heledone-ink-muted"
                   >
                     {isSelfView ? S.projectLabel : S.memberColumnLabel}
                     <span
