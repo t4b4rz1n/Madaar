@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { BrowserRouter, useRoutes } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorFallback } from "../../components/ErrorFallback";
@@ -14,7 +14,7 @@ const AppRoutes: React.FC = () => {
     return <PageLoader fullScreen />;
   }
 
-  return element;
+  return <Suspense fallback={<PageLoader fullScreen />}>{element}</Suspense>;
 };
 
 export const AppRouter: React.FC<{ children?: React.ReactNode }> = ({
