@@ -171,8 +171,8 @@ class InAppNotificationLocalizationTests(APITestCase):
             self.assertEqual(body["message_data"], notification.message_data)
 
     def test_broadcasts_and_existing_records_have_no_event_data(self):
-        from panel.Notification.models import Notification
         from dashboard.Notification.serializers import NotificationSerializer
+        from panel.Notification.models import Notification
 
         notification = Notification.objects.create(user=self.user, text="Team lunch at noon")
         body = NotificationSerializer(notification).data

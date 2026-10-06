@@ -86,7 +86,7 @@ const formatTime = (seconds?: number) => {
 
 const formatRelativeDate = formatRelativeTime;
 
-export const getHeledoneAvatar = (id?: string | number, name?: string) => {
+const getHeledoneAvatar = (id?: string | number, name?: string) => {
   const seed = (String(id || "") + String(name || ""))
     .split("")
     .reduce((acc, c) => acc + c.charCodeAt(0), 0);

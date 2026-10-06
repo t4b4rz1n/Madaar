@@ -20,6 +20,10 @@ it is an overlay, not a complete replacement. Preserve database credentials,
 `infra/docker/nginx/heledone.conf` belongs inside the shared Nginx `http` block.
 The shared webserver must join the external `madar_network`. This file uses
 Docker DNS at request time so API/web container updates do not leave stale IPs.
+Legacy routes using the same `madar-api` or `madar-web` hostnames must also use
+variable `proxy_pass` directives. A static upstream for the same hostname can
+shadow variable-based DNS resolution and keep an old container address. The
+server's existing `madaar.movazee.com` compatibility routes were updated too.
 The media proxy permits reads from the existing bucket. Collected Django static
 files are served through the web container's `/api-static/` location; mount an
 export of the API image's `/app/staticfiles` at `/srv/api-static:ro` in the web
@@ -46,9 +50,9 @@ madaar-api:heledone-20261006T074936Z
 madaar-web:heledone-20261006T074936Z
 ```
 
-Watchtower is disabled for this project's four application containers so previous
+Initially, Watchtower was disabled for this project's four application containers so previous
 registry images cannot overwrite the changes. Other projects' updater settings
-are unchanged. After publishing the repository changes to GHCR, switch back to
+were unchanged. After publishing the repository changes to GHCR, switch back to
 the corresponding registry images, refresh the static export and re-enable this
 project's Watchtower labels if automatic updates are desired.
 
@@ -80,3 +84,19 @@ docker exec webserver nginx -s reload
 It does not run `down`, remove volumes or recreate database/storage containers.
 The shared Compose network change is saved for future webserver recreation;
 the running shared Nginx already belongs to that network and only needs a reload.
+
+## Registry rollout on 2026-10-06
+
+After explicit approval, the four application services were switched back to
+`ghcr.io/t4b4rz1n/madaar-api:main` and `ghcr.io/t4b4rz1n/madaar-web:main`, both
+at Git revision `2a497b1c7044695d3c39d3428a8fd6f59c845732`. Watchtower is now
+enabled again for these four services. The static export was refreshed from the
+published API image. Database/storage containers and all 48 table row counts
+were preserved.
+
+The additional pre-rollout backup is
+`/root/madaar/backups/registry-20261006T083651Z`. It contains the previous Compose
+file, the PostgreSQL dump and static files, and the checked registry Compose
+candidate. The previous temporary images remain available for rollback.
+To return to the pre-registry application without restoring live data, run
+`python3 /root/madaar/backups/registry-20261006T083651Z/rollback.py`.
